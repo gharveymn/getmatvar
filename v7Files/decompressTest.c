@@ -19,13 +19,17 @@
 }
 
 #define HEADER_SIZE 128
+#define COMP_FACTOR 10
 
 int numFromStr(char* str);
 
 int main(int argc, char* argv[])
 {
-	char filename[] = "my_struct.mat";
-	int bytesToRead, readErr, comprErr;
+	char filename[50];
+	strcpy(filename, "my_struct.mat");
+	char spec[2];
+	
+	int bytesToRead, readErr, comprErr, numElem, eofAddr;
 	char *buffer, *uncompr;
 	uLongf uncomprLen;
 
@@ -37,42 +41,62 @@ int main(int argc, char* argv[])
 		perror("Could not open compressed data file.");
 		exit(1);
 	}
+	//get eof address
+	fseek(fp, 0, SEEK_END);
+	eofAddr = ftell(fp);
+	rewind(fp);
+	printf("Beginning of file address: 0x%x\n", ftell(fp));
 
 	//skip header
 	fseek(fp, HEADER_SIZE, SEEK_SET);
 
-	//get number of bytes in data element
-	fseek(fp, 4, SEEK_CUR);
-	char dataSize[4];
-	if (fread(dataSize, 1, 4, fp) != 4)
+	numElem = 0;
+	while (ftell(fp) < eofAddr)
 	{
-		fputs("Read failed on line 41", stderr);
+		printf("Current file address: 0x%x\n", ftell(fp));
+		//get number of bytes in data element
+		fseek(fp, 4, SEEK_CUR);
+		char dataSize[4];
+		if (readErr = fread(dataSize, 1, 4, fp) != 4)
+		{
+			fputs("Failed to read size of compressed data\n", stderr);
+			printf("Bytes read:%d\n", readErr);
+		}
+		bytesToRead = numFromStr(dataSize);
+
+		//read compressed data element into buffer
+		buffer = (char *)malloc(bytesToRead);
+		if (readErr = fread(buffer, 1, bytesToRead, fp) != bytesToRead)
+		{
+			fputs("Failed to read compressed data\n", stderr);
+			printf("Bytes read:%d\n", readErr);
+		}
+
+		//uncompress compressed data element
+		uncomprLen = COMP_FACTOR*bytesToRead;
+		uncompr = (char *)malloc(uncomprLen);
+
+		comprErr = uncompress(uncompr, &uncomprLen, buffer, bytesToRead);
+	    CHECK_ERR(comprErr, "uncompress");
+
+	    //write uncompressed data element to file
+	    sprintf(spec, "%d", ++numElem);
+	    filename[0] = '\0';
+	    strcpy(filename, "UncompressedDataElement");
+	    strcat(filename, spec);
+	    strcat(filename, ".txt");
+	    uncomprfp = fopen(filename, "w");
+	    if (fwrite(uncompr, 1, uncomprLen, uncomprfp) != uncomprLen)
+	    {
+	    	fputs("Write failed.", stderr);
+	    }
+	    fclose(uncomprfp);
+	    free(buffer);
+	    free(uncompr);
 	}
-	bytesToRead = numFromStr(dataSize);
-
-	//read compressed data element into buffer
-	buffer = (char *)malloc(bytesToRead);
-	if (readErr = fread(buffer, 1, bytesToRead, fp) != bytesToRead)
-	{
-		fputs("Read failed on line 50.", stderr);
-	}
-
-	//uncompress compressed data element
-	uncomprLen = 2*bytesToRead;
-	uncompr = (char *)malloc(uncomprLen);
-
-	comprErr = uncompress(uncompr, &uncomprLen, buffer, bytesToRead);
-    CHECK_ERR(comprErr, "uncompress");
-
-    //write uncompressed data element to file
-    uncomprfp = fopen("UncompressedDataElement.txt", "w");
-    if (fwrite(uncompr, 1, uncomprLen, uncomprfp) != uncomprLen)
-    {
-    	fputs("Write failed.", stderr);
-    }
 
     fclose(fp);
-    fclose(uncomprfp);
+    
 }
 int numFromStr(char* str)
 {
