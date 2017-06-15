@@ -36,6 +36,11 @@ int main(int argc, char* argv[])
 	FILE *fp, *uncomprfp;
 
 	fp = fopen(filename, "rb");
+	//get eof address
+	fseek(fp, 0, SEEK_END);
+	eofAddr = ftell(fp);
+	rewind(fp);
+	printf("Beginning of file address: 0x%x\n", ftell(fp));
 	if (!fp)
 	{
 		perror("Could not open compressed data file.");
