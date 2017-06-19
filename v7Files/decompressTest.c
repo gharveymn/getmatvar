@@ -2,6 +2,7 @@
 #include "zlib.h"
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
@@ -21,7 +22,7 @@
 #define HEADER_SIZE 128
 #define COMP_FACTOR 10
 
-int numFromStr(char* str);
+uint32_t numFromStr(char* str);
 
 int main(int argc, char* argv[])
 {
@@ -50,7 +51,6 @@ int main(int argc, char* argv[])
 	fseek(fp, 0, SEEK_END);
 	eofAddr = ftell(fp);
 	rewind(fp);
-	printf("Beginning of file address: 0x%x\n", ftell(fp));
 
 	//skip header
 	fseek(fp, HEADER_SIZE, SEEK_SET);
@@ -62,16 +62,17 @@ int main(int argc, char* argv[])
 		//get number of bytes in data element
 		fseek(fp, 4, SEEK_CUR);
 		char dataSize[4];
-		if (readErr = fread(dataSize, 1, 4, fp) != 4)
+		if ((readErr = fread(dataSize, 1, 4, fp)) != 4)
 		{
 			fputs("Failed to read size of compressed data\n", stderr);
 			printf("Bytes read:%d\n", readErr);
 		}
 		bytesToRead = numFromStr(dataSize);
+		printf("Bytes to read: 0x%x, %d\n", bytesToRead, bytesToRead);
 
 		//read compressed data element into buffer
 		buffer = (char *)malloc(bytesToRead);
-		if (readErr = fread(buffer, 1, bytesToRead, fp) != bytesToRead)
+		if ((readErr = fread(buffer, 1, bytesToRead, fp)) != bytesToRead)
 		{
 			fputs("Failed to read compressed data\n", stderr);
 			printf("Bytes read:%d\n", readErr);
@@ -103,7 +104,15 @@ int main(int argc, char* argv[])
     fclose(fp);
     
 }
-int numFromStr(char* str)
+uint32_t numFromStr(char* str)
 {
-	return str[0] + (str[1] << 8) + (str[2] << 16) + (str[3] << 24);
+	uint32_t ret = str[0] & 255;
+	
+	ret += (str[1] << 8) & 65535;
+	ret += (str[2] << 16) & 16777215;
+	ret += (str[3] << 24);
+
+	return ret;
+
+	//return str[0] + (str[1] << 8) + (str[2] << 16) + (str[3] << 24);
 }
