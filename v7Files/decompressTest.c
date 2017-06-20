@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 	char spec[2];
 	
 	int bytesToRead, readErr, comprErr, numElem, eofAddr;
-	char *buffer, *uncompr;
+	char *dataBuffer, *uncompr;
 	uLongf uncomprLen;
 
 	FILE *fp, *uncomprfp;
@@ -67,12 +67,13 @@ int main(int argc, char* argv[])
 			fputs("Failed to read size of compressed data\n", stderr);
 			printf("Bytes read:%d\n", readErr);
 		}
+
 		bytesToRead = numFromStr(dataSize);
 		printf("Bytes to read: 0x%x, %d\n", bytesToRead, bytesToRead);
 
-		//read compressed data element into buffer
-		buffer = (char *)malloc(bytesToRead);
-		if ((readErr = fread(buffer, 1, bytesToRead, fp)) != bytesToRead)
+		//read compressed data element into dataBuffer
+		dataBuffer = (char *)malloc(bytesToRead);
+		if ((readErr = fread(dataBuffer, 1, bytesToRead, fp)) != bytesToRead)
 		{
 			fputs("Failed to read compressed data\n", stderr);
 			printf("Bytes read:%d\n", readErr);
@@ -82,7 +83,7 @@ int main(int argc, char* argv[])
 		uncomprLen = COMP_FACTOR*bytesToRead;
 		uncompr = (char *)malloc(uncomprLen);
 
-		comprErr = uncompress(uncompr, &uncomprLen, buffer, bytesToRead);
+		comprErr = uncompress(uncompr, &uncomprLen, dataBuffer, bytesToRead);
 	    CHECK_ERR(comprErr, "uncompress");
 
 	    //write uncompressed data element to file
@@ -97,7 +98,7 @@ int main(int argc, char* argv[])
 	    	fputs("Write failed.", stderr);
 	    }
 	    fclose(uncomprfp);
-	    free(buffer);
+	    free(dataBuffer);
 	    free(uncompr);
 	}
 
