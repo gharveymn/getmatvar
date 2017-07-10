@@ -26,6 +26,7 @@ typedef struct
 {
 	Addr_Pair pairs[MAX_Q_LENGTH];
 	int front;
+	int back;
 	int length;
 } Addr_Q;
 
@@ -40,8 +41,8 @@ typedef struct
 
 char* findSuperblock(int fd, size_t file_size);
 long getAddress(char* chunk_start, int num_bytes);
-void addToQueue(Addr_Pair pair);
-Addr_Pair removeFromQueue();
+void enqueuePair(Addr_Pair pair);
+Addr_Pair dequeuePair();
 
 size_t bytes_mapped;
 char* map_start;
@@ -54,8 +55,10 @@ int main (int argc, char* argv[])
 	bytes_mapped = 0;
 	Superblock s_block;
 
+	//init queue
 	queue.front = 0;
 	queue.length = 0;
+	queue.back = 0;
 
 	//open the file descriptor
 	int fd = open(filename, O_RDWR);
@@ -78,11 +81,12 @@ int main (int argc, char* argv[])
 	s_block.internal_node_k = getAddress(chunk_start + 18, 2);
 	s_block.base_address = getAddress(chunk_start + 24, 8);
 
+	//read scratchpad space
 	char* sps_start = chunk_start + 80;
 	Addr_Pair root_pair;
 	root_pair.tree_address = getAddress(sps_start, 8) + s_block.base_address;
-	root_pair.heap_address = getAddress(sps_start + 8, 8) + s_block.base_address;;
-	addToQueue(root_pair);
+	root_pair.heap_address = getAddress(sps_start + 8, 8) + s_block.base_address;
+	enqueuePair(root_pair);
 
 	if (munmap(map_start, bytes_mapped) != 0)
 	{
@@ -132,29 +136,31 @@ long getAddress(char* chunk_start, int num_bytes)
 	}
 	return ret;
 }
-void addToQueue(Addr_Pair pair)
+void enqueuePair(Addr_Pair pair)
 {
-	int free_index = -1;
-	if (queue.front + queue.length < MAX_Q_LENGTH)
-	{
-		free_index = queue.front + queue.length;
-	}
-	else if (queue.length < MAX_Q_LENGTH - 1)
-	{
-		free_index = queue.length - MAX_Q_LENGTH + queue.front;
-	}
-	else
+	if (queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Not enough room in queue\n");
 		exit(EXIT_FAILURE);
 	}
-	queue.pairs[free_index].tree_address = pair.tree_address;
-	queue.pairs[free_index].heap_address = pair.heap_address;
-	queue.length += 1;
+	queue.pairs[queue.back].tree_address = pair.tree_address;
+	queue.pairs[queue.back].heap_address = pair.heap_address;
+	queue.length++;
+
+	if (queue.back < MAX_Q_LENGTH - 1)
+	{
+		queue.back++;
+	}
+	else
+	{
+		queue.back = 0;
+	}
 }
-Addr_Pair removeFromQueue()
+Addr_Pair dequeuePair()
 {
-	Addr_Pair pair = queue.pairs[queue.front];
+	Addr_Pair pair;
+	pair.tree_address = queue.pairs[queue.front].tree_address;
+	pair.heap_address = queue.pairs[queue.front].heap_address;
 	if (queue.front + 1 < MAX_Q_LENGTH)
 	{
 		queue.front++;
