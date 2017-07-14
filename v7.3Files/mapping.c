@@ -67,6 +67,7 @@ Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, int map_index);
 void readTreeNode(char* tree_address);
 uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
+uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 
 MemMap maps[2];
 Addr_Q queue;
@@ -107,6 +108,7 @@ int main (int argc, char* argv[])
 	//find superblock
 	s_block = getSuperblock(fd, file_size);
 
+	//search for the object header for the variable
 	while (queue.length > 0)
 	{
 		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, TREE);
@@ -121,8 +123,7 @@ int main (int argc, char* argv[])
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
 			header_address = readSnod(tree_pointer, heap_pointer, token);
-			//b_tree that is next on the variable_name path should be only pair in queue
-			//check if there is more path to explore and continue if so, break otherwise
+
 			token = strtok(NULL, delim);
 			if (token == NULL)
 			{
@@ -136,6 +137,39 @@ int main (int argc, char* argv[])
 		}
 	}
 	printf("Object header for variable %s is at 0x%lx\n", variable_name, header_address);
+
+	//interpret the header messages
+	char* header_pointer = navigateTo(header_address, TREE);
+	uint16_t num_msgs = getBytesAsNumber(header_pointer + 2, 2);
+	uint16_t msg_type = 0;
+	uint16_t msg_size = 0;
+	uint64_t bytes_read = 0;
+	uint32_t* dims;
+
+	for (int i = 0; i < num_msgs; i++)
+	{
+		msg_type = getBytesAsNumber(header_pointer + 16 + bytes_read, 2);
+		msg_size = getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2);
+
+		switch(msg_type)
+		{
+			case 1: 
+				// Dataspace message
+				dims = readDataSpaceMessage(header_pointer + 16 + bytes_read + 8, msg_size);
+				break;
+			case 3:
+				// Datatype message
+				break;
+			case 8:
+				// Data Layout message
+				break;
+			default:
+				//ignore message
+				;
+		}
+		bytes_read += msg_size;		
+	}
+
 	
 	exit(EXIT_SUCCESS);
 }
@@ -390,4 +424,18 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 
 	free(objects);
 	return ret;
+}
+uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size)
+{
+	//assume version 1 and ignore max dims and permutation indices
+	uint8_t num_dims = *(msg_pointer + 1);
+	uint32_t* dims = (uint32_t *)malloc(sizeof(int)*(num_dims + 1));
+	//uint64_t bytes_read = 0;
+
+	for (int i = 0; i < num_dims; i++)
+	{
+		dims[i] = getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, 4);
+	}
+	dims[num_dims] = 0;
+	return dims;
 }
