@@ -61,6 +61,7 @@ Superblock getSuperblock(int fd, size_t file_size);
 char* findSuperblock(int fd, size_t file_size);
 uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
 void enqueuePair(Addr_Pair pair);
+void flushQueue();
 Addr_Pair dequeuePair();
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, int map_index);
@@ -75,20 +76,22 @@ Superblock s_block;
 int main (int argc, char* argv[])
 {
 	char* filename = "my_struct.mat";
-	char* variable_name = "my_struct.array";
+	char variable_name[] = "my_struct.array"; //must be [] not * in order for strtok() to work
+	char* delim = ".";
 	char* tree_pointer;
 	char* heap_pointer;
+	char* token;
 
 	uint64_t header_address = 0;
+
+	token = strtok(variable_name, delim);
 
 	//init maps
 	maps[0].used = FALSE;
 	maps[1].used = FALSE;
 
 	//init queue
-	queue.front = 0;
-	queue.length = 0;
-	queue.back = 0;
+	flushQueue();
 
 	//open the file descriptor
 	fd = open(filename, O_RDWR);
@@ -113,14 +116,24 @@ int main (int argc, char* argv[])
 		if (strncmp("TREE", tree_pointer, 4) == 0)
 		{
 			readTreeNode(tree_pointer);
+			dequeuePair();
 		}
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
-			header_address = readSnod(tree_pointer, heap_pointer, variable_name);
-			break;
-		}
+			header_address = readSnod(tree_pointer, heap_pointer, token);
+			//b_tree that is next on the variable_name path should be only pair in queue
+			//check if there is more path to explore and continue if so, break otherwise
+			token = strtok(NULL, delim);
+			if (token == NULL)
+			{
+				break;
+			}
 
-		dequeuePair();
+			if (header_address == UNDEF_ADDR)
+			{
+				dequeuePair();
+			}
+		}
 	}
 	printf("Object header for variable %s is at 0x%lx\n", variable_name, header_address);
 	
@@ -209,6 +222,33 @@ void enqueuePair(Addr_Pair pair)
 		queue.back = 0;
 	}
 }
+void priorityEnqueuePair(Addr_Pair pair)
+{
+	if (queue.length >= MAX_Q_LENGTH)
+	{
+		printf("Not enough room in queue\n");
+		exit(EXIT_FAILURE);
+	}
+	if (queue.front - 1 < 0)
+	{
+		queue.pairs[MAX_Q_LENGTH - 1].tree_address = pair.tree_address;
+		queue.pairs[MAX_Q_LENGTH - 1].heap_address = pair.heap_address;
+		queue.front = MAX_Q_LENGTH - 1;
+	}
+	else
+	{
+		queue.pairs[queue.front - 1].tree_address = pair.tree_address;
+		queue.pairs[queue.front - 1].heap_address = pair.heap_address;
+		queue.front--;
+	}
+	queue.length++;
+}
+void flushQueue()
+{
+	queue.length = 0;
+	queue.front = 0;
+	queue.back = 0;
+}
 Addr_Pair dequeuePair()
 {
 	Addr_Pair pair;
@@ -267,7 +307,7 @@ char* navigateTo(uint64_t address, int map_index)
 
 		//map new page at needed location
 		size_t page_size = sysconf(_SC_PAGE_SIZE);
-		maps[map_index].offset = (off_t)(address/page_size);
+		maps[map_index].offset = (off_t)(address/page_size)*page_size;
 		maps[map_index].map_start = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, maps[map_index].offset);
 		maps[map_index].bytes_mapped = page_size;
 		maps[map_index].used = TRUE;
@@ -339,9 +379,10 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
 			{
-				pair.tree_address = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8, s_block.size_of_offsets) + s_block.base_address;
-				pair.heap_address = getBytesAsNumber(snod_pointer + 3*s_block.size_of_offsets + 8, s_block.size_of_offsets) + s_block.base_address;
-				enqueuePair(pair);
+				pair.tree_address = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets) + s_block.base_address;
+				pair.heap_address = getBytesAsNumber(snod_pointer + 3*s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets) + s_block.base_address;
+				flushQueue();
+				priorityEnqueuePair(pair);
 			}
 			break;
 		}
