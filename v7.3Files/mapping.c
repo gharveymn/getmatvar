@@ -57,6 +57,15 @@ typedef struct
 	uint64_t obj_header_address;
 } Object;
 
+typedef enum
+{
+	CHAR,
+	DOUBLE,
+	UINT16_T,
+	REF, 
+	UNDEF
+} Datatype;
+
 Superblock getSuperblock(int fd, size_t file_size);
 char* findSuperblock(int fd, size_t file_size);
 uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
@@ -68,6 +77,7 @@ char* navigateTo(uint64_t address, int map_index);
 void readTreeNode(char* tree_address);
 uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
+Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
 
 MemMap maps[2];
 Addr_Q queue;
@@ -77,7 +87,7 @@ Superblock s_block;
 int main (int argc, char* argv[])
 {
 	char* filename = "my_struct.mat";
-	char variable_name[] = "my_struct.array"; //must be [] not * in order for strtok() to work
+	char variable_name[] = "my_struct.cell"; //must be [] not * in order for strtok() to work
 	char* delim = ".";
 	char* tree_pointer;
 	char* heap_pointer;
@@ -144,7 +154,8 @@ int main (int argc, char* argv[])
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
 	uint64_t bytes_read = 0;
-	uint32_t* dims;
+	uint32_t* dims = NULL;
+	Datatype datatype;
 
 	for (int i = 0; i < num_msgs; i++)
 	{
@@ -159,6 +170,7 @@ int main (int argc, char* argv[])
 				break;
 			case 3:
 				// Datatype message
+				datatype = readDataTypeMessage(header_pointer + 16 + bytes_read + 8, msg_size);
 				break;
 			case 8:
 				// Data Layout message
@@ -167,7 +179,7 @@ int main (int argc, char* argv[])
 				//ignore message
 				;
 		}
-		bytes_read += msg_size;		
+		bytes_read += msg_size + 8;		
 	}
 
 	
@@ -438,4 +450,41 @@ uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size)
 	}
 	dims[num_dims] = 0;
 	return dims;
+}
+Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
+{
+	//assume version 1
+	uint8_t class = *(msg_pointer) & 7; //only want bottom 4 bits
+	uint32_t size = *(msg_pointer + 4);
+
+	switch(class)
+	{
+		case 0:
+			//fixed point (string)
+
+			switch(size)
+			{
+				case 1:
+					//"char"
+					return CHAR;
+				case 2:
+					//"uint16_t"
+					return UINT16_T;
+				default:
+					;
+			}
+
+			break;
+		case 1:
+			//floating point
+			//assume double precision
+			return DOUBLE;
+		case 7:
+			//reference (cell), data consists of addresses aka references
+			return REF;
+		default:
+			//ignore
+			return UNDEF;
+	}
+
 }
