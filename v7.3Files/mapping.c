@@ -78,22 +78,29 @@ void readTreeNode(char* tree_address);
 uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
+double convertHexToFloatingPoint(double hex);
+int roundUp(int numToRound);
 
 MemMap maps[2];
 Addr_Q queue;
 int fd;
 Superblock s_block;
+int is_string;
+char matlab_class[20];
 
 int main (int argc, char* argv[])
 {
 	char* filename = "my_struct.mat";
-	char variable_name[] = "my_struct.cell"; //must be [] not * in order for strtok() to work
+	char variable_name[] = "my_struct.string"; //must be [] not * in order for strtok() to work
+	printf("Object header for variable %s is at 0x", variable_name);
 	char* delim = ".";
 	char* tree_pointer;
 	char* heap_pointer;
 	char* token;
 
 	uint64_t header_address = 0;
+
+	is_string = FALSE;
 
 	token = strtok(variable_name, delim);
 
@@ -146,7 +153,7 @@ int main (int argc, char* argv[])
 			}
 		}
 	}
-	printf("Object header for variable %s is at 0x%lx\n", variable_name, header_address);
+	printf("%lx\n", header_address);
 
 	//interpret the header messages
 	char* header_pointer = navigateTo(header_address, TREE);
@@ -156,25 +163,61 @@ int main (int argc, char* argv[])
 	uint64_t bytes_read = 0;
 	uint32_t* dims = NULL;
 	Datatype datatype;
+	int num_elems = 1;
+	int elem_size;
+	int index;
+	uint8_t layout_class;
+	char* msg_pointer;
+	char* data_pointer;
+	uint16_t name_size, datatype_size, dataspace_size;
+	uint32_t attribute_data_size;
+	char name[20];
+
+	char* char_data = NULL;
+	double* double_data = NULL;
+	uint64_t* udouble_data = NULL;
+	uint16_t* ushort_data = NULL;
 
 	for (int i = 0; i < num_msgs; i++)
 	{
 		msg_type = getBytesAsNumber(header_pointer + 16 + bytes_read, 2);
 		msg_size = getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2);
+		msg_pointer = header_pointer + 16 + bytes_read + 8;
 
 		switch(msg_type)
 		{
 			case 1: 
 				// Dataspace message
-				dims = readDataSpaceMessage(header_pointer + 16 + bytes_read + 8, msg_size);
+				dims = readDataSpaceMessage(msg_pointer, msg_size);
+				
+				index = 0;
+				while (dims[index] > 0)
+				{
+					num_elems *= dims[index];
+					index++;
+				}
 				break;
 			case 3:
 				// Datatype message
-				datatype = readDataTypeMessage(header_pointer + 16 + bytes_read + 8, msg_size);
+				datatype = readDataTypeMessage(msg_pointer, msg_size);
 				break;
 			case 8:
 				// Data Layout message
+				//assume version 3
+				layout_class = *(msg_pointer + 1);
+				data_pointer = msg_pointer + 4;
 				break;
+			case 12:
+				//attribute message
+				name_size = getBytesAsNumber(msg_pointer + 2, 2);
+				datatype_size = getBytesAsNumber(msg_pointer + 4, 2);
+				dataspace_size = getBytesAsNumber(msg_pointer + 6, 2);
+				strncpy(name, msg_pointer + 8, name_size);
+				if (strncmp(name, "MATLAB_class", 11) == 0)
+				{
+					attribute_data_size = getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4);
+					strncpy(matlab_class, msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size), attribute_data_size);
+				}
 			default:
 				//ignore message
 				;
@@ -182,7 +225,55 @@ int main (int argc, char* argv[])
 		bytes_read += msg_size + 8;		
 	}
 
-	
+	switch(datatype)
+	{
+		case DOUBLE:
+			double_data = (double *)malloc(num_elems*sizeof(double));
+			elem_size = sizeof(double);
+			break;
+		case UINT16_T:
+			ushort_data = (uint16_t *)malloc(num_elems*sizeof(uint16_t));
+			elem_size = sizeof(uint16_t);
+			break;
+		case REF:
+			udouble_data = (uint64_t *)malloc(num_elems*sizeof(uint64_t));
+			elem_size = sizeof(uint64_t);
+			break;
+		case CHAR:
+			char_data = (char *)malloc(num_elems*sizeof(char));
+			elem_size = sizeof(char);
+		default:
+			printf("Unknown data type encountered with header at address 0x%lx\n", header_address);
+			exit(EXIT_FAILURE);
+	}
+	switch(layout_class)
+	{
+		case 0:
+			//compact storage
+			for (int j = 0; j < num_elems; j++)
+			{
+				if (double_data != NULL)
+				{
+					double_data[j] = convertHexToFloatingPoint(getBytesAsNumber(data_pointer + j*elem_size, elem_size));
+				}
+				else if (ushort_data != NULL)
+				{
+					ushort_data[j] = getBytesAsNumber(data_pointer + j*elem_size, elem_size);
+				}
+				else if (udouble_data != NULL)
+				{
+					udouble_data[j] = getBytesAsNumber(data_pointer + j*elem_size, elem_size) + s_block.base_address; //these are addresses so we have to add the offset
+				}
+				else if (char_data != NULL)
+				{
+					char_data[j] = getBytesAsNumber(data_pointer + j*elem_size, elem_size);
+				}
+			}
+			break;
+		default:
+			printf("Unknown Layout class encountered with header at address 0x%lx\n", header_address);
+			exit(EXIT_FAILURE);
+	}
 	exit(EXIT_SUCCESS);
 }
 Superblock getSuperblock(int fd, size_t file_size)
@@ -487,4 +578,41 @@ Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 			return UNDEF;
 	}
 
+}
+double convertHexToFloatingPoint(double hex)
+{
+	double ret;
+	int sign = 0;
+	if (((uint64_t)hex & (uint64_t)pow(2, 63)) > 0)
+	{
+		sign = 1;
+	}
+	uint64_t exponent = (uint64_t)hex >> 52;
+	exponent = exponent & 1023;
+
+	uint64_t temp = (uint64_t)(pow(2, 52) - 1);
+	uint64_t fraction = (uint64_t)hex & temp;
+
+	ret = pow(-1, sign)*pow(2, exponent - 1023);
+	double sum = 1;
+
+	long b_i;
+
+	for (int i = 1; i <=52; i++)
+	{
+		temp = (uint64_t)pow(2, 52 - i);
+		b_i = fraction & temp;
+		b_i = b_i >> (52-i);
+		sum += b_i*pow(2, -i);
+	}
+
+	return ret*sum;
+}
+int roundUp(int numToRound)
+{
+	int remainder = numToRound % 8;
+    if (remainder == 0)
+        return numToRound;
+
+    return numToRound + 8 - remainder;
 }
