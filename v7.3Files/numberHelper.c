@@ -16,7 +16,7 @@ uint64_t getBytesAsNumber(char* chunk_start, int num_bytes)
 	}
 	return ret;
 }
-double convertHexToFloatingPoint(double hex)
+double convertHexToFloatingPoint(uint64_t hex)
 {
 	double ret;
 	int sign = 0;
@@ -25,7 +25,7 @@ double convertHexToFloatingPoint(double hex)
 		sign = 1;
 	}
 	uint64_t exponent = (uint64_t)hex >> 52;
-	exponent = exponent & 1023;
+	exponent = exponent & 2047;
 
 	uint64_t temp = (uint64_t)(pow(2, 52) - 1);
 	uint64_t fraction = (uint64_t)hex & temp;

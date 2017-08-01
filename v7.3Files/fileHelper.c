@@ -193,6 +193,7 @@ Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 	//assume version 1
 	uint8_t class = *(msg_pointer) & 7; //only want bottom 4 bits
 	uint32_t size = *(msg_pointer + 4);
+	Datatype type = UNDEF;
 
 	switch(class)
 	{
@@ -203,25 +204,32 @@ Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 			{
 				case 1:
 					//"char"
-					return CHAR;
+					type = CHAR;
+					break;
 				case 2:
 					//"uint16_t"
-					return UINT16_T;
+					type = UINT16_T;
+					break;
 				default:
-					;
+					type = UNDEF;
+					break;
 			}
 
 			break;
 		case 1:
 			//floating point
 			//assume double precision
-			return DOUBLE;
+			type = DOUBLE;
+			break;
 		case 7:
 			//reference (cell), data consists of addresses aka references
-			return REF;
+			type = REF;
+			break;
 		default:
 			//ignore
-			return UNDEF;
+			type = UNDEF;
+			break;
 	}
+	return type;
 
 }

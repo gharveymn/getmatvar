@@ -95,7 +95,7 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
 
-double convertHexToFloatingPoint(double hex);
+double convertHexToFloatingPoint(uint64_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
 
@@ -107,6 +107,8 @@ void flushHeaderQueue();
 uint64_t dequeueAddress();
 void priorityEnqueueAddress(uint64_t address);
 void enqueueAddress(uint64_t address);
+
+Data* mapping (char* filename, char variable_name[]);
 
 MemMap maps[2];
 Addr_Q queue;

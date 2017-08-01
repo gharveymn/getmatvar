@@ -1,9 +1,9 @@
 #include "mapping.h"
 
-int main (int argc, char* argv[])
+Data* mapping (char* filename, char variable_name[])
 {
-	char* filename = "my_struct.mat";
-	char variable_name[] = "cell"; //must be [] not * in order for strtok() to work
+	//char* filename = "my_struct.mat";
+	//char variable_name[] = "cell"; //must be [] not * in order for strtok() to work
 	printf("Object header for variable %s is at 0x", variable_name);
 	char* delim = ".";
 	char* tree_pointer;
@@ -68,7 +68,7 @@ int main (int argc, char* argv[])
 	printf("%lx\n", header_address);
 	enqueueAddress(header_address);
 
-	Data data_objects[MAX_OBJS];
+	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
 	int num_objs = 0;
 
 	//interpret the header messages
@@ -93,8 +93,9 @@ int main (int argc, char* argv[])
 		data_objects[num_objs].ushort_data = NULL;
 		data_objects[num_objs].udouble_data = NULL;
 		data_objects[num_objs].char_data = NULL;
-		uint64_t temp = dequeueAddress();
-		header_pointer = navigateTo(temp, TREE);
+		header_address = dequeueAddress();
+		uint64_t msg_address = 0;
+		header_pointer = navigateTo(header_address, TREE);
 		num_msgs = getBytesAsNumber(header_pointer + 2, 2);
 
 		bytes_read = 0;
@@ -103,8 +104,10 @@ int main (int argc, char* argv[])
 		for (int i = 0; i < num_msgs; i++)
 		{
 			msg_type = getBytesAsNumber(header_pointer + 16 + bytes_read, 2);
+			msg_address = header_address + 16 + bytes_read;
 			msg_size = getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2);
 			msg_pointer = header_pointer + 16 + bytes_read + 8;
+			msg_address = header_address + 16 + bytes_read + 8;
 
 			switch(msg_type)
 			{
@@ -139,6 +142,7 @@ int main (int argc, char* argv[])
 					{
 						attribute_data_size = getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4);
 						strncpy(data_objects[num_objs].matlab_class, msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size), attribute_data_size);
+						data_objects[num_objs].matlab_class[attribute_data_size] = 0x0;
 					}
 				default:
 					//ignore message
@@ -209,5 +213,5 @@ int main (int argc, char* argv[])
 		num_objs++;
 	}
 
-	exit(EXIT_SUCCESS);
+	return data_objects;
 }
