@@ -22,6 +22,7 @@ int main()
 	{
 		assert(data.ushort_data[i] = string[i]);
 	}
+	freeDataObjects(objects, 1);
 
 	//dbl
 	strcpy(variable_name, "dbl");
@@ -36,6 +37,7 @@ int main()
 	assert(data.ushort_data == NULL);
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 2.2);
+	freeDataObjects(objects, 1);
 
 	//integer
 	strcpy(variable_name, "integer");
@@ -50,6 +52,7 @@ int main()
 	assert(data.ushort_data == NULL);
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 1);
+	freeDataObjects(objects, 1);
 
 	//array
 	strcpy(variable_name, "array");
@@ -68,6 +71,7 @@ int main()
 	{
 		assert(data.double_data[i] == 1);
 	}
+	freeDataObjects(objects, 1);
 
 	//cell
 	strcpy(variable_name, "cell");
@@ -95,6 +99,7 @@ int main()
 	assert(objects[1].double_data[0] == 1);
 	assert(objects[2].double_data[0] == 1.1);
 	assert(objects[3].double_data[0] == 1.2);
+	freeDataObjects(objects, 4);
 	
 	//my_struct.string
 	strcpy(variable_name, "my_struct.string");
@@ -112,6 +117,7 @@ int main()
 	{
 		assert(data.ushort_data[i] = string[i]);
 	}
+	freeDataObjects(objects, 1);
 
 	//my_struct.double
 	strcpy(variable_name, "my_struct.double");
@@ -126,6 +132,7 @@ int main()
 	assert(data.ushort_data == NULL);
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 2.2);
+	freeDataObjects(objects, 1);
 
 	//my_struct.integer
 	strcpy(variable_name, "my_struct.integer");
@@ -140,6 +147,7 @@ int main()
 	assert(data.ushort_data == NULL);
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 1);
+	freeDataObjects(objects, 1);
 
 	//my_struct.array
 	strcpy(variable_name, "my_struct.array");
@@ -157,6 +165,7 @@ int main()
 	{
 		assert(data.double_data[i] == 1);
 	}
+	freeDataObjects(objects, 1);
 
 	//my_struct.cell
 	strcpy(variable_name, "my_struct.cell");
@@ -184,4 +193,5 @@ int main()
 	assert(objects[1].double_data[0] == 1);
 	assert(objects[2].double_data[0] == 1.1);
 	assert(objects[3].double_data[0] == 1.2);
+	freeDataObjects(objects, 4);
 }

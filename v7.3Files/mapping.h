@@ -94,6 +94,7 @@ void readTreeNode(char* tree_address);
 uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
+void freeDataObjects(Data* objects, int num);
 
 double convertHexToFloatingPoint(uint64_t hex);
 int roundUp(int numToRound);

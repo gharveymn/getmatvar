@@ -228,3 +228,27 @@ Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 	return type;
 
 }
+void freeDataObjects(Data* objects, int num)
+{
+	for (int i = 0; i < num; i++)
+	{
+		if (objects[i].char_data != NULL)
+		{
+			free(objects[i].char_data);
+		}
+		else if (objects[i].double_data != NULL)
+		{
+			free(objects[i].double_data);
+		}
+		else if (objects[i].udouble_data != NULL)
+		{
+			free(objects[i].udouble_data);
+		}
+		else if (objects[i].ushort_data != NULL)
+		{
+			free(objects[i].ushort_data);
+		}
+		free(objects[i].dims);
+	}
+	
+}
