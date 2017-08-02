@@ -8,7 +8,7 @@ int main()
 
 	strcpy(variable_name, "string");
 	char string[9] = "Courtney";
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == UINT16_T);
 	assert(strcmp(data.matlab_class, "char") == 0);
@@ -25,7 +25,7 @@ int main()
 
 	//dbl
 	strcpy(variable_name, "dbl");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -39,7 +39,7 @@ int main()
 
 	//integer
 	strcpy(variable_name, "integer");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -53,7 +53,7 @@ int main()
 
 	//array
 	strcpy(variable_name, "array");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -71,7 +71,7 @@ int main()
 
 	//cell
 	strcpy(variable_name, "cell");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	assert(objects[0].type == REF);
 	assert(strcmp(objects[0].matlab_class, "cell") == 0);
 	assert(objects[0].dims[0] == 3);
@@ -98,7 +98,7 @@ int main()
 	
 	//my_struct.string
 	strcpy(variable_name, "my_struct.string");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == UINT16_T);
 	assert(strcmp(data.matlab_class, "char") == 0);
@@ -115,7 +115,7 @@ int main()
 
 	//my_struct.double
 	strcpy(variable_name, "my_struct.double");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -129,7 +129,7 @@ int main()
 
 	//my_struct.integer
 	strcpy(variable_name, "my_struct.integer");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -143,7 +143,7 @@ int main()
 
 	//my_struct.array
 	strcpy(variable_name, "my_struct.array");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	data = objects[0];
 	assert(data.type == DOUBLE);
 	assert(strcmp(data.matlab_class, "double") == 0);
@@ -160,7 +160,7 @@ int main()
 
 	//my_struct.cell
 	strcpy(variable_name, "my_struct.cell");
-	objects = mapping("my_struct.mat", variable_name);
+	objects = getDataObject("my_struct.mat", variable_name);
 	assert(objects[0].type == REF);
 	assert(strcmp(objects[0].matlab_class, "cell") == 0);
 	assert(objects[0].dims[0] == 3);

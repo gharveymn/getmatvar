@@ -108,7 +108,8 @@ uint64_t dequeueAddress();
 void priorityEnqueueAddress(uint64_t address);
 void enqueueAddress(uint64_t address);
 
-Data* mapping (char* filename, char variable_name[]);
+Data* getDataObject(char* filename, char variable_name[]);
+void findHeaderAddress(char* filename, char variable_name[]);
 
 MemMap maps[2];
 Addr_Q queue;

@@ -1,21 +1,21 @@
 #include "mapping.h"
 
-Data* mapping (char* filename, char variable_name[])
+Data* getDataObject(char* filename, char variable_name[])
 {
-	//char* filename = "my_struct.mat";
-	//char variable_name[] = "cell"; //must be [] not * in order for strtok() to work
-	printf("Object header for variable %s is at 0x", variable_name);
-	char* delim = ".";
-	char* tree_pointer;
-	char* heap_pointer;
-	char* token;
-
-	uint64_t header_address = 0;
-
-	is_string = FALSE;
-	default_bytes = sysconf(_SC_PAGE_SIZE);
-
-	token = strtok(variable_name, delim);
+	char *header_pointer, *msg_pointer, *data_pointer;
+	char name[20];
+	uint8_t layout_class;
+	uint16_t num_msgs, name_size, datatype_size, dataspace_size;
+	uint16_t msg_type = 0;
+	uint16_t msg_size = 0;
+	uint32_t attribute_data_size, header_length;
+	uint64_t bytes_read, header_address;
+	uint64_t msg_address = 0;
+	int num_objs = 0;
+	int num_elems = 1;
+	int elem_size, index;
+	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
+	
 
 	//init maps
 	maps[0].used = FALSE;
@@ -23,73 +23,11 @@ Data* mapping (char* filename, char variable_name[])
 
 	//init queue
 	flushQueue();
+	flushHeaderQueue();
 
-	//open the file descriptor
-	fd = open(filename, O_RDWR);
-	if (fd < 0)
-	{
-		printf("open() unsuccessful, Check errno: %d\n", errno);
-		exit(EXIT_FAILURE);
-	}
-
-	//get file size
-	size_t file_size = lseek(fd, 0, SEEK_END);
-
-	//find superblock
-	s_block = getSuperblock(fd, file_size);
-
-	//search for the object header for the variable
-	while (queue.length > 0)
-	{
-		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, default_bytes, TREE);
-		heap_pointer = navigateTo(queue.pairs[queue.front].heap_address, default_bytes, HEAP);
-		assert(strncmp("HEAP", heap_pointer, 4) == 0);
-
-		if (strncmp("TREE", tree_pointer, 4) == 0)
-		{
-			readTreeNode(tree_pointer);
-			dequeuePair();
-		}
-		else if (strncmp("SNOD", tree_pointer, 4) == 0)
-		{
-			header_address = readSnod(tree_pointer, heap_pointer, token);
-
-			token = strtok(NULL, delim);
-			if (token == NULL)
-			{
-				break;
-			}
-
-			if (header_address == UNDEF_ADDR)
-			{
-				dequeuePair();
-			}
-		}
-	}
-	printf("%lx\n", header_address);
-	enqueueAddress(header_address);
-
-	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
-	int num_objs = 0;
+	findHeaderAddress(filename, variable_name);
 
 	//interpret the header messages
-	char* header_pointer;
-	uint16_t num_msgs;
-	uint16_t msg_type = 0;
-	uint16_t msg_size = 0;
-	uint64_t bytes_read;
-	uint64_t msg_address = 0;
-	int num_elems = 1;
-	int elem_size;
-	int index;
-	uint8_t layout_class;
-	char* msg_pointer;
-	char* data_pointer;
-	uint16_t name_size, datatype_size, dataspace_size;
-	uint32_t attribute_data_size;
-	char name[20];
-	uint32_t header_length;
-
 	while (header_queue.length > 0)
 	{
 		data_objects[num_objs].double_data = NULL;
@@ -226,4 +164,62 @@ Data* mapping (char* filename, char variable_name[])
 	}
 
 	return data_objects;
+}
+void findHeaderAddress(char* filename, char variable_name[])
+{
+	printf("Object header for variable %s is at 0x", variable_name);
+	char* delim = ".";
+	char* tree_pointer;
+	char* heap_pointer;
+	char* token;
+
+	uint64_t header_address = 0;
+
+	default_bytes = sysconf(_SC_PAGE_SIZE);
+
+	token = strtok(variable_name, delim);
+	//open the file descriptor
+	fd = open(filename, O_RDWR);
+	if (fd < 0)
+	{
+		printf("open() unsuccessful, Check errno: %d\n", errno);
+		exit(EXIT_FAILURE);
+	}
+
+	//get file size
+	size_t file_size = lseek(fd, 0, SEEK_END);
+
+	//find superblock
+	s_block = getSuperblock(fd, file_size);
+
+	//search for the object header for the variable
+	while (queue.length > 0)
+	{
+		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, default_bytes, TREE);
+		heap_pointer = navigateTo(queue.pairs[queue.front].heap_address, default_bytes, HEAP);
+		assert(strncmp("HEAP", heap_pointer, 4) == 0);
+
+		if (strncmp("TREE", tree_pointer, 4) == 0)
+		{
+			readTreeNode(tree_pointer);
+			dequeuePair();
+		}
+		else if (strncmp("SNOD", tree_pointer, 4) == 0)
+		{
+			header_address = readSnod(tree_pointer, heap_pointer, token);
+
+			token = strtok(NULL, delim);
+			if (token == NULL)
+			{
+				break;
+			}
+
+			if (header_address == UNDEF_ADDR)
+			{
+				dequeuePair();
+			}
+		}
+	}
+	printf("%lx\n", header_address);
+	enqueueAddress(header_address);
 }
