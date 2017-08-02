@@ -147,7 +147,7 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets);
 		objects[i].obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
 
-		cache_type = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets, 4);
+		cache_type = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE*i, 4);
 
 		//check if we have found the object we're looking for
 		if(strcmp(var_name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset) == 0)
