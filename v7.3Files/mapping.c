@@ -13,6 +13,7 @@ Data* mapping (char* filename, char variable_name[])
 	uint64_t header_address = 0;
 
 	is_string = FALSE;
+	default_bytes = sysconf(_SC_PAGE_SIZE);
 
 	token = strtok(variable_name, delim);
 
@@ -40,8 +41,8 @@ Data* mapping (char* filename, char variable_name[])
 	//search for the object header for the variable
 	while (queue.length > 0)
 	{
-		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, TREE);
-		heap_pointer = navigateTo(queue.pairs[queue.front].heap_address, HEAP);
+		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, default_bytes, TREE);
+		heap_pointer = navigateTo(queue.pairs[queue.front].heap_address, default_bytes, HEAP);
 		assert(strncmp("HEAP", heap_pointer, 4) == 0);
 
 		if (strncmp("TREE", tree_pointer, 4) == 0)
@@ -77,6 +78,7 @@ Data* mapping (char* filename, char variable_name[])
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
 	uint64_t bytes_read;
+	uint64_t msg_address = 0;
 	int num_elems = 1;
 	int elem_size;
 	int index;
@@ -86,6 +88,7 @@ Data* mapping (char* filename, char variable_name[])
 	uint16_t name_size, datatype_size, dataspace_size;
 	uint32_t attribute_data_size;
 	char name[20];
+	uint32_t header_length;
 
 	while (header_queue.length > 0)
 	{
@@ -94,8 +97,17 @@ Data* mapping (char* filename, char variable_name[])
 		data_objects[num_objs].udouble_data = NULL;
 		data_objects[num_objs].char_data = NULL;
 		header_address = dequeueAddress();
-		uint64_t msg_address = 0;
-		header_pointer = navigateTo(header_address, TREE);
+
+		//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
+		header_pointer = navigateTo(header_address, 16, TREE);
+
+		//prevent error due to crossing of a page boundary
+		header_length = getBytesAsNumber(header_pointer + 8, 4);
+		if (header_address + header_length >= maps[TREE].offset + maps[TREE].bytes_mapped)
+		{
+			header_pointer = navigateTo(header_address, header_length, TREE);
+		}
+
 		num_msgs = getBytesAsNumber(header_pointer + 2, 2);
 
 		bytes_read = 0;

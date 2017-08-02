@@ -67,14 +67,9 @@ Superblock fillSuperblock(char* superblock_pointer)
 
 	return s_block;
 }
-char* navigateTo(uint64_t address, int map_index)
+char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 {
-	//ensure there are always 1024 bytes available for reading if we don't remap
-	if (maps[map_index].used && address >= maps[map_index].offset && address < maps[map_index].bytes_mapped - 1024)
-	{
-		return maps[map_index].map_start + address;
-	}
-	else
+	if (!(maps[map_index].used && address >= maps[map_index].offset && address + bytes_needed < maps[map_index].offset + maps[map_index].bytes_mapped))
 	{
 		//unmap current page if used
 		if (maps[map_index].used)
@@ -91,17 +86,17 @@ char* navigateTo(uint64_t address, int map_index)
 		//map new page at needed location
 		size_t page_size = sysconf(_SC_PAGE_SIZE);
 		maps[map_index].offset = (off_t)(address/page_size)*page_size;
-		maps[map_index].map_start = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, maps[map_index].offset);
-		maps[map_index].bytes_mapped = page_size;
+		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
+		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, maps[map_index].offset);
+		
 		maps[map_index].used = TRUE;
 		if (maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
 			printf("mmap() unsuccessful, Check errno: %d\n", errno);
 			exit(EXIT_FAILURE);
 		}
-		return maps[map_index].map_start + (address % page_size);
 	}
-	
+	return maps[map_index].map_start + address - maps[map_index].offset;
 }
 void readTreeNode(char* tree_pointer)
 {

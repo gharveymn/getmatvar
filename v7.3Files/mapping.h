@@ -89,7 +89,7 @@ typedef struct
 Superblock getSuperblock(int fd, size_t file_size);
 char* findSuperblock(int fd, size_t file_size);
 Superblock fillSuperblock(char* superblock_pointer);
-char* navigateTo(uint64_t address, int map_index);
+char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 void readTreeNode(char* tree_address);
 uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
@@ -117,3 +117,4 @@ Header_Q header_queue;
 int fd;
 Superblock s_block;
 int is_string;
+uint64_t default_bytes;
