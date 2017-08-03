@@ -131,7 +131,7 @@ void readTreeNode(char* tree_pointer)
 	}
 
 }
-uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
+void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
 	Object* objects = (Object *)malloc(sizeof(Object)*num_symbols);
@@ -146,13 +146,14 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 	{
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets);
 		objects[i].obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
-
+		ret = objects[i].obj_header_address;
 		cache_type = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE*i, 4);
 
 		//check if we have found the object we're looking for
-		if(strcmp(var_name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset) == 0)
+		if(var_name != NULL && strcmp(var_name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset) == 0)
 		{
-			ret = objects[i].obj_header_address;
+			flushHeaderQueue();
+			enqueueAddress(ret);
 
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
@@ -164,10 +165,13 @@ uint64_t readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 			}
 			break;
 		}
+		else if (var_name == NULL)
+		{
+			enqueueAddress(ret);
+		}
 	}
 
 	free(objects);
-	return ret;
 }
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size)
 {

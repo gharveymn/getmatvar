@@ -4,7 +4,7 @@ void enqueuePair(Addr_Pair pair)
 {
 	if (queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in queue\n");
+		printf("Not enough room in pair queue\n");
 		exit(EXIT_FAILURE);
 	}
 	queue.pairs[queue.back].tree_address = pair.tree_address;
@@ -24,7 +24,7 @@ void enqueueAddress(uint64_t address)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in queue\n");
+		printf("Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
 	header_queue.header_addresses[header_queue.back] = address;
@@ -43,7 +43,7 @@ void priorityEnqueuePair(Addr_Pair pair)
 {
 	if (queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in queue\n");
+		printf("Trying to priority enqueue: Not enough room in pair queue\n");
 		exit(EXIT_FAILURE);
 	}
 	if (queue.front - 1 < 0)
@@ -64,7 +64,7 @@ void priorityEnqueueAddress(uint64_t address)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in queue\n");
+		printf("Trying to priority enqueue: Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
 	if (header_queue.front - 1 < 0)

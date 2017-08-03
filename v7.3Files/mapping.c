@@ -93,7 +93,18 @@ Data* getDataObject(char* filename, char variable_name[])
 						attribute_data_size = getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4);
 						strncpy(data_objects[num_objs].matlab_class, msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size), attribute_data_size);
 						data_objects[num_objs].matlab_class[attribute_data_size] = 0x0;
+						if(strcmp("struct", data_objects[num_objs].matlab_class) == 0)
+						{
+							data_objects[num_objs].type = STRUCT;
+						}
 					}
+					break;
+				case 16:
+					//object header continuation message
+					header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets) + s_block.base_address;
+					header_length = getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths);
+					header_pointer = navigateTo(header_address - 16, header_length + 16, TREE);
+					bytes_read =  0 - msg_size - 8;
 				default:
 					//ignore message
 					;
@@ -119,6 +130,10 @@ Data* getDataObject(char* filename, char variable_name[])
 			case CHAR:
 				data_objects[num_objs].char_data = (char *)malloc(num_elems*sizeof(char));
 				elem_size = sizeof(char);
+				break;
+			case STRUCT:
+				//ignore
+				break;
 			default:
 				printf("Unknown data type encountered with header at address 0x%lx\n", header_address);
 				exit(EXIT_FAILURE);
@@ -167,13 +182,13 @@ Data* getDataObject(char* filename, char variable_name[])
 }
 void findHeaderAddress(char* filename, char variable_name[])
 {
-	printf("Object header for variable %s is at 0x", variable_name);
+	//printf("Object header for variable %s is at ", variable_name);
 	char* delim = ".";
 	char* tree_pointer;
 	char* heap_pointer;
 	char* token;
 
-	uint64_t header_address = 0;
+	//uint64_t header_address = 0;
 
 	default_bytes = sysconf(_SC_PAGE_SIZE);
 
@@ -206,20 +221,11 @@ void findHeaderAddress(char* filename, char variable_name[])
 		}
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
-			header_address = readSnod(tree_pointer, heap_pointer, token);
+			dequeuePair();
+			readSnod(tree_pointer, heap_pointer, token);
 
 			token = strtok(NULL, delim);
-			if (token == NULL)
-			{
-				break;
-			}
-
-			if (header_address == UNDEF_ADDR)
-			{
-				dequeuePair();
-			}
 		}
 	}
-	printf("%lx\n", header_address);
-	enqueueAddress(header_address);
+	//printf("0x%lx\n", header_address);
 }

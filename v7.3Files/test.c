@@ -23,6 +23,7 @@ int main()
 		assert(data.ushort_data[i] = string[i]);
 	}
 	freeDataObjects(objects, 1);
+	printf("string test succeeded.\n");
 
 	//dbl
 	strcpy(variable_name, "dbl");
@@ -38,6 +39,7 @@ int main()
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 2.2);
 	freeDataObjects(objects, 1);
+	printf("dbl test succeeded.\n");
 
 	//integer
 	strcpy(variable_name, "integer");
@@ -53,6 +55,7 @@ int main()
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 1);
 	freeDataObjects(objects, 1);
+	printf("integer test succeeded.\n");
 
 	//array
 	strcpy(variable_name, "array");
@@ -72,6 +75,7 @@ int main()
 		assert(data.double_data[i] == 1);
 	}
 	freeDataObjects(objects, 1);
+	printf("array test succeeded.\n");
 
 	//cell
 	strcpy(variable_name, "cell");
@@ -100,6 +104,7 @@ int main()
 	assert(objects[2].double_data[0] == 1.1);
 	assert(objects[3].double_data[0] == 1.2);
 	freeDataObjects(objects, 4);
+	printf("cell test succeeded.\n");
 	
 	//my_struct.string
 	strcpy(variable_name, "my_struct.string");
@@ -118,6 +123,7 @@ int main()
 		assert(data.ushort_data[i] = string[i]);
 	}
 	freeDataObjects(objects, 1);
+	printf("my_struct.string test succeeded.\n");
 
 	//my_struct.double
 	strcpy(variable_name, "my_struct.double");
@@ -133,6 +139,7 @@ int main()
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 2.2);
 	freeDataObjects(objects, 1);
+	printf("my_struct.double test succeeded.\n");
 
 	//my_struct.integer
 	strcpy(variable_name, "my_struct.integer");
@@ -148,6 +155,7 @@ int main()
 	assert(data.char_data == NULL);
 	assert(data.double_data[0] == 1);
 	freeDataObjects(objects, 1);
+	printf("my_struct.integer test succeeded.\n");
 
 	//my_struct.array
 	strcpy(variable_name, "my_struct.array");
@@ -166,6 +174,7 @@ int main()
 		assert(data.double_data[i] == 1);
 	}
 	freeDataObjects(objects, 1);
+	printf("my_struct.array test succeeded.\n");
 
 	//my_struct.cell
 	strcpy(variable_name, "my_struct.cell");
@@ -194,4 +203,10 @@ int main()
 	assert(objects[2].double_data[0] == 1.1);
 	assert(objects[3].double_data[0] == 1.2);
 	freeDataObjects(objects, 4);
+	printf("my_struct.cell test succeeded.\n");
+
+	//my_struct
+	strcpy(variable_name, "my_struct");
+	objects = getDataObject("my_struct.mat", variable_name);
+	printf("my_struct test succeeded.\n");
 }
