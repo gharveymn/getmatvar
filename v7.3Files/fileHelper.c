@@ -137,7 +137,6 @@ void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 	Object* objects = (Object *)malloc(sizeof(Object)*num_symbols);
 	uint32_t cache_type;
 	Addr_Pair pair;
-	uint64_t ret = UNDEF_ADDR;
 
 	//get to entries
 	snod_pointer += 8;
@@ -146,14 +145,14 @@ void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 	{
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets);
 		objects[i].obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
-		ret = objects[i].obj_header_address;
+		strcpy(objects[i].name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 		cache_type = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE*i, 4);
 
 		//check if we have found the object we're looking for
-		if(var_name != NULL && strcmp(var_name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset) == 0)
+		if(var_name != NULL && strcmp(var_name, objects[i].name) == 0)
 		{
 			flushHeaderQueue();
-			enqueueAddress(ret);
+			enqueueObject(objects[i]);
 
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
@@ -167,7 +166,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 		}
 		else if (var_name == NULL)
 		{
-			enqueueAddress(ret);
+			enqueueObject(objects[i]);
 		}
 	}
 

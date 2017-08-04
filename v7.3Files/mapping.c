@@ -12,9 +12,10 @@ Data* getDataObject(char* filename, char variable_name[])
 	uint64_t bytes_read, header_address;
 	uint64_t msg_address = 0;
 	int num_objs = 0;
-	int num_elems = 1;
+	int num_elems;
 	int elem_size, index;
 	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
+	Object obj;
 	
 
 	//init maps
@@ -30,11 +31,14 @@ Data* getDataObject(char* filename, char variable_name[])
 	//interpret the header messages
 	while (header_queue.length > 0)
 	{
+		num_elems = 1;
 		data_objects[num_objs].double_data = NULL;
 		data_objects[num_objs].ushort_data = NULL;
 		data_objects[num_objs].udouble_data = NULL;
 		data_objects[num_objs].char_data = NULL;
-		header_address = dequeueAddress();
+		obj = dequeueObject();
+		header_address = obj.obj_header_address;
+		strcpy(data_objects[num_objs].name, obj.name);
 
 		//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 		header_pointer = navigateTo(header_address, 16, TREE);
@@ -172,7 +176,10 @@ Data* getDataObject(char* filename, char variable_name[])
 		{
 			for (int i = 0; i < num_elems; i++)
 			{
-				enqueueAddress(data_objects[num_objs].udouble_data[i]);
+				Object obj;
+				obj.obj_header_address = data_objects[num_objs].udouble_data[i];
+				obj.name[0] = 0;
+				enqueueObject(obj);
 			}
 		} 
 		num_objs++;

@@ -20,6 +20,8 @@
 #define UNDEF_ADDR 0xffffffffffffffff
 #define SYM_TABLE_ENTRY_SIZE 40
 #define MAX_OBJS 100
+#define CLASS_LENGTH 20
+#define NAME_LENGTH 30
 
 typedef struct
 {
@@ -55,12 +57,13 @@ typedef struct
 typedef struct
 {
 	uint64_t name_offset;
+	char name[NAME_LENGTH];
 	uint64_t obj_header_address;
 } Object;
 
 typedef struct
 {
-	uint64_t header_addresses[MAX_Q_LENGTH];
+	Object objects[MAX_Q_LENGTH];
 	int front;
 	int back;
 	int length;
@@ -79,12 +82,13 @@ typedef enum
 typedef struct
 {
 	Datatype type;
-	char matlab_class[20];
+	char matlab_class[CLASS_LENGTH];
 	uint32_t* dims;
 	char* char_data;
 	double* double_data;
 	uint64_t* udouble_data;
 	uint16_t* ushort_data;
+	char name[NAME LENGTH];
 } Data;
 
 Superblock getSuperblock(int fd, size_t file_size);
@@ -106,9 +110,9 @@ void flushQueue();
 Addr_Pair dequeuePair();
 void priorityEnqueuePair(Addr_Pair pair);
 void flushHeaderQueue();
-uint64_t dequeueAddress();
-void priorityEnqueueAddress(uint64_t address);
-void enqueueAddress(uint64_t address);
+Object dequeueObject();
+void priorityEnqueueObject(Object obj);
+void enqueueObject(Object obj);
 
 Data* getDataObject(char* filename, char variable_name[]);
 void findHeaderAddress(char* filename, char variable_name[]);

@@ -20,14 +20,15 @@ void enqueuePair(Addr_Pair pair)
 		queue.back = 0;
 	}
 }
-void enqueueAddress(uint64_t address)
+void enqueueObject(Object obj)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
-	header_queue.header_addresses[header_queue.back] = address;
+	header_queue.objects[header_queue.back].obj_header_address = obj.obj_header_address;
+	strcpy(header_queue.objects[header_queue.back].name, obj.name);
 	header_queue.length++;
 
 	if (header_queue.back < MAX_Q_LENGTH - 1)
@@ -60,7 +61,7 @@ void priorityEnqueuePair(Addr_Pair pair)
 	}
 	queue.length++;
 }
-void priorityEnqueueAddress(uint64_t address)
+void priorityEnqueueObject(Object obj)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
 	{
@@ -69,12 +70,14 @@ void priorityEnqueueAddress(uint64_t address)
 	}
 	if (header_queue.front - 1 < 0)
 	{
-		header_queue.header_addresses[MAX_Q_LENGTH - 1] = address;
+		header_queue.objects[MAX_Q_LENGTH - 1].obj_header_address = obj.obj_header_address;
+		strcpy(header_queue.objects[MAX_Q_LENGTH - 1].name, obj.name);
 		header_queue.front = MAX_Q_LENGTH - 1;
 	}
 	else
 	{
-		header_queue.header_addresses[header_queue.front - 1] = address;
+		header_queue.objects[header_queue.front - 1].obj_header_address = obj.obj_header_address;
+		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
 		header_queue.front--;
 	}
 	header_queue.length++;
@@ -95,10 +98,11 @@ Addr_Pair dequeuePair()
 	queue.length--;
 	return pair;
 }
-uint64_t dequeueAddress()
+Object dequeueObject()
 {
-	uint64_t address;
-	address = header_queue.header_addresses[header_queue.front];
+	Object obj;
+	obj.obj_header_address = header_queue.objects[header_queue.front].obj_header_address;
+	strcpy(obj.name, header_queue.objects[header_queue.front].name);
 	if (header_queue.front + 1 < MAX_Q_LENGTH)
 	{
 		header_queue.front++;
@@ -108,7 +112,7 @@ uint64_t dequeueAddress()
 		header_queue.front = 0;
 	}
 	header_queue.length--;
-	return address;
+	return obj;
 }
 void flushQueue()
 {
