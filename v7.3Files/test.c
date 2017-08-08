@@ -81,36 +81,50 @@ int main()
 	printf("my_struct.cell test succeeded.\n");
 
 	//my_struct
-	/*strcpy(variable_name, "my_struct");
+	strcpy(variable_name, "my_struct");
 	objects = getDataObject("my_struct.mat", variable_name);
+	Data* cell_objects;
+	int num_cell = 0;
 	for (int i = 0; i < 9; i++)
 	{
-		switch(objects[i].type)
+		if (strcmp(objects[i].name, "integer") == 0)
 		{
-			case CHAR:
-				break;
-			case DOUBLE:
-				if (objects[i].dims[0] > 1)
-				{
-					arrayTest(objects[i]);
-				}
-				else
-				{
-					//
-				}
-				break;
-			case UINT16_T:
-				stringTest(objects[i]);
-				break;
-			case REF:
-				break;
-			case STRUCT:
-				break;
-			default:
-				break;
+			integerTest(&objects[i]);
+		}
+		else if (strcmp(objects[i].name, "dbl") == 0)
+		{
+			doubleTest(&objects[i]);
+		}
+		else if (strcmp(objects[i].name, "array") == 0)
+		{
+			arrayTest(&objects[i]);
+		}
+		else if (strcmp(objects[i].name, "string") == 0)
+		{
+			stringTest(&objects[i]);
+		}
+		else if (strcmp(objects[i].name, "cell") == 0)
+		{
+			cell_objects = (Data *)malloc(4*sizeof(Data));
+			cell_objects[num_cell] = objects[i];
+			num_cell++;
+		}
+		else if (strcmp(objects[i].name, "double") == 0)
+		{
+			doubleTest(&objects[i]);
+		}
+		else if (strcmp(objects[i].name, "my_struct") == 0)
+		{
+			//do nothing
+		}
+		else
+		{
+			cell_objects[num_cell] = objects[i];
+			num_cell++;
 		}
 	}
-	printf("my_struct test succeeded.\n");*/
+	cellTest(cell_objects);
+	printf("my_struct test succeeded.\n");
 }
 void cellTest(Data* objects)
 {
