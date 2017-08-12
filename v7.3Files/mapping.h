@@ -116,6 +116,7 @@ void enqueueObject(Object obj);
 
 Data* getDataObject(char* filename, char variable_name[]);
 void findHeaderAddress(char* filename, char variable_name[]);
+Data* collectMetaData(uint64_t header_address, char* header_pointer);
 
 MemMap maps[2];
 Addr_Q queue;
