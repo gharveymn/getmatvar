@@ -238,6 +238,8 @@ Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 }
 void freeDataObjects(Data* objects, int num)
 {
+	int num_subs = 0;
+	int j;
 	for (int i = 0; i < num; i++)
 	{
 		if (objects[i].char_data != NULL)
@@ -257,6 +259,16 @@ void freeDataObjects(Data* objects, int num)
 			free(objects[i].ushort_data);
 		}
 		free(objects[i].dims);
+		j = 0;
+		if (objects[i].sub_objects != NULL)
+		{
+			while (objects->sub_objects[j].type != UNDEF)
+			{
+				num_subs++;
+				j++;
+			}
+			freeDataObjects(objects[i].sub_objects, num_subs);
+		}
 	}
 	free(objects);
 	

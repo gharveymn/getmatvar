@@ -11,33 +11,37 @@ int main (int argc, char* argv[])
 	char* filename = argv[1];
 	char variable_name[30];
 	strcpy(variable_name, argv[2]);
-	Data* objects = getDataObject(filename, variable_name);
+	int* num_objs = (int *)malloc(sizeof(int));
+	Data* objects = getDataObject(filename, variable_name, num_objs);
+	Data* hi_objects = organizeObjects(objects, *num_objs);
 	int index = 0;
 
-	while (objects[index].type != UNDEF)
+	while (hi_objects[index].type != UNDEF)
 	{
-		switch (objects[index].type)
+		switch (hi_objects[index].type)
 		{
 			case DOUBLE:
-				printDouble(&objects[index]);
+				printDouble(&hi_objects[index]);
 				break;
 			case CHAR:
-				printChar(&objects[index]);
+				printChar(&hi_objects[index]);
 				break;
 			case UINT16_T:
-				printShort(&objects[index]);
+				printShort(&hi_objects[index]);
 				break;
 			case REF:
-				printCell(&objects[index]);
+				printCell(&hi_objects[index]);
 				break;
 			case STRUCT:
-				printStruct(&objects[index]);
+				printStruct(&hi_objects[index]);
 				break;
 			default:
 				break;
 		}
 		index++;
 	}
+	freeDataObjects(objects, *num_objs);
+	free(hi_objects);
 }
 void printDouble(Data* object)
 {

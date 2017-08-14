@@ -1,13 +1,12 @@
 #include "mapping.h"
 
-Data* getDataObject(char* filename, char variable_name[])
+Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 {
 	char *header_pointer;
 	uint32_t header_length;
 	uint64_t header_address, root_tree_address;
 	int num_objs = 0;
 	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
-	Data* ret_objects;
 	Object obj;
 	
 
@@ -63,8 +62,9 @@ Data* getDataObject(char* filename, char variable_name[])
 		
 		num_objs++;
 	}
-	ret_objects = organizeObjects(data_objects, num_objs);
-	return ret_objects;
+	num_objects[0] = num_objs;
+	close(fd);
+	return data_objects;
 }
 
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer)
@@ -328,48 +328,77 @@ Data* organizeObjects(Data* objects, int num_objs)
 			}
 		}
 	}
-	/*for (int i = 0; i < num_objs; i++)
-	{
-		if (objects[i].this_tree_address != 0)
-		{
-			super_objects[num_super] = objects[i];
-			super_objects[num_super].sub_objects = (Data *)malloc(num_objs*sizeof(Data));
-			num_super++;
-		}
-		else if (objects[i].parent_tree_address == s_block.root_tree_address)
-		{
-			super_objects[num_super] = objects[i];
-			num_super++;
-		}
-		else
-		{
-			for (int j = 0; j < num_super; j++)
-			{
-				if (objects[i].parent_tree_address == super_objects[j].this_tree_address || strcmp(objects[i].name, super_objects[j].name) == 0)
-				{
-					super_objects[j].sub_objects[num_subs[j]] = objects[i];
-					num_subs[j]++;
-				}
-			}
-		}
-	}*/
 	return super_objects;
 }
-void deepCopy(Data* dest, Data* source)
+/*void deepCopy(Data* dest, Data* source)
 {
+	int num_elems = 1, num_dims = 0, index = 0;
+	while (source->dims[index] > 0)
+	{
+		num_dims++;
+		num_elems *= source->dims[index];
+		index++;
+	}
+
 	dest->type = source->type;
 
 	strcpy(dest->matlab_class, source->matlab_class);
 
-	dest->dims = source->dims;
-	dest->char_data = source->char_data;
-	dest->double_data = source->double_data;
-	dest->udouble_data = source->udouble_data;
-	dest->ushort_data = source->ushort_data;
+	dest->dims = (uint32_t *)malloc((num_dims + 1)*sizeof(uint32_t));
+	for (index = 0; i < num_dims; i++)
+	{
+		dest->dims[i] = source->dims[i];
+	}
+	dest->dims[num_dims] = 0;
+
+	if (source->char_data != NULL)
+	{
+		dest->char_data = (char *)malloc(num_elems);
+		dest->double_data = NULL;
+		dest->udouble_data = NULL;
+		dest->ushort_data = NULL;
+		for (index = 0; index < num_elems; index++)
+		{
+			dest->char_data[index] = source->char_data[index];
+		}
+	}
+	else if (source->double_data != NULL)
+	{
+		dest->double_data = (char *)malloc(num_elems*sizeof(double));
+		dest->char_data = NULL;
+		dest->udouble_data = NULL;
+		dest->ushort_data = NULL;
+		for (index = 0; index < num_elems; index++)
+		{
+			dest->double_data[index] = source->double_data[index];
+		}
+	}
+	else if (source->udouble_data != NULL)
+	{
+		dest->udouble_data = (char *)malloc(num_elems*sizeof(uint64_t));
+		dest->double_data = NULL;
+		dest->char_data = NULL;
+		dest->ushort_data = NULL;
+		for (index = 0; index < num_elems; index++)
+		{
+			dest->udouble_data[index] = source->udouble_data[index];
+		}
+	}
+	else if (source->ushort_data != NULL)
+	{
+		dest->ushort_data = (char *)malloc(num_elems*sizeof(uint16_t));
+		dest->double_data = NULL;
+		dest->udouble_data = NULL;
+		dest->char_data = NULL;
+		for (index = 0; index < num_elems; index++)
+		{
+			dest->ushort_data[index] = source->ushort_data[index];
+		}
+	}
 
 	strcpy(dest->name, source->name);
 
 	dest->this_tree_address = source->this_tree_address;
 	dest->parent_tree_address = source->parent_tree_address;
 	dest->sub_objects = source->sub_objects;
-}
+}*/

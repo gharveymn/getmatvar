@@ -126,11 +126,11 @@ Object dequeueObject();
 void priorityEnqueueObject(Object obj);
 void enqueueObject(Object obj);
 
-Data* getDataObject(char* filename, char variable_name[]);
+Data* getDataObject(char* filename, char variable_name[], int* num_objs);
 void findHeaderAddress(char* filename, char variable_name[]);
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
-Data* organizeObjects(Data* objects, int num_objs);
-void deepCopy(Data* dest, Data* source);
+Data* organizeObjects(Data* objects, int num_objects);
+//void deepCopy(Data* dest, Data* source);
 
 MemMap maps[2];
 Addr_Q queue;
