@@ -3,11 +3,11 @@ CFLAGS=-c -g -Wall
 
 all: mapping
 
-mapping: test.o mapping.o fileHelper.o numberHelper.o queue.o
-	$(CC) test.o mapping.o fileHelper.o numberHelper.o queue.o -o mapping -lm
+mapping: userTest.o mapping.o fileHelper.o numberHelper.o queue.o
+	$(CC) userTest.o mapping.o fileHelper.o numberHelper.o queue.o -o mapping -lm
 
-test.o: test.c
-	$(CC) $(CFLAGS) test.c
+userTest.o: userTest.c
+	$(CC) $(CFLAGS) userTest.c
 
 mapping.o: mapping.c
 	$(CC) $(CFLAGS) mapping.c

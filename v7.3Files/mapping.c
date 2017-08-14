@@ -64,7 +64,7 @@ Data* getDataObject(char* filename, char variable_name[])
 		num_objs++;
 	}
 	ret_objects = organizeObjects(data_objects, num_objs);
-	return data_objects;
+	return ret_objects;
 }
 
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer)
