@@ -53,3 +53,35 @@ int roundUp(int numToRound)
 
     return numToRound + 8 - remainder;
 }
+//indices is assumed to have the same amount of allocated memory as dims
+//indices is an out parameter
+void indToSub(int index, uint32_t* dims, uint32_t* indices)
+{
+	int num_dims = 0;
+	int num_elems = 1;
+	int i = 0;
+	while (dims[i] > 0)
+	{
+		num_elems *= dims[i];
+		num_dims++;
+	}
+
+	indices[0] = (index + 1)% dims[0];
+
+	int divide = dims[0];
+	int mult = 1;
+	int sub = indices[0]*mult;
+
+	for (i = 1; i < num_dims - 1; i++)
+	{
+		indices[i] = ((index + 1 - sub)/divide)%dims[i];
+		divide *= dims[i];
+		mult*= dims[i-1];
+		sub += indices[i]*mult;
+	}
+
+	divide *= dims[num_dims - 1];
+	mult *= dims[num_dims - 2];
+	sub += indices[num_dims - 2];
+	indices[num_dims - 1] = (index + 1 - sub)/divide;
+}

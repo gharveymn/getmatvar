@@ -4,9 +4,10 @@ Data* getDataObject(char* filename, char variable_name[])
 {
 	char *header_pointer;
 	uint32_t header_length;
-	uint64_t header_address;
+	uint64_t header_address, root_tree_address;
 	int num_objs = 0;
 	Data* data_objects = (Data *)malloc(MAX_OBJS*sizeof(Data));
+	Data* ret_objects;
 	Object obj;
 	
 
@@ -18,7 +19,23 @@ Data* getDataObject(char* filename, char variable_name[])
 	flushQueue();
 	flushHeaderQueue();
 
-	printf("Object header for variable %s is at 0x", variable_name);
+	//open the file descriptor
+	fd = open(filename, O_RDWR);
+	if (fd < 0)
+	{
+		printf("open() unsuccessful, Check errno: %d\n", errno);
+		exit(EXIT_FAILURE);
+	}
+
+	//get file size
+	size_t file_size = lseek(fd, 0, SEEK_END);
+
+	//find superblock
+	s_block = getSuperblock(fd, file_size);
+
+	root_tree_address = queue.pairs[queue.front].tree_address;
+
+	printf("\nObject header for variable %s is at 0x", variable_name);
 	findHeaderAddress(filename, variable_name);
 	printf("%lx\n", header_queue.objects[header_queue.front].obj_header_address);
 
@@ -39,18 +56,19 @@ Data* getDataObject(char* filename, char variable_name[])
 		{
 			header_pointer = navigateTo(header_address, header_length, TREE);
 		}
-		data_objects[num_objs] = *collectMetaData(header_address, header_pointer);
 		strcpy(data_objects[num_objs].name, obj.name);
+		collectMetaData(&data_objects[num_objs], header_address, header_pointer);
+		data_objects[num_objs].parent_tree_address = obj.prev_tree_address;
+		data_objects[num_objs].this_tree_address = obj.this_tree_address;
 		
 		num_objs++;
 	}
-
+	ret_objects = organizeObjects(data_objects, num_objs);
 	return data_objects;
 }
 
-Data* collectMetaData(uint64_t header_address, char* header_pointer)
+void collectMetaData(Data* object, uint64_t header_address, char* header_pointer)
 {
-	Data *object = (Data *)malloc(sizeof(Data));
 	object->double_data = NULL;
 	object->udouble_data = NULL;
 	object->char_data = NULL;
@@ -198,11 +216,10 @@ Data* collectMetaData(uint64_t header_address, char* header_pointer)
 		{
 			Object obj;
 			obj.obj_header_address = object->udouble_data[i];
-			strcpy(obj.name, "__CELL");
+			strcpy(obj.name, object->name);
 			enqueueObject(obj);
 		}
 	}
-	return object;
 } 
 
 void findHeaderAddress(char* filename, char variable_name[])
@@ -213,24 +230,11 @@ void findHeaderAddress(char* filename, char variable_name[])
 	char* heap_pointer;
 	char* token;
 
-	//uint64_t header_address = 0;
-
 	default_bytes = sysconf(_SC_PAGE_SIZE);
 
 	token = strtok(variable_name, delim);
-	//open the file descriptor
-	fd = open(filename, O_RDWR);
-	if (fd < 0)
-	{
-		printf("open() unsuccessful, Check errno: %d\n", errno);
-		exit(EXIT_FAILURE);
-	}
 
-	//get file size
-	size_t file_size = lseek(fd, 0, SEEK_END);
-
-	//find superblock
-	s_block = getSuperblock(fd, file_size);
+	uint64_t prev_tree_address = 0;
 
 	//search for the object header for the variable
 	while (queue.length > 0)
@@ -242,15 +246,130 @@ void findHeaderAddress(char* filename, char variable_name[])
 		if (strncmp("TREE", tree_pointer, 4) == 0)
 		{
 			readTreeNode(tree_pointer);
+			prev_tree_address = queue.pairs[queue.front].tree_address;
 			dequeuePair();
 		}
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
 			dequeuePair();
-			readSnod(tree_pointer, heap_pointer, token);
+			readSnod(tree_pointer, heap_pointer, token, prev_tree_address);
+			prev_tree_address = 0;
 
 			token = strtok(NULL, delim);
 		}
 	}
 	//printf("0x%lx\n", header_address);
+}
+Data* organizeObjects(Data* objects, int num_objs)
+{
+	Data* super_objects = (Data *)malloc(num_objs*sizeof(Data));
+	int num_super = 0, num_temp = 0;
+	int* num_subs = (int *)calloc(num_objs, sizeof(int));
+	int* num_temp_subs = (int *)calloc(num_objs, sizeof(int));
+	Data** temp_objects = (Data **)malloc(num_objs*sizeof(Data*));
+	int temp_cell_member, super_cell_member, struct_member;
+	int curr_super_index = -1;
+	int placed;
+
+
+	for (int i = 0; i < num_objs; i++)
+	{
+		placed = FALSE;
+		if (objects[i].parent_tree_address == s_block.root_tree_address)
+		{
+			super_objects[num_super] = objects[i];
+			placed = TRUE;
+			num_super++;
+		}
+		else
+		{
+			for (int j = 0; j < num_super; j++)
+			{
+				struct_member = super_objects[j].this_tree_address == objects[i].parent_tree_address;
+				super_cell_member = super_objects[j].type == REF && strcmp(super_objects[j].name, objects[i].name) == 0;
+				
+				if (struct_member || super_cell_member)
+				{
+					if (super_objects[j].sub_objects == NULL)
+					{
+						super_objects[j].sub_objects = (Data *)malloc(num_objs*sizeof(Data));
+					}
+					super_objects[j].sub_objects[num_subs[j]] = objects[i];
+					num_subs[j]++;
+					curr_super_index = j;
+					placed = TRUE;
+				}
+			}
+			for (int j = 0; j < num_temp; j++)
+			{
+				temp_cell_member = temp_objects[j]->type == REF && strcmp(temp_objects[j]->name, objects[i].name) == 0;
+				if (temp_cell_member)
+				{
+					if (temp_objects[j]->sub_objects == NULL)
+					{
+						temp_objects[j]->sub_objects = (Data *)malloc(num_objs*sizeof(Data));
+					}
+					temp_objects[j]->sub_objects[num_temp_subs[j]] = objects[i];
+					num_temp_subs[j]++;
+					placed = TRUE;
+				}
+			}
+
+			if (placed && (objects[i].type == STRUCT || objects[i].type == REF))
+			{
+				temp_objects[num_temp] = &(super_objects[curr_super_index].sub_objects[num_subs[curr_super_index] - 1]);
+				num_temp++;
+			}
+
+			if (!placed)
+			{
+				super_objects[num_super] = objects[i];
+				num_super++;
+			}
+		}
+	}
+	/*for (int i = 0; i < num_objs; i++)
+	{
+		if (objects[i].this_tree_address != 0)
+		{
+			super_objects[num_super] = objects[i];
+			super_objects[num_super].sub_objects = (Data *)malloc(num_objs*sizeof(Data));
+			num_super++;
+		}
+		else if (objects[i].parent_tree_address == s_block.root_tree_address)
+		{
+			super_objects[num_super] = objects[i];
+			num_super++;
+		}
+		else
+		{
+			for (int j = 0; j < num_super; j++)
+			{
+				if (objects[i].parent_tree_address == super_objects[j].this_tree_address || strcmp(objects[i].name, super_objects[j].name) == 0)
+				{
+					super_objects[j].sub_objects[num_subs[j]] = objects[i];
+					num_subs[j]++;
+				}
+			}
+		}
+	}*/
+	return super_objects;
+}
+void deepCopy(Data* dest, Data* source)
+{
+	dest->type = source->type;
+
+	strcpy(dest->matlab_class, source->matlab_class);
+
+	dest->dims = source->dims;
+	dest->char_data = source->char_data;
+	dest->double_data = source->double_data;
+	dest->udouble_data = source->udouble_data;
+	dest->ushort_data = source->ushort_data;
+
+	strcpy(dest->name, source->name);
+
+	dest->this_tree_address = source->this_tree_address;
+	dest->parent_tree_address = source->parent_tree_address;
+	dest->sub_objects = source->sub_objects;
 }

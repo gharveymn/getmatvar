@@ -63,6 +63,7 @@ Superblock fillSuperblock(char* superblock_pointer)
 	Addr_Pair root_pair;
 	root_pair.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets) + s_block.base_address;
 	root_pair.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
+	s_block.root_tree_address = root_pair.tree_address;
 	enqueuePair(root_pair);
 
 	return s_block;
@@ -131,7 +132,7 @@ void readTreeNode(char* tree_pointer)
 	}
 
 }
-void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
+void readSnod(char* snod_pointer, char* heap_pointer, char* var_name, uint64_t prev_tree_address)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
 	Object* objects = (Object *)malloc(sizeof(Object)*num_symbols);
@@ -143,29 +144,33 @@ void readSnod(char* snod_pointer, char* heap_pointer, char* var_name)
 
 	for (int i = 0; i < num_symbols; i++)
 	{
+		objects[i].this_tree_address = 0;
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets);
 		objects[i].obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE*i + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
 		strcpy(objects[i].name, heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 		cache_type = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE*i, 4);
+		objects[i].prev_tree_address = prev_tree_address;
 
 		//check if we have found the object we're looking for
 		if(var_name != NULL && strcmp(var_name, objects[i].name) == 0)
 		{
 			flushHeaderQueue();
-			enqueueObject(objects[i]);
 
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
 			{
 				pair.tree_address = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets) + s_block.base_address;
 				pair.heap_address = getBytesAsNumber(snod_pointer + 3*s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE*i, s_block.size_of_offsets) + s_block.base_address;
+				objects[i].this_tree_address = pair.tree_address;
 				flushQueue();
 				priorityEnqueuePair(pair);
 			}
+			enqueueObject(objects[i]);
 			break;
 		}
 		else if (var_name == NULL)
 		{
+			//objects[i].this_tree_address = UNDEF_ADDR;
 			enqueueObject(objects[i]);
 		}
 	}
@@ -253,5 +258,6 @@ void freeDataObjects(Data* objects, int num)
 		}
 		free(objects[i].dims);
 	}
+	free(objects);
 	
 }

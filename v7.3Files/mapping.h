@@ -22,6 +22,9 @@
 #define MAX_OBJS 100
 #define CLASS_LENGTH 20
 #define NAME_LENGTH 30
+#define MAX_SUB_OBJECTS 30;
+#define USE_SUPER_OBJECT_CELL 1;
+#define USE_SUPER_OBJECT_ALL 2;
 
 typedef struct
 {
@@ -44,6 +47,7 @@ typedef struct
 	uint16_t leaf_node_k;
 	uint16_t internal_node_k;
 	uint64_t base_address;
+	uint64_t root_tree_address;
 } Superblock;
 
 typedef struct 
@@ -59,6 +63,8 @@ typedef struct
 	uint64_t name_offset;
 	char name[NAME_LENGTH];
 	uint64_t obj_header_address;
+	uint64_t prev_tree_address;
+	uint64_t this_tree_address;
 } Object;
 
 typedef struct
@@ -79,7 +85,8 @@ typedef enum
 	STRUCT
 } Datatype;
 
-typedef struct
+typedef struct data_ Data;
+struct data_
 {
 	Datatype type;
 	char matlab_class[CLASS_LENGTH];
@@ -88,15 +95,19 @@ typedef struct
 	double* double_data;
 	uint64_t* udouble_data;
 	uint16_t* ushort_data;
-	char name[NAME LENGTH];
-} Data;
+	char name[NAME_LENGTH];
+	uint64_t this_tree_address;
+	uint64_t parent_tree_address;
+	Data* sub_objects;
+} ;
+
 
 Superblock getSuperblock(int fd, size_t file_size);
 char* findSuperblock(int fd, size_t file_size);
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 void readTreeNode(char* tree_address);
-void readSnod(char* snod_pointer, char* heap_pointer, char* var_name);
+void readSnod(char* snod_pointer, char* heap_pointer, char* var_name, uint64_t prev_tree_address);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
 void freeDataObjects(Data* objects, int num);
@@ -104,6 +115,7 @@ void freeDataObjects(Data* objects, int num);
 double convertHexToFloatingPoint(uint64_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
+void indToSub(int index, uint32_t* dims, uint32_t* indices);
 
 void enqueuePair(Addr_Pair pair);
 void flushQueue();
@@ -116,7 +128,9 @@ void enqueueObject(Object obj);
 
 Data* getDataObject(char* filename, char variable_name[]);
 void findHeaderAddress(char* filename, char variable_name[]);
-Data* collectMetaData(uint64_t header_address, char* header_pointer);
+void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
+Data* organizeObjects(Data* objects, int num_objs);
+void deepCopy(Data* dest, Data* source);
 
 MemMap maps[2];
 Addr_Q queue;

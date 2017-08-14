@@ -14,6 +14,8 @@ int main()
 	strcpy(variable_name, "string");
 	objects = getDataObject("my_struct.mat", variable_name);
 	stringTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x288);
 	freeDataObjects(objects, 1);
 	printf("string test succeeded.\n");
 
@@ -21,6 +23,8 @@ int main()
 	strcpy(variable_name, "dbl");
 	objects = getDataObject("my_struct.mat", variable_name);
 	doubleTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x288);
 	freeDataObjects(objects, 1);
 	printf("dbl test succeeded.\n");
 
@@ -28,6 +32,8 @@ int main()
 	strcpy(variable_name, "integer");
 	objects = getDataObject("my_struct.mat", variable_name);
 	integerTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x288);
 	freeDataObjects(objects, 1);
 	printf("integer test succeeded.\n");
 
@@ -35,6 +41,8 @@ int main()
 	strcpy(variable_name, "array");
 	objects = getDataObject("my_struct.mat", variable_name);
 	arrayTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x288);
 	freeDataObjects(objects, 1);
 	printf("array test succeeded.\n");
 
@@ -42,6 +50,8 @@ int main()
 	strcpy(variable_name, "cell");
 	objects = getDataObject("my_struct.mat", variable_name);
 	cellTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x288);
 	freeDataObjects(objects, 4);
 	printf("cell test succeeded.\n");
 	
@@ -49,6 +59,8 @@ int main()
 	strcpy(variable_name, "my_struct.string");
 	objects = getDataObject("my_struct.mat", variable_name);
 	stringTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x1398);
 	freeDataObjects(objects, 1);
 	printf("my_struct.string test succeeded.\n");
 
@@ -56,6 +68,8 @@ int main()
 	strcpy(variable_name, "my_struct.double");
 	objects = getDataObject("my_struct.mat", variable_name);
 	doubleTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x1398);
 	freeDataObjects(objects, 1);
 	printf("my_struct.double test succeeded.\n");
 
@@ -63,6 +77,8 @@ int main()
 	strcpy(variable_name, "my_struct.integer");
 	objects = getDataObject("my_struct.mat", variable_name);
 	integerTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x1398);
 	freeDataObjects(objects, 1);
 	printf("my_struct.integer test succeeded.\n");
 
@@ -70,6 +86,8 @@ int main()
 	strcpy(variable_name, "my_struct.array");
 	objects = getDataObject("my_struct.mat", variable_name);
 	arrayTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x1398);
 	freeDataObjects(objects, 1);
 	printf("my_struct.array test succeeded.\n");
 
@@ -77,12 +95,16 @@ int main()
 	strcpy(variable_name, "my_struct.cell");
 	objects = getDataObject("my_struct.mat", variable_name);
 	cellTest(objects);
+	assert(objects[0].this_tree_address == 0);
+	assert(objects[0].parent_tree_address == 0x1398);
 	freeDataObjects(objects, 4);
 	printf("my_struct.cell test succeeded.\n");
 
 	//my_struct
 	strcpy(variable_name, "my_struct");
 	objects = getDataObject("my_struct.mat", variable_name);
+	assert(objects[0].this_tree_address == 0x1398);
+	assert(objects[0].parent_tree_address == 0x288);
 	Data* cell_objects;
 	int num_cell = 0;
 	for (int i = 0; i < 9; i++)
@@ -103,7 +125,7 @@ int main()
 		{
 			stringTest(&objects[i]);
 		}
-		else if (strcmp(objects[i].name, "cell") == 0)
+		else if (strcmp(objects[i].name, "cell") == 0 && objects[i].type == REF)
 		{
 			cell_objects = (Data *)malloc(4*sizeof(Data));
 			cell_objects[num_cell] = objects[i];
@@ -149,6 +171,7 @@ void cellTest(Data* objects)
 		assert(data.udouble_data == NULL);
 		assert(data.ushort_data == NULL);
 		assert(data.char_data == NULL);
+		assert(strcmp(data.name, objects[0].name) == 0);
 	}
 	assert(objects[1].double_data[0] == 1);
 	assert(objects[2].double_data[0] == 1.1);
