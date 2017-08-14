@@ -4,6 +4,7 @@ void printDouble(Data* object);
 void printShort(Data* object);
 void printCell(Data* object);
 void printStruct(Data* object);
+void printChar(Data* object);
 
 int main (int argc, char* argv[])
 {
@@ -21,7 +22,7 @@ int main (int argc, char* argv[])
 				printDouble(&objects[index]);
 				break;
 			case CHAR:
-				//printChar(objects[index]);
+				printChar(&objects[index]);
 				break;
 			case UINT16_T:
 				printShort(&objects[index]);
@@ -126,4 +127,32 @@ void printStruct(Data* object)
 	}
 
 	printf("\n");
+}
+void printChar(Data* object)
+{
+	printf("%s:\n", object->name);
+
+	int num_elems = 1;
+	int num_dims = 0;
+	int i = 0;
+	while(object->dims[i] > 0)
+	{
+		num_elems *= object->dims[i];
+		num_dims++;
+		i++;
+	}
+
+	for (i = 0; i < num_elems; i++)
+	{
+		printf("%d ", object->char_data[i]);
+		for (int j = 0; j < num_dims - 1; j++)
+		{
+			if ((i + 1) % object->dims[j] == 0)
+			{
+				printf("\n");
+			}
+		}
+	}
+	printf("\n");
+
 }
