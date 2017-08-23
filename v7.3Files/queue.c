@@ -1,5 +1,6 @@
 #include "mapping.h"
 
+
 void enqueuePair(Addr_Pair pair)
 {
 	if (queue.length >= MAX_Q_LENGTH)
@@ -10,16 +11,17 @@ void enqueuePair(Addr_Pair pair)
 	queue.pairs[queue.back].tree_address = pair.tree_address;
 	queue.pairs[queue.back].heap_address = pair.heap_address;
 	queue.length++;
-
+	
 	if (queue.back < MAX_Q_LENGTH - 1)
 	{
 		queue.back++;
-	}
-	else
+	} else
 	{
 		queue.back = 0;
 	}
 }
+
+
 void enqueueObject(Object obj)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
@@ -32,16 +34,17 @@ void enqueueObject(Object obj)
 	header_queue.objects[header_queue.back].this_tree_address = obj.this_tree_address;
 	header_queue.objects[header_queue.back].prev_tree_address = obj.prev_tree_address;
 	header_queue.length++;
-
+	
 	if (header_queue.back < MAX_Q_LENGTH - 1)
 	{
 		header_queue.back++;
-	}
-	else
+	} else
 	{
 		header_queue.back = 0;
 	}
 }
+
+
 void priorityEnqueuePair(Addr_Pair pair)
 {
 	if (queue.length >= MAX_Q_LENGTH)
@@ -54,8 +57,7 @@ void priorityEnqueuePair(Addr_Pair pair)
 		queue.pairs[MAX_Q_LENGTH - 1].tree_address = pair.tree_address;
 		queue.pairs[MAX_Q_LENGTH - 1].heap_address = pair.heap_address;
 		queue.front = MAX_Q_LENGTH - 1;
-	}
-	else
+	} else
 	{
 		queue.pairs[queue.front - 1].tree_address = pair.tree_address;
 		queue.pairs[queue.front - 1].heap_address = pair.heap_address;
@@ -63,6 +65,8 @@ void priorityEnqueuePair(Addr_Pair pair)
 	}
 	queue.length++;
 }
+
+
 void priorityEnqueueObject(Object obj)
 {
 	if (header_queue.length >= MAX_Q_LENGTH)
@@ -75,19 +79,20 @@ void priorityEnqueueObject(Object obj)
 		header_queue.objects[MAX_Q_LENGTH - 1].obj_header_address = obj.obj_header_address;
 		strcpy(header_queue.objects[MAX_Q_LENGTH - 1].name, obj.name);
 		header_queue.objects[MAX_Q_LENGTH - 1].this_tree_address = obj.this_tree_address;
-	header_queue.objects[MAX_Q_LENGTH - 1].prev_tree_address = obj.prev_tree_address;
+		header_queue.objects[MAX_Q_LENGTH - 1].prev_tree_address = obj.prev_tree_address;
 		header_queue.front = MAX_Q_LENGTH - 1;
-	}
-	else
+	} else
 	{
 		header_queue.objects[header_queue.front - 1].obj_header_address = obj.obj_header_address;
 		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
 		header_queue.objects[header_queue.front].this_tree_address = obj.this_tree_address;
-	header_queue.objects[header_queue.front].prev_tree_address = obj.prev_tree_address;
+		header_queue.objects[header_queue.front].prev_tree_address = obj.prev_tree_address;
 		header_queue.front--;
 	}
 	header_queue.length++;
 }
+
+
 Addr_Pair dequeuePair()
 {
 	Addr_Pair pair;
@@ -96,14 +101,15 @@ Addr_Pair dequeuePair()
 	if (queue.front + 1 < MAX_Q_LENGTH)
 	{
 		queue.front++;
-	}
-	else
+	} else
 	{
 		queue.front = 0;
 	}
 	queue.length--;
 	return pair;
 }
+
+
 Object dequeueObject()
 {
 	Object obj;
@@ -114,20 +120,23 @@ Object dequeueObject()
 	if (header_queue.front + 1 < MAX_Q_LENGTH)
 	{
 		header_queue.front++;
-	}
-	else
+	} else
 	{
 		header_queue.front = 0;
 	}
 	header_queue.length--;
 	return obj;
 }
+
+
 void flushQueue()
 {
 	queue.length = 0;
 	queue.front = 0;
 	queue.back = 0;
 }
+
+
 void flushHeaderQueue()
 {
 	header_queue.length = 0;

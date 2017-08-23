@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -10,6 +9,14 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+
+
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
+#include "extlib/mman-win32/mman.h"
+#else
+#include <sys/mman.h>
+typedef uint64_t OffsetType;
+#endif
 
 #define TRUE 1
 #define FALSE 0
@@ -40,7 +47,7 @@ typedef struct
 	int length;
 } Addr_Q;
 
-typedef struct 
+typedef struct
 {
 	uint8_t size_of_offsets;
 	uint8_t size_of_lengths;
@@ -50,11 +57,11 @@ typedef struct
 	uint64_t root_tree_address;
 } Superblock;
 
-typedef struct 
+typedef struct
 {
-	char* map_start;
+	char *map_start;
 	uint64_t bytes_mapped;
-	uint64_t offset;
+	OffsetType offset;
 	int used;
 } MemMap;
 
@@ -90,33 +97,38 @@ struct data_
 {
 	Datatype type;
 	char matlab_class[CLASS_LENGTH];
-	uint32_t* dims;
-	char* char_data;
-	double* double_data;
-	uint64_t* udouble_data;
-	uint16_t* ushort_data;
+	uint32_t *dims;
+	char *char_data;
+	double *double_data;
+	uint64_t *udouble_data;
+	uint16_t *ushort_data;
 	char name[NAME_LENGTH];
 	uint64_t this_tree_address;
 	uint64_t parent_tree_address;
-	Data* sub_objects;
-} ;
+	Data *sub_objects;
+};
 
 
+//fileHelper.c
 Superblock getSuperblock(int fd, size_t file_size);
-char* findSuperblock(int fd, size_t file_size);
-Superblock fillSuperblock(char* superblock_pointer);
-char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char* tree_address);
-void readSnod(char* snod_pointer, char* heap_pointer, char* var_name, uint64_t prev_tree_address);
-uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
-Datatype readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
-void freeDataObjects(Data* objects, int num);
+char *findSuperblock(int fd, size_t file_size);
+Superblock fillSuperblock(char *superblock_pointer);
+char *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
+void readTreeNode(char *tree_address);
+void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, uint64_t prev_tree_address);
+uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size);
+Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size);
+void freeDataObjects(Data *objects, int num);
 
+
+//numberHelper.c
 double convertHexToFloatingPoint(uint64_t hex);
 int roundUp(int numToRound);
-uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
-void indToSub(int index, uint32_t* dims, uint32_t* indices);
+uint64_t getBytesAsNumber(char *chunk_start, int num_bytes);
+void indToSub(int index, uint32_t *dims, uint32_t *indices);
 
+
+//queue.c
 void enqueuePair(Addr_Pair pair);
 void flushQueue();
 Addr_Pair dequeuePair();
@@ -126,11 +138,18 @@ Object dequeueObject();
 void priorityEnqueueObject(Object obj);
 void enqueueObject(Object obj);
 
-Data* getDataObject(char* filename, char variable_name[], int* num_objs);
-void findHeaderAddress(char* filename, char variable_name[]);
-void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
-Data* organizeObjects(Data* objects, int num_objects);
+
+//mapping.c
+Data *getDataObject(char *filename, char variable_name[], int *num_objs);
+void findHeaderAddress(char *filename, char variable_name[]);
+void collectMetaData(Data *object, uint64_t header_address, char *header_pointer);
+Data *organizeObjects(Data *objects, int num_objects);
 //void deepCopy(Data* dest, Data* source);
+
+//getPageSize.c
+int getPageSize(void);
+int getAllocGran(void);
+
 
 MemMap maps[2];
 Addr_Q queue;

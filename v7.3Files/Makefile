@@ -3,8 +3,8 @@ CFLAGS=-c -g -Wall
 
 all: mapping
 
-mapping: userTest.o mapping.o fileHelper.o numberHelper.o queue.o
-	$(CC) userTest.o mapping.o fileHelper.o numberHelper.o queue.o -o mapping -lm
+mapping: test1.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o
+	$(CC) test1.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o -o mapping -lm
 
 userTest.o: userTest.c
 	$(CC) $(CFLAGS) userTest.c
@@ -20,6 +20,9 @@ numberHelper.o: numberHelper.c
 
 queue.o: queue.c
 	$(CC) $(CFLAGS) queue.c
+
+getPageSize.o: getPageSize.c
+	$(CC) $(CFLAGS) getPageSize.c
 
 clean: 
 	rm *o mapping
