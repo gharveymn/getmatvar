@@ -10,7 +10,6 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 	Data *data_objects = (Data *) malloc(MAX_OBJS * sizeof(Data));
 	Object obj;
 	
-	
 	//init maps
 	maps[0].used = FALSE;
 	maps[1].used = FALSE;
@@ -166,7 +165,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			object->double_data = (double *) malloc(num_elems * sizeof(double));
 			elem_size = sizeof(double);
 			break;
-		case UINT16_T:
+		case UNSIGNEDINT16:
 			object->ushort_data = (uint16_t *) malloc(num_elems * sizeof(uint16_t));
 			elem_size = sizeof(uint16_t);
 			break;

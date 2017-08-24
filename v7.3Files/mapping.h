@@ -4,12 +4,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <errno.h>
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -87,7 +85,7 @@ typedef enum
 	UNDEF,
 	CHAR,
 	DOUBLE,
-	UINT16_T,
+	UNSIGNEDINT16,
 	REF,
 	STRUCT
 } Datatype;
