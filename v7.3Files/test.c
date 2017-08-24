@@ -3,17 +3,9 @@
 
 
 void cellTest(Data *objects);
-
-
 void arrayTest(Data *objects);
-
-
 void integerTest(Data *objects);
-
-
 void doubleTest(Data *objects);
-
-
 void stringTest(Data *objects);
 
 
@@ -240,7 +232,7 @@ void stringTest(Data *objects)
 {
 	char string[9] = "Courtney";
 	Data data = objects[0];
-	assert(data.type == UINT16_T);
+	assert(data.type == UNSIGNEDINT16);
 	assert(strcmp(data.matlab_class, "char") == 0);
 	assert(data.dims[0] == 8);
 	assert(data.dims[1] == 1);

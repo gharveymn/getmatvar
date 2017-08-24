@@ -1,0 +1,1 @@
+s = getmatvar('my_struct.mat','string');

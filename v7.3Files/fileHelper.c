@@ -237,7 +237,7 @@ Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size)
 					break;
 				case 2:
 					//"uint16_t"
-					type = UINT16_T;
+					type = UNSIGNEDINT16;
 					break;
 				default:
 					type = UNDEF;
