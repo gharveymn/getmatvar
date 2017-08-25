@@ -1,13 +1,15 @@
 #include "C:/Program Files/MATLAB/R2017a/extern/include/mex.h"
 #include "mapping.h"
 
-void makeReturnStructure(mxArray* returnStructure[], int num_elems, const char** varnames, const char* filename);
+void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const char* varnames[], const char* filename);
 mxArray* makeStruct(mxArray* returnStructure, int num_elems, Data* object);
 mxArray* makeCell(mxArray* returnStructure, int num_elems, Data* objects);
 char** getFieldNames(const int num_elems, Data* object);
-mwSize* makeObjDims(uint32_t* dims, const mwSize num_dims);
-int getNumDims(Data *object);
-int getNumElems(Data *object);
+void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
+void setCharPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
+void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
+mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims);
+void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
@@ -36,18 +38,10 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 	mwSize struct_dims[1] = {1};
 	returnStructure[0] = mxCreateStructArray(1, struct_dims, num_elems, varnames);
 	
-	mwSize num_dims;
+	mwSize num_obj_dims, num_obj_elems = 0;
 	mwSize* obj_dims;
-	mxArray* mxDblPtr;
-	double* mxDblPtrPr;
-	mxArray* mxCharPtr;
-	char* mxCharPtrPr;
-	mxArray* mxIntPtr;
-	char* mxIntPtrPr;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
-	int num_cells;
-	int num_fields;
 	
 	for(int i = 0; i < num_elems; i++)
 	{
@@ -55,59 +49,33 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 		Data *objects = getDataObject(filename, varnames[i], num_objs);
 		Data *hi_objects = organizeObjects(objects, *num_objs);
 		int index = 0;
-		mwSize num_dims;
+		mwSize num_obj_dims;
 		
 		while (hi_objects[index].type != UNDEF)
 		{
 			switch (hi_objects[index].type)
 			{
 				case DOUBLE:
-					num_dims = (mwSize)getNumDims(&hi_objects[index]);
-					obj_dims = makeObjDims(hi_objects[index].dims, num_dims);
-					mxDblPtr = mxCreateNumericArray(num_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
-					mxDblPtrPr = mxGetPr(mxDblPtr);
-					for (int j = 0; j < getNumElems(&hi_objects[index]); j++)
-					{
-						mxDblPtrPr[j] = hi_objects[index].double_data[j];
-					}
-					mxSetField(returnStructure[0], 0, varnames[i], mxDblPtr);
+					setDblPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
 					break;
 				case CHAR:
-					num_dims = (mwSize)getNumDims(&hi_objects[index]);
-					obj_dims = makeObjDims(hi_objects[index].dims, num_dims);
-					mxCharPtr = mxCreateCharArray(num_dims, obj_dims);
-					mxCharPtrPr = mxGetChars(mxCharPtr);
-					for (int j = 0; j < getNumElems(&hi_objects[index]); j++)
-					{
-						mxCharPtrPr[j] = hi_objects[index].char_data[j];
-					}
-					mxSetField(returnStructure[0], 0, varnames[i], mxCharPtr);
+					setCharPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
 					break;
 				case UNSIGNEDINT16:
-					num_dims = (mwSize)getNumDims(&hi_objects[index]);
-					obj_dims = makeObjDims(hi_objects[index].dims, num_dims);
-					mxIntPtrPr = mxCalloc(obj_dims[1], sizeof(char));
-					for (int j = 0; j < obj_dims[1]; j++)
-					{
-						mxIntPtrPr[j] = hi_objects[index].ushort_data[j];
-					}
-					mxIntPtr = mxCreateString(mxIntPtrPr);
-					mxSetField(returnStructure[0], 0, varnames[i], mxIntPtr);
-					mxFree(mxIntPtrPr);
+					setIntPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
 					break;
 				case REF:
-					num_dims = (mwSize)getNumDims(&hi_objects[index]);
-					obj_dims = makeObjDims(hi_objects[index].dims, num_dims);
-					num_cells = getNumElems(hi_objects[index].sub_objects);
-					mxCellPtr = mxCreateCellArray(num_dims, obj_dims);
-					mxSetField(returnStructure[0], 0, varnames[i], makeCell(mxCellPtr, num_cells, hi_objects[index].sub_objects));
+					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
+					obj_dims = makeObjDims(hi_objects[index].dims, num_obj_dims);
+					mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
+					mxSetField(returnStructure[0], 0, varnames[i], makeCell(mxCellPtr, num_obj_elems, hi_objects[index].sub_objects));
 					break;
 				case STRUCT:
-					num_dims = (mwSize)getNumDims(&hi_objects[index]);
+					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
 					obj_dims = (mwSize *)hi_objects[index].dims;
-					num_fields = getNumElems(hi_objects[index].sub_objects);
-					mxStructPtr = mxCreateStructArray(1, struct_dims, num_fields, getFieldNames(num_fields, hi_objects[index].sub_objects));
-					mxSetField(returnStructure[0], 0, varnames[i], makeStruct(mxStructPtr, num_fields, hi_objects[index].sub_objects));
+					getNums(&hi_objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
+					mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, hi_objects[index].sub_objects));
+					mxSetField(returnStructure[0], 0, varnames[i], makeStruct(mxStructPtr, num_obj_elems, hi_objects[index].sub_objects));
 					break;
 				default:
 					break;
@@ -120,82 +88,43 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 	}
 }
 
-mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* object)
+mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects)
 {
 	mwSize struct_dims[1] = {1};
-	mwSize num_dims;
+	mwSize num_obj_dims, num_obj_elems = 0;
 	mwSize* obj_dims;
-	mxArray* mxDblPtr;
-	double* mxDblPtrPr;
-	mxArray* mxCharPtr;
-	char* mxCharPtrPr;
-	mxArray* mxIntPtr;
-	uint16_t* mxIntPtrPr;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
-	int num_cells;
-	int num_fields;
 	
-	for(int i = 0; i < num_elems; i++)
+	for(int index = 0; index < num_elems; index++)
 	{
-		int index = 0;
-		
-		while (object[index].type != UNDEF)
+		switch (objects[index].type)
 		{
-			switch (object[index].type)
-			{
-				case DOUBLE:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxDblPtr = mxCreateNumericArray(num_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
-					mxDblPtrPr = mxGetPr(mxDblPtr);
-					for (int j = 0; j < getNumElems(&object[index]); j++)
-					{
-						mxDblPtrPr[j] = object[index].double_data[j];
-					}
-					mxSetField(returnStructure, 0, object[index].name, mxDblPtr);
-					break;
-				case CHAR:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxCharPtr = mxCreateCharArray(num_dims, obj_dims);
-					mxCharPtrPr = (char *)mxGetChars(mxCharPtr);
-					for (int j = 0; j < getNumElems(&object[index]); j++)
-					{
-						mxCharPtrPr[j] = object[index].char_data[j];
-					}
-					mxSetField(returnStructure, 0, object[index].name, mxCharPtr);
-					break;
-				case UNSIGNEDINT16:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxIntPtrPr = mxCalloc(obj_dims[1], sizeof(char));
-					for (int j = 0; j < obj_dims[1]; j++)
-					{
-						mxIntPtrPr[j] = object[index].ushort_data[j];
-					}
-					mxIntPtr = mxCreateString(mxIntPtrPr);
-					mxSetField(returnStructure, 0, object[index].name, mxIntPtr);
-					mxFree(mxIntPtrPr);
-					break;
-				case REF:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxCellPtr = mxCreateCellArray(num_dims, obj_dims);
-					num_cells = getNumElems(object[index].sub_objects);
-					mxSetField(returnStructure, 0, object[index].name, makeCell(mxCellPtr, num_cells, object[index].sub_objects));
-					break;
-				case STRUCT:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					num_fields = getNumElems(object[index].sub_objects);
-					mxStructPtr = mxCreateStructArray(1, struct_dims, num_fields, getFieldNames(num_fields, object[index].sub_objects));
-					mxSetField(returnStructure, 0, object[index].name, makeStruct(returnStructure, num_fields, object[index].sub_objects));
-					break;
-				default:
-					break;
-			}
-			index++;
+			case DOUBLE:
+				setDblPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				break;
+			case CHAR:
+				setCharPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				break;
+			case UNSIGNEDINT16:
+				setIntPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				break;
+			case REF:
+				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
+				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
+				mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
+				getNums(objects[index].sub_objects, &num_obj_dims, &num_elems);
+				mxSetField(returnStructure, 0, objects[index].name, makeCell(mxCellPtr, num_elems, objects[index].sub_objects));
+				break;
+			case STRUCT:
+				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
+				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
+				getNums(&objects[index].sub_objects, &num_obj_dims, &num_elems);
+				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
+				mxSetField(returnStructure, 0, objects[index].name, makeStruct(returnStructure, num_obj_elems, objects[index].sub_objects));
+				break;
+			default:
+				break;
 		}
 		
 	}
@@ -204,83 +133,44 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* object)
 }
 
 
-mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* object)
+mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 {
 	
 	mwSize struct_dims[1] = {1};
-	mwSize num_dims;
+	mwSize num_obj_dims, num_obj_elems = 0;
 	mwSize* obj_dims;
-	mxArray* mxDblPtr;
-	double* mxDblPtrPr;
-	mxArray* mxCharPtr;
-	char* mxCharPtrPr;
-	mxArray* mxIntPtr;
-	uint16_t* mxIntPtrPr;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
-	int num_cells;
-	int num_fields;
 	
-	for(int i = 0; i < num_elems; i++)
+	for(int index = 0; index < num_elems; index++)
 	{
-		int index = 0;
-		
-		while (object[index].type != UNDEF)
+		switch (objects[index].type)
 		{
-			switch (object[index].type)
-			{
-				case DOUBLE:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxDblPtr = mxCreateNumericArray(num_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
-					mxDblPtrPr = mxGetPr(mxDblPtr);
-					for (int j = 0; j < getNumElems(&object[index]); j++)
-					{
-						mxDblPtrPr[j] = object[index].double_data[j];
-					}
-					mxSetCell(returnStructure, i, mxDblPtr);
-					break;
-				case CHAR:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxCharPtr = mxCreateCharArray(num_dims, obj_dims);
-					mxCharPtrPr = (char *)mxGetChars(mxCharPtr);
-					for (int j = 0; j < getNumElems(&object[index]); j++)
-					{
-						mxCharPtrPr[j] = object[index].char_data[j];
-					}
-					mxSetCell(returnStructure, i, mxCharPtr);
-					break;
-				case UNSIGNEDINT16:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxIntPtrPr = mxCalloc(obj_dims[1], sizeof(char));
-					for (int j = 0; j < obj_dims[1]; j++)
-					{
-						mxIntPtrPr[j] = object[index].ushort_data[j];
-					}
-					mxIntPtr = mxCreateString(mxIntPtrPr);
-					mxSetCell(returnStructure, i, mxIntPtr);
-					mxFree(mxIntPtrPr);
-					break;
-				case REF:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					mxCellPtr = mxCreateCellArray(num_dims, obj_dims);
-					num_cells = getNumElems(object[index].sub_objects);
-					mxSetCell(returnStructure, i, makeCell(mxCellPtr, num_cells, object[index].sub_objects));
-					break;
-				case STRUCT:
-					num_dims = (mwSize)getNumDims(&object[index]);
-					obj_dims = makeObjDims(object[index].dims, num_dims);
-					num_fields = getNumElems(object[index].sub_objects);
-					mxStructPtr = mxCreateStructArray(1, struct_dims, num_fields, getFieldNames(num_fields, object[index].sub_objects));
-					mxSetField(returnStructure, 0, object[index].name, makeStruct(returnStructure, num_fields, object[index].sub_objects));
-					break;
-				default:
-					break;
-			}
-			index++;
+			case DOUBLE:
+				setDblPtr(objects[index], returnStructure, &index, FALSE);
+				break;
+			case CHAR:
+				setCharPtr(objects[index], returnStructure, &index, FALSE);
+				break;
+			case UNSIGNEDINT16:
+				setIntPtr(objects[index], returnStructure, &index, FALSE);
+				break;
+			case REF:
+				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
+				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
+				mxCellPtr = mxCreateCellArray(num_obj_elems, obj_dims);
+				getNums(objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
+				mxSetCell(returnStructure, index, makeCell(mxCellPtr, num_obj_elems, objects[index].sub_objects));
+				break;
+			case STRUCT:
+				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
+				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
+				getNums(objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
+				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
+				mxSetCell(returnStructure, index, makeStruct(returnStructure, num_obj_elems, objects[index].sub_objects));
+				break;
+			default:
+				break;
 		}
 		
 	}
@@ -288,6 +178,80 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* object)
 	return returnStructure;
 	
 }
+
+void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+{
+	mwSize num_obj_dims, num_obj_elems = 0;
+	getNums(&object, &num_obj_dims, &num_obj_elems);
+	mwSize* obj_dims = makeObjDims(object.dims, num_obj_dims);
+	mxArray* mxDblPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
+	double* mxDblPtrPr = mxGetPr(mxDblPtr);
+
+	for (int j = 0; j < num_obj_elems; j++)
+	{
+		mxDblPtrPr[j] = object.double_data[j];
+	}
+
+	if (isStruct)
+	{
+		mxSetField(returnStructure, 0, varname, mxDblPtr);
+	}
+	else
+	{
+		//is a cell array
+		mxSetCell(returnStructure, *varname, mxDblPtr);
+	}
+}
+
+void setCharPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+{
+	mwSize num_obj_dims, num_obj_elems = 0;
+	getNums(&object, &num_obj_dims, &num_obj_elems);
+	char* mxCharPtrPr = mxCalloc(num_obj_elems, sizeof(char));
+
+	for (int j = 0; j < num_obj_elems; j++)
+	{
+		mxCharPtrPr[j] = object.ushort_data[j];
+	}
+	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
+
+	if (isStruct)
+	{
+		mxSetField(returnStructure, 0, varname, mxCharPtr);
+	}
+	else
+	{
+		//is a cell array
+		mxSetCell(returnStructure, *varname, mxCharPtr);
+	}
+	mxFree(mxCharPtrPr);
+}
+
+
+void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+{
+	mwSize num_obj_dims, num_obj_elems = 0;
+	getNums(&object, &num_obj_dims, &num_obj_elems);
+	char* mxIntPtrPr = mxCalloc(num_obj_elems, sizeof(char));
+
+	for (int j = 0; j < num_obj_elems; j++)
+	{
+		mxIntPtrPr[j] = object.ushort_data[j];
+	}
+	mxArray* mxIntPtr = mxCreateString(mxIntPtrPr);
+
+	if (isStruct)
+	{
+		mxSetField(returnStructure, 0, varname, mxIntPtr);
+	}
+	else
+	{
+		//is a cell array
+		mxSetCell(returnStructure, *varname, mxIntPtr);
+	}
+	mxFree(mxIntPtrPr);
+}
+
 
 char** getFieldNames(const int num_elems, Data* object)
 {
@@ -302,37 +266,27 @@ char** getFieldNames(const int num_elems, Data* object)
 }
 
 
-int getNumDims(Data *object)
+void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems)
 {
-	int num_dims = 0;
+	mwSize ne = 1;
+	mwSize nd = 0;
 	int i = 0;
 	while (object->dims[i] > 0)
 	{
-		num_dims++;
+		ne *= object->dims[i];
+		nd++;
 		i++;
 	}
-	return num_dims;
+	*num_obj_dims = nd;
+	*num_elems = ne;
 }
 
-int getNumElems(Data *object)
+mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims)
 {
-	int num_elems = 1;
-	int i = 0;
-	while (object->dims[i] > 0)
+	mwSize* obj_dims = malloc(num_obj_dims);
+	for(int i = 0; i < num_obj_dims; i++)
 	{
-		num_elems *= object->dims[i];
-		i++;
-	}
-	return num_elems;
-}
-
-mwSize* makeObjDims(uint32_t* dims, const mwSize num_dims)
-{
-	mwSize* obj_dims = malloc(num_dims);
-	obj_dims[0] = 1;
-	for(int i = 0; i < num_dims-1; i++)
-	{
-		obj_dims[i+1] = (mwSize)dims[i];
+		obj_dims[i] = (mwSize)dims[num_obj_dims-1-i];
 	}
 	return obj_dims;
 }
