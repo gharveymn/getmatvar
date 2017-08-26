@@ -220,7 +220,7 @@ uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size)
 Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size)
 {
 	//assume version 1
-	uint8_t class = *(msg_pointer) & 7; //only want bottom 4 bits
+	uint8_t class = *(msg_pointer) & 0x0F; //only want bottom 4 bits
 	uint32_t size = *(msg_pointer + 4);
 	Datatype type = UNDEF;
 	
