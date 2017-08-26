@@ -87,6 +87,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	uint16_t msg_size = 0;
 	uint32_t attribute_data_size, header_length;
 	uint64_t msg_address = 0;
+	uint64_t data_address = 0;
 	char *msg_pointer, *data_pointer;
 	int index, num_elems = 1;
 	char name[NAME_LENGTH];
@@ -123,8 +124,26 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			case 8:
 				// Data Layout message
 				//assume version 3
+				if(*msg_pointer != 3)
+				{
+					printf("Data layout version at address 0x%lx; expected version 3.\n", msg_address);
+					exit(EXIT_FAILURE);
+				}
+				
 				layout_class = *(msg_pointer + 1);
-				data_pointer = msg_pointer + 4;
+				switch(layout_class)
+				{
+					case 0:
+						data_pointer = msg_pointer + 4;
+						break;
+					case 1:
+						data_address = *((uint64_t*)(msg_pointer+4));
+						data_pointer = msg_pointer + (data_address - msg_address);
+						break;
+					case 2:
+						//
+						break;
+				}
 				break;
 			case 12:
 				//attribute message
@@ -189,7 +208,8 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	switch (layout_class)
 	{
 		case 0:
-			//compact storage
+		case 1:
+			//compact storage or contiguous storage
 			for (int j = 0; j < num_elems; j++)
 			{
 				if (object->double_data != NULL)
@@ -197,7 +217,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 					object->double_data[j] = convertHexToFloatingPoint(getBytesAsNumber(data_pointer + j * elem_size, elem_size));
 				} else if (object->ushort_data != NULL)
 				{
-					object->ushort_data[j] = getBytesAsNumber(data_pointer + j * elem_size, elem_size);
+					object->ushort_data[j] = (uint16_t )getBytesAsNumber(data_pointer + j * elem_size, elem_size);
 				} else if (object->udouble_data != NULL)
 				{
 					object->udouble_data[j] = getBytesAsNumber(data_pointer + j * elem_size, elem_size) +
@@ -208,6 +228,10 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 				}
 			}
 			break;
+		case 2:
+			//chunked storage
+			printf("Chunked layout class (not yet implemented) encountered with header at address 0x%lx\n", header_address);
+			exit(EXIT_FAILURE);
 		default:
 			printf("Unknown Layout class encountered with header at address 0x%lx\n", header_address);
 			exit(EXIT_FAILURE);
@@ -338,75 +362,3 @@ Data *organizeObjects(Data *objects, int num_objs)
 	}
 	return super_objects;
 }
-/*void deepCopy(Data* dest, Data* source)
-{
-	int num_elems = 1, num_dims = 0, index = 0;
-	while (source->dims[index] > 0)
-	{
-		num_dims++;
-		num_elems *= source->dims[index];
-		index++;
-	}
-
-	dest->type = source->type;
-
-	strcpy(dest->matlab_class, source->matlab_class);
-
-	dest->dims = (uint32_t *)malloc((num_dims + 1)*sizeof(uint32_t));
-	for (index = 0; i < num_dims; i++)
-	{
-		dest->dims[i] = source->dims[i];
-	}
-	dest->dims[num_dims] = 0;
-
-	if (source->char_data != NULL)
-	{
-		dest->char_data = (char *)malloc(num_elems);
-		dest->double_data = NULL;
-		dest->udouble_data = NULL;
-		dest->ushort_data = NULL;
-		for (index = 0; index < num_elems; index++)
-		{
-			dest->char_data[index] = source->char_data[index];
-		}
-	}
-	else if (source->double_data != NULL)
-	{
-		dest->double_data = (char *)malloc(num_elems*sizeof(double));
-		dest->char_data = NULL;
-		dest->udouble_data = NULL;
-		dest->ushort_data = NULL;
-		for (index = 0; index < num_elems; index++)
-		{
-			dest->double_data[index] = source->double_data[index];
-		}
-	}
-	else if (source->udouble_data != NULL)
-	{
-		dest->udouble_data = (char *)malloc(num_elems*sizeof(uint64_t));
-		dest->double_data = NULL;
-		dest->char_data = NULL;
-		dest->ushort_data = NULL;
-		for (index = 0; index < num_elems; index++)
-		{
-			dest->udouble_data[index] = source->udouble_data[index];
-		}
-	}
-	else if (source->ushort_data != NULL)
-	{
-		dest->ushort_data = (char *)malloc(num_elems*sizeof(uint16_t));
-		dest->double_data = NULL;
-		dest->udouble_data = NULL;
-		dest->char_data = NULL;
-		for (index = 0; index < num_elems; index++)
-		{
-			dest->ushort_data[index] = source->ushort_data[index];
-		}
-	}
-
-	strcpy(dest->name, source->name);
-
-	dest->this_tree_address = source->this_tree_address;
-	dest->parent_tree_address = source->parent_tree_address;
-	dest->sub_objects = source->sub_objects;
-}*/
