@@ -111,6 +111,39 @@ char *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 }
 
 
+char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index)
+{
+	if (!(map.used && address >= map.offset && address + bytes_needed < map.offset + map.bytes_mapped))
+	{
+		//unmap current page if used
+		if (map.used)
+		{
+			if (munmap(map.map_start, map.bytes_mapped) != 0)
+			{
+				printf("munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
+				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
+				exit(EXIT_FAILURE);
+			}
+			map.used = FALSE;
+		}
+		
+		//map new page at needed location
+		size_t alloc_gran = getAllocGran();
+		map.offset = (off_t)(address/alloc_gran)*alloc_gran;
+		map.bytes_mapped = address - map.offset + bytes_needed;
+		map.map_start = mmap(NULL, map.bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, map.offset);
+		
+		map.used = TRUE;
+		if (map.map_start == NULL || map.map_start == MAP_FAILED)
+		{
+			printf("mmap() unsuccessful, Check errno: %d\n", errno);
+			exit(EXIT_FAILURE);
+		}
+	}
+	return map.map_start + address - map.offset;
+}
+
+
 void readTreeNode(char *tree_pointer)
 {
 	Addr_Pair pair;

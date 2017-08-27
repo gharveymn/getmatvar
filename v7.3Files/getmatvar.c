@@ -56,13 +56,13 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 			switch (hi_objects[index].type)
 			{
 				case DOUBLE:
-					setDblPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
+					setDblPtr(hi_objects[index], returnStructure[0], varnames[i], STRUCT);
 					break;
 				case CHAR:
-					setCharPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
+					setCharPtr(hi_objects[index], returnStructure[0], varnames[i], STRUCT);
 					break;
 				case UNSIGNEDINT16:
-					setIntPtr(hi_objects[index], returnStructure[0], varnames[i], TRUE);
+					setIntPtr(hi_objects[index], returnStructure[0], varnames[i], STRUCT);
 					break;
 				case REF:
 					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
@@ -101,13 +101,13 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 		switch (objects[index].type)
 		{
 			case DOUBLE:
-				setDblPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				setDblPtr(objects[index], returnStructure, objects[index].name, STRUCT);
 				break;
 			case CHAR:
-				setCharPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				setCharPtr(objects[index], returnStructure, objects[index].name, STRUCT);
 				break;
 			case UNSIGNEDINT16:
-				setIntPtr(objects[index], returnStructure, objects[index].name, TRUE);
+				setIntPtr(objects[index], returnStructure, objects[index].name, STRUCT);
 				break;
 			case REF:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
@@ -121,7 +121,7 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
 				getNums(&objects[index].sub_objects, &num_obj_dims, &num_elems);
 				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
-				mxSetField(returnStructure, 0, objects[index].name, makeStruct(returnStructure, num_obj_elems, objects[index].sub_objects));
+				mxSetField(returnStructure, 0, objects[index].name, makeStruct(mxStructPtr, num_obj_elems, objects[index].sub_objects));
 				break;
 			default:
 				break;
@@ -147,13 +147,13 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 		switch (objects[index].type)
 		{
 			case DOUBLE:
-				setDblPtr(objects[index], returnStructure, &index, FALSE);
+				setDblPtr(objects[index], returnStructure, &index, REF);
 				break;
 			case CHAR:
-				setCharPtr(objects[index], returnStructure, &index, FALSE);
+				setCharPtr(objects[index], returnStructure, &index, REF);
 				break;
 			case UNSIGNEDINT16:
-				setIntPtr(objects[index], returnStructure, &index, FALSE);
+				setIntPtr(objects[index], returnStructure, &index, REF);
 				break;
 			case REF:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
@@ -167,7 +167,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
 				getNums(objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
 				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
-				mxSetCell(returnStructure, index, makeStruct(returnStructure, num_obj_elems, objects[index].sub_objects));
+				mxSetCell(returnStructure, index, makeStruct(mxStructPtr, num_obj_elems, objects[index].sub_objects));
 				break;
 			default:
 				break;
@@ -179,7 +179,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 	
 }
 
-void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+void setDblPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
@@ -191,19 +191,19 @@ void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const
 	{
 		mxDblPtrPr[j] = object.double_data[j];
 	}
-
-	if (isStruct)
+	
+	if (type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxDblPtr);
 	}
-	else
+	else if (type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxDblPtr);
 	}
 }
 
-void setCharPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+void setCharPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
@@ -215,11 +215,11 @@ void setCharPtr(Data object, mxArray* returnStructure, const char* varname, cons
 	}
 	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
 
-	if (isStruct)
+	if (type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxCharPtr);
 	}
-	else
+	else if (type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxCharPtr);
@@ -228,7 +228,7 @@ void setCharPtr(Data object, mxArray* returnStructure, const char* varname, cons
 }
 
 
-void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct)
+void setIntPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
@@ -239,12 +239,12 @@ void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const
 		mxIntPtrPr[j] = object.ushort_data[j];
 	}
 	mxArray* mxIntPtr = mxCreateString(mxIntPtrPr);
-
-	if (isStruct)
+	
+	if (type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else
+	else if (type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxIntPtr);

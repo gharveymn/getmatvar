@@ -81,7 +81,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	
 	uint16_t num_msgs = getBytesAsNumber(header_pointer + 2, 2);
 	
-	uint8_t layout_class;
+	uint8_t layout_class = 0;
 	uint16_t name_size, datatype_size, dataspace_size;
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
@@ -92,6 +92,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	int index, num_elems = 1;
 	char name[NAME_LENGTH];
 	int elem_size;
+	int num_chunked_dims;
 	
 	uint64_t bytes_read = 0;
 	
@@ -137,11 +138,18 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 						data_pointer = msg_pointer + 4;
 						break;
 					case 1:
-						data_address = *((uint64_t*)(msg_pointer+4));
+						data_address = getBytesAsNumber(msg_pointer + 2, s_block.size_of_offsets) +  s_block.base_address;
 						data_pointer = msg_pointer + (data_address - msg_address);
 						break;
 					case 2:
-						//
+						num_chunked_dims = *(msg_pointer+2)-1; //??
+						int32_t chunked_dim_sizes[num_chunked_dims];
+						data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets) + s_block.base_address;
+						data_pointer = msg_pointer + (data_address - msg_address);
+						for (int j = 0; j < num_chunked_dims; j++)
+						{
+							chunked_dim_sizes[j] = getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4);
+						}
 						break;
 				}
 				break;
@@ -208,7 +216,6 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	switch (layout_class)
 	{
 		case 0:
-		case 1:
 			//compact storage or contiguous storage
 			for (int j = 0; j < num_elems; j++)
 			{
@@ -230,6 +237,9 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			break;
 		case 2:
 			//chunked storage
+			//TreeNode root;
+			//fillNode(&root,num_chunked_dims);
+			//freeTree(&root);
 			printf("Chunked layout class (not yet implemented) encountered with header at address 0x%lx\n", header_address);
 			exit(EXIT_FAILURE);
 		default:
