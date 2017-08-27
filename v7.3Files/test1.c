@@ -83,7 +83,7 @@ void cellTest(Data *objects)
 	assert(strcmp(objects[0].name, "cell") == 0);
 	
 	data = objects[1];
-	assert(data.type == UINT16_T);
+	assert(data.type == UNSIGNEDINT16);
 	assert(strcmp(data.matlab_class, "char") == 0);
 	assert(data.dims[0] == 4);
 	assert(data.dims[1] == 1);
@@ -111,7 +111,7 @@ void cellTest(Data *objects)
 	assert(data.double_data[0] == 2.0);
 	
 	data = objects[3];
-	assert(data.type == UINT16_T);
+	assert(data.type == UNSIGNEDINT16);
 	assert(strcmp(data.matlab_class, "char") == 0);
 	assert(data.dims[0] == 5);
 	assert(data.dims[1] == 1);

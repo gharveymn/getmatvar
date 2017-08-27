@@ -17,6 +17,6 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
-	   userTest.c)
+	   chunkedData.c)
 
 add_executable(MatFile_Parsing_WinJB ${SOURCE_FILES})
