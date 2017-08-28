@@ -27,6 +27,7 @@ typedef uint64_t OffsetType;
 #define MAX_OBJS 100
 #define CLASS_LENGTH 20
 #define NAME_LENGTH 30
+#define MAX_NUM_FILTERS 32; //see spec IV.A.2.1
 #define MAX_SUB_OBJECTS 30;
 #define USE_SUPER_OBJECT_CELL 1;
 #define USE_SUPER_OBJECT_ALL 2;
@@ -105,6 +106,25 @@ struct data_
 	uint64_t parent_tree_address;
 	Data *sub_objects;
 };
+
+typedef enum
+{
+	NA,
+	DEFLATE,
+	SHUFFLE,
+	FLETCHER32,
+	SZIP,
+	NBIT,
+	SCALEOFFSET,
+} FilterID;
+
+typedef struct
+{
+	FilterID filter_id;
+	uint16_t num_client_vals;
+	uint32_t* client_data;
+	uint8_t optional_flag;
+} Filter;
 
 
 //fileHelper.c
