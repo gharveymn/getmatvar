@@ -238,7 +238,7 @@ uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size)
 {
 	//assume version 1 and ignore max dims and permutation indices
 	uint8_t num_dims = *(msg_pointer + 1);
-	uint32_t *dims = (uint32_t *) malloc(sizeof(int) * (num_dims + 1));
+	uint32_t *dims = malloc(sizeof(int) * (num_dims + 1));
 	//uint64_t bytes_read = 0;
 	
 	for (int i = 0; i < num_dims; i++)

@@ -7,7 +7,7 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 	uint32_t header_length;
 	uint64_t header_address, root_tree_address;
 	int num_objs = 0;
-	Data *data_objects = (Data *) malloc(MAX_OBJS * sizeof(Data));
+	Data *data_objects = (Data *) malloc((MAX_OBJS+1) * sizeof(Data));
 	Object obj;
 	
 	//init maps
@@ -66,6 +66,8 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 		num_objs++;
 		
 	}
+	data_objects[num_objs].type = UNDEF;
+	
 	num_objects[0] = num_objs;
 	close(fd);
 	return data_objects;
@@ -74,6 +76,7 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 
 void collectMetaData(Data *object, uint64_t header_address, char *header_pointer)
 {
+	object->type = UNDEF;
 	object->double_data = NULL;
 	object->udouble_data = NULL;
 	object->char_data = NULL;
@@ -93,6 +96,11 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	char name[NAME_LENGTH];
 	int elem_size;
 	int num_chunked_dims;
+	int32_t* chunked_dim_sizes;
+	
+	Filter* filters;
+	char* helper_pointer;
+	int num_filters;
 	
 	uint64_t bytes_read = 0;
 	
@@ -127,7 +135,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 				//assume version 3
 				if(*msg_pointer != 3)
 				{
-					printf("Data layout version at address 0x%lx; expected version 3.\n", msg_address);
+					printf("Data layout version at address 0x%lx is %d; expected version 3.\n", msg_address, *msg_pointer);
 					exit(EXIT_FAILURE);
 				}
 				
@@ -143,7 +151,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 						break;
 					case 2:
 						num_chunked_dims = *(msg_pointer+2)-1; //??
-						int32_t chunked_dim_sizes[num_chunked_dims];
+						chunked_dim_sizes = malloc(num_chunked_dims * sizeof(uint32_t));
 						data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets) + s_block.base_address;
 						data_pointer = msg_pointer + (data_address - msg_address);
 						for (int j = 0; j < num_chunked_dims; j++)
@@ -153,6 +161,62 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 						break;
 				}
 				break;
+			case 11:
+				//data storage pipeline message
+				
+				num_filters = *(msg_pointer + 1);
+				filters = malloc(num_filters * sizeof(Filter));
+				
+				//version number
+				switch(*msg_pointer)
+				{
+					case 1:
+						helper_pointer = msg_pointer + 8;
+						
+						for (int j = 0; j < num_filters; j++)
+						{
+							filters[j].filter_id = getBytesAsNumber(helper_pointer, 2);
+							name_size = getBytesAsNumber(helper_pointer + 2, 2);
+							filters[j].optional_flag = getBytesAsNumber(helper_pointer + 4, 2) & 1;
+							filters[j].num_client_vals = getBytesAsNumber(helper_pointer + 6, 2);
+							filters[j].client_data = malloc(filters[j].num_client_vals * sizeof(uint32_t));
+							helper_pointer += 8 + name_size;
+							
+							for (int k = 0; k < filters[j].num_client_vals; k++)
+							{
+								filters[j].client_data[k] = getBytesAsNumber(helper_pointer, 4);
+								helper_pointer += 4;
+							}
+							
+						}
+						
+						break;
+					case 2:
+						helper_pointer = msg_pointer + 2;
+						
+						for (int j = 0; j < num_filters; j++)
+						{
+							
+							filters[j].filter_id = getBytesAsNumber(helper_pointer, 2);
+							filters[j].optional_flag = getBytesAsNumber(helper_pointer + 2, 2) & 1;
+							filters[j].num_client_vals = getBytesAsNumber(helper_pointer + 4, 2);
+							filters[j].client_data = malloc(filters[j].num_client_vals * sizeof(uint32_t));
+							helper_pointer += 6;
+							
+							for (int k = 0; k < filters[j].num_client_vals; k++)
+							{
+								filters[j].client_data[k] = getBytesAsNumber(helper_pointer, 4);
+								helper_pointer += 4;
+							}
+							
+						}
+						
+						break;
+					default:
+						printf("Unknown data storage pipeline version %d at address 0x%lx.\n", *msg_pointer, msg_address);
+						exit(EXIT_FAILURE);
+						
+				}
 			case 12:
 				//attribute message
 				name_size = getBytesAsNumber(msg_pointer + 2, 2);
@@ -205,7 +269,10 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			elem_size = sizeof(char);
 			break;
 		case STRUCT:
-			//
+			object->dims = malloc(sizeof(int) * 3);
+			object->dims[0] = 1;
+			object->dims[1] = 1;
+			object->dims[2] = 0;
 			break;
 		default:
 			printf("Unknown data type encountered with header at address 0x%lx\n", header_address);
@@ -302,11 +369,11 @@ void findHeaderAddress(char *filename, char variable_name[])
 
 Data *organizeObjects(Data *objects, int num_objs)
 {
-	Data *super_objects = (Data *) malloc(num_objs * sizeof(Data));
+	Data *super_objects = (Data *) malloc((num_objs + 1) * sizeof(Data));
 	int num_super = 0, num_temp = 0;
 	int *num_subs = (int *) calloc(num_objs, sizeof(int));
 	int *num_temp_subs = (int *) calloc(num_objs, sizeof(int));
-	Data **temp_objects = (Data **) malloc(num_objs * sizeof(Data *));
+	Data **temp_objects = (Data **) malloc((num_objs + 1) * sizeof(Data *));
 	int temp_cell_member, super_cell_member, struct_member;
 	int curr_super_index = -1;
 	int placed;
@@ -325,15 +392,21 @@ Data *organizeObjects(Data *objects, int num_objs)
 			for (int j = 0; j < num_super; j++)
 			{
 				struct_member = super_objects[j].this_tree_address == objects[i].parent_tree_address;
-				super_cell_member =
-					   super_objects[j].type == REF && strcmp(super_objects[j].name, objects[i].name) == 0;
+				super_cell_member = super_objects[j].type == REF && strcmp(super_objects[j].name, objects[i].name) == 0;
 				
 				if (struct_member || super_cell_member)
 				{
 					if (super_objects[j].sub_objects == NULL)
 					{
-						super_objects[j].sub_objects = (Data *) malloc(num_objs * sizeof(Data));
+						super_objects[j].sub_objects = malloc(num_objs - i + 1 * sizeof(Data));
+						
+						//Initialize types for struct parsing and allocation later
+						for (int k = 0; k < num_objs - i + 1; k++)
+						{
+							super_objects[j].sub_objects[k].type = UNDEF;
+						}
 					}
+					
 					super_objects[j].sub_objects[num_subs[j]] = objects[i];
 					num_subs[j]++;
 					curr_super_index = j;
@@ -342,14 +415,21 @@ Data *organizeObjects(Data *objects, int num_objs)
 			}
 			for (int j = 0; j < num_temp; j++)
 			{
-				temp_cell_member =
-					   temp_objects[j]->type == REF && strcmp(temp_objects[j]->name, objects[i].name) == 0;
+				temp_cell_member = temp_objects[j]->type == REF && strcmp(temp_objects[j]->name, objects[i].name) == 0;
 				if (temp_cell_member)
 				{
 					if (temp_objects[j]->sub_objects == NULL)
 					{
-						temp_objects[j]->sub_objects = (Data *) malloc(num_objs * sizeof(Data));
+						temp_objects[j]->sub_objects = malloc(num_objs - i + 1 * sizeof(Data));
+						
+						//Initialize types for struct parsing and allocation later
+						for (int k = 0; k < num_objs - i + 1; k++)
+						{
+							temp_objects[j]->sub_objects[k].type = UNDEF;
+						}
 					}
+					
+					
 					temp_objects[j]->sub_objects[num_temp_subs[j]] = objects[i];
 					num_temp_subs[j]++;
 					placed = TRUE;
@@ -358,8 +438,7 @@ Data *organizeObjects(Data *objects, int num_objs)
 			
 			if (placed && (objects[i].type == STRUCT || objects[i].type == REF))
 			{
-				temp_objects[num_temp] = &(super_objects[curr_super_index].sub_objects[num_subs[curr_super_index] -
-																		 1]);
+				temp_objects[num_temp] = &(super_objects[curr_super_index].sub_objects[num_subs[curr_super_index] - 1]);
 				num_temp++;
 			}
 			
@@ -370,5 +449,6 @@ Data *organizeObjects(Data *objects, int num_objs)
 			}
 		}
 	}
+	super_objects[num_super].type = UNDEF;
 	return super_objects;
 }

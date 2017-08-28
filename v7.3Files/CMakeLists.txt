@@ -17,6 +17,48 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   userTest.c)
+
+add_executable(MatFile_Parsing_WinJB_userTest ${SOURCE_FILES})
+
+set(SOURCE_FILES
+	   ${MEX}/mex.h
+	   extlib/mman-win32/mman.c
+	   extlib/mman-win32/mman.h
+	   fileHelper.c
+	   getPageSize.c
+	   mapping.c
+	   mapping.h
+	   numberHelper.c
+	   queue.c
 	   chunkedData.c)
 
-add_executable(MatFile_Parsing_WinJB ${SOURCE_FILES})
+add_executable(MatFile_Parsing_WinJB_chunkedData ${SOURCE_FILES})
+
+set(SOURCE_FILES
+	   ${MEX}/mex.h
+	   extlib/mman-win32/mman.c
+	   extlib/mman-win32/mman.h
+	   fileHelper.c
+	   getPageSize.c
+	   mapping.c
+	   mapping.h
+	   numberHelper.c
+	   queue.c
+	   test.c)
+
+add_executable(MatFile_Parsing_WinJB_test ${SOURCE_FILES})
+
+set(SOURCE_FILES
+	   ${MEX}/mex.h
+	   extlib/mman-win32/mman.c
+	   extlib/mman-win32/mman.h
+	   fileHelper.c
+	   getPageSize.c
+	   mapping.c
+	   mapping.h
+	   numberHelper.c
+	   queue.c
+	   test1.c)
+
+add_executable(MatFile_Parsing_WinJB_test1 ${SOURCE_FILES})

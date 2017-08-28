@@ -4,12 +4,13 @@
 void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const char* varnames[], const char* filename);
 mxArray* makeStruct(mxArray* returnStructure, int num_elems, Data* object);
 mxArray* makeCell(mxArray* returnStructure, int num_elems, Data* objects);
-char** getFieldNames(const int num_elems, Data* object);
+char** getFieldNames(Data* object, const int num_elems);
 void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
 void setCharPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
 void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
 mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims);
 void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems);
+void getNumFields(Data* object, mwSize* num_fields);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
@@ -35,13 +36,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
 void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const char* varnames[], const char* filename)
 {
-	mwSize struct_dims[1] = {1};
-	returnStructure[0] = mxCreateStructArray(1, struct_dims, num_elems, varnames);
+	mwSize ret_struct_dims[1] = {1};
+	returnStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
 	
-	mwSize num_obj_dims, num_obj_elems = 0;
+	mwSize num_obj_dims, num_obj_elems, num_fields = 0;
 	mwSize* obj_dims;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
+	char** field_names;
 	
 	for(int i = 0; i < num_elems; i++)
 	{
@@ -72,10 +74,11 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 					break;
 				case STRUCT:
 					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
-					obj_dims = (mwSize *)hi_objects[index].dims;
-					getNums(&hi_objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
-					mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, hi_objects[index].sub_objects));
-					mxSetField(returnStructure[0], 0, varnames[i], makeStruct(mxStructPtr, num_obj_elems, hi_objects[index].sub_objects));
+					obj_dims = makeObjDims(hi_objects[index].dims, num_obj_dims);
+					getNumFields(&hi_objects[index], &num_fields);
+					field_names = getFieldNames(&hi_objects[index], num_fields);
+					mxStructPtr = mxCreateStructArray(num_obj_dims, obj_dims, num_fields, field_names);
+					mxSetField(returnStructure[0], 0, varnames[i], makeStruct(mxStructPtr, num_fields, hi_objects[index].sub_objects));
 					break;
 				default:
 					break;
@@ -91,10 +94,11 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects)
 {
 	mwSize struct_dims[1] = {1};
-	mwSize num_obj_dims, num_obj_elems = 0;
+	mwSize num_obj_dims, num_obj_elems, num_fields = 0;
 	mwSize* obj_dims;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
+	char** field_names;
 	
 	for(int index = 0; index < num_elems; index++)
 	{
@@ -119,8 +123,9 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 			case STRUCT:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
-				getNums(&objects[index].sub_objects, &num_obj_dims, &num_elems);
-				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
+				getNumFields(&objects[index], &num_fields);
+				field_names = getFieldNames(&objects[index], num_fields);
+				mxStructPtr = mxCreateStructArray(num_obj_dims, obj_dims, num_fields, field_names);
 				mxSetField(returnStructure, 0, objects[index].name, makeStruct(mxStructPtr, num_obj_elems, objects[index].sub_objects));
 				break;
 			default:
@@ -137,10 +142,11 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 {
 	
 	mwSize struct_dims[1] = {1};
-	mwSize num_obj_dims, num_obj_elems = 0;
+	mwSize num_obj_dims, num_obj_elems, num_fields = 0;
 	mwSize* obj_dims;
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
+	char** field_names;
 	
 	for(int index = 0; index < num_elems; index++)
 	{
@@ -165,8 +171,9 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 			case STRUCT:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
-				getNums(objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
-				mxStructPtr = mxCreateStructArray(1, struct_dims, num_obj_elems, getFieldNames(num_obj_elems, objects[index].sub_objects));
+				getNumFields(&objects[index], &num_fields);
+				field_names = getFieldNames(&objects[index], num_fields);
+				mxStructPtr = mxCreateStructArray(num_obj_dims, obj_dims, num_fields, field_names);
 				mxSetCell(returnStructure, index, makeStruct(mxStructPtr, num_obj_elems, objects[index].sub_objects));
 				break;
 			default:
@@ -253,16 +260,27 @@ void setIntPtr(Data object, mxArray* returnStructure, const char* varname, Datat
 }
 
 
-char** getFieldNames(const int num_elems, Data* object)
+char** getFieldNames(Data* object, const int num_elems)
 {
 	char** varnames = malloc(num_elems*sizeof(char*));
-	int index = 0;
-	while (object->sub_objects[index].type != UNDEF)
+	for(int index = 0; index < num_elems; index++)
 	{
 		varnames[index] = object->sub_objects[index].name;
 		index++;
 	}
+
+	return varnames;
 	
+}
+
+void getNumFields(Data* object, mwSize* num_fields)
+{
+	int index = 0;
+	while (object->sub_objects[index].type != UNDEF)
+	{
+		index++;
+	}
+	*num_fields = index;
 }
 
 
