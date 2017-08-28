@@ -66,8 +66,7 @@ Superblock fillSuperblock(char *superblock_pointer)
 	char *sps_start = superblock_pointer + 80;
 	Addr_Pair root_pair;
 	root_pair.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets) + s_block.base_address;
-	root_pair.heap_address =
-		   getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
+	root_pair.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
 	s_block.root_tree_address = root_pair.tree_address;
 	enqueuePair(root_pair);
 	
@@ -169,13 +168,15 @@ void readTreeNode(char *tree_pointer)
 		enqueuePair(pair);
 	}
 	
+	//group node B-Tree traversal (version 0)
+	int key_size = s_block.size_of_lengths;
+	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for (int i = 0; i < entries_used; i++)
 	{
-		pair.tree_address =
-			   getBytesAsNumber(tree_pointer + 2 * s_block.size_of_offsets + 16 * (i + 1), s_block.size_of_offsets) +
-			   s_block.base_address;
+		pair.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets) + s_block.base_address;
 		pair.heap_address = queue.pairs[queue.front].heap_address;
 		enqueuePair(pair);
+		key_pointer += key_size + s_block.size_of_offsets;
 	}
 	
 }
@@ -204,9 +205,10 @@ void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, uint64_t p
 		objects[i].prev_tree_address = prev_tree_address;
 		
 		//check if we have found the object we're looking for
-		if (var_name != NULL && strcmp(var_name, objects[i].name) == 0)
+		if(variable_found == TRUE)
 		{
-			flushHeaderQueue();
+			//if the variable has been found we should keep going down the tree for that variable
+			//all items in the queue should only be subobjects so this is safe
 			
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
@@ -218,7 +220,27 @@ void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, uint64_t p
 					   getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
 									s_block.size_of_offsets) + s_block.base_address;
 				objects[i].this_tree_address = pair.tree_address;
-				flushQueue();
+				priorityEnqueuePair(pair);
+			}
+			enqueueObject(objects[i]);
+			
+		}
+		else if (var_name != NULL && strcmp(var_name, objects[i].name) == 0)
+		{
+			variable_found = TRUE;
+			flushHeaderQueue();
+			flushQueue();
+			
+			//if another tree exists for this object, put it on the queue
+			if (cache_type == 1)
+			{
+				pair.tree_address =
+					   getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
+									s_block.size_of_offsets) + s_block.base_address;
+				pair.heap_address =
+					   getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
+									s_block.size_of_offsets) + s_block.base_address;
+				objects[i].this_tree_address = pair.tree_address;
 				priorityEnqueuePair(pair);
 			}
 			enqueueObject(objects[i]);

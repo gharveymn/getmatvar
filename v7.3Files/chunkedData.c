@@ -135,6 +135,8 @@ void fillNode(TreeNode *node, int num_chunked_dims)
 	
 	switch (node->node_type)
 	{
+		
+		//unneeded for chunk blocks, but maybe useful
 		case GROUP:
 			key_size = s_block.size_of_lengths;
 			

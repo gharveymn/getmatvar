@@ -67,6 +67,7 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 		
 	}
 	data_objects[num_objs].type = UNDEF;
+	data_objects[num_objs].parent_tree_address = 0;
 	
 	num_objects[0] = num_objs;
 	close(fd);
@@ -335,6 +336,7 @@ void findHeaderAddress(char *filename, char variable_name[])
 	char *tree_pointer;
 	char *heap_pointer;
 	char *token;
+	variable_found = FALSE;
 	
 	default_bytes = getAllocGran();
 	
@@ -354,7 +356,8 @@ void findHeaderAddress(char *filename, char variable_name[])
 			readTreeNode(tree_pointer);
 			prev_tree_address = queue.pairs[queue.front].tree_address;
 			dequeuePair();
-		} else if (strncmp("SNOD", tree_pointer, 4) == 0)
+		}
+		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
 			dequeuePair();
 			readSnod(tree_pointer, heap_pointer, token, prev_tree_address);
@@ -367,88 +370,42 @@ void findHeaderAddress(char *filename, char variable_name[])
 }
 
 
-Data *organizeObjects(Data *objects, int num_objs)
+Data* organizeObjects(Data* objects, int num_objs)
 {
-	Data *super_objects = (Data *) malloc((num_objs + 1) * sizeof(Data));
-	int num_super = 0, num_temp = 0;
-	int *num_subs = (int *) calloc(num_objs, sizeof(int));
-	int *num_temp_subs = (int *) calloc(num_objs, sizeof(int));
-	Data **temp_objects = (Data **) malloc((num_objs + 1) * sizeof(Data *));
-	int temp_cell_member, super_cell_member, struct_member;
-	int curr_super_index = -1;
-	int placed;
+	int index = 0;
+	Data* super_objects = malloc((num_objs + 1) * sizeof(Data));
+	super_objects[0] = objects[0];
+	super_objects[1].type = UNDEF;
+	index++;
 	
+	placeInSuperObject(&super_objects[0], objects, num_objs, &index);
 	
-	for (int i = 0; i < num_objs; i++)
-	{
-		placed = FALSE;
-		if (objects[i].parent_tree_address == s_block.root_tree_address)
-		{
-			super_objects[num_super] = objects[i];
-			placed = TRUE;
-			num_super++;
-		} else
-		{
-			for (int j = 0; j < num_super; j++)
-			{
-				struct_member = super_objects[j].this_tree_address == objects[i].parent_tree_address;
-				super_cell_member = super_objects[j].type == REF && strcmp(super_objects[j].name, objects[i].name) == 0;
-				
-				if (struct_member || super_cell_member)
-				{
-					if (super_objects[j].sub_objects == NULL)
-					{
-						super_objects[j].sub_objects = malloc(num_objs - i + 1 * sizeof(Data));
-						
-						//Initialize types for struct parsing and allocation later
-						for (int k = 0; k < num_objs - i + 1; k++)
-						{
-							super_objects[j].sub_objects[k].type = UNDEF;
-						}
-					}
-					
-					super_objects[j].sub_objects[num_subs[j]] = objects[i];
-					num_subs[j]++;
-					curr_super_index = j;
-					placed = TRUE;
-				}
-			}
-			for (int j = 0; j < num_temp; j++)
-			{
-				temp_cell_member = temp_objects[j]->type == REF && strcmp(temp_objects[j]->name, objects[i].name) == 0;
-				if (temp_cell_member)
-				{
-					if (temp_objects[j]->sub_objects == NULL)
-					{
-						temp_objects[j]->sub_objects = malloc(num_objs - i + 1 * sizeof(Data));
-						
-						//Initialize types for struct parsing and allocation later
-						for (int k = 0; k < num_objs - i + 1; k++)
-						{
-							temp_objects[j]->sub_objects[k].type = UNDEF;
-						}
-					}
-					
-					
-					temp_objects[j]->sub_objects[num_temp_subs[j]] = objects[i];
-					num_temp_subs[j]++;
-					placed = TRUE;
-				}
-			}
-			
-			if (placed && (objects[i].type == STRUCT || objects[i].type == REF))
-			{
-				temp_objects[num_temp] = &(super_objects[curr_super_index].sub_objects[num_subs[curr_super_index] - 1]);
-				num_temp++;
-			}
-			
-			if (!placed)
-			{
-				super_objects[num_super] = objects[i];
-				num_super++;
-			}
-		}
-	}
-	super_objects[num_super].type = UNDEF;
 	return super_objects;
+}
+
+void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index)
+{
+	//note: index should be at the starting index of the subobjects
+	
+	int j = 0;
+	int idx = *index;
+	Data* sub_objects = malloc((num_objs - idx + 1)*sizeof(Data));
+	
+	while(super_object->this_tree_address == objects[idx].parent_tree_address)
+	{
+		sub_objects[j] = objects[idx];
+		idx++;
+		if(sub_objects[j].type == STRUCT || sub_objects[j].type == REF)
+		{
+			//since this is a depth-first traversal
+			placeInSuperObject(&sub_objects[j], objects, num_objs, &idx);
+		}
+		j++;
+	}
+	
+	//signals the end of the objects
+	sub_objects[j].type = UNDEF;
+	super_object->sub_objects = sub_objects;
+	*index = idx;
+	
 }

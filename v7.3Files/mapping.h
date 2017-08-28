@@ -159,10 +159,11 @@ void enqueueObject(Object obj);
 
 
 //mapping.c
-Data *getDataObject(char *filename, char variable_name[], int *num_objs);
+Data* getDataObject(char *filename, char variable_name[], int *num_objs);
 void findHeaderAddress(char *filename, char variable_name[]);
 void collectMetaData(Data *object, uint64_t header_address, char *header_pointer);
-Data *organizeObjects(Data *objects, int num_objects);
+Data* organizeObjects(Data *objects, int num_objs);
+void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c
@@ -178,3 +179,4 @@ int fd;
 Superblock s_block;
 int is_string;
 uint64_t default_bytes;
+int variable_found;

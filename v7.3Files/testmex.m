@@ -1,1 +1,1 @@
-s = getmatvar('a.mat','a.d');
+s = getmatvar('a.mat','a');

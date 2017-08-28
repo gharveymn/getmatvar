@@ -57,7 +57,8 @@ void priorityEnqueuePair(Addr_Pair pair)
 		queue.pairs[MAX_Q_LENGTH - 1].tree_address = pair.tree_address;
 		queue.pairs[MAX_Q_LENGTH - 1].heap_address = pair.heap_address;
 		queue.front = MAX_Q_LENGTH - 1;
-	} else
+	}
+	else
 	{
 		queue.pairs[queue.front - 1].tree_address = pair.tree_address;
 		queue.pairs[queue.front - 1].heap_address = pair.heap_address;
