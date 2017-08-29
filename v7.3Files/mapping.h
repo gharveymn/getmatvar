@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#include <zlib.h>
+
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -27,10 +29,11 @@ typedef uint64_t OffsetType;
 #define MAX_OBJS 100
 #define CLASS_LENGTH 20
 #define NAME_LENGTH 30
-#define MAX_NUM_FILTERS 32; //see spec IV.A.2.1
-#define MAX_SUB_OBJECTS 30;
-#define USE_SUPER_OBJECT_CELL 1;
-#define USE_SUPER_OBJECT_ALL 2;
+#define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
+#define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
+#define MAX_SUB_OBJECTS 30
+#define USE_SUPER_OBJECT_CELL 1
+#define USE_SUPER_OBJECT_ALL 2
 
 typedef struct
 {
@@ -67,7 +70,7 @@ typedef struct
 
 typedef struct
 {
-	char *map_start;
+	char* map_start;
 	uint64_t bytes_mapped;
 	OffsetType offset;
 	int used;
@@ -99,68 +102,99 @@ typedef struct
 
 typedef enum
 {
-	UNDEF,
-	CHAR,
-	DOUBLE,
-	UNSIGNEDINT16,
-	REF,
-	STRUCT
-} Datatype;
-
-typedef struct data_ Data;
-struct data_
-{
-	Datatype type;
-	char matlab_class[CLASS_LENGTH];
-	uint32_t *dims;
-	char *char_data;
-	double *double_data;
-	uint64_t *udouble_data;
-	uint16_t *ushort_data;
-	char name[NAME_LENGTH];
-	uint64_t parent_obj_address;
-	uint64_t this_obj_address;
-	Data *sub_objects;
-};
+	UNDEF, CHAR, DOUBLE, UNSIGNEDINT16, REF, STRUCT
+} DataType;
 
 typedef enum
 {
-	NA,
-	DEFLATE,
-	SHUFFLE,
-	FLETCHER32,
-	SZIP,
-	NBIT,
-	SCALEOFFSET,
-} FilterID;
+	NOT_AVAILABLE, DEFLATE, SHUFFLE, FLETCHER32, SZIP, NBIT, SCALEOFFSET
+}FilterType;
 
 typedef struct
 {
-	FilterID filter_id;
+	FilterType filter_id;
 	uint16_t num_client_vals;
 	uint32_t* client_data;
 	uint8_t optional_flag;
 } Filter;
 
+typedef struct
+{
+	uint8_t num_filters;
+	Filter filters[MAX_NUM_FILTERS];
+	uint8_t num_chunked_dims;
+	uint32_t* chunked_dim_sizes;
+} ChunkedInfo;
+
+typedef struct data_ Data;
+struct data_
+{
+	DataType type;
+	char matlab_class[CLASS_LENGTH];
+	ChunkedInfo chunked_info;
+	uint32_t* dims;
+	char* char_data;
+	double* double_data;
+	uint64_t* udouble_data;
+	uint16_t* ushort_data;
+	char name[NAME_LENGTH];
+	uint64_t parent_obj_address;
+	uint64_t this_obj_address;
+	uint64_t data_address;
+	Data* sub_objects;
+};
+
+typedef enum
+{
+	NODETYPE_UNDEFINED, GROUP = (uint8_t) 0, CHUNK = (uint8_t) 1
+} NodeType;
+
+typedef enum
+{
+	LEAFTYPE_UNDEFINED, RAWDATA, SYMBOL
+} LeafType;
+
+typedef struct
+{
+	uint32_t size;
+	uint32_t filter_mask;
+	uint64_t* chunk_start;
+	uint64_t local_heap_offset;
+} Key;
+
+typedef struct tree_node_ TreeNode;
+struct tree_node_
+{
+	uint64_t address;
+	NodeType node_type;
+	LeafType leaf_type;
+	int16_t node_level;
+	uint16_t entries_used;
+	Key* keys;
+	TreeNode* children;
+	TreeNode* left_sibling;
+	TreeNode* right_sibling;
+};
+
 
 //fileHelper.c
 Superblock getSuperblock(int fd, size_t file_size);
 char* findSuperblock(int fd, size_t file_size);
-Superblock fillSuperblock(char *superblock_pointer);
+Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char *tree_address);
-void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
-uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size);
-Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size);
-void freeDataObjects(Data *objects, int num);
+void readTreeNode(char* tree_address);
+void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
+uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
+DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
+void freeDataObjects(Data* objects, int num);
 
 
 //numberHelper.c
 double convertHexToFloatingPoint(uint64_t hex);
 int roundUp(int numToRound);
-uint64_t getBytesAsNumber(char *chunk_start, int num_bytes);
-void indToSub(int index, uint32_t *dims, uint32_t *indices);
+uint64_t getBytesAsNumber(char* chunk_start, int num_bytes);
+void indToSub(int index, uint32_t* dims, uint32_t* indices);
 
 
 //queue.c
@@ -179,10 +213,10 @@ void enqueueVariableName(char* variable_name);
 
 
 //mapping.c
-Data* getDataObject(char *filename, char variable_name[], int *num_objs);
-void findHeaderAddress(char *filename, char variable_name[]);
-void collectMetaData(Data *object, uint64_t header_address, char *header_pointer);
-Data* organizeObjects(Data *objects, int num_objs);
+Data* getDataObject(char* filename, char variable_name[], int* num_objs);
+void findHeaderAddress(char variable_name[]);
+void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
+Data* organizeObjects(Data* objects, int num_objs);
 void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index);
 //void deepCopy(Data* dest, Data* source);
 
@@ -190,6 +224,12 @@ void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* in
 int getPageSize(void);
 int getAllocGran(void);
 
+//chunkedData.c
+void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims);
+void fillNode(TreeNode* node, uint64_t num_chunked_dims, TreeNode* previous_node);
+void decompressChunk(Data* object, TreeNode* root);
+void freeTree(TreeNode* node);
+void getChunkedData(Data* object);
 
 MemMap maps[2];
 Addr_Q queue;

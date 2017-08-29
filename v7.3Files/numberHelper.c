@@ -1,13 +1,13 @@
 #include "mapping.h"
 
 
-uint64_t getBytesAsNumber(char *chunk_start, int num_bytes)
+uint64_t getBytesAsNumber(char* chunk_start, int num_bytes)
 {
 	uint64_t ret = 0;
 	int n = 0;
 	uint8_t byte = 0;
 	uint64_t temp = 0;
-	while (n < num_bytes)
+	while(n < num_bytes)
 	{
 		byte = *(chunk_start + n);
 		temp = byte;
@@ -23,7 +23,7 @@ double convertHexToFloatingPoint(uint64_t hex)
 {
 	double ret;
 	int sign = 0;
-	if (((uint64_t) hex & (uint64_t) pow(2, 63)) > 0)
+	if(((uint64_t) hex & (uint64_t) pow(2, 63)) > 0)
 	{
 		sign = 1;
 	}
@@ -38,7 +38,7 @@ double convertHexToFloatingPoint(uint64_t hex)
 	
 	uint64_t b_i;
 	
-	for (int i = 1; i <= 52; i++)
+	for(int i = 1; i <= 52; i++)
 	{
 		temp = (uint64_t) pow(2, 52 - i);
 		b_i = fraction & temp;
@@ -53,7 +53,7 @@ double convertHexToFloatingPoint(uint64_t hex)
 int roundUp(int numToRound)
 {
 	int remainder = numToRound % 8;
-	if (remainder == 0)
+	if(remainder == 0)
 	{
 		return numToRound;
 	}
@@ -64,12 +64,12 @@ int roundUp(int numToRound)
 
 //indices is assumed to have the same amount of allocated memory as dims
 //indices is an out parameter
-void indToSub(int index, uint32_t *dims, uint32_t *indices)
+void indToSub(int index, uint32_t* dims, uint32_t* indices)
 {
 	int num_dims = 0;
 	int num_elems = 1;
 	int i = 0;
-	while (dims[i] > 0)
+	while(dims[i] > 0)
 	{
 		num_elems *= dims[i];
 		num_dims++;
@@ -81,7 +81,7 @@ void indToSub(int index, uint32_t *dims, uint32_t *indices)
 	int mult = 1;
 	int sub = indices[0] * mult;
 	
-	for (i = 1; i < num_dims - 1; i++)
+	for(i = 1; i < num_dims - 1; i++)
 	{
 		indices[i] = ((index + 1 - sub) / divide) % dims[i];
 		divide *= dims[i];
