@@ -64,11 +64,12 @@ Superblock fillSuperblock(char *superblock_pointer)
 	
 	//read scratchpad space
 	char *sps_start = superblock_pointer + 80;
-	Addr_Pair root_pair;
-	root_pair.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets) + s_block.base_address;
-	root_pair.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
-	s_block.root_tree_address = root_pair.tree_address;
-	enqueuePair(root_pair);
+	Addr_Trio root_trio;
+	root_trio.parent_obj_header_address = UNDEF_ADDR;
+	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets) + s_block.base_address;
+	root_trio.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
+	s_block.root_tree_address = root_trio.tree_address;
+	enqueueTrio(root_trio);
 	
 	return s_block;
 }
@@ -143,29 +144,31 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 }
 
 
-void readTreeNode(char *tree_pointer)
+void readTreeNode(char *tree_pointer, Addr_Trio this_trio)
 {
-	Addr_Pair pair;
+	Addr_Trio trio;
 	uint16_t entries_used = 0;
-	uint64_t left_sibling, right_sibling;
+	uint64_t left_sibling_address, right_sibling_address;
 	
 	entries_used = getBytesAsNumber(tree_pointer + 6, 2);
 	
 	//assuming keys do not contain pertinent information
-	left_sibling = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets);
-	if (left_sibling != UNDEF_ADDR)
+	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets);
+	if (left_sibling_address != UNDEF_ADDR)
 	{
-		pair.tree_address = left_sibling + s_block.base_address;
-		pair.heap_address = queue.pairs[queue.front].heap_address;
-		enqueuePair(pair);
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
+		trio.tree_address = left_sibling_address + s_block.base_address;
+		trio.heap_address = queue.trios[queue.front].heap_address;
+		enqueueTrio(trio);
 	}
 	
-	right_sibling = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets);
-	if (right_sibling != UNDEF_ADDR)
+	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets);
+	if (right_sibling_address != UNDEF_ADDR)
 	{
-		pair.tree_address = right_sibling + s_block.base_address;
-		pair.heap_address = queue.pairs[queue.front].heap_address;
-		enqueuePair(pair);
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;;
+		trio.tree_address = right_sibling_address + s_block.base_address;
+		trio.heap_address = queue.trios[queue.front].heap_address;
+		enqueueTrio(trio);
 	}
 	
 	//group node B-Tree traversal (version 0)
@@ -173,82 +176,61 @@ void readTreeNode(char *tree_pointer)
 	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for (int i = 0; i < entries_used; i++)
 	{
-		pair.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets) + s_block.base_address;
-		pair.heap_address = queue.pairs[queue.front].heap_address;
-		enqueuePair(pair);
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
+		trio.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets) + s_block.base_address;
+		trio.heap_address = queue.trios[queue.front].heap_address;
+		enqueueTrio(trio);
 		key_pointer += key_size + s_block.size_of_offsets;
 	}
 	
 }
 
 
-void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, uint64_t prev_tree_address)
+void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
 	Object *objects = (Object *) malloc(sizeof(Object) * num_symbols);
 	uint32_t cache_type;
-	Addr_Pair pair;
+	Addr_Trio trio;
 	
 	//get to entries
 	snod_pointer += 8;
 	
 	for (int i = 0; i < num_symbols; i++)
 	{
-		objects[i].this_tree_address = 0;
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets);
-		objects[i].obj_header_address =
-			   getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i + s_block.size_of_offsets,
-							s_block.size_of_offsets) + s_block.base_address;
-		strcpy(objects[i].name,
-			  heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
+		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
+		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i + s_block.size_of_offsets, s_block.size_of_offsets) + s_block.base_address;
+		strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 		cache_type = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE * i, 4);
-		objects[i].prev_tree_address = prev_tree_address;
+		objects[i].parent_tree_address = parent_trio.tree_address;
+		objects[i].this_tree_address = this_trio.tree_address;
+		objects[i].sub_tree_address = UNDEF_ADDR;
 		
-		//check if we have found the object we're looking for
-		if(variable_found == TRUE)
+		//check if we have found the object we're looking for or if we are just adding subobjects
+		if ((var_name != NULL && strcmp(var_name, objects[i].name) == 0) || variable_found == TRUE)
 		{
+			if(variable_found == FALSE)
+			{
+				flushHeaderQueue();
+				flushQueue();
+				variable_found = TRUE;
+			}
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
 			
-			//if another tree exists for this object, put it on the queue
-			if (cache_type == 1)
-			{
-				pair.tree_address =
-					   getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
-									s_block.size_of_offsets) + s_block.base_address;
-				pair.heap_address =
-					   getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
-									s_block.size_of_offsets) + s_block.base_address;
-				objects[i].this_tree_address = pair.tree_address;
-				priorityEnqueuePair(pair);
-			}
-			enqueueObject(objects[i]);
-			
-		}
-		else if (var_name != NULL && strcmp(var_name, objects[i].name) == 0)
-		{
-			variable_found = TRUE;
-			flushHeaderQueue();
-			flushQueue();
 			
 			//if another tree exists for this object, put it on the queue
 			if (cache_type == 1)
 			{
-				pair.tree_address =
-					   getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
-									s_block.size_of_offsets) + s_block.base_address;
-				pair.heap_address =
-					   getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i,
-									s_block.size_of_offsets) + s_block.base_address;
-				objects[i].this_tree_address = pair.tree_address;
-				priorityEnqueuePair(pair);
+				trio.parent_obj_header_address = objects[i].this_obj_header_address;
+				trio.tree_address = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets) + s_block.base_address;
+				trio.heap_address = getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets) + s_block.base_address;
+				objects[i].sub_tree_address = trio.tree_address;
+				priorityEnqueueTrio(trio);
 			}
 			enqueueObject(objects[i]);
 			break;
-		} else if (var_name == NULL)
-		{
-			//objects[i].this_tree_address = UNDEF_ADDR;
-			enqueueObject(objects[i]);
 		}
 	}
 	

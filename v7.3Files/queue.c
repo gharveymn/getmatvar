@@ -1,15 +1,16 @@
 #include "mapping.h"
 
 
-void enqueuePair(Addr_Pair pair)
+void enqueueTrio(Addr_Trio trio)
 {
 	if (queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in pair queue\n");
+		printf("Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
 	}
-	queue.pairs[queue.back].tree_address = pair.tree_address;
-	queue.pairs[queue.back].heap_address = pair.heap_address;
+	queue.trios[queue.back].parent_obj_header_address = trio.parent_obj_header_address;
+	queue.trios[queue.back].tree_address = trio.tree_address;
+	queue.trios[queue.back].heap_address = trio.heap_address;
 	queue.length++;
 	
 	if (queue.back < MAX_Q_LENGTH - 1)
@@ -29,10 +30,12 @@ void enqueueObject(Object obj)
 		printf("Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
-	header_queue.objects[header_queue.back].obj_header_address = obj.obj_header_address;
+	header_queue.objects[header_queue.back].parent_obj_header_address = obj.parent_obj_header_address;
+	header_queue.objects[header_queue.back].this_obj_header_address = obj.this_obj_header_address;
 	strcpy(header_queue.objects[header_queue.back].name, obj.name);
+	header_queue.objects[header_queue.back].sub_tree_address = obj.sub_tree_address;
 	header_queue.objects[header_queue.back].this_tree_address = obj.this_tree_address;
-	header_queue.objects[header_queue.back].prev_tree_address = obj.prev_tree_address;
+	header_queue.objects[header_queue.back].parent_tree_address = obj.parent_tree_address;
 	header_queue.length++;
 	
 	if (header_queue.back < MAX_Q_LENGTH - 1)
@@ -45,23 +48,25 @@ void enqueueObject(Object obj)
 }
 
 
-void priorityEnqueuePair(Addr_Pair pair)
+void priorityEnqueueTrio(Addr_Trio trio)
 {
 	if (queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Trying to priority enqueue: Not enough room in pair queue\n");
+		printf("Trying to priority enqueue: Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
 	}
 	if (queue.front - 1 < 0)
 	{
-		queue.pairs[MAX_Q_LENGTH - 1].tree_address = pair.tree_address;
-		queue.pairs[MAX_Q_LENGTH - 1].heap_address = pair.heap_address;
+		queue.trios[MAX_Q_LENGTH - 1].parent_obj_header_address = trio.parent_obj_header_address;
+		queue.trios[MAX_Q_LENGTH - 1].tree_address = trio.tree_address;
+		queue.trios[MAX_Q_LENGTH - 1].heap_address = trio.heap_address;
 		queue.front = MAX_Q_LENGTH - 1;
 	}
 	else
 	{
-		queue.pairs[queue.front - 1].tree_address = pair.tree_address;
-		queue.pairs[queue.front - 1].heap_address = pair.heap_address;
+		queue.trios[queue.front - 1].parent_obj_header_address = trio.parent_obj_header_address;
+		queue.trios[queue.front - 1].tree_address = trio.tree_address;
+		queue.trios[queue.front - 1].heap_address = trio.heap_address;
 		queue.front--;
 	}
 	queue.length++;
@@ -77,28 +82,34 @@ void priorityEnqueueObject(Object obj)
 	}
 	if (header_queue.front - 1 < 0)
 	{
-		header_queue.objects[MAX_Q_LENGTH - 1].obj_header_address = obj.obj_header_address;
+		
+		header_queue.objects[MAX_Q_LENGTH - 1].parent_obj_header_address = obj.parent_obj_header_address;
+		header_queue.objects[MAX_Q_LENGTH - 1].this_obj_header_address = obj.this_obj_header_address;
 		strcpy(header_queue.objects[MAX_Q_LENGTH - 1].name, obj.name);
+		header_queue.objects[MAX_Q_LENGTH - 1].sub_tree_address = obj.sub_tree_address;
 		header_queue.objects[MAX_Q_LENGTH - 1].this_tree_address = obj.this_tree_address;
-		header_queue.objects[MAX_Q_LENGTH - 1].prev_tree_address = obj.prev_tree_address;
+		header_queue.objects[MAX_Q_LENGTH - 1].parent_tree_address = obj.parent_tree_address;
 		header_queue.front = MAX_Q_LENGTH - 1;
 	} else
 	{
-		header_queue.objects[header_queue.front - 1].obj_header_address = obj.obj_header_address;
-		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
+		header_queue.objects[header_queue.front].parent_obj_header_address = obj.parent_obj_header_address;
+		header_queue.objects[header_queue.front].this_obj_header_address = obj.this_obj_header_address;
+		strcpy(header_queue.objects[header_queue.front].name, obj.name);
+		header_queue.objects[header_queue.front].sub_tree_address = obj.sub_tree_address;
 		header_queue.objects[header_queue.front].this_tree_address = obj.this_tree_address;
-		header_queue.objects[header_queue.front].prev_tree_address = obj.prev_tree_address;
+		header_queue.objects[header_queue.front].parent_tree_address = obj.parent_tree_address;
 		header_queue.front--;
 	}
 	header_queue.length++;
 }
 
 
-Addr_Pair dequeuePair()
+Addr_Trio dequeueTrio()
 {
-	Addr_Pair pair;
-	pair.tree_address = queue.pairs[queue.front].tree_address;
-	pair.heap_address = queue.pairs[queue.front].heap_address;
+	Addr_Trio trio;
+	trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
+	trio.tree_address = queue.trios[queue.front].tree_address;
+	trio.heap_address = queue.trios[queue.front].heap_address;
 	if (queue.front + 1 < MAX_Q_LENGTH)
 	{
 		queue.front++;
@@ -107,16 +118,18 @@ Addr_Pair dequeuePair()
 		queue.front = 0;
 	}
 	queue.length--;
-	return pair;
+	return trio;
 }
 
 
 Object dequeueObject()
 {
 	Object obj;
-	obj.obj_header_address = header_queue.objects[header_queue.front].obj_header_address;
+	obj.parent_obj_header_address = header_queue.objects[header_queue.front].parent_obj_header_address;
+	obj.this_obj_header_address = header_queue.objects[header_queue.front].this_obj_header_address;
 	strcpy(obj.name, header_queue.objects[header_queue.front].name);
-	obj.prev_tree_address = header_queue.objects[header_queue.front].prev_tree_address;
+	obj.sub_tree_address = header_queue.objects[header_queue.front].sub_tree_address;
+	obj.parent_tree_address = header_queue.objects[header_queue.front].parent_tree_address;
 	obj.this_tree_address = header_queue.objects[header_queue.front].this_tree_address;
 	if (header_queue.front + 1 < MAX_Q_LENGTH)
 	{

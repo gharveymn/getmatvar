@@ -34,13 +34,14 @@ typedef uint64_t OffsetType;
 
 typedef struct
 {
+	uint64_t parent_obj_header_address;
 	uint64_t tree_address;
 	uint64_t heap_address;
-} Addr_Pair;
+} Addr_Trio;
 
 typedef struct
 {
-	Addr_Pair pairs[MAX_Q_LENGTH];
+	Addr_Trio trios[MAX_Q_LENGTH];
 	int front;
 	int back;
 	int length;
@@ -66,11 +67,18 @@ typedef struct
 
 typedef struct
 {
+	//this is an ENTRY for a SNOD
+	
 	uint64_t name_offset;
 	char name[NAME_LENGTH];
-	uint64_t obj_header_address;
-	uint64_t prev_tree_address;
+	
+	uint64_t parent_obj_header_address;
+	uint64_t this_obj_header_address;
+	
+	uint64_t parent_tree_address;
 	uint64_t this_tree_address;
+	uint64_t sub_tree_address; //invoked if cache type 1
+	
 } Object;
 
 typedef struct
@@ -102,8 +110,8 @@ struct data_
 	uint64_t *udouble_data;
 	uint16_t *ushort_data;
 	char name[NAME_LENGTH];
-	uint64_t this_tree_address;
-	uint64_t parent_tree_address;
+	uint64_t parent_obj_address;
+	uint64_t this_obj_address;
 	Data *sub_objects;
 };
 
@@ -133,8 +141,8 @@ char* findSuperblock(int fd, size_t file_size);
 Superblock fillSuperblock(char *superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char *tree_address);
-void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, uint64_t prev_tree_address);
+void readTreeNode(char *tree_address, Addr_Trio this_trio);
+void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio parent_trio, Addr_Trio this_address);
 uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size);
 void freeDataObjects(Data *objects, int num);
@@ -148,10 +156,10 @@ void indToSub(int index, uint32_t *dims, uint32_t *indices);
 
 
 //queue.c
-void enqueuePair(Addr_Pair pair);
+void enqueueTrio(Addr_Trio trio);
 void flushQueue();
-Addr_Pair dequeuePair();
-void priorityEnqueuePair(Addr_Pair pair);
+Addr_Trio dequeueTrio();
+void priorityEnqueueTrio(Addr_Trio trio);
 void flushHeaderQueue();
 Object dequeueObject();
 void priorityEnqueueObject(Object obj);

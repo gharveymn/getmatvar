@@ -18,8 +18,8 @@ int main()
 	strcpy(variable_name, "string");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	stringTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
 	printf("string test succeeded.\n");
 	
@@ -27,8 +27,8 @@ int main()
 	strcpy(variable_name, "dbl");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	doubleTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
 	printf("dbl test succeeded.\n");
 	
@@ -36,8 +36,8 @@ int main()
 	strcpy(variable_name, "integer");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	integerTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
 	printf("integer test succeeded.\n");
 	
@@ -45,8 +45,8 @@ int main()
 	strcpy(variable_name, "array");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	arrayTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
 	printf("array test succeeded.\n");
 	
@@ -54,8 +54,8 @@ int main()
 	strcpy(variable_name, "cell");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	cellTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
 	printf("cell test succeeded.\n");
 	
@@ -63,8 +63,8 @@ int main()
 	strcpy(variable_name, "my_struct.string");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	stringTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x1398);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
 	printf("my_struct.string test succeeded.\n");
 	
@@ -72,8 +72,8 @@ int main()
 	strcpy(variable_name, "my_struct.double");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	doubleTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x1398);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
 	printf("my_struct.double test succeeded.\n");
 	
@@ -81,8 +81,8 @@ int main()
 	strcpy(variable_name, "my_struct.integer");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	integerTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x1398);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
 	printf("my_struct.integer test succeeded.\n");
 	
@@ -90,8 +90,8 @@ int main()
 	strcpy(variable_name, "my_struct.array");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	arrayTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x1398);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
 	printf("my_struct.array test succeeded.\n");
 	
@@ -99,16 +99,16 @@ int main()
 	strcpy(variable_name, "my_struct.cell");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
 	cellTest(objects);
-	assert(objects[0].this_tree_address == 0);
-	assert(objects[0].parent_tree_address == 0x1398);
+	assert(objects[0].this_obj_address == 0);
+	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
 	printf("my_struct.cell test succeeded.\n");
 	
 	//my_struct
 	strcpy(variable_name, "my_struct");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
-	assert(objects[0].this_tree_address == 0x1398);
-	assert(objects[0].parent_tree_address == 0x288);
+	assert(objects[0].this_obj_address == 0x1398);
+	assert(objects[0].parent_obj_address == 0x288);
 	Data *cell_objects;
 	int num_cell = 0;
 	for (int i = 0; i < 9; i++)
