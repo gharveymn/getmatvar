@@ -323,7 +323,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 	//if we have encountered a cell array, queue up headers for its elements
 	if (object->udouble_data != NULL && object->type == REF)
 	{
-		for (int i = 0; i < num_elems; i++)
+		for (int i = num_elems-1; i >= 0; i--)
 		{
 			Object obj;
 			obj.this_obj_header_address = object->udouble_data[i];
@@ -346,7 +346,13 @@ void findHeaderAddress(char *filename, char variable_name[])
 	
 	default_bytes = getAllocGran();
 	
+	flushVariableNameQueue();
 	token = strtok(variable_name, delim);
+	while(token != NULL)
+	{
+		enqueueVariableName(token);
+		token = strtok(NULL, delim);
+	}
 	
 	//aka the parent address for a snod
 	Addr_Trio parent_trio, this_trio;
@@ -366,7 +372,7 @@ void findHeaderAddress(char *filename, char variable_name[])
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
 			this_trio = dequeueTrio();
-			readSnod(tree_pointer, heap_pointer, token, parent_trio, this_trio);
+			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio);
 		}
 	}
 	//printf("0x%lx\n", header_address);

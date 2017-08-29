@@ -49,6 +49,14 @@ typedef struct
 
 typedef struct
 {
+	char* variable_names[MAX_Q_LENGTH];
+	int front;
+	int back;
+	int length;
+} Variable_Name_Q;
+
+typedef struct
+{
 	uint8_t size_of_offsets;
 	uint8_t size_of_lengths;
 	uint16_t leaf_node_k;
@@ -142,7 +150,7 @@ Superblock fillSuperblock(char *superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
 void readTreeNode(char *tree_address);
-void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio parent_trio, Addr_Trio this_address);
+void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size);
 void freeDataObjects(Data *objects, int num);
@@ -164,6 +172,10 @@ void flushHeaderQueue();
 Object dequeueObject();
 void priorityEnqueueObject(Object obj);
 void enqueueObject(Object obj);
+void flushVariableNameQueue();
+char* dequeueVariableName();
+char* peekVariableName();
+void enqueueVariableName(char* variable_name);
 
 
 //mapping.c
@@ -182,6 +194,7 @@ int getAllocGran(void);
 MemMap maps[2];
 Addr_Q queue;
 Header_Q header_queue;
+Variable_Name_Q variable_name_queue;
 
 int fd;
 Superblock s_block;

@@ -70,8 +70,9 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 				case REF:
 					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
 					obj_dims = makeObjDims(hi_objects[index].dims, num_obj_dims);
+					getNumFields(&hi_objects[index], &num_fields);
 					mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
-					mxSetField(returnStructure[0], 0, varnames[i], makeCell(mxCellPtr, num_obj_elems, hi_objects[index].sub_objects));
+					mxSetField(returnStructure[0], 0, varnames[i], makeCell(mxCellPtr, num_fields, hi_objects[index].sub_objects));
 					break;
 				case STRUCT:
 					getNums(&hi_objects[index], &num_obj_dims, &num_obj_elems);
@@ -117,9 +118,9 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 			case REF:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
+				getNumFields(&objects[index], &num_fields);
 				mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
-				getNums(objects[index].sub_objects, &num_obj_dims, &num_elems);
-				mxSetField(returnStructure, 0, objects[index].name, makeCell(mxCellPtr, num_elems, objects[index].sub_objects));
+				mxSetField(returnStructure, 0, objects[index].name, makeCell(mxCellPtr, num_fields, objects[index].sub_objects));
 				break;
 			case STRUCT:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
@@ -166,9 +167,9 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 			case REF:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
 				obj_dims = makeObjDims(objects[index].dims, num_obj_dims);
-				mxCellPtr = mxCreateCellArray(num_obj_elems, obj_dims);
-				getNums(objects[index].sub_objects, &num_obj_dims, &num_obj_elems);
-				mxSetCell(returnStructure, index, makeCell(mxCellPtr, num_obj_elems, objects[index].sub_objects));
+				getNumFields(&objects[index], &num_fields);
+				mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
+				mxSetCell(returnStructure, index, makeCell(mxCellPtr, num_fields, objects[index].sub_objects));
 				break;
 			case STRUCT:
 				getNums(&objects[index], &num_obj_dims, &num_obj_elems);
