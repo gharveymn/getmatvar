@@ -10,7 +10,6 @@
 #include <assert.h>
 #include <zlib.h>
 
-
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
 #else

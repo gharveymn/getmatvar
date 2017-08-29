@@ -56,10 +56,10 @@ Superblock fillSuperblock(char* superblock_pointer)
 {
 	Superblock s_block;
 	//get stuff from superblock, for now assume consistent versions of stuff
-	s_block.size_of_offsets = getBytesAsNumber(superblock_pointer + 13, 1);
-	s_block.size_of_lengths = getBytesAsNumber(superblock_pointer + 14, 1);
-	s_block.leaf_node_k = getBytesAsNumber(superblock_pointer + 16, 2);
-	s_block.internal_node_k = getBytesAsNumber(superblock_pointer + 18, 2);
+	s_block.size_of_offsets = (uint8_t)getBytesAsNumber(superblock_pointer + 13, 1);
+	s_block.size_of_lengths = (uint8_t)getBytesAsNumber(superblock_pointer + 14, 1);
+	s_block.leaf_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 16, 2);
+	s_block.internal_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 18, 2);
 	s_block.base_address = getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets);
 	
 	//read scratchpad space
@@ -94,7 +94,7 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
-		maps[map_index].offset = (OffsetType) ((address / alloc_gran) * alloc_gran);
+		maps[map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
 		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
 		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, maps[map_index].offset);
 		
@@ -127,7 +127,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
-		map.offset = (off_t) (address / alloc_gran) * alloc_gran;
+		map.offset = (off_t)(address / alloc_gran) * alloc_gran;
 		map.bytes_mapped = address - map.offset + bytes_needed;
 		map.map_start = mmap(NULL, map.bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, map.offset);
 		
@@ -187,7 +187,7 @@ void readTreeNode(char* tree_pointer)
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
-	Object* objects = (Object*) malloc(sizeof(Object) * num_symbols);
+	Object* objects = (Object*)malloc(sizeof(Object) * num_symbols);
 	uint32_t cache_type;
 	Addr_Trio trio;
 	char* var_name = peekVariableName();

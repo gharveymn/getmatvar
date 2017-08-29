@@ -8,7 +8,7 @@ Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 	uint64_t header_address;
 	//uint64_t root_tree_address;
 	int num_objs = 0;
-	Data* data_objects = (Data*) malloc((MAX_OBJS + 1) * sizeof(Data));
+	Data* data_objects = (Data*)malloc((MAX_OBJS + 1) * sizeof(Data));
 	Object obj;
 	
 	//init maps
@@ -28,7 +28,7 @@ Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 	}
 	
 	//get file size
-	size_t file_size = (size_t) lseek(fd, 0, SEEK_END);
+	size_t file_size = (size_t)lseek(fd, 0, SEEK_END);
 	
 	//find superblock
 	s_block = getSuperblock(fd, file_size);
@@ -53,7 +53,7 @@ Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 		header_pointer = navigateTo(header_address, 16, TREE);
 		
 		//prevent error due to crossing of a page boundary
-		header_length = (uint32_t) getBytesAsNumber(header_pointer + 8, 4);
+		header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4);
 		if(header_address + header_length >= maps[TREE].offset + maps[TREE].bytes_mapped)
 		{
 			header_pointer = navigateTo(header_address, header_length, TREE);
@@ -85,7 +85,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	object->char_data = NULL;
 	object->ushort_data = NULL;
 	
-	uint16_t num_msgs = (uint16_t) getBytesAsNumber(header_pointer + 2, 2);
+	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2);
 	
 	uint8_t layout_class = 0;
 	uint16_t name_size, datatype_size, dataspace_size;
@@ -105,9 +105,9 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	//interpret messages in header
 	for(int i = 0; i < num_msgs; i++)
 	{
-		msg_type = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read, 2);
+		msg_type = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read, 2);
 		//msg_address = header_address + 16 + bytes_read;
-		msg_size = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2);
+		msg_size = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2);
 		msg_pointer = header_pointer + 16 + bytes_read + 8;
 		msg_address = header_address + 16 + bytes_read + 8;
 		
@@ -137,7 +137,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 					exit(EXIT_FAILURE);
 				}
 				
-				layout_class = (uint8_t) *(msg_pointer + 1);
+				layout_class = (uint8_t)*(msg_pointer + 1);
 				switch(layout_class)
 				{
 					case 0:
@@ -148,13 +148,13 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 						data_pointer = msg_pointer + (object->data_address - msg_address);
 						break;
 					case 2:
-						object->chunked_info.num_chunked_dims = (uint8_t) (*(msg_pointer + 2) - 1); //??
+						object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
 						object->chunked_info.chunked_dim_sizes = malloc(object->chunked_info.num_chunked_dims * sizeof(uint32_t));
 						object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets) + s_block.base_address;
 						data_pointer = msg_pointer + (object->data_address - msg_address);
 						for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 						{
-							object->chunked_info.chunked_dim_sizes[j] = (uint32_t) getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4);
+							object->chunked_info.chunked_dim_sizes[j] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4);
 						}
 						break;
 					default:
@@ -165,7 +165,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 			case 11:
 				//data storage pipeline message
 				
-				object->chunked_info.num_filters = (uint8_t) *(msg_pointer + 1);
+				object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
 				
 				//version number
 				switch(*msg_pointer)
@@ -175,16 +175,16 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 						
 						for(int j = 0; j < object->chunked_info.num_filters; j++)
 						{
-							object->chunked_info.filters[j].filter_id = (FilterType) getBytesAsNumber(helper_pointer, 2);
-							name_size = (uint16_t) getBytesAsNumber(helper_pointer + 2, 2);
-							object->chunked_info.filters[j].optional_flag = (uint8_t) (getBytesAsNumber(helper_pointer + 4, 2) & 1);
-							object->chunked_info.filters[j].num_client_vals = (uint16_t) getBytesAsNumber(helper_pointer + 6, 2);
+							object->chunked_info.filters[j].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2);
+							name_size = (uint16_t)getBytesAsNumber(helper_pointer + 2, 2);
+							object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 4, 2) & 1);
+							object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 6, 2);
 							object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals * sizeof(uint32_t));
 							helper_pointer += 8 + name_size;
 							
 							for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
 							{
-								object->chunked_info.filters[j].client_data[k] = (uint32_t) getBytesAsNumber(helper_pointer, 4);
+								object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4);
 								helper_pointer += 4;
 							}
 							
@@ -197,15 +197,15 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 						for(int j = 0; j < object->chunked_info.num_filters; j++)
 						{
 							
-							object->chunked_info.filters[j].filter_id = (FilterType) getBytesAsNumber(helper_pointer, 2);
-							object->chunked_info.filters[j].optional_flag = (uint8_t) (getBytesAsNumber(helper_pointer + 2, 2) & 1);
-							object->chunked_info.filters[j].num_client_vals = (uint16_t) getBytesAsNumber(helper_pointer + 4, 2);
+							object->chunked_info.filters[j].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2);
+							object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 2, 2) & 1);
+							object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 4, 2);
 							object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals * sizeof(uint32_t));
 							helper_pointer += 6;
 							
 							for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
 							{
-								object->chunked_info.filters[j].client_data[k] = (uint32_t) getBytesAsNumber(helper_pointer, 4);
+								object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4);
 								helper_pointer += 4;
 							}
 							
@@ -219,13 +219,13 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 				}
 			case 12:
 				//attribute message
-				name_size = (uint16_t) getBytesAsNumber(msg_pointer + 2, 2);
-				datatype_size = (uint16_t) getBytesAsNumber(msg_pointer + 4, 2);
-				dataspace_size = (uint16_t) getBytesAsNumber(msg_pointer + 6, 2);
+				name_size = (uint16_t)getBytesAsNumber(msg_pointer + 2, 2);
+				datatype_size = (uint16_t)getBytesAsNumber(msg_pointer + 4, 2);
+				dataspace_size = (uint16_t)getBytesAsNumber(msg_pointer + 6, 2);
 				strncpy(name, msg_pointer + 8, name_size);
 				if(strncmp(name, "MATLAB_class", 11) == 0)
 				{
-					attribute_data_size = (uint32_t) getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4);
+					attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4);
 					strncpy(object->matlab_class, msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size), attribute_data_size);
 					object->matlab_class[attribute_data_size] = 0x0;
 					if(strcmp("struct", object->matlab_class) == 0)
@@ -237,7 +237,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 			case 16:
 				//object header continuation message
 				header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets) + s_block.base_address;
-				header_length = (uint32_t) getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths);
+				header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths);
 				header_pointer = navigateTo(header_address - 16, header_length + 16, TREE);
 				bytes_read = 0 - msg_size - 8;
 			default:
@@ -252,20 +252,20 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	switch(object->type)
 	{
 		case DOUBLE:
-			object->double_data = (double*) malloc(num_elems * sizeof(double));
+			object->double_data = (double*)malloc(num_elems * sizeof(double));
 			elem_size = sizeof(double);
 			break;
 		case UNSIGNEDINT16:
-			object->ushort_data = (uint16_t*) malloc(num_elems * sizeof(uint16_t));
+			object->ushort_data = (uint16_t*)malloc(num_elems * sizeof(uint16_t));
 			elem_size = sizeof(uint16_t);
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT NOT ACTUAL ELEMENTS
-			object->udouble_data = (uint64_t*) malloc(num_elems * sizeof(uint64_t));
+			object->udouble_data = (uint64_t*)malloc(num_elems * sizeof(uint64_t));
 			elem_size = sizeof(uint64_t);
 			break;
 		case CHAR:
-			object->char_data = (char*) malloc(num_elems * sizeof(char));
+			object->char_data = (char*)malloc(num_elems * sizeof(char));
 			elem_size = sizeof(char);
 			break;
 		case STRUCT:
@@ -293,7 +293,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 				}
 				else if(object->ushort_data != NULL)
 				{
-					object->ushort_data[j] = (uint16_t) getBytesAsNumber(data_pointer + j * elem_size, elem_size);
+					object->ushort_data[j] = (uint16_t)getBytesAsNumber(data_pointer + j * elem_size, elem_size);
 				}
 				else if(object->udouble_data != NULL)
 				{
@@ -301,7 +301,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 				}
 				else if(object->char_data != NULL)
 				{
-					object->char_data[j] = (char) getBytesAsNumber(data_pointer + j * elem_size, elem_size);
+					object->char_data[j] = (char)getBytesAsNumber(data_pointer + j * elem_size, elem_size);
 				}
 			}
 			break;
@@ -335,7 +335,7 @@ void findHeaderAddress(char variable_name[])
 	char* token;
 	variable_found = FALSE;
 	
-	default_bytes = (uint64_t) getAllocGran();
+	default_bytes = (uint64_t)getAllocGran();
 	
 	flushVariableNameQueue();
 	token = strtok(variable_name, delim);

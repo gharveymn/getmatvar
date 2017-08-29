@@ -58,7 +58,7 @@ void decompressChunk(Data* object, TreeNode* node)
 	//we're just gonna assume MathWorks is only using DEFLATE rn, I don't want to have to deal with the 5 others
 	if(node->node_type == NODETYPE_UNDEFINED)
 	{
-		//we want to select nodes from level 0 since that level holds the keys
+		//don't do the decompression from the leaf level
 		return;
 	}
 	
@@ -70,12 +70,17 @@ void decompressChunk(Data* object, TreeNode* node)
 	decompressChunk(object, node->right_sibling);
 	
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
+	if(node->node_level != 0)
+	{
+		//we want to select nodes from level 0 since that level holds the keys for each of the children
+		return;
+	}
 	
 	int ret = Z_OK;
 	size_t amount_processed = 0;
 	z_stream strm;
-	uint8_t in[CHUNK_BUFFER_SIZE];
 	uint8_t out[CHUNK_BUFFER_SIZE];
+	char* data_pointer;
 	
 	strm.zalloc = Z_NULL;
 	strm.zfree = Z_NULL;
@@ -88,6 +93,13 @@ void decompressChunk(Data* object, TreeNode* node)
 		printf("Error in intialization of inflate");
 		system(EXIT_FAILURE);
 	}
+	
+	for(int i = 0; i < node->entries_used; i++)
+	{
+		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
+	}
+	
+	
 	
 	
 }

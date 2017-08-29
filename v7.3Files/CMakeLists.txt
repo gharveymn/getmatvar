@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 3.7)
 project(MatFile_Parsing_WinJB)
 
 set(CMAKE_CXX_STANDARD 11)
-
 set(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
 
 include_directories(${MEX})
+
+find_package( ZLIB REQUIRED )
+if ( ZLIB_FOUND )
+	include_directories( ${ZLIB_INCLUDE_DIRS} )
+endif( ZLIB_FOUND )
 
 set(SOURCE_FILES
 	   ${MEX}/mex.h
