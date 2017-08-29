@@ -38,6 +38,7 @@ DWORD getAllocGran(void)
 	return system_info.dwAllocationGranularity;
 }
 
+
 #else
 
 //these are the same on unix

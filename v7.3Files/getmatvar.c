@@ -1,6 +1,7 @@
 #include "C:/Program Files/MATLAB/R2017a/extern/include/mex.h"
 #include "mapping.h"
 
+
 void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const char* varnames[], const char* filename);
 mxArray* makeStruct(mxArray* returnStructure, int num_elems, Data* object);
 mxArray* makeCell(mxArray* returnStructure, int num_elems, Data* objects);
@@ -12,23 +13,23 @@ mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims);
 void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems);
 void getNumFields(Data* object, mwSize* num_fields);
 
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+
+void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	if(nrhs < 2)
 	{
-		mexErrMsgIdAndTxt("MATLAB:getmatvar:invalidNumInputs",
-					   "At least two input arguments required.");
+		mexErrMsgIdAndTxt("MATLAB:getmatvar:invalidNumInputs", "At least two input arguments required.");
 	}
 	else
 	{
 		char* filename = mxArrayToString(prhs[0]);
-		char** varnames = malloc((nrhs-1)*sizeof(char*));
-		for(int i = 0; i < nrhs-1; i++)
+		char** varnames = malloc((nrhs - 1) * sizeof(char*));
+		for(int i = 0; i < nrhs - 1; i++)
 		{
-			varnames[i] = mxArrayToString(prhs[i+1]);
+			varnames[i] = mxArrayToString(prhs[i + 1]);
 		}
 		
-		makeReturnStructure(plhs, nrhs-1, varnames, filename);
+		makeReturnStructure(plhs, nrhs - 1, varnames, filename);
 	}
 	
 }
@@ -48,15 +49,15 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 	
 	for(int i = 0; i < num_elems; i++)
 	{
-		int *num_objs = (int *) malloc(sizeof(int));
-		Data *objects = getDataObject(filename, varnames[i], num_objs);
-		Data *hi_objects = organizeObjects(objects, *num_objs);
+		int* num_objs = (int*) malloc(sizeof(int));
+		Data* objects = getDataObject(filename, varnames[i], num_objs);
+		Data* hi_objects = organizeObjects(objects, *num_objs);
 		int index = 0;
 		mwSize num_obj_dims;
 		
-		while (hi_objects[index].type != UNDEF)
+		while(hi_objects[index].type != UNDEF)
 		{
-			switch (hi_objects[index].type)
+			switch(hi_objects[index].type)
 			{
 				case DOUBLE:
 					setDblPtr(hi_objects[index], returnStructure[0], varnames[i], data_insertion_type);
@@ -93,6 +94,7 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 	}
 }
 
+
 mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects)
 {
 	mwSize num_obj_dims, num_obj_elems, num_fields = 0;
@@ -104,7 +106,7 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 	
 	for(int index = 0; index < num_elems; index++)
 	{
-		switch (objects[index].type)
+		switch(objects[index].type)
 		{
 			case DOUBLE:
 				setDblPtr(objects[index], returnStructure, objects[index].name, data_insertion_type);
@@ -153,7 +155,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 	
 	for(int index = 0; index < num_elems; index++)
 	{
-		switch (objects[index].type)
+		switch(objects[index].type)
 		{
 			case DOUBLE:
 				setDblPtr(objects[index], returnStructure, &index, data_insertion_type);
@@ -189,6 +191,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 	
 }
 
+
 void setDblPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
@@ -196,40 +199,41 @@ void setDblPtr(Data object, mxArray* returnStructure, const char* varname, Datat
 	mwSize* obj_dims = makeObjDims(object.dims, num_obj_dims);
 	mxArray* mxDblPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
 	double* mxDblPtrPr = mxGetPr(mxDblPtr);
-
-	for (int j = 0; j < num_obj_elems; j++)
+	
+	for(int j = 0; j < num_obj_elems; j++)
 	{
 		mxDblPtrPr[j] = object.double_data[j];
 	}
 	
-	if (type == STRUCT)
+	if(type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxDblPtr);
 	}
-	else if (type == REF)
+	else if(type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxDblPtr);
 	}
 }
 
+
 void setCharPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
 	char* mxCharPtrPr = mxCalloc(num_obj_elems, sizeof(char));
-
-	for (int j = 0; j < num_obj_elems; j++)
+	
+	for(int j = 0; j < num_obj_elems; j++)
 	{
 		mxCharPtrPr[j] = object.ushort_data[j];
 	}
 	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
-
-	if (type == STRUCT)
+	
+	if(type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxCharPtr);
 	}
-	else if (type == REF)
+	else if(type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxCharPtr);
@@ -243,18 +247,18 @@ void setIntPtr(Data object, mxArray* returnStructure, const char* varname, Datat
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
 	char* mxIntPtrPr = mxCalloc(num_obj_elems, sizeof(char));
-
-	for (int j = 0; j < num_obj_elems; j++)
+	
+	for(int j = 0; j < num_obj_elems; j++)
 	{
 		mxIntPtrPr[j] = object.ushort_data[j];
 	}
 	mxArray* mxIntPtr = mxCreateString(mxIntPtrPr);
 	
-	if (type == STRUCT)
+	if(type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if (type == REF)
+	else if(type == REF)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, *varname, mxIntPtr);
@@ -265,7 +269,7 @@ void setIntPtr(Data object, mxArray* returnStructure, const char* varname, Datat
 
 char** getFieldNames(Data* object, const int num_elems)
 {
-	char** varnames = malloc(num_elems*sizeof(char*));
+	char** varnames = malloc(num_elems * sizeof(char*));
 	for(int index = 0; index < num_elems; index++)
 	{
 		varnames[index] = object->sub_objects[index].name;
@@ -273,10 +277,11 @@ char** getFieldNames(Data* object, const int num_elems)
 	return varnames;
 }
 
+
 void getNumFields(Data* object, mwSize* num_fields)
 {
 	int index = 0;
-	while (object->sub_objects[index].type != UNDEF)
+	while(object->sub_objects[index].type != UNDEF)
 	{
 		index++;
 	}
@@ -289,7 +294,7 @@ void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems)
 	mwSize ne = 1;
 	mwSize nd = 0;
 	int i = 0;
-	while (object->dims[i] > 0)
+	while(object->dims[i] > 0)
 	{
 		ne *= object->dims[i];
 		nd++;
@@ -299,12 +304,13 @@ void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems)
 	*num_elems = ne;
 }
 
+
 mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims)
 {
 	mwSize* obj_dims = malloc(num_obj_dims);
 	for(int i = 0; i < num_obj_dims; i++)
 	{
-		obj_dims[i] = (mwSize)dims[num_obj_dims-1-i];
+		obj_dims[i] = (mwSize) dims[num_obj_dims - 1 - i];
 	}
 	return obj_dims;
 }

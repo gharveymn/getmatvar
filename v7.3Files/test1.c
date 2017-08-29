@@ -1,23 +1,23 @@
 #include "mapping.h"
 
 
-void arrayTest(Data *objects);
+void arrayTest(Data* objects);
 
 
-void cellTest(Data *objects);
+void cellTest(Data* objects);
 
 
-void integerTest(Data *objects);
+void integerTest(Data* objects);
 
 
-void doubleTest(Data *objects);
+void doubleTest(Data* objects);
 
 
 int main()
 {
-	Data *objects;
-	char *variable_name = (char *) malloc(50);
-	int *num_objs = (int *) malloc(sizeof(int));
+	Data* objects;
+	char* variable_name = (char*) malloc(50);
+	int* num_objs = (int*) malloc(sizeof(int));
 	
 	/*strcpy(variable_name, "my_struct.array");
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
@@ -49,7 +49,7 @@ int main()
 }
 
 
-void arrayTest(Data *objects)
+void arrayTest(Data* objects)
 {
 	Data data = objects[0];
 	assert(data.type == DOUBLE);
@@ -62,14 +62,14 @@ void arrayTest(Data *objects)
 	assert(data.ushort_data == NULL);
 	assert(data.char_data == NULL);
 	assert(strcmp(data.name, "array") == 0);
-	for (int i = 0; i < 102 * 101 * 100; i++)
+	for(int i = 0; i < 102 * 101 * 100; i++)
 	{
 		assert(data.double_data[i] == 1);
 	}
 }
 
 
-void cellTest(Data *objects)
+void cellTest(Data* objects)
 {
 	Data data;
 	assert(objects[0].type == REF);
@@ -91,8 +91,8 @@ void cellTest(Data *objects)
 	assert(data.udouble_data == NULL);
 	assert(data.ushort_data != NULL);
 	assert(data.char_data == NULL);
-	char *string = (char *) malloc(5 * sizeof(char));
-	for (int i = 0; i < 4; i++)
+	char* string = (char*) malloc(5 * sizeof(char));
+	for(int i = 0; i < 4; i++)
 	{
 		string[i] = data.ushort_data[i];
 	}
@@ -119,8 +119,8 @@ void cellTest(Data *objects)
 	assert(data.udouble_data == NULL);
 	assert(data.ushort_data != NULL);
 	assert(data.char_data == NULL);
-	string = (char *) malloc(6 * sizeof(char));
-	for (int i = 0; i < 5; i++)
+	string = (char*) malloc(6 * sizeof(char));
+	for(int i = 0; i < 5; i++)
 	{
 		string[i] = data.ushort_data[i];
 	}
@@ -129,7 +129,7 @@ void cellTest(Data *objects)
 }
 
 
-void integerTest(Data *objects)
+void integerTest(Data* objects)
 {
 	Data data = objects[0];
 	assert(data.type == DOUBLE);
@@ -145,7 +145,7 @@ void integerTest(Data *objects)
 }
 
 
-void doubleTest(Data *objects)
+void doubleTest(Data* objects)
 {
 	Data data = objects[0];
 	assert(data.type == DOUBLE);

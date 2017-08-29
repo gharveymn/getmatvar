@@ -3,7 +3,7 @@
 
 void enqueueTrio(Addr_Trio trio)
 {
-	if (queue.length >= MAX_Q_LENGTH)
+	if(queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
@@ -13,7 +13,7 @@ void enqueueTrio(Addr_Trio trio)
 	queue.trios[queue.back].heap_address = trio.heap_address;
 	queue.length++;
 	
-	if (queue.back < MAX_Q_LENGTH - 1)
+	if(queue.back < MAX_Q_LENGTH - 1)
 	{
 		queue.back++;
 	}
@@ -26,7 +26,7 @@ void enqueueTrio(Addr_Trio trio)
 
 void enqueueObject(Object obj)
 {
-	if (header_queue.length >= MAX_Q_LENGTH)
+	if(header_queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
@@ -39,7 +39,7 @@ void enqueueObject(Object obj)
 	header_queue.objects[header_queue.back].parent_tree_address = obj.parent_tree_address;
 	header_queue.length++;
 	
-	if (header_queue.back < MAX_Q_LENGTH - 1)
+	if(header_queue.back < MAX_Q_LENGTH - 1)
 	{
 		header_queue.back++;
 	}
@@ -49,6 +49,7 @@ void enqueueObject(Object obj)
 	}
 }
 
+
 void enqueueVariableName(char* variable_name)
 {
 	variable_name_queue.variable_names[variable_name_queue.back] = variable_name;
@@ -56,14 +57,15 @@ void enqueueVariableName(char* variable_name)
 	variable_name_queue.back++;
 }
 
+
 void priorityEnqueueTrio(Addr_Trio trio)
 {
-	if (queue.length >= MAX_Q_LENGTH)
+	if(queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Trying to priority enqueue: Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
 	}
-	if (queue.front - 1 < 0)
+	if(queue.front - 1 < 0)
 	{
 		queue.trios[MAX_Q_LENGTH - 1].parent_obj_header_address = trio.parent_obj_header_address;
 		queue.trios[MAX_Q_LENGTH - 1].tree_address = trio.tree_address;
@@ -83,12 +85,12 @@ void priorityEnqueueTrio(Addr_Trio trio)
 
 void priorityEnqueueObject(Object obj)
 {
-	if (header_queue.length >= MAX_Q_LENGTH)
+	if(header_queue.length >= MAX_Q_LENGTH)
 	{
 		printf("Trying to priority enqueue: Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
-	if (header_queue.front - 1 < 0)
+	if(header_queue.front - 1 < 0)
 	{
 		
 		header_queue.objects[MAX_Q_LENGTH - 1].parent_obj_header_address = obj.parent_obj_header_address;
@@ -119,7 +121,7 @@ Addr_Trio dequeueTrio()
 	trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
 	trio.tree_address = queue.trios[queue.front].tree_address;
 	trio.heap_address = queue.trios[queue.front].heap_address;
-	if (queue.front + 1 < MAX_Q_LENGTH)
+	if(queue.front + 1 < MAX_Q_LENGTH)
 	{
 		queue.front++;
 	}
@@ -141,7 +143,7 @@ Object dequeueObject()
 	obj.sub_tree_address = header_queue.objects[header_queue.front].sub_tree_address;
 	obj.parent_tree_address = header_queue.objects[header_queue.front].parent_tree_address;
 	obj.this_tree_address = header_queue.objects[header_queue.front].this_tree_address;
-	if (header_queue.front + 1 < MAX_Q_LENGTH)
+	if(header_queue.front + 1 < MAX_Q_LENGTH)
 	{
 		header_queue.front++;
 	}
@@ -153,6 +155,7 @@ Object dequeueObject()
 	return obj;
 }
 
+
 char* dequeueVariableName()
 {
 	char* variable_name = variable_name_queue.variable_names[variable_name_queue.front];
@@ -161,10 +164,12 @@ char* dequeueVariableName()
 	return variable_name;
 }
 
+
 char* peekVariableName()
 {
 	return variable_name_queue.variable_names[variable_name_queue.front];
 }
+
 
 void flushQueue()
 {
@@ -180,6 +185,7 @@ void flushHeaderQueue()
 	header_queue.front = 0;
 	header_queue.back = 0;
 }
+
 
 void flushVariableNameQueue()
 {

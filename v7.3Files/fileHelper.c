@@ -3,11 +3,11 @@
 
 Superblock getSuperblock(int fd, size_t file_size)
 {
-	char *superblock_pointer = findSuperblock(fd, file_size);
+	char* superblock_pointer = findSuperblock(fd, file_size);
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	
 	//unmap superblock
-	if (munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
+	if(munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
 		printf("munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
@@ -18,9 +18,9 @@ Superblock getSuperblock(int fd, size_t file_size)
 }
 
 
-char *findSuperblock(int fd, size_t file_size)
+char* findSuperblock(int fd, size_t file_size)
 {
-	char *chunk_start = "";
+	char* chunk_start = "";
 	size_t alloc_gran = getAllocGran();
 	
 	//Assuming that superblock is in first 8 512 byte chunks
@@ -29,7 +29,7 @@ char *findSuperblock(int fd, size_t file_size)
 	maps[0].offset = 0;
 	maps[0].used = TRUE;
 	
-	if (maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
+	if(maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
 	{
 		printf("mmap() unsuccessful, Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
@@ -37,12 +37,12 @@ char *findSuperblock(int fd, size_t file_size)
 	
 	chunk_start = maps[0].map_start;
 	
-	while (strncmp(FORMAT_SIG, chunk_start, 8) != 0 && (chunk_start - maps[0].map_start) < alloc_gran)
+	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && (chunk_start - maps[0].map_start) < alloc_gran)
 	{
 		chunk_start += 512;
 	}
 	
-	if ((chunk_start - maps[0].map_start) >= alloc_gran)
+	if((chunk_start - maps[0].map_start) >= alloc_gran)
 	{
 		printf("Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
 		exit(EXIT_FAILURE);
@@ -52,7 +52,7 @@ char *findSuperblock(int fd, size_t file_size)
 }
 
 
-Superblock fillSuperblock(char *superblock_pointer)
+Superblock fillSuperblock(char* superblock_pointer)
 {
 	Superblock s_block;
 	//get stuff from superblock, for now assume consistent versions of stuff
@@ -63,7 +63,7 @@ Superblock fillSuperblock(char *superblock_pointer)
 	s_block.base_address = getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets);
 	
 	//read scratchpad space
-	char *sps_start = superblock_pointer + 80;
+	char* sps_start = superblock_pointer + 80;
 	Addr_Trio root_trio;
 	root_trio.parent_obj_header_address = UNDEF_ADDR;
 	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets) + s_block.base_address;
@@ -75,20 +75,18 @@ Superblock fillSuperblock(char *superblock_pointer)
 }
 
 
-char *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
+char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 {
 	
-	if (!(maps[map_index].used && address >= maps[map_index].offset &&
-		 address + bytes_needed < maps[map_index].offset + maps[map_index].bytes_mapped))
+	if(!(maps[map_index].used && address >= maps[map_index].offset && address + bytes_needed < maps[map_index].offset + maps[map_index].bytes_mapped))
 	{
 		//unmap current page if used
-		if (maps[map_index].used)
+		if(maps[map_index].used)
 		{
-			if (munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
+			if(munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
 			{
 				printf("munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start,
-					  maps[map_index].bytes_mapped, maps[map_index].used);
+				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
 				exit(EXIT_FAILURE);
 			}
 			maps[map_index].used = FALSE;
@@ -101,7 +99,7 @@ char *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, maps[map_index].offset);
 		
 		maps[map_index].used = TRUE;
-		if (maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
+		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
 			printf("mmap() unsuccessful, Check errno: %d\n", errno);
 			exit(EXIT_FAILURE);
@@ -113,12 +111,12 @@ char *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index)
 {
-	if (!(map.used && address >= map.offset && address + bytes_needed < map.offset + map.bytes_mapped))
+	if(!(map.used && address >= map.offset && address + bytes_needed < map.offset + map.bytes_mapped))
 	{
 		//unmap current page if used
-		if (map.used)
+		if(map.used)
 		{
-			if (munmap(map.map_start, map.bytes_mapped) != 0)
+			if(munmap(map.map_start, map.bytes_mapped) != 0)
 			{
 				printf("munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
 				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
@@ -129,12 +127,12 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
-		map.offset = (off_t)(address/alloc_gran)*alloc_gran;
+		map.offset = (off_t) (address / alloc_gran) * alloc_gran;
 		map.bytes_mapped = address - map.offset + bytes_needed;
 		map.map_start = mmap(NULL, map.bytes_mapped, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, map.offset);
 		
 		map.used = TRUE;
-		if (map.map_start == NULL || map.map_start == MAP_FAILED)
+		if(map.map_start == NULL || map.map_start == MAP_FAILED)
 		{
 			printf("mmap() unsuccessful, Check errno: %d\n", errno);
 			exit(EXIT_FAILURE);
@@ -144,7 +142,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 }
 
 
-void readTreeNode(char *tree_pointer)
+void readTreeNode(char* tree_pointer)
 {
 	Addr_Trio trio;
 	uint16_t entries_used = 0;
@@ -154,7 +152,7 @@ void readTreeNode(char *tree_pointer)
 	
 	//assuming keys do not contain pertinent information
 	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets);
-	if (left_sibling_address != UNDEF_ADDR)
+	if(left_sibling_address != UNDEF_ADDR)
 	{
 		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
 		trio.tree_address = left_sibling_address + s_block.base_address;
@@ -163,7 +161,7 @@ void readTreeNode(char *tree_pointer)
 	}
 	
 	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets);
-	if (right_sibling_address != UNDEF_ADDR)
+	if(right_sibling_address != UNDEF_ADDR)
 	{
 		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;;
 		trio.tree_address = right_sibling_address + s_block.base_address;
@@ -174,7 +172,7 @@ void readTreeNode(char *tree_pointer)
 	//group node B-Tree traversal (version 0)
 	int key_size = s_block.size_of_lengths;
 	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
-	for (int i = 0; i < entries_used; i++)
+	for(int i = 0; i < entries_used; i++)
 	{
 		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
 		trio.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets) + s_block.base_address;
@@ -186,10 +184,10 @@ void readTreeNode(char *tree_pointer)
 }
 
 
-void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
+void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
-	Object *objects = (Object *) malloc(sizeof(Object) * num_symbols);
+	Object* objects = (Object*) malloc(sizeof(Object) * num_symbols);
 	uint32_t cache_type;
 	Addr_Trio trio;
 	char* var_name = peekVariableName();
@@ -197,7 +195,7 @@ void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Add
 	//get to entries
 	snod_pointer += 8;
 	
-	for (int i = 0; i < num_symbols; i++)
+	for(int i = 0; i < num_symbols; i++)
 	{
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
@@ -209,7 +207,7 @@ void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Add
 		objects[i].sub_tree_address = UNDEF_ADDR;
 		
 		//check if we have found the object we're looking for or if we are just adding subobjects
-		if ((var_name != NULL && strcmp(var_name, objects[i].name) == 0) || variable_found == TRUE)
+		if((var_name != NULL && strcmp(var_name, objects[i].name) == 0) || variable_found == TRUE)
 		{
 			if(variable_found == FALSE)
 			{
@@ -221,7 +219,7 @@ void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Add
 			
 			
 			//if another tree exists for this object, put it on the queue
-			if (cache_type == 1)
+			if(cache_type == 1)
 			{
 				trio.parent_obj_header_address = objects[i].this_obj_header_address;
 				trio.tree_address = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets) + s_block.base_address;
@@ -250,14 +248,14 @@ void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Add
 }
 
 
-uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size)
+uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size)
 {
 	//assume version 1 and ignore max dims and permutation indices
 	uint8_t num_dims = *(msg_pointer + 1);
-	uint32_t *dims = malloc(sizeof(int) * (num_dims + 1));
+	uint32_t* dims = malloc(sizeof(int) * (num_dims + 1));
 	//uint64_t bytes_read = 0;
 	
-	for (int i = 0; i < num_dims; i++)
+	for(int i = 0; i < num_dims; i++)
 	{
 		dims[i] = getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4);
 	}
@@ -266,19 +264,19 @@ uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size)
 }
 
 
-Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size)
+DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 {
 	//assume version 1
 	uint8_t class = *(msg_pointer) & 0x0F; //only want bottom 4 bits
 	uint32_t size = *(msg_pointer + 4);
-	Datatype type = UNDEF;
+	DataType type = UNDEF;
 	
-	switch (class)
+	switch(class)
 	{
 		case 0:
 			//fixed point (string)
 			
-			switch (size)
+			switch(size)
 			{
 				case 1:
 					//"char"
@@ -313,30 +311,33 @@ Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size)
 }
 
 
-void freeDataObjects(Data *objects, int num)
+void freeDataObjects(Data* objects, int num)
 {
 	int num_subs = 0;
 	int j;
-	for (int i = 0; i < num; i++)
+	for(int i = 0; i < num; i++)
 	{
-		if (objects[i].char_data != NULL)
+		if(objects[i].char_data != NULL)
 		{
 			free(objects[i].char_data);
-		} else if (objects[i].double_data != NULL)
+		}
+		else if(objects[i].double_data != NULL)
 		{
 			free(objects[i].double_data);
-		} else if (objects[i].udouble_data != NULL)
+		}
+		else if(objects[i].udouble_data != NULL)
 		{
 			free(objects[i].udouble_data);
-		} else if (objects[i].ushort_data != NULL)
+		}
+		else if(objects[i].ushort_data != NULL)
 		{
 			free(objects[i].ushort_data);
 		}
 		free(objects[i].dims);
 		j = 0;
-		if (objects[i].sub_objects != NULL)
+		if(objects[i].sub_objects != NULL)
 		{
-			while (objects->sub_objects[j].type != UNDEF)
+			while(objects->sub_objects[j].type != UNDEF)
 			{
 				num_subs++;
 				j++;
