@@ -16,7 +16,8 @@ void enqueueTrio(Addr_Trio trio)
 	if (queue.back < MAX_Q_LENGTH - 1)
 	{
 		queue.back++;
-	} else
+	}
+	else
 	{
 		queue.back = 0;
 	}
@@ -41,7 +42,8 @@ void enqueueObject(Object obj)
 	if (header_queue.back < MAX_Q_LENGTH - 1)
 	{
 		header_queue.back++;
-	} else
+	}
+	else
 	{
 		header_queue.back = 0;
 	}
@@ -90,14 +92,15 @@ void priorityEnqueueObject(Object obj)
 		header_queue.objects[MAX_Q_LENGTH - 1].this_tree_address = obj.this_tree_address;
 		header_queue.objects[MAX_Q_LENGTH - 1].parent_tree_address = obj.parent_tree_address;
 		header_queue.front = MAX_Q_LENGTH - 1;
-	} else
+	}
+	else
 	{
-		header_queue.objects[header_queue.front].parent_obj_header_address = obj.parent_obj_header_address;
-		header_queue.objects[header_queue.front].this_obj_header_address = obj.this_obj_header_address;
-		strcpy(header_queue.objects[header_queue.front].name, obj.name);
-		header_queue.objects[header_queue.front].sub_tree_address = obj.sub_tree_address;
-		header_queue.objects[header_queue.front].this_tree_address = obj.this_tree_address;
-		header_queue.objects[header_queue.front].parent_tree_address = obj.parent_tree_address;
+		header_queue.objects[header_queue.front - 1].parent_obj_header_address = obj.parent_obj_header_address;
+		header_queue.objects[header_queue.front - 1].this_obj_header_address = obj.this_obj_header_address;
+		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
+		header_queue.objects[header_queue.front - 1].sub_tree_address = obj.sub_tree_address;
+		header_queue.objects[header_queue.front - 1].this_tree_address = obj.this_tree_address;
+		header_queue.objects[header_queue.front - 1].parent_tree_address = obj.parent_tree_address;
 		header_queue.front--;
 	}
 	header_queue.length++;
@@ -113,7 +116,8 @@ Addr_Trio dequeueTrio()
 	if (queue.front + 1 < MAX_Q_LENGTH)
 	{
 		queue.front++;
-	} else
+	}
+	else
 	{
 		queue.front = 0;
 	}
@@ -134,7 +138,8 @@ Object dequeueObject()
 	if (header_queue.front + 1 < MAX_Q_LENGTH)
 	{
 		header_queue.front++;
-	} else
+	}
+	else
 	{
 		header_queue.front = 0;
 	}
