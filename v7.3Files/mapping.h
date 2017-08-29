@@ -141,7 +141,7 @@ char* findSuperblock(int fd, size_t file_size);
 Superblock fillSuperblock(char *superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char *tree_address, Addr_Trio this_trio);
+void readTreeNode(char *tree_address);
 void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio parent_trio, Addr_Trio this_address);
 uint32_t *readDataSpaceMessage(char *msg_pointer, uint16_t msg_size);
 Datatype readDataTypeMessage(char *msg_pointer, uint16_t msg_size);

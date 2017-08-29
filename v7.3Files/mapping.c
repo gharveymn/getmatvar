@@ -329,7 +329,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			obj.this_obj_header_address = object->udouble_data[i];
 			obj.parent_obj_header_address = object->this_obj_address;
 			strcpy(obj.name, object->name);
-			enqueueObject(obj);
+			priorityEnqueueObject(obj);
 		}
 	}
 }
@@ -350,7 +350,6 @@ void findHeaderAddress(char *filename, char variable_name[])
 	
 	//aka the parent address for a snod
 	Addr_Trio parent_trio, this_trio;
-	this_trio.parent_obj_header_address = UNDEF_ADDR;
 	
 	//search for the object header for the variable
 	while (queue.length > 0)
@@ -361,7 +360,7 @@ void findHeaderAddress(char *filename, char variable_name[])
 		
 		if (strncmp("TREE", tree_pointer, 4) == 0)
 		{
-			readTreeNode(tree_pointer, this_trio);
+			readTreeNode(tree_pointer);
 			parent_trio = dequeueTrio();
 		}
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)

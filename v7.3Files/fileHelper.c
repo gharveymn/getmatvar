@@ -144,7 +144,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 }
 
 
-void readTreeNode(char *tree_pointer, Addr_Trio this_trio)
+void readTreeNode(char *tree_pointer)
 {
 	Addr_Trio trio;
 	uint16_t entries_used = 0;
@@ -156,7 +156,7 @@ void readTreeNode(char *tree_pointer, Addr_Trio this_trio)
 	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets);
 	if (left_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
+		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
 		trio.tree_address = left_sibling_address + s_block.base_address;
 		trio.heap_address = queue.trios[queue.front].heap_address;
 		enqueueTrio(trio);
@@ -165,7 +165,7 @@ void readTreeNode(char *tree_pointer, Addr_Trio this_trio)
 	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets);
 	if (right_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;;
+		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;;
 		trio.tree_address = right_sibling_address + s_block.base_address;
 		trio.heap_address = queue.trios[queue.front].heap_address;
 		enqueueTrio(trio);
@@ -176,7 +176,7 @@ void readTreeNode(char *tree_pointer, Addr_Trio this_trio)
 	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for (int i = 0; i < entries_used; i++)
 	{
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
+		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
 		trio.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets) + s_block.base_address;
 		trio.heap_address = queue.trios[queue.front].heap_address;
 		enqueueTrio(trio);
@@ -214,7 +214,6 @@ void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio 
 			{
 				flushHeaderQueue();
 				flushQueue();
-				variable_found = TRUE;
 			}
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
@@ -230,7 +229,13 @@ void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio 
 				priorityEnqueueTrio(trio);
 			}
 			enqueueObject(objects[i]);
-			break;
+			
+			if(variable_found == FALSE)
+			{
+				variable_found = TRUE;
+				break;
+			}
+			
 		}
 	}
 	
