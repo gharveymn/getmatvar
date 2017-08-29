@@ -32,11 +32,11 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 	//find superblock
 	s_block = getSuperblock(fd, file_size);
 	
-	root_tree_address = queue.pairs[queue.front].tree_address;
+	root_tree_address = queue.trios[queue.front].tree_address;
 	
 	printf("\nObject header for variable %s is at 0x", variable_name);
 	findHeaderAddress(filename, variable_name);
-	printf("%lx\n", header_queue.objects[header_queue.front].obj_header_address);
+	printf("%lx\n", header_queue.objects[header_queue.front].this_obj_header_address);
 	
 	
 	//interpret the header messages
@@ -46,8 +46,7 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 		data_objects[num_objs].sub_objects = NULL;
 		
 		obj = dequeueObject();
-		header_address = obj.obj_header_address;
-		
+		header_address = obj.this_obj_header_address;
 		
 		//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 		header_pointer = navigateTo(header_address, 16, TREE);
@@ -59,15 +58,17 @@ Data *getDataObject(char *filename, char variable_name[], int *num_objects)
 			header_pointer = navigateTo(header_address, header_length, TREE);
 		}
 		strcpy(data_objects[num_objs].name, obj.name);
+		data_objects[num_objs].parent_obj_address = obj.parent_obj_header_address;
+		data_objects[num_objs].this_obj_address = obj.this_obj_header_address;
 		collectMetaData(&data_objects[num_objs], header_address, header_pointer);
-		data_objects[num_objs].parent_tree_address = obj.prev_tree_address;
-		data_objects[num_objs].this_tree_address = obj.this_tree_address;
 		
 		num_objs++;
 		
 	}
+	
+	//set object at the end to trigger sentinel
 	data_objects[num_objs].type = UNDEF;
-	data_objects[num_objs].parent_tree_address = 0;
+	data_objects[num_objs].parent_obj_address = UNDEF_ADDR;
 	
 	num_objects[0] = num_objs;
 	close(fd);
@@ -160,6 +161,9 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 							chunked_dim_sizes[j] = getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4);
 						}
 						break;
+					default:
+						printf("Unknown data layout class %d at address 0x%lx.\n", layout_class, msg_address + 1);
+						exit(EXIT_FAILURE);
 				}
 				break;
 			case 11:
@@ -262,6 +266,7 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 			elem_size = sizeof(uint16_t);
 			break;
 		case REF:
+			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT NOT ACTUAL ELEMENTS
 			object->udouble_data = (uint64_t *) malloc(num_elems * sizeof(uint64_t));
 			elem_size = sizeof(uint64_t);
 			break;
@@ -321,7 +326,8 @@ void collectMetaData(Data *object, uint64_t header_address, char *header_pointer
 		for (int i = 0; i < num_elems; i++)
 		{
 			Object obj;
-			obj.obj_header_address = object->udouble_data[i];
+			obj.this_obj_header_address = object->udouble_data[i];
+			obj.parent_obj_header_address = object->this_obj_address;
 			strcpy(obj.name, object->name);
 			enqueueObject(obj);
 		}
@@ -342,28 +348,26 @@ void findHeaderAddress(char *filename, char variable_name[])
 	
 	token = strtok(variable_name, delim);
 	
-	uint64_t prev_tree_address = 0;
+	//aka the parent address for a snod
+	Addr_Trio parent_trio, this_trio;
+	this_trio.parent_obj_header_address = UNDEF_ADDR;
 	
 	//search for the object header for the variable
 	while (queue.length > 0)
 	{
-		tree_pointer = navigateTo(queue.pairs[queue.front].tree_address, default_bytes, TREE);
-		heap_pointer = navigateTo(queue.pairs[queue.front].heap_address, default_bytes, HEAP);
+		tree_pointer = navigateTo(queue.trios[queue.front].tree_address, default_bytes, TREE);
+		heap_pointer = navigateTo(queue.trios[queue.front].heap_address, default_bytes, HEAP);
 		assert(strncmp("HEAP", heap_pointer, 4) == 0);
 		
 		if (strncmp("TREE", tree_pointer, 4) == 0)
 		{
-			readTreeNode(tree_pointer);
-			prev_tree_address = queue.pairs[queue.front].tree_address;
-			dequeuePair();
+			readTreeNode(tree_pointer, this_trio);
+			parent_trio = dequeueTrio();
 		}
 		else if (strncmp("SNOD", tree_pointer, 4) == 0)
 		{
-			dequeuePair();
-			readSnod(tree_pointer, heap_pointer, token, prev_tree_address);
-			prev_tree_address = 0;
-			
-			token = strtok(NULL, delim);
+			this_trio = dequeueTrio();
+			readSnod(tree_pointer, heap_pointer, token, parent_trio, this_trio);
 		}
 	}
 	//printf("0x%lx\n", header_address);
@@ -391,7 +395,7 @@ void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* in
 	int idx = *index;
 	Data* sub_objects = malloc((num_objs - idx + 1)*sizeof(Data));
 	
-	while(super_object->this_tree_address == objects[idx].parent_tree_address)
+	while(super_object->this_obj_address == objects[idx].parent_obj_address)
 	{
 		sub_objects[j] = objects[idx];
 		idx++;
