@@ -49,6 +49,12 @@ void enqueueObject(Object obj)
 	}
 }
 
+void enqueueVariableName(char* variable_name)
+{
+	variable_name_queue.variable_names[variable_name_queue.back] = variable_name;
+	variable_name_queue.length++;
+	variable_name_queue.back++;
+}
 
 void priorityEnqueueTrio(Addr_Trio trio)
 {
@@ -147,6 +153,18 @@ Object dequeueObject()
 	return obj;
 }
 
+char* dequeueVariableName()
+{
+	char* variable_name = variable_name_queue.variable_names[variable_name_queue.front];
+	variable_name_queue.front++;
+	variable_name_queue.length--;
+	return variable_name;
+}
+
+char* peekVariableName()
+{
+	return variable_name_queue.variable_names[variable_name_queue.front];
+}
 
 void flushQueue()
 {
@@ -161,4 +179,11 @@ void flushHeaderQueue()
 	header_queue.length = 0;
 	header_queue.front = 0;
 	header_queue.back = 0;
+}
+
+void flushVariableNameQueue()
+{
+	variable_name_queue.length = 0;
+	variable_name_queue.front = 0;
+	variable_name_queue.back = 0;
 }

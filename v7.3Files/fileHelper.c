@@ -186,12 +186,13 @@ void readTreeNode(char *tree_pointer)
 }
 
 
-void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio parent_trio, Addr_Trio this_trio)
+void readSnod(char *snod_pointer, char *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
 	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2);
 	Object *objects = (Object *) malloc(sizeof(Object) * num_symbols);
 	uint32_t cache_type;
 	Addr_Trio trio;
+	char* var_name = peekVariableName();
 	
 	//get to entries
 	snod_pointer += 8;
@@ -230,9 +231,15 @@ void readSnod(char *snod_pointer, char *heap_pointer, char *var_name, Addr_Trio 
 			}
 			enqueueObject(objects[i]);
 			
+			//we found a token, but not the end variable, so we dont need to look at the rest of the variables at this level
 			if(variable_found == FALSE)
 			{
-				variable_found = TRUE;
+				dequeueVariableName();
+				if(variable_name_queue.length == 0)
+				{
+					//means this was the last token, so we've found the variable we want
+					variable_found = TRUE;
+				}
 				break;
 			}
 			
