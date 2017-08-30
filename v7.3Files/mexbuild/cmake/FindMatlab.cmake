@@ -22,12 +22,12 @@ ELSE("$ENV{MATLAB_ROOT}" STREQUAL "" )
         FIND_LIBRARY( MATLAB_MEX_LIBRARY
                       NAMES libmex mex
                       PATHS $ENV{MATLAB_ROOT}/bin $ENV{MATLAB_ROOT}/extern/lib 
-                      PATH_SUFFIXES glnxa64 glnx86 win64/microsoft win32/microsoft)
+                      PATH_SUFFIXES glnxa64 glnx86 win64/microsoft win32/microsoft win64/mingw64)
 
         FIND_LIBRARY( MATLAB_MX_LIBRARY
                       NAMES libmx mx
                       PATHS $ENV{MATLAB_ROOT}/bin $ENV{MATLAB_ROOT}/extern/lib 
-                      PATH_SUFFIXES glnxa64 glnx86 win64/microsoft win32/microsoft)
+                      PATH_SUFFIXES glnxa64 glnx86 win64/microsoft win32/microsoft win64/mingw64)
 
     MESSAGE (STATUS "MATLAB_ROOT: $ENV{MATLAB_ROOT}")
 
