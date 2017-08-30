@@ -5,10 +5,9 @@
   </component>
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true" buildAllGenerated="true">
     <generated>
-      <config projectName="MatFile_Parsing_WinJB" targetName="MatFile_Parsing_WinJB_chunkedData" />
-      <config projectName="MatFile_Parsing_WinJB" targetName="MatFile_Parsing_WinJB_test" />
       <config projectName="MatFile_Parsing_WinJB" targetName="MatFile_Parsing_WinJB_userTest" />
       <config projectName="MatFile_Parsing_WinJB" targetName="MatFile_Parsing_WinJB_test1" />
+      <config projectName="MatFile_Parsing_WinJB" targetName="MatFile_Parsing_WinJB_test" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -19,42 +18,95 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5adce463-bb8f-47bd-8a57-ee4eb4fc9594" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB_chunkedData.exe" afterPath="" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/chunkedTest.c" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/1" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/2" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/3" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/4" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/5" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/6" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/7" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/8" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Progress/count.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/getmatvar.mexw64" afterPath="" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/chunkedData.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/chunkedData.c.obj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects.a" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects.a" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/extlib/mman-win32/mman.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/extlib/mman-win32/mman.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/fileHelper.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/fileHelper.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/mapping.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/mapping.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/numberHelper.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/numberHelper.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects.a" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects.a" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/queue.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/queue.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/userTest.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/userTest.c.obj" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB_userTest.exe" afterPath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB_userTest.exe" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CMakeLists.txt" afterPath="$PROJECT_DIR$/CMakeLists.txt" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/chunkedData.c" afterPath="$PROJECT_DIR$/chunkedData.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeCache.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/CMakeOutput.log" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/C.includecache" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/C.includecache" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/includes_C.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/includes_C.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/includes_C.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/cmake_clean.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/depend.internal" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/depend.internal" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/depend.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/depend.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects1.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/C.includecache" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/C.includecache" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/includes_C.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/cmake_clean.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/depend.internal" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/depend.internal" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/depend.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/depend.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects1.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/TargetDirectories.txt" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/TargetDirectories.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/Makefile" afterPath="$PROJECT_DIR$/cmake-build-debug/Makefile" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB.cbp" afterPath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB.cbp" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeCache.txt" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeCache.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/CMakeOutput.log" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/CMakeOutput.log" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile2" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile2" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/DependInfo.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/build.make" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/includes_C.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/includes_C.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/includes_C.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/objects1.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_chunkedData.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/build.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/DependInfo.cmake" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/build.make" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/includes_C.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/includes_C.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/linklibs.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/linklibs.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/objects1.rsp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/TargetDirectories.txt" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/TargetDirectories.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/progress.marks" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/progress.marks" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/Makefile" afterPath="$PROJECT_DIR$/cmake-build-release/Makefile" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/MatFile_Parsing_WinJB.cbp" afterPath="$PROJECT_DIR$/cmake-build-release/MatFile_Parsing_WinJB.cbp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/cmake_install.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/cmake_install.cmake" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileHelper.c" afterPath="$PROJECT_DIR$/fileHelper.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.c" afterPath="$PROJECT_DIR$/getmatvar.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.c" afterPath="$PROJECT_DIR$/mapping.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.h" afterPath="$PROJECT_DIR$/mapping.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexmake.m" afterPath="$PROJECT_DIR$/mexmake.m" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/numberHelper.c" afterPath="$PROJECT_DIR$/numberHelper.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/userTest.c" afterPath="$PROJECT_DIR$/userTest.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/cmake-build-release/" />
@@ -67,42 +119,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="256">
-              <caret line="16" column="32" lean-forward="true" selection-start-line="16" selection-start-column="32" selection-end-line="16" selection-end-column="32" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="queue.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/queue.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2656">
-              <caret line="166" column="0" lean-forward="false" selection-start-line="167" selection-start-column="0" selection-end-line="167" selection-end-column="24" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="numberHelper.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/numberHelper.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="816">
-              <caret line="51" column="0" lean-forward="false" selection-start-line="51" selection-start-column="0" selection-end-line="51" selection-end-column="0" />
+            <state relative-caret-position="198">
+              <caret line="17" column="32" lean-forward="false" selection-start-line="17" selection-start-column="32" selection-end-line="17" selection-end-column="32" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="getPageSize.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/getPageSize.c">
+      <file leaf-file-name="mapping.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mapping.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="202">
-              <caret line="15" column="20" lean-forward="false" selection-start-line="15" selection-start-column="20" selection-end-line="15" selection-end-column="20" />
-              <folding />
+            <state relative-caret-position="144">
+              <caret line="9" column="19" lean-forward="false" selection-start-line="9" selection-start-column="19" selection-end-line="9" selection-end-column="19" />
+              <folding>
+                <element signature="e#330#380#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -110,22 +144,9 @@
       <file leaf-file-name="fileHelper.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fileHelper.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1232">
-              <caret line="77" column="11" lean-forward="false" selection-start-line="77" selection-start-column="11" selection-end-line="77" selection-end-column="11" />
+            <state relative-caret-position="-813">
+              <caret line="261" column="24" lean-forward="false" selection-start-line="261" selection-start-column="24" selection-end-line="261" selection-end-column="24" />
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mapping.h" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/mapping.h">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="436">
-              <caret line="43" column="14" lean-forward="true" selection-start-line="43" selection-start-column="14" selection-end-line="43" selection-end-column="14" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-                <element signature="e#318#368#0" expanded="true" />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -133,8 +154,38 @@
       <file leaf-file-name="mapping.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mapping.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5840">
-              <caret line="365" column="76" lean-forward="false" selection-start-line="365" selection-start-column="76" selection-end-line="365" selection-end-column="76" />
+            <state relative-caret-position="282">
+              <caret line="67" column="6" lean-forward="false" selection-start-line="67" selection-start-column="6" selection-end-line="67" selection-end-column="6" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="userTest.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/userTest.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="254">
+              <caret line="45" column="0" lean-forward="false" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="35">
+              <caret line="50" column="16" lean-forward="false" selection-start-line="50" selection-start-column="16" selection-end-line="50" selection-end-column="16" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="getmatvar.c" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/getmatvar.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="10" lean-forward="false" selection-start-line="0" selection-start-column="10" selection-end-line="0" selection-end-column="10" />
               <folding />
             </state>
           </provider>
@@ -143,12 +194,9 @@
       <file leaf-file-name="chunkedData.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/chunkedData.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1424">
-              <caret line="89" column="15" lean-forward="false" selection-start-line="89" selection-start-column="15" selection-end-line="89" selection-end-column="15" />
-              <folding>
-                <element signature="e#98#118#0" expanded="true" />
-                <element signature="e#207#238#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="1307">
+              <caret line="126" column="52" lean-forward="false" selection-start-line="126" selection-start-column="52" selection-end-line="126" selection-end-column="52" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -156,8 +204,8 @@
       <file leaf-file-name="zlib.h" pinned="false" current-in-tab="false">
         <entry file="file://C:/msys64/mingw64/include/zlib.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="28704">
-              <caret line="1794" column="10" lean-forward="false" selection-start-line="1794" selection-start-column="10" selection-end-line="1794" selection-end-column="10" />
+            <state relative-caret-position="-272">
+              <caret line="414" column="0" lean-forward="false" selection-start-line="414" selection-start-column="0" selection-end-line="414" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -167,23 +215,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>-1</find>
-      <find>- 1</find>
-      <find>navigate</find>
-      <find>s_block</find>
-      <find>children</find>
-      <find>chunk_start</find>
-      <find>filename</find>
-      <find>pointer</find>
-      <find>= NULL</find>
-      <find>sub_ob</find>
-      <find>dims</find>
-      <find>type</find>
-      <find>sub_objects</find>
-      <find>temp_objects</find>
-      <find>NULL</find>
-      <find>parent_tree_address</find>
-      <find>readTreeNode</find>
       <find>enqueue</find>
       <find>obj_header_address</find>
       <find>this_address</find>
@@ -195,13 +226,33 @@
       <find>tree_address</find>
       <find>data_address</find>
       <find>chunked_dim_sizes</find>
-      <find>elem_size</find>
       <find>node_level</find>
+      <find>printf</find>
+      <find>num</find>
+      <find>num_chunked</find>
+      <find>num_elems</find>
+      <find>elem_size</find>
+      <find>object head</find>
+      <find>char* peekVariableName()</find>
+      <find>Object header for</find>
+      <find>size</find>
+      <find>object header for</find>
+      <find>dims</find>
+      <find>index</find>
+      <find>getBytesAsNumber</find>
+      <find>getBytesAsNumber\((.*?)\)</find>
+      <find>total_in</find>
+      <find>data_buffer_index</find>
+      <find>Datatype</find>
+      <find>setIn</find>
     </findStrings>
     <replaceStrings>
       <replace>trio</replace>
       <replace>tree_address</replace>
       <replace>object-&gt;chunked_info.chunked_dim_sizes</replace>
+      <replace>object-&gt;elem_size</replace>
+      <replace>getBytesAsNumber($1, META_DATA_BYTE_ORDER)</replace>
+      <replace>DataType</replace>
     </replaceStrings>
     <dirStrings>
       <dir>C:\workspace\c\MatFile-Parsing-Win\v7.3Files</dir>
@@ -217,21 +268,23 @@
         <option value="$PROJECT_DIR$/extlib/mman-win32/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/getpagesize.c" />
         <option value="$PROJECT_DIR$/extlib/mman-win32/mman.c" />
-        <option value="$PROJECT_DIR$/userTest.c" />
         <option value="$PROJECT_DIR$/getopt.h" />
         <option value="$PROJECT_DIR$/test.c" />
         <option value="$PROJECT_DIR$/unistd.h" />
         <option value="$PROJECT_DIR$/getPageSize.c" />
-        <option value="$PROJECT_DIR$/getmatvar.c" />
         <option value="$PROJECT_DIR$/test1.c" />
-        <option value="$PROJECT_DIR$/numberHelper.c" />
         <option value="$PROJECT_DIR$/queue.c" />
+        <option value="$APPLICATION_CONFIG_DIR$/clion64.exe.vmoptions" />
+        <option value="$PROJECT_DIR$/chunkedTest.h" />
+        <option value="$PROJECT_DIR$/CMakeLists.txt" />
+        <option value="$PROJECT_DIR$/chunkedTest.c" />
         <option value="$PROJECT_DIR$/fileHelper.c" />
+        <option value="$PROJECT_DIR$/numberHelper.c" />
         <option value="$PROJECT_DIR$/mapping.c" />
+        <option value="$PROJECT_DIR$/userTest.c" />
         <option value="$PROJECT_DIR$/chunkedData.c" />
         <option value="$PROJECT_DIR$/mapping.h" />
-        <option value="$PROJECT_DIR$/CMakeLists.txt" />
-        <option value="$APPLICATION_CONFIG_DIR$/clion64.exe.vmoptions" />
+        <option value="$PROJECT_DIR$/getmatvar.c" />
       </list>
     </option>
   </component>
@@ -242,7 +295,7 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="-8" />
     <option name="y" value="-8" />
     <option name="width" value="1936" />
@@ -295,7 +348,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="settings.editor.selected.configurable" value="reference.settings.ide.settings.web.browsers" />
+    <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors.General" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
   </component>
@@ -316,11 +369,11 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.MatFile_Parsing_WinJB_chunkedData">
+  <component name="RunManager" selected="Application.my_struct1.mat my_struct.array">
     <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" EXPLICIT_BUILD_TARGET_NAME="all">
       <envs />
     </configuration>
-    <configuration name="MatFile_Parsing_WinJB_chunkedData" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_chunkedData" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_chunkedData">
+    <configuration name="MatFile_Parsing_WinJB_chunkedTest" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_chunkedTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_chunkedTest">
       <envs />
     </configuration>
     <configuration name="MatFile_Parsing_WinJB_test" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_test">
@@ -329,15 +382,27 @@
     <configuration name="MatFile_Parsing_WinJB_test1" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_test1" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_test1">
       <envs />
     </configuration>
-    <configuration name="MatFile_Parsing_WinJB_userTest" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="my_struct.mat my_struct" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
+    <configuration name="MatFile_Parsing_WinJB_userTest" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="chunked.mat data" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
       <envs />
     </configuration>
-    <list size="5">
+    <configuration name="chunked.mat data" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="chunked.mat data" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
+      <envs />
+    </configuration>
+    <configuration name="my_struct1.mat my_struct.array" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="my_struct1.mat my_struct.array" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
+      <envs />
+    </configuration>
+    <configuration name="my_struct.mat array" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="my_struct.mat array" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
+      <envs />
+    </configuration>
+    <list size="8">
       <item index="0" class="java.lang.String" itemvalue="Application.Build All" />
-      <item index="1" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_chunkedData" />
+      <item index="1" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_chunkedTest" />
       <item index="2" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_test" />
       <item index="3" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_test1" />
       <item index="4" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_userTest" />
+      <item index="5" class="java.lang.String" itemvalue="Application.chunked.mat data" />
+      <item index="6" class="java.lang.String" itemvalue="Application.my_struct.mat array" />
+      <item index="7" class="java.lang.String" itemvalue="Application.my_struct1.mat my_struct.array" />
     </list>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
@@ -373,37 +438,39 @@
       <workItem from="1503897422708" duration="10210000" />
       <workItem from="1503910861874" duration="36236000" />
       <workItem from="1503992046721" duration="14736000" />
-      <workItem from="1504011915029" duration="158000" />
+      <workItem from="1504011915029" duration="7228000" />
+      <workItem from="1504045058457" duration="7678000" />
+      <workItem from="1504053404968" duration="34936000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="170639000" />
+    <option name="totallyTimeSpent" value="220323000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1066" extended-state="7" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1671875" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32948583" sideWeight="0.48333332" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="LuaJ" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32948583" sideWeight="0.51666665" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.34375" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.48125" order="11" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39979014" sideWeight="0.6859375" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1671875" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="LuaJ" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection Results" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.475" order="12" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30430222" sideWeight="0.48125" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39979014" sideWeight="0.36354166" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39979014" sideWeight="0.3140625" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.534375" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Inspection Results" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.47708333" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30430222" sideWeight="0.48333332" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -427,57 +494,20 @@
           <option name="timeStamp" value="127" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/chunkedData.c</url>
-          <line>40</line>
-          <option name="timeStamp" value="238" />
+          <url>file://$PROJECT_DIR$/userTest.c</url>
+          <line>45</line>
+          <option name="timeStamp" value="351" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="240" />
+      <option name="time" value="352" />
     </breakpoint-manager>
-    <watches-manager />
+    <watches-manager>
+      <configuration name="CMakeRunConfiguration">
+        <watch expression="decompressed_data_buffer" />
+      </configuration>
+    </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/getPageSize.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="74" lean-forward="false" selection-start-line="0" selection-start-column="74" selection-end-line="0" selection-end-column="74" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapping.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1700">
-          <caret line="100" column="15" lean-forward="false" selection-start-line="100" selection-start-column="5" selection-end-line="100" selection-end-column="15" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#318#368#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/getmatvar.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="29" column="71" lean-forward="true" selection-start-line="29" selection-start-column="71" selection-end-line="29" selection-end-column="71" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="14" lean-forward="false" selection-start-line="14" selection-start-column="14" selection-end-line="14" selection-end-column="14" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/userTest.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" column="29" lean-forward="false" selection-start-line="7" selection-start-column="29" selection-end-line="7" selection-end-column="29" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2737">
@@ -527,8 +557,7 @@
         <state relative-caret-position="170">
           <caret line="10" column="19" lean-forward="true" selection-start-line="10" selection-start-column="19" selection-end-line="10" selection-end-column="19" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#318#368#0" expanded="true" />
+            <element signature="e#330#380#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -583,8 +612,7 @@
         <state relative-caret-position="2618">
           <caret line="154" column="9" lean-forward="false" selection-start-line="154" selection-start-column="9" selection-end-line="154" selection-end-column="9" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#318#368#0" expanded="true" />
+            <element signature="e#330#380#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -701,21 +729,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/getmatvar.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3222">
-          <caret line="65" column="39" lean-forward="false" selection-start-line="65" selection-start-column="39" selection-end-line="65" selection-end-column="39" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/userTest.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="16">
-          <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/msys64/mingw64/include/H5Zpublic.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="384">
@@ -730,89 +743,124 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/clion64.exe.vmoptions">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="160">
+          <caret line="10" column="3" lean-forward="false" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/extlib/zlib-1.2.11/zlib.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="231">
+          <caret line="1790" column="63" lean-forward="false" selection-start-line="1790" selection-start-column="63" selection-end-line="1790" selection-end-column="63" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/extlib/zlib-1.2.11/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/chunkedTest.cpp" />
+    <entry file="file://$PROJECT_DIR$/chunkedTest.h" />
+    <entry file="file://$PROJECT_DIR$/getPageSize.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="15" column="20" lean-forward="false" selection-start-line="15" selection-start-column="20" selection-end-line="15" selection-end-column="20" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/queue.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2656">
-          <caret line="166" column="0" lean-forward="false" selection-start-line="167" selection-start-column="0" selection-end-line="167" selection-end-column="24" />
+        <state relative-caret-position="2448">
+          <caret line="153" column="27" lean-forward="false" selection-start-line="153" selection-start-column="27" selection-end-line="153" selection-end-column="27" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fileHelper.c">
+    <entry file="file://$PROJECT_DIR$/chunkedTest.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1232">
-          <caret line="77" column="11" lean-forward="false" selection-start-line="77" selection-start-column="11" selection-end-line="77" selection-end-column="11" />
+        <state relative-caret-position="-13">
+          <caret line="8" column="26" lean-forward="true" selection-start-line="8" selection-start-column="26" selection-end-line="8" selection-end-column="26" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mapping.c">
+    <entry file="file://$PROJECT_DIR$/numberHelper.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5840">
-          <caret line="365" column="76" lean-forward="false" selection-start-line="365" selection-start-column="76" selection-end-line="365" selection-end-column="76" />
+        <state relative-caret-position="198">
+          <caret line="17" column="32" lean-forward="false" selection-start-line="17" selection-start-column="32" selection-end-line="17" selection-end-column="32" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://C:/msys64/mingw64/include/zlib.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="28704">
-          <caret line="1794" column="10" lean-forward="false" selection-start-line="1794" selection-start-column="10" selection-end-line="1794" selection-end-column="10" />
+        <state relative-caret-position="-272">
+          <caret line="414" column="0" lean-forward="false" selection-start-line="414" selection-start-column="0" selection-end-line="414" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fileHelper.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-813">
+          <caret line="261" column="24" lean-forward="false" selection-start-line="261" selection-start-column="24" selection-end-line="261" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapping.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="282">
+          <caret line="67" column="6" lean-forward="false" selection-start-line="67" selection-start-column="6" selection-end-line="67" selection-end-column="6" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/userTest.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="254">
+          <caret line="45" column="0" lean-forward="false" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/chunkedData.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1424">
-          <caret line="89" column="15" lean-forward="false" selection-start-line="89" selection-start-column="15" selection-end-line="89" selection-end-column="15" />
-          <folding>
-            <element signature="e#98#118#0" expanded="true" />
-            <element signature="e#207#238#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/numberHelper.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="816">
-          <caret line="51" column="0" lean-forward="false" selection-start-line="51" selection-start-column="0" selection-end-line="51" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$APPLICATION_CONFIG_DIR$/clion64.exe.vmoptions">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="160">
-          <caret line="10" column="3" lean-forward="false" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="16" column="32" lean-forward="true" selection-start-line="16" selection-start-column="32" selection-end-line="16" selection-end-column="32" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/getPageSize.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="202">
-          <caret line="15" column="20" lean-forward="false" selection-start-line="15" selection-start-column="20" selection-end-line="15" selection-end-column="20" />
+        <state relative-caret-position="1307">
+          <caret line="126" column="52" lean-forward="false" selection-start-line="126" selection-start-column="52" selection-end-line="126" selection-end-column="52" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mapping.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="436">
-          <caret line="43" column="14" lean-forward="true" selection-start-line="43" selection-start-column="14" selection-end-line="43" selection-end-column="14" />
+        <state relative-caret-position="144">
+          <caret line="9" column="19" lean-forward="false" selection-start-line="9" selection-start-column="19" selection-end-line="9" selection-end-column="19" />
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#318#368#0" expanded="true" />
+            <element signature="e#330#380#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="35">
+          <caret line="50" column="16" lean-forward="false" selection-start-line="50" selection-start-column="16" selection-end-line="50" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/getmatvar.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="10" lean-forward="false" selection-start-line="0" selection-start-column="10" selection-end-line="0" selection-end-column="10" />
+          <folding />
         </state>
       </provider>
     </entry>

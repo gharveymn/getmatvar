@@ -6,10 +6,17 @@ set(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
 
 include_directories(${MEX})
 
-find_package( ZLIB REQUIRED )
-if ( ZLIB_FOUND )
-	include_directories( ${ZLIB_INCLUDE_DIRS} )
-endif( ZLIB_FOUND )
+macro (add_executable _name)
+	# invoke built-in add_executable
+	_add_executable(${ARGV})
+	if (TARGET ${_name})
+		find_package(ZLIB REQUIRED)
+		if (ZLIB_FOUND)
+			include_directories(${ZLIB_INCLUDE_DIRS})
+			target_link_libraries(${_name} ${ZLIB_LIBRARIES})
+		endif (ZLIB_FOUND)
+	endif()
+endmacro()
 
 set(SOURCE_FILES
 	   ${MEX}/mex.h
@@ -21,6 +28,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   chunkedData.c
 	   userTest.c)
 
 add_executable(MatFile_Parsing_WinJB_userTest ${SOURCE_FILES})
@@ -35,9 +43,10 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
-	   chunkedData.c)
+	   chunkedData.c
+	   chunkedTest.c)
 
-add_executable(MatFile_Parsing_WinJB_chunkedData ${SOURCE_FILES})
+add_executable(MatFile_Parsing_WinJB_chunkedTest ${SOURCE_FILES})
 
 set(SOURCE_FILES
 	   ${MEX}/mex.h
