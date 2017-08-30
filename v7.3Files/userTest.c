@@ -18,30 +18,31 @@ int main(int argc, char* argv[])
 	Data* hi_objects = organizeObjects(objects, *num_objs);
 	int index = 0;
 	
-	while(hi_objects[index].type != UNDEF)
-	{
-		switch(hi_objects[index].type)
-		{
-			case DOUBLE:
-				printDouble(&hi_objects[index]);
-				break;
-			case CHAR:
-				printChar(&hi_objects[index]);
-				break;
-			case UNSIGNEDINT16:
-				printShort(&hi_objects[index]);
-				break;
-			case REF:
-				printCell(&hi_objects[index]);
-				break;
-			case STRUCT:
-				printStruct(&hi_objects[index]);
-				break;
-			default:
-				break;
-		}
-		index++;
-	}
+//	while(hi_objects[index].type != UNDEF)
+//	{
+//		switch(hi_objects[index].type)
+//		{
+//			case DOUBLE:
+//				printDouble(&hi_objects[index]);
+//				break;
+//			case CHAR:
+//				printChar(&hi_objects[index]);
+//				break;
+//			case UNSIGNEDINT16:
+//				printShort(&hi_objects[index]);
+//				break;
+//			case REF:
+//				printCell(&hi_objects[index]);
+//				break;
+//			case STRUCT:
+//				printStruct(&hi_objects[index]);
+//				break;
+//			default:
+//				break;
+//		}
+//		index++;
+//	}
+	
 	freeDataObjects(objects, *num_objs);
 	free(hi_objects);
 }

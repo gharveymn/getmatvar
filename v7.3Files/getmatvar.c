@@ -1,4 +1,4 @@
-#include "C:/Program Files/MATLAB/R2017a/extern/include/mex.h"
+#include <mex.h>
 #include "mapping.h"
 
 
@@ -6,9 +6,9 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 mxArray* makeStruct(mxArray* returnStructure, int num_elems, Data* object);
 mxArray* makeCell(mxArray* returnStructure, int num_elems, Data* objects);
 char** getFieldNames(Data* object, const int num_elems);
-void setDblPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
-void setCharPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
-void setIntPtr(Data object, mxArray* returnStructure, const char* varname, const bool isStruct);
+void setDblPtr(Data object, mxArray* returnStructure, const char* varname, DataType type);
+void setCharPtr(Data object, mxArray* returnStructure, const char* varname, DataType type);
+void setIntPtr(Data object, mxArray* returnStructure, const char* varname, DataType type);
 mwSize* makeObjDims(uint32_t* dims, const mwSize num_obj_dims);
 void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems);
 void getNumFields(Data* object, mwSize* num_fields);
@@ -45,7 +45,7 @@ void makeReturnStructure(mxArray* returnStructure[], const int num_elems, const 
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
 	char** field_names;
-	Datatype data_insertion_type = STRUCT;
+	DataType data_insertion_type = STRUCT;
 	
 	for(int i = 0; i < num_elems; i++)
 	{
@@ -102,7 +102,7 @@ mxArray* makeStruct(mxArray* returnStructure, const int num_elems, Data* objects
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
 	char** field_names;
-	Datatype data_insertion_type = STRUCT;
+	DataType data_insertion_type = STRUCT;
 	
 	for(int index = 0; index < num_elems; index++)
 	{
@@ -151,7 +151,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 	mxArray* mxCellPtr;
 	mxArray* mxStructPtr;
 	char** field_names;
-	Datatype data_insertion_type = REF;
+	DataType data_insertion_type = REF;
 	
 	for(int index = 0; index < num_elems; index++)
 	{
@@ -192,7 +192,7 @@ mxArray* makeCell(mxArray* returnStructure, const int num_elems, Data* objects)
 }
 
 
-void setDblPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
+void setDblPtr(Data object, mxArray* returnStructure, const char* varname, DataType type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
@@ -217,7 +217,7 @@ void setDblPtr(Data object, mxArray* returnStructure, const char* varname, Datat
 }
 
 
-void setCharPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
+void setCharPtr(Data object, mxArray* returnStructure, const char* varname, DataType type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
@@ -242,7 +242,7 @@ void setCharPtr(Data object, mxArray* returnStructure, const char* varname, Data
 }
 
 
-void setIntPtr(Data object, mxArray* returnStructure, const char* varname, Datatype type)
+void setIntPtr(Data object, mxArray* returnStructure, const char* varname, DataType type)
 {
 	mwSize num_obj_dims, num_obj_elems = 0;
 	getNums(&object, &num_obj_dims, &num_obj_elems);
