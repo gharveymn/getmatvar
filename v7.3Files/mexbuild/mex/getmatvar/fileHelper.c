@@ -318,9 +318,9 @@ void freeDataObjects(Data** objects)
 	while(objects[i]->type != UNDEF)
 	{
 		
-		if(objects[i]->char_data != NULL)
+		if(objects[i]->data_arrays.char_data != NULL)
 		{
-			free(objects[i]->char_data);
+			free(objects[i]->data_arrays.char_data);
 		}
 		else if(objects[i]->double_data != NULL)
 		{
@@ -330,9 +330,9 @@ void freeDataObjects(Data** objects)
 		{
 			free(objects[i]->udouble_data);
 		}
-		else if(objects[i]->ushort_data != NULL)
+		else if(objects[i]->data_arrays.ui16_data != NULL)
 		{
-			free(objects[i]->ushort_data);
+			free(objects[i]->data_arrays.ui16_data);
 		}
 		
 		if(objects[i]->dims != NULL)
@@ -368,9 +368,9 @@ void freeDataObjectTree(Data* super_object)
 	if(super_object->type != UNDEF)
 	{
 		
-		if(super_object->char_data != NULL)
+		if(super_object->data_arrays.char_data != NULL)
 		{
-			free(super_object->char_data);
+			free(super_object->data_arrays.char_data);
 		}
 		else if(super_object->double_data != NULL)
 		{
@@ -380,9 +380,9 @@ void freeDataObjectTree(Data* super_object)
 		{
 			free(super_object->udouble_data);
 		}
-		else if(super_object->ushort_data != NULL)
+		else if(super_object->data_arrays.ui16_data != NULL)
 		{
-			free(super_object->ushort_data);
+			free(super_object->data_arrays.ui16_data);
 		}
 		
 		if(super_object->dims != NULL)

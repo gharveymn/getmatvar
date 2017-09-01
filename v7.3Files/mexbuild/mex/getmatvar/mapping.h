@@ -141,10 +141,10 @@ struct data_
 	ChunkedInfo chunked_info;
 	uint32_t* dims;
 	size_t elem_size;
-	char* char_data;
+	char* data_arrays.char_data;
 	double* double_data;
 	uint64_t* udouble_data;
-	uint16_t* ushort_data;
+	uint16_t* data_arrays.ui16_data;
 	char name[NAME_LENGTH];
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;

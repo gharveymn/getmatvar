@@ -123,18 +123,18 @@ void doInflate(Data* object, TreeNode* node)
 					int a = TRUE;
 				}
 			}
-			else if(object->ushort_data != NULL)
+			else if(object->data_arrays.ui16_data != NULL)
 			{
-				object->ushort_data[array_index] = (uint16_t)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
+				object->data_arrays.ui16_data[array_index] = (uint16_t)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
 			}
 			else if(object->udouble_data != NULL)
 			{
 				//these are addresses so we have to add the offset
 				object->udouble_data[array_index] = getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order) + s_block.base_address;
 			}
-			else if(object->char_data != NULL)
+			else if(object->data_arrays.char_data != NULL)
 			{
-				object->char_data[array_index] = (char)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
+				object->data_arrays.char_data[array_index] = (char)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
 			}
 			data_buffer_index++;
 		}

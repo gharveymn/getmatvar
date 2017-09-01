@@ -160,10 +160,10 @@ void cellTest(Data* objects)
 	assert(strcmp(objects[0].matlab_class, "cell") == 0);
 	assert(objects[0].dims[0] == 3);
 	assert(objects[0].dims[1] == 1);
-	assert(objects[0].double_data == NULL);
-	assert(objects[0].udouble_data != NULL);
-	assert(objects[0].ushort_data == NULL);
-	assert(objects[0].char_data == NULL);
+	assert(objects[0].data_arrays.double_data == NULL);
+	assert(objects[0].data_arrays.udouble_data != NULL);
+	assert(objects[0].data_arrays.ui16_data == NULL);
+	assert(objects[0].data_arrays.char_data == NULL);
 	assert(strcmp(objects[0].name, "cell") == 0);
 	for(int i = 1; i < 4; i++)
 	{
@@ -172,15 +172,15 @@ void cellTest(Data* objects)
 		assert(strcmp(data.matlab_class, "double") == 0);
 		assert(data.dims[0] == 1);
 		assert(data.dims[1] == 1);
-		assert(data.double_data != NULL);
-		assert(data.udouble_data == NULL);
-		assert(data.ushort_data == NULL);
-		assert(data.char_data == NULL);
+		assert(data.data_arrays.double_data != NULL);
+		assert(data.data_arrays.udouble_data == NULL);
+		assert(data.data_arrays.ui16_data == NULL);
+		assert(data.data_arrays.char_data == NULL);
 		assert(strcmp(data.name, objects[0].name) == 0);
 	}
-	assert(objects[1].double_data[0] == 1);
-	assert(objects[2].double_data[0] == 1.1);
-	assert(objects[3].double_data[0] == 1.2);
+	assert(objects[1].data_arrays.double_data[0] == 1);
+	assert(objects[2].data_arrays.double_data[0] == 1.1);
+	assert(objects[3].data_arrays.double_data[0] == 1.2);
 }
 
 
@@ -191,14 +191,14 @@ void arrayTest(Data* objects)
 	assert(strcmp(data.matlab_class, "double") == 0);
 	assert(data.dims[0] == 3);
 	assert(data.dims[1] == 2);
-	assert(data.double_data != NULL);
-	assert(data.udouble_data == NULL);
-	assert(data.ushort_data == NULL);
-	assert(data.char_data == NULL);
+	assert(data.data_arrays.double_data != NULL);
+	assert(data.data_arrays.udouble_data == NULL);
+	assert(data.data_arrays.ui16_data == NULL);
+	assert(data.data_arrays.char_data == NULL);
 	assert(strcmp(data.name, "array") == 0);
 	for(int i = 0; i < 6; i++)
 	{
-		assert(data.double_data[i] == 1);
+		assert(data.data_arrays.double_data[i] == 1);
 	}
 }
 
@@ -210,11 +210,11 @@ void integerTest(Data* objects)
 	assert(strcmp(data.matlab_class, "double") == 0);
 	assert(data.dims[0] == 1);
 	assert(data.dims[1] == 1);
-	assert(data.double_data != NULL);
-	assert(data.udouble_data == NULL);
-	assert(data.ushort_data == NULL);
-	assert(data.char_data == NULL);
-	assert(data.double_data[0] == 1);
+	assert(data.data_arrays.double_data != NULL);
+	assert(data.data_arrays.udouble_data == NULL);
+	assert(data.data_arrays.ui16_data == NULL);
+	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.double_data[0] == 1);
 	assert(strcmp(data.name, "integer") == 0);
 }
 
@@ -226,11 +226,11 @@ void doubleTest(Data* objects)
 	assert(strcmp(data.matlab_class, "double") == 0);
 	assert(data.dims[0] == 1);
 	assert(data.dims[1] == 1);
-	assert(data.double_data != NULL);
-	assert(data.udouble_data == NULL);
-	assert(data.ushort_data == NULL);
-	assert(data.char_data == NULL);
-	assert(data.double_data[0] == 2.2);
+	assert(data.data_arrays.double_data != NULL);
+	assert(data.data_arrays.udouble_data == NULL);
+	assert(data.data_arrays.ui16_data == NULL);
+	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.double_data[0] == 2.2);
 }
 
 
@@ -242,13 +242,13 @@ void stringTest(Data* objects)
 	assert(strcmp(data.matlab_class, "char") == 0);
 	assert(data.dims[0] == 8);
 	assert(data.dims[1] == 1);
-	assert(data.double_data == NULL);
-	assert(data.udouble_data == NULL);
-	assert(data.ushort_data != NULL);
-	assert(data.char_data == NULL);
+	assert(data.data_arrays.double_data == NULL);
+	assert(data.data_arrays.udouble_data == NULL);
+	assert(data.data_arrays.ui16_data != NULL);
+	assert(data.data_arrays.char_data == NULL);
 	assert(strcmp(data.name, "string") == 0);
 	for(int i = 0; i < 8; i++)
 	{
-		assert(data.ushort_data[i] == string[i]);
+		assert(data.data_arrays.ui16_data[i] == string[i]);
 	}
 }
