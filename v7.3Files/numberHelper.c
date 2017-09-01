@@ -39,16 +39,15 @@ uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endiann
 }
 
 
-double convertHexToFloatingPoint(uint64_t hex)
+double convertHexToDouble(uint64_t hex)
 {
 	double ret;
-	hex = (uint64_t)hex;
 	
 	//sign bit 63
 	double sign = 1 - 2*(hex >> 63);
 	
 	//exponent field bits 62-52
-	int16_t exponent = (int16_t)(((hex << 1) >> (52 + 1)) - 1023);
+	int32_t exponent = (int32_t)(((hex << 1) >> (52 + 1)) - 1023);
 	
 	//significand bits 51-0, shift back later for fewer operations
 	uint64_t significand = (hex << 12);
@@ -68,6 +67,39 @@ double convertHexToFloatingPoint(uint64_t hex)
 	{
 		b_i = (significand << i) >> 63;
 		sum += b_i / ((uint64_t)1 << (i + 1));
+	}
+	
+	return ret * sum;
+}
+
+double convertHexToSingle(uint32_t hex)
+{
+	double ret;
+	
+	//sign bit 63
+	double sign = 1 - 2*(hex >> 31);
+	
+	//exponent field bits 62-52
+	int16_t exponent = (int16_t)(((hex << 1) >> (23 + 1)) - 127);
+	
+	//significand bits 51-0, shift back later for fewer operations
+	uint32_t significand = (hex << 9);
+	
+	if(exponent >= 0)
+	{
+		ret = sign * (1 << exponent);
+	}
+	else
+	{
+		ret = sign / (1 << (-exponent));
+	}
+	
+	double sum = 1;
+	double b_i;
+	for(int i = 0; i <= 22; i++)
+	{
+		b_i = (significand << i) >> 31;
+		sum += b_i / ((uint32_t)1 << (i + 1));
 	}
 	
 	return ret * sum;

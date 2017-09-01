@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 //			case CHAR:
 //				printChar(&hi_objects[index]);
 //				break;
-//			case UNSIGNEDINT16:
+//			case UINT16:
 //				printShort(&hi_objects[index]);
 //				break;
 //			case REF:

@@ -28,6 +28,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   readMessage.c
 	   chunkedData.c
 	   userTest.c)
 
@@ -43,6 +44,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   readMessage.c
 	   chunkedData.c
 	   chunkedTest.c)
 
@@ -58,6 +60,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   readMessage.c
 	   test.c)
 
 add_executable(MatFile_Parsing_WinJB_test ${SOURCE_FILES})
@@ -72,6 +75,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   readMessage.c
 	   test1.c)
 
 add_executable(MatFile_Parsing_WinJB_test1 ${SOURCE_FILES})
@@ -86,6 +90,7 @@ set(SOURCE_FILES
 	   mapping.h
 	   numberHelper.c
 	   queue.c
+	   readMessage.c
 	   getmatvar.c)
 
 add_executable(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})

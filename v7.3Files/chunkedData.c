@@ -41,23 +41,12 @@ void decompressChunk(Data* object, TreeNode* node)
 void doInflate(Data* object, TreeNode* node)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
-	uint32_t num_elems = 1;
-	uint8_t num_dims = 0;
-	int index = 0;
-	while(object->dims[index] > 0)
-	{
-		num_elems *= object->dims[index];
-		num_dims++;
-		index++;
-	}
 	
 	uint64_t chunk_start_index, chunk_end_index;
 	uint64_t chunk_end_index_offset = 1;
-	index = 0;
-	while(object->chunked_info.chunked_dims[index] > 0)
+	for(int i = 0; object->chunked_info.chunked_dims[i] > 0; i++)
 	{
-		chunk_end_index_offset *= object->chunked_info.chunked_dims[index];
-		index++;
+		chunk_end_index_offset *= object->chunked_info.chunked_dims[i];
 	}
 	
 	int ret = Z_OK;
@@ -109,33 +98,11 @@ void doInflate(Data* object, TreeNode* node)
 		
 		inflateReset(&strm);
 		
-		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, num_dims);
-		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, num_dims);
+		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
+		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims);
 		
 		//copy over data
-		int data_buffer_index = 0;
-		for(uint64_t array_index = chunk_start_index; array_index < chunk_end_index && array_index < chunk_start_index + chunk_end_index_offset && array_index < num_elems; array_index++)
-		{
-			if(object->double_data != NULL)
-			{
-				object->double_data[array_index] = convertHexToFloatingPoint(getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order));
-			}
-			else if(object->ushort_data != NULL)
-			{
-				object->ushort_data[array_index] = (uint16_t)getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
-			}
-			else if(object->udouble_data != NULL)
-			{
-				//these are addresses so we have to add the offset
-				object->udouble_data[array_index] = getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order) + s_block.base_address;
-			}
-			else if(object->char_data != NULL)
-			{
-				object->char_data[array_index] = (char)getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
-			}
-			data_buffer_index++;
-		}
-		
+		placeData(object, (char*)&decompressed_data_buffer[0], chunk_start_index, MIN(chunk_end_index, object->num_elems), object->elem_size, object->byte_order);
 		
 	}
 	
