@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 //			case DOUBLE:
 //				printDouble(&hi_objects[index]);
 //				break;
-//			case CHAR:
+//			case UINT8:
 //				printChar(&hi_objects[index]);
 //				break;
 //			case UINT16:
@@ -159,7 +159,7 @@ void printChar(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%d ", object->data_arrays.char_data[i]);
+		printf("%d ", object->data_arrays.ui8_data[i]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)

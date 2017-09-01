@@ -3,8 +3,8 @@ CFLAGS=-c -g -Wall
 
 all: mapping
 
-mapping: test1.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o
-	$(CC) test1.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o -o mapping -lm
+mapping: userTest.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o readMessage.o chunkedData.o
+	$(CC) userTest.o mapping.o fileHelper.o numberHelper.o queue.o getPageSize.o readMessage.o chunkedData.o -o mapping -lm -lz
 
 userTest.o: userTest.c
 	$(CC) $(CFLAGS) userTest.c
@@ -23,6 +23,12 @@ queue.o: queue.c
 
 getPageSize.o: getPageSize.c
 	$(CC) $(CFLAGS) getPageSize.c
+
+readMessage.o: readMessage.c
+	$(CC) $(CFLAGS) readMessage.c
+
+chunkedData.o: chunkedData.c
+	$(CC) $(CFLAGS) chunkedData.c
 
 clean: 
 	rm *o mapping

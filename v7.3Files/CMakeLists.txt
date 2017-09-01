@@ -19,7 +19,6 @@ macro (add_executable _name)
 endmacro()
 
 set(SOURCE_FILES
-	   ${MEX}/mex.h
 	   extlib/mman-win32/mman.c
 	   extlib/mman-win32/mman.h
 	   fileHelper.c
@@ -35,7 +34,6 @@ set(SOURCE_FILES
 add_executable(MatFile_Parsing_WinJB_userTest ${SOURCE_FILES})
 
 set(SOURCE_FILES
-	   ${MEX}/mex.h
 	   extlib/mman-win32/mman.c
 	   extlib/mman-win32/mman.h
 	   fileHelper.c
@@ -51,7 +49,6 @@ set(SOURCE_FILES
 add_executable(MatFile_Parsing_WinJB_chunkedTest ${SOURCE_FILES})
 
 set(SOURCE_FILES
-	   ${MEX}/mex.h
 	   extlib/mman-win32/mman.c
 	   extlib/mman-win32/mman.h
 	   fileHelper.c
@@ -66,7 +63,6 @@ set(SOURCE_FILES
 add_executable(MatFile_Parsing_WinJB_test ${SOURCE_FILES})
 
 set(SOURCE_FILES
-	   ${MEX}/mex.h
 	   extlib/mman-win32/mman.c
 	   extlib/mman-win32/mman.h
 	   fileHelper.c
@@ -91,6 +87,8 @@ set(SOURCE_FILES
 	   numberHelper.c
 	   queue.c
 	   readMessage.c
+	   mexPointerSetters.c
+	   getmatvar.h
 	   getmatvar.c)
 
 add_executable(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})

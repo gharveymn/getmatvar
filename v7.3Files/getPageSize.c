@@ -40,6 +40,7 @@ DWORD getAllocGran(void)
 
 
 #else
+#include <unistd.h>
 
 //these are the same on unix
 

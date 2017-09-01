@@ -60,7 +60,7 @@ void arrayTest(Data* objects)
 	assert(data.data_arrays.double_data != NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data == NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	assert(strcmp(data.name, "array") == 0);
 	for(int i = 0; i < 102 * 101 * 100; i++)
 	{
@@ -79,7 +79,7 @@ void cellTest(Data* objects)
 	assert(objects[0].data_arrays.double_data == NULL);
 	assert(objects[0].data_arrays.udouble_data != NULL);
 	assert(objects[0].data_arrays.ui16_data == NULL);
-	assert(objects[0].data_arrays.char_data == NULL);
+	assert(objects[0].data_arrays.ui8_data == NULL);
 	assert(strcmp(objects[0].name, "cell") == 0);
 	
 	data = objects[1];
@@ -90,7 +90,7 @@ void cellTest(Data* objects)
 	assert(data.data_arrays.double_data == NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data != NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	char* string = (char*) malloc(5 * sizeof(char));
 	for(int i = 0; i < 4; i++)
 	{
@@ -107,7 +107,7 @@ void cellTest(Data* objects)
 	assert(data.data_arrays.double_data != NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data == NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	assert(data.data_arrays.double_data[0] == 2.0);
 	
 	data = objects[3];
@@ -118,7 +118,7 @@ void cellTest(Data* objects)
 	assert(data.data_arrays.double_data == NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data != NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	string = (char*) malloc(6 * sizeof(char));
 	for(int i = 0; i < 5; i++)
 	{
@@ -139,7 +139,7 @@ void integerTest(Data* objects)
 	assert(data.data_arrays.double_data != NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data == NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	assert(data.data_arrays.double_data[0] == 1);
 	assert(strcmp(data.name, "integer") == 0);
 }
@@ -155,6 +155,6 @@ void doubleTest(Data* objects)
 	assert(data.data_arrays.double_data != NULL);
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data == NULL);
-	assert(data.data_arrays.char_data == NULL);
+	assert(data.data_arrays.ui8_data == NULL);
 	assert(data.data_arrays.double_data[0] == 2.0);
 }
