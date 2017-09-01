@@ -53,57 +53,57 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n");
 		}
 
-		const char** varnames = malloc((nrhs - 1) * sizeof(char*));
+		const char** full_variable_names = malloc((nrhs - 1) * sizeof(char*));
 		for(int i = 0; i < nrhs - 1; i++)
 		{
-			varnames[i] = mxArrayToString(prhs[i + 1]);
+			full_variable_names[i] = mxArrayToString(prhs[i + 1]);
 		}
-		makeReturnStructure(plhs, nrhs - 1, varnames, filename);
-		free(varnames);
-		
+
+		makeReturnStructure(plhs, nrhs - 1, full_variable_names, filename);
+
+		/*
+		if (nrhs == 2)
+		{
+			//just one output, don't need the struct to hold all the returns
+			plhs[0] = mxGetFieldByNumber(plhs[0], 0, 0);
+		}
+		*/
+
+		free(full_variable_names);
+
 	}
 	
 }
 
 
-void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* varnames[], const char* filename)
+void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* full_variable_names[], const char* filename)
 {
-	mwSize ret_struct_dims[1] = {1};
-	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
-	DataType super_structure_type = STRUCT;
+
+	Data*** super_objects = malloc(num_elems*sizeof(Data**));
+	Data** super_object = malloc(sizeof(Data*));
+	const char** varnames = malloc(num_elems*sizeof(char*));
 	
 	for(mwIndex i = 0; i < num_elems; i++)
 	{
-		
-		Data* hi_objects = findDataObject(filename, varnames[i]);
-		
-		switch(hi_objects->type)
-		{
-			case DOUBLE:
-				setDblPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case CHAR:
-				setCharPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case UNSIGNEDINT16:
-				setIntPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case REF:
-				setCellPtr(hi_objects, uberStructure[0], hi_objects->name, i, super_structure_type);
-				break;
-			case STRUCT:
-				setStructPtr(hi_objects, uberStructure[0], hi_objects->name, i, super_structure_type);
-				break;
-			default:
-				break;
-		}
-		
-		freeDataObjectTree(hi_objects);
-		
+		super_object[0] = findDataObject(filename, full_variable_names[i]);
+		super_objects[i] = super_object;
+		varnames[i] = super_object[0]->name;
 	}
+
+	mwSize ret_struct_dims[1] = {1};
+	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
+
+	for (mwIndex i = 0; i < num_elems; i++)
+	{
+		makeSubstructure(uberStructure[0], 1, super_objects[i], STRUCT);
+	}
+
+	free(super_objects);
+	free(super_object);
+	free(varnames);
+
 }
 
-/*this will run only after one of the setXXXX methods*/
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type)
 {
 	
@@ -126,6 +126,8 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case STRUCT:
 				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
+			case FUNCTION_HANDLE:
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not supported (proprietary).");
 			default:
 				break;
 		}
@@ -139,6 +141,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
+
 	mwSize num_obj_dims = 0, num_obj_elems = 0;
 	getNums(object, &num_obj_dims, &num_obj_elems);
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
@@ -160,6 +163,7 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		//is a cell array
 		mxSetCell(returnStructure, index, mxDblPtr);
 	}
+
 }
 
 

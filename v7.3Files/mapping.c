@@ -267,7 +267,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 					{
 						object->type = STRUCT;
 					}
-					else if(strcmp("function-handle", object->matlab_class) == 0)
+					else if(strcmp("function_handle", object->matlab_class) == 0)
 					{
 						object->type = FUNCTION_HANDLE;
 					}
@@ -282,7 +282,6 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 				bytes_read = 0 - msg_size - 8;
 			default:
 				//ignore message
-				
 				//case 17 -- B tree already traversed and in queue
 				;
 		}
@@ -311,6 +310,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 			object->elem_size = sizeof(char);
 			break;
 		case STRUCT:
+		case FUNCTION_HANDLE:
 			object->dims = malloc(sizeof(int) * 3);
 			object->dims[0] = 1;
 			object->dims[1] = 1;
