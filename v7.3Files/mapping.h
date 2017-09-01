@@ -135,7 +135,7 @@ typedef struct
 typedef struct
 {
 	char* char_data;
-	int8_t i8_data;
+	int8_t* i8_data;
 	uint16_t* ui16_data;
 	int16_t* i16_data;
 	uint32_t* ui32_data;
@@ -220,6 +220,7 @@ void freeDataObjectTree(Data* super_object);
 
 //numberHelper.c
 double convertHexToDouble(uint64_t hex);
+double convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness);
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);

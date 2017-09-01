@@ -21,17 +21,9 @@
   <component name="ChangeListManager">
     <list default="true" id="5adce463-bb8f-47bd-8a57-ee4eb4fc9594" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileHelper.c" afterPath="$PROJECT_DIR$/fileHelper.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.c" afterPath="$PROJECT_DIR$/getmatvar.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.c" afterPath="$PROJECT_DIR$/mapping.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.h" afterPath="$PROJECT_DIR$/mapping.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexbuild/mex/getmatvar/chunkedData.c" afterPath="$PROJECT_DIR$/mexbuild/mex/getmatvar/chunkedData.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexbuild/mex/getmatvar/fileHelper.c" afterPath="$PROJECT_DIR$/mexbuild/mex/getmatvar/fileHelper.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexbuild/mex/getmatvar/getmatvar.c" afterPath="$PROJECT_DIR$/mexbuild/mex/getmatvar/getmatvar.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexbuild/mex/getmatvar/mapping.c" afterPath="$PROJECT_DIR$/mexbuild/mex/getmatvar/mapping.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexbuild/mex/getmatvar/mapping.h" afterPath="$PROJECT_DIR$/mexbuild/mex/getmatvar/mapping.h" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test.c" afterPath="$PROJECT_DIR$/test.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test1.c" afterPath="$PROJECT_DIR$/test1.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/userTest.c" afterPath="$PROJECT_DIR$/userTest.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/readMessage.c" afterPath="$PROJECT_DIR$/readMessage.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/cmake-build-release/" />
@@ -47,8 +39,18 @@
       <file leaf-file-name="numberHelper.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/numberHelper.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="208">
-              <caret line="16" column="0" lean-forward="false" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+            <state relative-caret-position="320">
+              <caret line="74" column="0" lean-forward="false" selection-start-line="74" selection-start-column="0" selection-end-line="74" selection-end-column="39" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="queue.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/queue.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="240">
+              <caret line="122" column="0" lean-forward="false" selection-start-line="122" selection-start-column="0" selection-end-line="122" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -57,8 +59,8 @@
       <file leaf-file-name="mapping.h" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mapping.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="20">
-              <caret line="134" column="8" lean-forward="false" selection-start-line="134" selection-start-column="8" selection-end-line="134" selection-end-column="8" />
+            <state relative-caret-position="184">
+              <caret line="220" column="16" lean-forward="true" selection-start-line="220" selection-start-column="16" selection-end-line="220" selection-end-column="16" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
                 <element signature="e#300#350#0" expanded="true" />
@@ -67,32 +69,15 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="mapping.c" pinned="false" current-in-tab="true">
+      <file leaf-file-name="mapping.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mapping.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2684">
-              <caret line="224" column="19" lean-forward="true" selection-start-line="224" selection-start-column="19" selection-end-line="224" selection-end-column="19" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="48">
-              <caret line="162" column="23" lean-forward="false" selection-start-line="162" selection-start-column="23" selection-end-line="162" selection-end-column="23" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test1.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test1.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="606">
-              <caret line="59" column="17" lean-forward="false" selection-start-line="59" selection-start-column="17" selection-end-line="59" selection-end-column="17" />
-              <folding />
+            <state relative-caret-position="1003">
+              <caret line="370" column="0" lean-forward="false" selection-start-line="370" selection-start-column="0" selection-end-line="370" selection-end-column="0" />
+              <folding>
+                <element signature="e#5475#7101#0" expanded="false" />
+                <element signature="e#7103#10300#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -100,8 +85,8 @@
       <file leaf-file-name="readMessage.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/readMessage.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="299">
-              <caret line="160" column="18" lean-forward="true" selection-start-line="160" selection-start-column="18" selection-end-line="160" selection-end-column="18" />
+            <state relative-caret-position="208">
+              <caret line="126" column="0" lean-forward="false" selection-start-line="126" selection-start-column="0" selection-end-line="126" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -110,18 +95,18 @@
       <file leaf-file-name="fileHelper.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fileHelper.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="308">
-              <caret line="270" column="57" lean-forward="true" selection-start-line="270" selection-start-column="57" selection-end-line="270" selection-end-column="57" />
+            <state relative-caret-position="1084">
+              <caret line="198" column="41" lean-forward="true" selection-start-line="198" selection-start-column="41" selection-end-line="198" selection-end-column="41" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="userTest.c" pinned="false" current-in-tab="false">
+      <file leaf-file-name="userTest.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/userTest.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1148">
-              <caret line="43" column="5" lean-forward="true" selection-start-line="43" selection-start-column="5" selection-end-line="43" selection-end-column="5" />
+            <state relative-caret-position="227">
+              <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -155,8 +140,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>system(EXIT_FAILURE)</find>
-      <find>setIn</find>
       <find>type</find>
       <find>data_insertion_type</find>
       <find>str</find>
@@ -185,6 +168,8 @@
       <find>char_data</find>
       <find>layout_</find>
       <find>layout</find>
+      <find>(objects\[i\]\-\&gt;data\_arrays\.(.*?)\_data)(.*?);</find>
+      <find>hea</find>
     </findStrings>
     <replaceStrings>
       <replace>trio</replace>
@@ -205,6 +190,8 @@
       <replace>data_arrays.ui16_data</replace>
       <replace>data_arrays.char_data</replace>
       <replace>elem_size</replace>
+      <replace>free($1)</replace>
+      <replace>free($1);</replace>
     </replaceStrings>
     <dirStrings>
       <dir>C:\workspace\c\MatFile-Parsing-Win\v7.3Files</dir>
@@ -233,14 +220,14 @@
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/numberHelper.c" />
         <option value="$PROJECT_DIR$/chunkedData.c" />
-        <option value="$PROJECT_DIR$/readMessage.c" />
         <option value="$PROJECT_DIR$/getmatvar.c" />
-        <option value="$PROJECT_DIR$/mapping.c" />
         <option value="$PROJECT_DIR$/test.c" />
         <option value="$PROJECT_DIR$/test1.c" />
         <option value="$PROJECT_DIR$/userTest.c" />
-        <option value="$PROJECT_DIR$/fileHelper.c" />
+        <option value="$PROJECT_DIR$/readMessage.c" />
         <option value="$PROJECT_DIR$/mapping.h" />
+        <option value="$PROJECT_DIR$/mapping.c" />
+        <option value="$PROJECT_DIR$/fileHelper.c" />
       </list>
     </option>
   </component>
@@ -330,7 +317,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.my_struct1.mat my_struct.array">
+  <component name="RunManager" selected="Application.alltypes.mat my_struct">
     <configuration name="Build All" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" CONFIG_NAME="Debug" EXPLICIT_BUILD_TARGET_NAME="all">
       <envs />
     </configuration>
@@ -355,6 +342,9 @@
     <configuration name="chunked.mat data" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="chunked.mat data" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
       <envs />
     </configuration>
+    <configuration name="i32.mat signed_int_32" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="i32.mat signed_int_32" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
+      <envs />
+    </configuration>
     <configuration name="my_struct1.mat my_struct" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="my_struct1.mat my_struct" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
       <envs />
     </configuration>
@@ -367,7 +357,7 @@
     <configuration name="my_struct.mat my_struct" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="my_struct.mat my_struct" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="MatFile_Parsing_WinJB" TARGET_NAME="MatFile_Parsing_WinJB_userTest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="MatFile_Parsing_WinJB" RUN_TARGET_NAME="MatFile_Parsing_WinJB_userTest">
       <envs />
     </configuration>
-    <list size="12">
+    <list size="13">
       <item index="0" class="java.lang.String" itemvalue="Application.Build All" />
       <item index="1" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_chunkedTest" />
       <item index="2" class="java.lang.String" itemvalue="Application.MatFile_Parsing_WinJB_mex" />
@@ -380,6 +370,7 @@
       <item index="9" class="java.lang.String" itemvalue="Application.my_struct1.mat my_struct" />
       <item index="10" class="java.lang.String" itemvalue="Application.my_struct.mat my_struct" />
       <item index="11" class="java.lang.String" itemvalue="Application.alltypes.mat my_struct" />
+      <item index="12" class="java.lang.String" itemvalue="Application.i32.mat signed_int_32" />
     </list>
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
@@ -419,21 +410,20 @@
       <workItem from="1504045058457" duration="7678000" />
       <workItem from="1504053404968" duration="62091000" />
       <workItem from="1504180300188" duration="477000" />
-      <workItem from="1504180791287" duration="25119000" />
+      <workItem from="1504180791287" duration="28180000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="273074000" />
+    <option name="totallyTimeSpent" value="276135000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.38645834" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.37083334" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.47916666" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31899264" sideWeight="0.42604166" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31899264" sideWeight="0.44739583" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
@@ -442,7 +432,7 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30430222" sideWeight="0.47083333" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31899264" sideWeight="0.57395834" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.31899264" sideWeight="0.55260414" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -473,23 +463,24 @@
           <option name="timeStamp" value="127" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/readMessage.c</url>
-          <line>42</line>
-          <option name="timeStamp" value="421" />
+          <url>file://$PROJECT_DIR$/userTest.c</url>
+          <line>44</line>
+          <option name="timeStamp" value="429" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/mapping.c</url>
-          <line>157</line>
-          <option name="timeStamp" value="423" />
+          <url>file://$PROJECT_DIR$/fileHelper.c</url>
+          <line>233</line>
+          <option name="timeStamp" value="433" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="424" />
+      <option name="time" value="434" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="CMakeRunConfiguration">
         <watch expression="header_queue" language="ObjectiveC" />
         <watch expression="queue" language="ObjectiveC" />
         <watch expression="variable_name_queue" language="ObjectiveC" />
+        <watch expression="object-&gt;type" />
         <watch expression="sign" />
       </configuration>
     </watches-manager>
@@ -506,7 +497,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="765">
           <caret line="45" column="10" lean-forward="false" selection-start-line="45" selection-start-column="10" selection-end-line="45" selection-end-column="10" />
-          <folding />
+          <folding>
+            <element signature="e#5475#7101#0" expanded="false" />
+            <element signature="e#7103#10300#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -570,7 +564,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="833">
           <caret line="49" column="0" lean-forward="false" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#5475#7101#0" expanded="false" />
+            <element signature="e#7103#10300#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -728,19 +725,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/queue.c">
+    <entry file="file://$PROJECT_DIR$/test.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="478">
-          <caret line="191" column="24" lean-forward="false" selection-start-line="191" selection-start-column="5" selection-end-line="191" selection-end-column="24" />
+        <state relative-caret-position="48">
+          <caret line="162" column="23" lean-forward="false" selection-start-line="162" selection-start-column="23" selection-end-line="162" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test1.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="606">
+          <caret line="59" column="17" lean-forward="false" selection-start-line="59" selection-start-column="17" selection-end-line="59" selection-end-column="17" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/numberHelper.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="208">
-          <caret line="16" column="0" lean-forward="false" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
+        <state relative-caret-position="320">
+          <caret line="74" column="0" lean-forward="false" selection-start-line="74" selection-start-column="0" selection-end-line="74" selection-end-column="39" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapping.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="184">
+          <caret line="220" column="16" lean-forward="true" selection-start-line="220" selection-start-column="16" selection-end-line="220" selection-end-column="16" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#300#350#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -764,61 +780,45 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test.c">
+    <entry file="file://$PROJECT_DIR$/queue.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="48">
-          <caret line="162" column="23" lean-forward="false" selection-start-line="162" selection-start-column="23" selection-end-line="162" selection-end-column="23" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test1.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="606">
-          <caret line="59" column="17" lean-forward="false" selection-start-line="59" selection-start-column="17" selection-end-line="59" selection-end-column="17" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fileHelper.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="308">
-          <caret line="270" column="57" lean-forward="true" selection-start-line="270" selection-start-column="57" selection-end-line="270" selection-end-column="57" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapping.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="20">
-          <caret line="134" column="8" lean-forward="false" selection-start-line="134" selection-start-column="8" selection-end-line="134" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <element signature="e#300#350#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/userTest.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1148">
-          <caret line="43" column="5" lean-forward="true" selection-start-line="43" selection-start-column="5" selection-end-line="43" selection-end-column="5" />
+        <state relative-caret-position="240">
+          <caret line="122" column="0" lean-forward="false" selection-start-line="122" selection-start-column="0" selection-end-line="122" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/readMessage.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="299">
-          <caret line="160" column="18" lean-forward="true" selection-start-line="160" selection-start-column="18" selection-end-line="160" selection-end-column="18" />
+        <state relative-caret-position="208">
+          <caret line="126" column="0" lean-forward="false" selection-start-line="126" selection-start-column="0" selection-end-line="126" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fileHelper.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1084">
+          <caret line="198" column="41" lean-forward="true" selection-start-line="198" selection-start-column="41" selection-end-line="198" selection-end-column="41" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mapping.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2684">
-          <caret line="224" column="19" lean-forward="true" selection-start-line="224" selection-start-column="19" selection-end-line="224" selection-end-column="19" />
+        <state relative-caret-position="1003">
+          <caret line="370" column="0" lean-forward="false" selection-start-line="370" selection-start-column="0" selection-end-line="370" selection-end-column="0" />
+          <folding>
+            <element signature="e#5475#7101#0" expanded="false" />
+            <element signature="e#7103#10300#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/userTest.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="227">
+          <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
           <folding />
         </state>
       </provider>
