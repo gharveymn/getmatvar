@@ -65,8 +65,8 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 		data_objects_ptrs[num_objs]->type = UNDEF;
 		data_objects_ptrs[num_objs]->double_data = NULL;
 		data_objects_ptrs[num_objs]->udouble_data = NULL;
-		data_objects_ptrs[num_objs]->char_data = NULL;
-		data_objects_ptrs[num_objs]->ushort_data = NULL;
+		data_objects_ptrs[num_objs]->data_arrays.char_data = NULL;
+		data_objects_ptrs[num_objs]->data_arrays.ui16_data = NULL;
 		data_objects_ptrs[num_objs]->sub_objects = NULL;
 		data_objects_ptrs[num_objs]->chunked_info.chunked_dims = NULL;
 		
@@ -291,7 +291,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 			object->elem_size = sizeof(double);
 			break;
 		case UNSIGNEDINT16:
-			object->ushort_data = malloc(num_elems * sizeof(uint16_t));
+			object->data_arrays.ui16_data = malloc(num_elems * sizeof(uint16_t));
 			object->elem_size = sizeof(uint16_t);
 			break;
 		case REF:
@@ -300,7 +300,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 			object->elem_size = sizeof(uint64_t);
 			break;
 		case CHAR:
-			object->char_data = malloc(num_elems * sizeof(char));
+			object->data_arrays.char_data = malloc(num_elems * sizeof(char));
 			object->elem_size = sizeof(char);
 			break;
 		case STRUCT:
@@ -326,18 +326,18 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 				{
 					object->double_data[j] = convertHexToFloatingPoint(getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order));
 				}
-				else if(object->ushort_data != NULL)
+				else if(object->data_arrays.ui16_data != NULL)
 				{
-					object->ushort_data[j] = (uint16_t)getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order);
+					object->data_arrays.ui16_data[j] = (uint16_t)getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order);
 				}
 				else if(object->udouble_data != NULL)
 				{
 					//these are addresses so we have to add the offset
 					object->udouble_data[j] = getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order) + s_block.base_address;
 				}
-				else if(object->char_data != NULL)
+				else if(object->data_arrays.char_data != NULL)
 				{
-					object->char_data[j] = (char)getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order);
+					object->data_arrays.char_data[j] = (char)getBytesAsNumber(data_pointer + j * object->elem_size, object->elem_size, object->byte_order);
 				}
 			}
 			break;

@@ -150,7 +150,7 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	//must copy over because all objects are freed at the end of execution
 	for(int j = 0; j < num_obj_elems; j++)
 	{
-		mxDblPtrPr[j] = object->double_data[j];
+		mxDblPtrPr[j] = object->data_arrays.double_data[j];
 	}
 	
 	if(super_structure_type == STRUCT)
@@ -186,7 +186,7 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 
 	for(int j = 0; j < num_obj_elems; j++)
 	{
-		mxCharPtrPr[j] = object->char_data[j];
+		mxCharPtrPr[j] = object->data_arrays.char_data[j];
 	}
 	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
 	
@@ -212,7 +212,7 @@ void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	
 	for(int j = 0; j < num_obj_elems; j++)
 	{
-		mxIntPtrPr[j] = (char)object->ushort_data[j];
+		mxIntPtrPr[j] = (char)object->data_arrays.ui16_data[j];
 	}
 	mxArray* mxIntPtr = mxCreateString(mxIntPtrPr);
 	

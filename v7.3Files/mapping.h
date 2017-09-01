@@ -132,6 +132,21 @@ typedef struct
 	uint32_t* chunked_dims;
 } ChunkedInfo;
 
+typedef struct
+{
+	char* char_data;
+	int8_t i8_data;
+	uint16_t* ui16_data;
+	int16_t* i16_data;
+	uint32_t* ui32_data;
+	int32_t* i32_data;
+	uint64_t* ui64_data;
+	int64_t* i64_data;
+	double* single_data;
+	double* double_data;
+	uint64_t* udouble_data;
+} DataArrays;
+
 typedef struct data_ Data;
 struct data_
 {
@@ -149,10 +164,7 @@ struct data_
 	
 	uint8_t layout_class;
 	uint64_t data_address;
-	char* char_data;
-	double* double_data;
-	uint64_t* udouble_data;
-	uint16_t* ushort_data;
+	DataArrays data_arrays;
 	
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;

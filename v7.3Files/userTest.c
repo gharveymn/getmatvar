@@ -61,7 +61,7 @@ void printDouble(Data* object)
 	printf("\n%s:\n", object->name);
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%f ", object->double_data[i]);
+		printf("%f ", object->data_arrays.double_data[i]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
@@ -90,7 +90,7 @@ void printShort(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		string[i] = (char)object->ushort_data[i];
+		string[i] = (char)object->data_arrays.ui16_data[i];
 	}
 	string[num_elems] = 0;
 	printf("\n%s:\n", object->name);
@@ -115,7 +115,7 @@ void printCell(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%f ", cell_objects[i]->double_data[0]);
+		printf("%f ", cell_objects[i]->data_arrays.double_data[0]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
@@ -159,7 +159,7 @@ void printChar(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%d ", object->char_data[i]);
+		printf("%d ", object->data_arrays.char_data[i]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)

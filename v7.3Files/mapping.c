@@ -172,12 +172,12 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	}
 	
 	//if we have encountered a cell array, queue up headers for its elements
-	if(object->udouble_data != NULL && object->type == REF)
+	if(object->data_arrays.udouble_data != NULL && object->type == REF)
 	{
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			Object obj;
-			obj.this_obj_header_address = object->udouble_data[i];
+			obj.this_obj_header_address = object->data_arrays.udouble_data[i];
 			obj.parent_obj_header_address = object->this_obj_address;
 			strcpy(obj.name, object->name);
 			priorityEnqueueObject(obj);
@@ -193,14 +193,14 @@ void allocateSpace(Data* object)
 			//
 			break;
 		case CHAR:
-			object->char_data = malloc(object->num_elems * sizeof(char));
+			object->data_arrays.char_data = malloc(object->num_elems * sizeof(char));
 			object->elem_size = sizeof(char);
 			break;
 		case INT16:
 			//
 			break;
 		case UINT16:
-			object->ushort_data = malloc(object->num_elems * sizeof(uint16_t));
+			object->data_arrays.ui16_data = malloc(object->num_elems * sizeof(uint16_t));
 			object->elem_size = sizeof(uint16_t);
 			break;
 		case INT32:
@@ -219,12 +219,12 @@ void allocateSpace(Data* object)
 			//
 			break;
 		case DOUBLE:
-			object->double_data = malloc(object->num_elems * sizeof(double));
+			object->data_arrays.double_data = malloc(object->num_elems * sizeof(double));
 			object->elem_size = sizeof(double);
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->udouble_data = malloc(object->num_elems * sizeof(uint64_t));
+			object->data_arrays.udouble_data = malloc(object->num_elems * sizeof(uint64_t));
 			object->elem_size = sizeof(uint64_t);
 			break;
 		case STRUCT:
@@ -251,7 +251,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 		case CHAR:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->ushort_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object->data_arrays.ui16_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
 				object_data_index++;
 			}
 			break;
@@ -261,7 +261,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 		case UINT16:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->ushort_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object->data_arrays.ui16_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
 				object_data_index++;
 			}
 			break;
@@ -283,7 +283,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 		case DOUBLE:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->double_data[j] = convertHexToDouble(getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));
+				object->data_arrays.double_data[j] = convertHexToDouble(getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));
 				object_data_index++;
 			}
 			break;
@@ -291,7 +291,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
 				//these are addresses so we have to add the offset
-				object->udouble_data[j] = getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order) + s_block.base_address;
+				object->data_arrays.udouble_data[j] = getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order) + s_block.base_address;
 				object_data_index++;
 			}
 			break;
