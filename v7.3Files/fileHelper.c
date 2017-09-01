@@ -254,69 +254,6 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	free(objects);
 }
 
-
-uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size)
-{
-	//assume version 1 and ignore max dims and permutation indices
-	uint8_t num_dims = *(msg_pointer + 1);
-	uint32_t* dims = malloc(sizeof(int) * (num_dims + 1));
-	//uint64_t bytes_read = 0;
-	
-	for(int i = 0; i < num_dims; i++)
-	{
-		dims[i] = getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
-	}
-	dims[num_dims] = 0;
-	return dims;
-}
-
-
-DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
-{
-	//assume version 1
-	uint8_t class = *(msg_pointer) & 0x0F; //only want bottom 4 bits
-	uint32_t size = *(msg_pointer + 4);
-	DataType type = UNDEF;
-	
-	switch(class)
-	{
-		case 0:
-			//fixed point (string)
-			
-			switch(size)
-			{
-				case 1:
-					//"char"
-					type = CHAR;
-					break;
-				case 2:
-					//"uint16_t"
-					type = UNSIGNEDINT16;
-					break;
-				default:
-					type = UNDEF;
-					break;
-			}
-			
-			break;
-		case 1:
-			//floating point
-			//assume double precision
-			type = DOUBLE;
-			break;
-		case 7:
-			//reference (cell), data consists of addresses aka references
-			type = REF;
-			break;
-		default:
-			//ignore
-			type = UNDEF;
-			break;
-	}
-	return type;
-	
-}
-
 /*use when using getDataObjects*/
 void freeDataObjects(Data** objects)
 {

@@ -19,7 +19,6 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 
 mwSize* makeObjDims(const uint32_t* dims, mwSize num_obj_dims);
-void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems);
 const char** getFieldNames(Data* object);
 
 void readMXError(const char error_id[], const char error_message[]);
@@ -117,7 +116,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case CHAR:
 				setCharPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case UNSIGNEDINT16:
+			case UINT16:
 				setIntPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case REF:
@@ -141,9 +140,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-
-	mwSize num_obj_dims = 0, num_obj_elems = 0;
-	getNums(object, &num_obj_dims, &num_obj_elems);
+	
+	mwSize num_obj_dims = object->num_dims;
+	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	mxArray* mxDblPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
 	double* mxDblPtrPr = mxGetPr(mxDblPtr);
@@ -169,8 +168,9 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	mwSize num_obj_dims = 0, num_obj_elems = 0;
-	getNums(object, &num_obj_dims, &num_obj_elems);
+	
+	mwSize num_obj_dims = object->num_dims;
+	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	char* mxCharPtrPr;
 
@@ -199,13 +199,15 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 		//is a cell array
 		mxSetCell(returnStructure, index, mxCharPtr);
 	}
+	
 }
 
 
 void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	mwSize num_obj_dims = 0, num_obj_elems = 0;
-	getNums(object, &num_obj_dims, &num_obj_elems);
+	
+	mwSize num_obj_dims = object->num_dims;
+	mwSize num_obj_elems = object->num_elems;
 	char* mxIntPtrPr = mxMalloc(num_obj_elems*sizeof(char));
 	
 	for(int j = 0; j < num_obj_elems; j++)
@@ -223,6 +225,7 @@ void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
 	}
+	
 }
 
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
@@ -230,8 +233,8 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	
 	DataType this_stucture_type = REF;
 	
-	mwSize num_obj_dims = 0, num_obj_elems = 0;
-	getNums(object, &num_obj_dims, &num_obj_elems);
+	mwSize num_obj_dims = object->num_dims;
+	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	int num_fields = object->num_sub_objs;
 	mxArray* mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
@@ -252,8 +255,8 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 	
 	DataType this_stucture_type = STRUCT;
 	
-	mwSize num_obj_dims = 0, num_obj_elems = 0;
-	getNums(object, &num_obj_dims, &num_obj_elems);
+	mwSize num_obj_dims = object->num_dims;
+	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	int num_fields = object->num_sub_objs;
 	const char** field_names = getFieldNames(object);
@@ -284,24 +287,11 @@ const char** getFieldNames(Data* object)
 }
 
 
-void getNums(Data* object, mwSize* num_obj_dims, mwSize* num_elems)
-{
-	mwSize ne = 1;
-	mwSize nd = 0;
-	int i = 0;
-	while(object->dims[i] > 0)
-	{
-		ne *= object->dims[i];
-		nd++;
-		i++;
-	}
-	*num_obj_dims = nd;
-	*num_elems = ne;
-}
-
-
 mwSize* makeObjDims(const uint32_t* dims, const mwSize num_obj_dims)
 {
+	
+	//ie. flip them around...
+	
 	mwSize* obj_dims = malloc(num_obj_dims);
 	for(int i = 0; i < num_obj_dims; i++)
 	{
