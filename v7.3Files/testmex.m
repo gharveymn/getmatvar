@@ -1,1 +1,1 @@
-s = getmatvar('alltypes.mat','my_struct');
+s = getmatvar('my_struct.mat','my_struct');

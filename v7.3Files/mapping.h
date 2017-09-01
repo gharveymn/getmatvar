@@ -233,12 +233,13 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 void readTreeNode(char* tree_pointer, Addr_Trio this_trio);
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 void freeDataObjects(Data** objects);
+void freeMXDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
 
 
 //numberHelper.c
 double convertHexToDouble(uint64_t hex);
-double convertHexToSingle(uint32_t hex);
+float convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness);
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);
@@ -275,6 +276,7 @@ Data* organizeObjects(Data** objects);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder byte_order);
+void initializeObject(Data* object, Object obj);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c

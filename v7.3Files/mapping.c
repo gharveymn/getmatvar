@@ -13,6 +13,7 @@ Data* findDataObject(const char* filename, const char variable_name[])
 		i++;
 	}
 	free(objects[i]);
+	free(objects);
 	return hi_objects;
 }
 
@@ -59,11 +60,12 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	while(header_queue.length > 0)
 	{
 		
-		//initialize elements since we have nested deallocation
-		data_objects_ptrs[num_objs] = calloc(1,sizeof(Data));
-		
 		obj = dequeueObject();
 		header_address = obj.this_obj_header_address;
+		
+		//initialize elements since we have nested deallocation
+		data_objects_ptrs[num_objs] = malloc(sizeof(*(data_objects_ptrs[num_objs])));
+		initializeObject(data_objects_ptrs[num_objs], obj);
 		
 		//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 		header_pointer = navigateTo(header_address, 16, TREE);
@@ -90,6 +92,42 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	
 	close(fd);
 	return data_objects_ptrs;
+}
+
+void initializeObject(Data* object, Object obj)
+{
+	
+	object->data_arrays.ui8_data = NULL;
+	object->data_arrays.i8_data = NULL;
+	object->data_arrays.ui16_data = NULL;
+	object->data_arrays.i16_data = NULL;
+	object->data_arrays.ui32_data = NULL;
+	object->data_arrays.i32_data = NULL;
+	object->data_arrays.ui64_data = NULL;
+	object->data_arrays.i64_data = NULL;
+	object->data_arrays.single_data = NULL;
+	object->data_arrays.double_data = NULL;
+	object->data_arrays.udouble_data = NULL;
+	object->dims = NULL;
+	
+	object->chunked_info.num_filters = 0;
+	object->chunked_info.chunked_dims = NULL;
+	object->chunked_info.num_chunked_dims = 0;
+	
+	object->sub_objects = NULL;
+	
+	//zero by default for REF data
+	object->layout_class = 0;
+	object->datatype_bit_field = 0;
+	object->byte_order = LITTLE_ENDIAN;
+	object->type = UNDEF;
+	
+	object->num_dims = 0;
+	object->num_elems = 0;
+	object->elem_size = 0;
+	object->data_address = 0;
+	object->num_sub_objs = 0;
+	
 }
 
 
@@ -226,9 +264,13 @@ void allocateSpace(Data* object)
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
+			if(object->dims != NULL)
+			{
+				free(object->dims);
+			}
 			object->num_elems = 1;
 			object->num_dims = 2;
-			object->dims = malloc(sizeof(int) * 3);
+			object->dims = malloc(3 * sizeof(int));
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
@@ -344,11 +386,12 @@ void findHeaderAddress(const char variable_name[])
 	char* heap_pointer;
 	char* token;
 	variable_found = FALSE;
-	
 	default_bytes = (uint64_t)getAllocGran();
+	char varname[NAME_LENGTH];
+	strcpy(varname, variable_name);
 	
 	flushVariableNameQueue();
-	token = strtok(strdup(variable_name), delim);
+	token = strtok(varname, delim);
 	while(token != NULL)
 	{
 		enqueueVariableName(token);

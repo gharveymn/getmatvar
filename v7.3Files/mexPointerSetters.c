@@ -71,24 +71,24 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	mwSize num_obj_elems = object->num_elems;
 	const mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	mxArray* mxIntPtr;
-	uint16_t* mxIntPtrPr;
 	if(strncmp(object->matlab_class,"char",7) == 0)
 	{
 		mxIntPtr = mxCreateCharArray(num_obj_dims, obj_dims);
-		mxIntPtrPr = mxGetChars(mxIntPtr);
+		uint16_t* mxIntPtrPr = mxGetChars(mxIntPtr);
+		memcpy(mxIntPtrPr, object->data_arrays.ui16_data, num_obj_elems * object->elem_size);
 	}
 	else if(strncmp(object->matlab_class,"uint16",6) == 0)
 	{
 		mxIntPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxUINT16_CLASS, mxREAL);
-		 mxIntPtrPr = mxGetData(mxIntPtr);
+		uint16_t* mxIntPtrPr = mxGetData(mxIntPtr);
+		memcpy(mxIntPtrPr, object->data_arrays.ui16_data, num_obj_elems * object->elem_size);
 	}
 	else
 	{
 		mxIntPtr = mxCreateLogicalArray(num_obj_dims, obj_dims);
-		mxIntPtrPr= mxGetLogicals(mxIntPtr);
+		uint8_t* mxIntPtrPr = mxGetLogicals(mxIntPtr);
+		memcpy(mxIntPtrPr, object->data_arrays.ui16_data, num_obj_elems * object->elem_size);
 	}
-	
-	memcpy(mxIntPtrPr, object->data_arrays.ui16_data, num_obj_elems * object->elem_size);
 	if(super_structure_type == STRUCT)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
@@ -238,7 +238,7 @@ void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	mxArray* mxSglPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxSINGLE_CLASS, mxREAL);
-	double* mxSglPtrPr = mxGetPr(mxSglPtr);
+	float* mxSglPtrPr = mxGetData(mxSglPtr);
 	
 	//must copy over because all objects are freed at the end of execution
 	for(int j = 0; j < num_obj_elems; j++)

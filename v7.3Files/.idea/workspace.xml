@@ -20,17 +20,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5adce463-bb8f-47bd-8a57-ee4eb4fc9594" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/getmatvar.h" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mexPointerSetters.c" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/32afeb57654ca27f/GETMATVAR.ipch" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../alltypes.mat" afterPath="$PROJECT_DIR$/../alltypes.mat" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/slnx.sqlite" afterPath="$PROJECT_DIR$/.vs/slnx.sqlite" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/.suo" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/.suo" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/Browse.VC.db" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/Browse.VC.db" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/10ba433c51d1b006/NUMBERHELPER.ipch" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/10ba433c51d1b006/NUMBERHELPER.ipch" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/164b3aaaad175391/CHUNKEDDATA.ipch" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/164b3aaaad175391/CHUNKEDDATA.ipch" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/83f971517abadc47/GETMATVAR.ipch" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/83f971517abadc47/GETMATVAR.ipch" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/alltypes.mat" afterPath="$PROJECT_DIR$/alltypes.mat" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/dd28ccb2e8420df5/MEXPOINTERSETTERS.ipch" afterPath="$PROJECT_DIR$/.vs/v7.3Files/v15/ipch/AutoPCH/dd28ccb2e8420df5/MEXPOINTERSETTERS.ipch" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/chunkedData.o" afterPath="$PROJECT_DIR$/chunkedData.o" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/chunkedData.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/chunkedData.c.obj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/fileHelper.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/fileHelper.c.obj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/mapping.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/mapping.c.obj" />
@@ -40,46 +36,25 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/readMessage.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/readMessage.c.obj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/userTest.c.obj" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/userTest.c.obj" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB_userTest.exe" afterPath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB_userTest.exe" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileHelper.o" afterPath="$PROJECT_DIR$/fileHelper.o" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.mexw64" afterPath="$PROJECT_DIR$/getmatvar.mexw64" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.mexw64.pdb" afterPath="$PROJECT_DIR$/getmatvar.mexw64.pdb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping" afterPath="$PROJECT_DIR$/mapping" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.o" afterPath="$PROJECT_DIR$/mapping.o" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/numberHelper.o" afterPath="$PROJECT_DIR$/numberHelper.o" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/queue.o" afterPath="$PROJECT_DIR$/queue.o" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/readMessage.o" afterPath="$PROJECT_DIR$/readMessage.o" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/userTest.o" afterPath="$PROJECT_DIR$/userTest.o" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.vscode/settings.json" afterPath="$PROJECT_DIR$/.vscode/settings.json" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CMakeLists.txt" afterPath="$PROJECT_DIR$/CMakeLists.txt" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Makefile" afterPath="$PROJECT_DIR$/Makefile" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/Makefile2" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/build.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/objects1.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/progress.marks" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/Makefile" afterPath="$PROJECT_DIR$/cmake-build-debug/Makefile" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB.cbp" afterPath="$PROJECT_DIR$/cmake-build-debug/MatFile_Parsing_WinJB.cbp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile2" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/Makefile2" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/DependInfo.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/DependInfo.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/build.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/build.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/cmake_clean.cmake" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/cmake_clean.cmake" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/objects1.rsp" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/objects1.rsp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_mex.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_test1.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/progress.make" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/progress.marks" afterPath="$PROJECT_DIR$/cmake-build-release/CMakeFiles/progress.marks" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/Makefile" afterPath="$PROJECT_DIR$/cmake-build-release/Makefile" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-release/MatFile_Parsing_WinJB.cbp" afterPath="$PROJECT_DIR$/cmake-build-release/MatFile_Parsing_WinJB.cbp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/C.includecache" afterPath="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/MatFile_Parsing_WinJB_userTest.dir/C.includecache" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fileHelper.c" afterPath="$PROJECT_DIR$/fileHelper.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getPageSize.c" afterPath="$PROJECT_DIR$/getPageSize.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.c" afterPath="$PROJECT_DIR$/getmatvar.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/getmatvar.h" afterPath="$PROJECT_DIR$/getmatvar.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.c" afterPath="$PROJECT_DIR$/mapping.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mapping.h" afterPath="$PROJECT_DIR$/mapping.h" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexPointerSetters.c" afterPath="$PROJECT_DIR$/mexPointerSetters.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mexmake.m" afterPath="$PROJECT_DIR$/mexmake.m" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/numberHelper.c" afterPath="$PROJECT_DIR$/numberHelper.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/readMessage.c" afterPath="$PROJECT_DIR$/readMessage.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test.c" afterPath="$PROJECT_DIR$/test.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test1.c" afterPath="$PROJECT_DIR$/test1.c" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/testmex.m" afterPath="$PROJECT_DIR$/testmex.m" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/userTest.c" afterPath="$PROJECT_DIR$/userTest.c" />
     </list>
@@ -94,75 +69,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="mapping.h" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mapping.h">
+      <file leaf-file-name="userTest.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/userTest.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-                <marker date="1504284414687" expanded="true" signature="300:322" ph="..." />
-                <marker date="1504284414687" expanded="true" signature="3329:3392" ph="{...}" />
-                <marker date="1504284414687" expanded="true" signature="3446:3863" ph="{...}" />
-                <marker date="1504284414687" expanded="true" signature="3879:3944" ph="{...}" />
-                <marker date="1504284414687" expanded="true" signature="3969:4009" ph="{...}" />
-                <marker date="1504284414687" expanded="true" signature="4036:4131" ph="{...}" />
-                <marker date="1504284414687" expanded="true" signature="4192:4385" ph="{...}" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="getPageSize.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/getPageSize.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="224">
-              <caret line="41" column="5" lean-forward="false" selection-start-line="41" selection-start-column="5" selection-end-line="41" selection-end-column="5" />
-              <folding>
-                <element signature="e#1297#1465#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="queue.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/queue.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-645">
-              <caret line="60" column="5" lean-forward="false" selection-start-line="60" selection-start-column="5" selection-end-line="60" selection-end-column="5" />
+            <state relative-caret-position="220">
+              <caret line="45" column="0" lean-forward="false" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="144">
-              <caret line="9" column="37" lean-forward="false" selection-start-line="9" selection-start-column="37" selection-end-line="9" selection-end-column="37" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mapping.c" pinned="false" current-in-tab="false">
+      <file leaf-file-name="mapping.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/mapping.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-457">
-              <caret line="77" column="31" lean-forward="false" selection-start-line="77" selection-start-column="31" selection-end-line="77" selection-end-column="31" />
+            <state relative-caret-position="361">
+              <caret line="120" column="36" lean-forward="true" selection-start-line="120" selection-start-column="36" selection-end-line="120" selection-end-column="36" />
               <folding>
-                <element signature="e#7194#10405#0" expanded="false" />
+                <marker date="1504296790971" expanded="false" signature="8433:11510" ph="{...}" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="readMessage.c" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/readMessage.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="333">
-              <caret line="140" column="6" lean-forward="true" selection-start-line="140" selection-start-column="6" selection-end-line="140" selection-end-column="6" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -170,21 +94,26 @@
       <file leaf-file-name="fileHelper.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fileHelper.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-594">
-              <caret line="174" column="42" lean-forward="false" selection-start-line="174" selection-start-column="42" selection-end-line="174" selection-end-column="42" />
+            <state relative-caret-position="153">
+              <caret line="204" column="23" lean-forward="true" selection-start-line="204" selection-start-column="23" selection-end-line="204" selection-end-column="23" />
               <folding>
-                <element signature="e#10082#11426#0" expanded="false" />
+                <element signature="e#10083#11166#0" expanded="false" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="userTest.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/userTest.c">
+      <file leaf-file-name="mapping.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mapping.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="327">
-              <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
-              <folding />
+            <state relative-caret-position="352">
+              <caret line="138" column="26" lean-forward="false" selection-start-line="138" selection-start-column="26" selection-end-line="138" selection-end-column="26" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+                <element signature="e#300#393#0" expanded="true" />
+                <element signature="e#2618#2638#0" expanded="true" />
+                <element signature="e#2665#2682#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -192,8 +121,24 @@
       <file leaf-file-name="getmatvar.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/getmatvar.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="256">
-              <caret line="16" column="11" lean-forward="false" selection-start-line="16" selection-start-column="11" selection-end-line="16" selection-end-column="11" />
+            <state relative-caret-position="-316">
+              <caret line="41" column="6" lean-forward="false" selection-start-line="41" selection-start-column="6" selection-end-line="41" selection-end-column="6" />
+              <folding>
+                <marker date="1504297346662" expanded="true" signature="1148:2044" ph="{...}" />
+                <marker date="1504297346662" expanded="true" signature="2166:4118" ph="{...}" />
+                <marker date="1504297346662" expanded="true" signature="4162:4378" ph="{...}" />
+                <marker date="1504297346662" expanded="true" signature="4450:4642" ph="{...}" />
+                <marker date="1504297346662" expanded="true" signature="4712:4875" ph="{...}" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="readMessage.c" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/readMessage.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="48">
+              <caret line="203" column="17" lean-forward="true" selection-start-line="203" selection-start-column="17" selection-end-line="203" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -202,19 +147,11 @@
       <file leaf-file-name="mexPointerSetters.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mexPointerSetters.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-264">
-              <caret line="78" column="6" lean-forward="false" selection-start-line="78" selection-start-column="6" selection-end-line="78" selection-end-column="6" />
+            <state relative-caret-position="528">
+              <caret line="291" column="5" lean-forward="true" selection-start-line="291" selection-start-column="5" selection-end-line="291" selection-end-column="5" />
               <folding>
                 <element signature="e#24#950#0" expanded="false" />
                 <element signature="e#952#1663#0" expanded="false" />
-                <element signature="e#6343#7131#0" expanded="false" />
-                <marker date="1504280413548" expanded="false" signature="2872:3465" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="3590:4186" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="4310:4903" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="5028:5624" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="5748:6341" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="7255:7921" ph="{...}" />
-                <marker date="1504280413548" expanded="false" signature="8046:8673" ph="{...}" />
               </folding>
             </state>
           </provider>
@@ -224,17 +161,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>type</find>
-      <find>data_insertion_type</find>
-      <find>str</find>
-      <find>subobjects</find>
-      <find>sub_objects</find>
-      <find>index</find>
-      <find>objects[i]</find>
-      <find>chunked_info</find>
-      <find>dims</find>
-      <find>malloc</find>
-      <find>left</find>
       <find>name</find>
       <find>SYM_TABLE_ENTRY_SIZE</find>
       <find>permu</find>
@@ -254,6 +180,17 @@
       <find>layout</find>
       <find>(objects\[i\]\-\&gt;data\_arrays\.(.*?)\_data)(.*?);</find>
       <find>hea</find>
+      <find>objects[i]</find>
+      <find>super_object</find>
+      <find>%llu</find>
+      <find>malloc</find>
+      <find>if\(object\-\&gt;(.*?) != NULL\)</find>
+      <find>object-&gt;dims</find>
+      <find>variable_name</find>
+      <find>super</find>
+      <find>obj</find>
+      <find>mem</find>
+      <find>obj.name</find>
     </findStrings>
     <replaceStrings>
       <replace>trio</replace>
@@ -265,7 +202,6 @@
       <replace>DataType</replace>
       <replace>data_insertion_type</replace>
       <replace>super_structure_type</replace>
-      <replace>super_object</replace>
       <replace>sym_table_entry_size</replace>
       <replace>object-&gt;num_elems</replace>
       <replace>object-&gt;layout_class</replace>
@@ -276,6 +212,10 @@
       <replace>elem_size</replace>
       <replace>free($1)</replace>
       <replace>free($1);</replace>
+      <replace>super_object</replace>
+      <replace>objects[i]</replace>
+      <replace>$1 = NULL;</replace>
+      <replace>memcpy($1, $2, num_obj_elems * object-&gt;elem_size);</replace>
     </replaceStrings>
     <dirStrings>
       <dir>C:\workspace\c\MatFile-Parsing-Win\v7.3Files</dir>
@@ -304,16 +244,16 @@
         <option value="$PROJECT_DIR$/chunkedData.c" />
         <option value="$PROJECT_DIR$/test.c" />
         <option value="$PROJECT_DIR$/test1.c" />
-        <option value="$PROJECT_DIR$/userTest.c" />
-        <option value="$PROJECT_DIR$/readMessage.c" />
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/getmatvar.h" />
-        <option value="$PROJECT_DIR$/getmatvar.c" />
-        <option value="$PROJECT_DIR$/mexPointerSetters.c" />
-        <option value="$PROJECT_DIR$/mapping.c" />
-        <option value="$PROJECT_DIR$/fileHelper.c" />
-        <option value="$PROJECT_DIR$/mapping.h" />
         <option value="$PROJECT_DIR$/getPageSize.c" />
+        <option value="$PROJECT_DIR$/userTest.c" />
+        <option value="$PROJECT_DIR$/getmatvar.c" />
+        <option value="$PROJECT_DIR$/mapping.h" />
+        <option value="$PROJECT_DIR$/fileHelper.c" />
+        <option value="$PROJECT_DIR$/readMessage.c" />
+        <option value="$PROJECT_DIR$/mapping.c" />
+        <option value="$PROJECT_DIR$/mexPointerSetters.c" />
       </list>
     </option>
   </component>
@@ -325,7 +265,7 @@
   </component>
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-1928" />
+    <option name="x" value="-8" />
     <option name="y" value="-8" />
     <option name="width" value="1936" />
     <option name="height" value="1066" />
@@ -501,21 +441,21 @@
       <workItem from="1504053404968" duration="62091000" />
       <workItem from="1504180300188" duration="477000" />
       <workItem from="1504180791287" duration="32000000" />
-      <workItem from="1504263929425" duration="11602000" />
+      <workItem from="1504263929425" duration="22625000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="291557000" />
+    <option name="totallyTimeSpent" value="302580000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1928" y="-8" width="1936" height="1066" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.48958334" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32948583" sideWeight="0.47916666" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39664218" sideWeight="0.51197916" order="8" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39664218" sideWeight="0.51197916" order="8" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
@@ -525,7 +465,7 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30430222" sideWeight="0.47083333" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.39664218" sideWeight="0.48802084" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.37670514" sideWeight="0.48802084" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -556,16 +496,16 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/userTest.c</url>
-          <line>44</line>
-          <option name="timeStamp" value="429" />
+          <line>45</line>
+          <option name="timeStamp" value="463" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/mexPointerSetters.c</url>
-          <line>261</line>
-          <option name="timeStamp" value="447" />
+          <url>file://$PROJECT_DIR$/fileHelper.c</url>
+          <line>335</line>
+          <option name="timeStamp" value="465" />
         </line-breakpoint>
       </breakpoints>
-      <option name="time" value="457" />
+      <option name="time" value="466" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="CMakeRunConfiguration">
@@ -573,7 +513,7 @@
         <watch expression="queue" language="ObjectiveC" />
         <watch expression="variable_name_queue" language="ObjectiveC" />
         <watch expression="s_block" />
-        <watch expression="objects[i].name" language="ObjectiveC" />
+        <watch expression="objects[i]" language="ObjectiveC" />
       </configuration>
     </watches-manager>
   </component>
@@ -606,13 +546,9 @@
           <caret line="154" column="9" lean-forward="false" selection-start-line="154" selection-start-column="9" selection-end-line="154" selection-end-column="9" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <marker date="1504284414687" expanded="true" signature="300:322" ph="..." />
-            <marker date="1504284414687" expanded="true" signature="3329:3392" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3446:3863" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3879:3944" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3969:4009" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="4036:4131" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="4192:4385" ph="{...}" />
+            <element signature="e#300#393#0" expanded="true" />
+            <element signature="e#2618#2638#0" expanded="true" />
+            <element signature="e#2665#2682#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -622,7 +558,7 @@
         <state relative-caret-position="425">
           <caret line="25" column="53" lean-forward="false" selection-start-line="25" selection-start-column="53" selection-end-line="25" selection-end-column="53" />
           <folding>
-            <element signature="e#10082#11426#0" expanded="false" />
+            <element signature="e#10083#11166#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -647,7 +583,7 @@
         <state relative-caret-position="833">
           <caret line="49" column="0" lean-forward="false" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
           <folding>
-            <element signature="e#7194#10405#0" expanded="false" />
+            <marker date="1504296790971" expanded="false" signature="8433:11510" ph="{...}" />
           </folding>
         </state>
       </provider>
@@ -657,7 +593,7 @@
         <state relative-caret-position="1717">
           <caret line="101" column="0" lean-forward="false" selection-start-line="101" selection-start-column="0" selection-end-line="101" selection-end-column="0" />
           <folding>
-            <element signature="e#10082#11426#0" expanded="false" />
+            <element signature="e#10083#11166#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -829,62 +765,7 @@
         <state relative-caret-position="16">
           <caret line="1" column="16" lean-forward="false" selection-start-line="1" selection-start-column="16" selection-end-line="1" selection-end-column="16" />
           <folding>
-            <element signature="e#0#20#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mexPointerSetters.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-264">
-          <caret line="78" column="6" lean-forward="false" selection-start-line="78" selection-start-column="6" selection-end-line="78" selection-end-column="6" />
-          <folding>
-            <element signature="e#24#950#0" expanded="false" />
-            <element signature="e#952#1663#0" expanded="false" />
-            <element signature="e#6343#7131#0" expanded="false" />
-            <marker date="1504280413548" expanded="false" signature="2872:3465" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="3590:4186" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="4310:4903" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="5028:5624" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="5748:6341" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="7255:7921" ph="{...}" />
-            <marker date="1504280413548" expanded="false" signature="8046:8673" ph="{...}" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fileHelper.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-594">
-          <caret line="174" column="42" lean-forward="false" selection-start-line="174" selection-start-column="42" selection-end-line="174" selection-end-column="42" />
-          <folding>
-            <element signature="e#10082#11426#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/getmatvar.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="256">
-          <caret line="16" column="11" lean-forward="false" selection-start-line="16" selection-start-column="11" selection-end-line="16" selection-end-column="11" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/userTest.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="327">
-          <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mapping.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-457">
-          <caret line="77" column="31" lean-forward="false" selection-start-line="77" selection-start-column="31" selection-end-line="77" selection-end-column="31" />
-          <folding>
-            <element signature="e#7194#10405#0" expanded="false" />
+            <element signature="e#0#20#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -899,44 +780,93 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/queue.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-645">
-          <caret line="60" column="5" lean-forward="false" selection-start-line="60" selection-start-column="5" selection-end-line="60" selection-end-column="5" />
+        <state relative-caret-position="191">
+          <caret line="137" column="1" lean-forward="true" selection-start-line="137" selection-start-column="1" selection-end-line="137" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/getPageSize.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="308">
+          <caret line="41" column="5" lean-forward="false" selection-start-line="41" selection-start-column="5" selection-end-line="41" selection-end-column="5" />
+          <folding>
+            <element signature="e#1297#1465#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/getmatvar.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-316">
+          <caret line="41" column="6" lean-forward="false" selection-start-line="41" selection-start-column="6" selection-end-line="41" selection-end-column="6" />
+          <folding>
+            <marker date="1504297346662" expanded="true" signature="1148:2044" ph="{...}" />
+            <marker date="1504297346662" expanded="true" signature="2166:4118" ph="{...}" />
+            <marker date="1504297346662" expanded="true" signature="4162:4378" ph="{...}" />
+            <marker date="1504297346662" expanded="true" signature="4450:4642" ph="{...}" />
+            <marker date="1504297346662" expanded="true" signature="4712:4875" ph="{...}" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/userTest.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="220">
+          <caret line="45" column="0" lean-forward="false" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mapping.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+        <state relative-caret-position="352">
+          <caret line="138" column="26" lean-forward="false" selection-start-line="138" selection-start-column="26" selection-end-line="138" selection-end-column="26" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
-            <marker date="1504284414687" expanded="true" signature="300:322" ph="..." />
-            <marker date="1504284414687" expanded="true" signature="3329:3392" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3446:3863" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3879:3944" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="3969:4009" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="4036:4131" ph="{...}" />
-            <marker date="1504284414687" expanded="true" signature="4192:4385" ph="{...}" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/getPageSize.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="41" column="5" lean-forward="false" selection-start-line="41" selection-start-column="5" selection-end-line="41" selection-end-column="5" />
-          <folding>
-            <element signature="e#1297#1465#0" expanded="true" />
+            <element signature="e#300#393#0" expanded="true" />
+            <element signature="e#2618#2638#0" expanded="true" />
+            <element signature="e#2665#2682#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/readMessage.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="333">
-          <caret line="140" column="6" lean-forward="true" selection-start-line="140" selection-start-column="6" selection-end-line="140" selection-end-column="6" />
+        <state relative-caret-position="48">
+          <caret line="203" column="17" lean-forward="true" selection-start-line="203" selection-start-column="17" selection-end-line="203" selection-end-column="17" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fileHelper.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="204" column="23" lean-forward="true" selection-start-line="204" selection-start-column="23" selection-end-line="204" selection-end-column="23" />
+          <folding>
+            <element signature="e#10083#11166#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mexPointerSetters.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="528">
+          <caret line="291" column="5" lean-forward="true" selection-start-line="291" selection-start-column="5" selection-end-line="291" selection-end-column="5" />
+          <folding>
+            <element signature="e#24#950#0" expanded="false" />
+            <element signature="e#952#1663#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mapping.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="361">
+          <caret line="120" column="36" lean-forward="true" selection-start-line="120" selection-start-column="36" selection-end-line="120" selection-end-column="36" />
+          <folding>
+            <marker date="1504296790971" expanded="false" signature="8433:11510" ph="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>

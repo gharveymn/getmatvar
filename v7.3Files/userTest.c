@@ -13,7 +13,8 @@ int main(int argc, char* argv[])
 	char* filename = argv[1];
 	char variable_name[30];
 	strcpy(variable_name, argv[2]);
-	Data* hi_objects = findDataObject(filename, variable_name);
+	Data** objects = getDataObjects(filename, variable_name);
+	Data* hi_objects = organizeObjects(objects);
 	//Data* hi_objects = findDataObject(filename, variable_name);
 //	int index = 0;
 //
@@ -42,7 +43,8 @@ int main(int argc, char* argv[])
 //		index++;
 //	}
 	
-	freeDataObjectTree(hi_objects);
+	freeDataObjects(objects);
+	
 }
 
 
