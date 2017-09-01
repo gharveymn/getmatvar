@@ -186,22 +186,23 @@ void readTreeNode(char* tree_pointer)
 
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
-	uint16_t num_symbols = getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	Object* objects = (Object*)malloc(sizeof(Object) * num_symbols);
+	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	Object* objects = malloc(sizeof(Object) * num_symbols);
 	uint32_t cache_type;
 	Addr_Trio trio;
 	char* var_name = peekVariableName();
 	
 	//get to entries
 	snod_pointer += 8;
+	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
 	
 	for(int i = 0; i < num_symbols; i++)
 	{
-		objects[i].name_offset = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		objects[i].name_offset = getBytesAsNumber(snod_pointer + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
-		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + SYM_TABLE_ENTRY_SIZE * i + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
-		cache_type = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + SYM_TABLE_ENTRY_SIZE * i, 4, META_DATA_BYTE_ORDER);
+		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i].parent_tree_address = parent_trio.tree_address;
 		objects[i].this_tree_address = this_trio.tree_address;
 		objects[i].sub_tree_address = UNDEF_ADDR;
@@ -218,14 +219,20 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 			//all items in the queue should only be subobjects so this is safe
 			
 			
-			//if another tree exists for this object, put it on the queue
 			if(cache_type == 1)
 			{
+				//if another tree exists for this object, put it on the queue
 				trio.parent_obj_header_address = objects[i].this_obj_header_address;
-				trio.tree_address = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio.heap_address = getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + SYM_TABLE_ENTRY_SIZE * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.tree_address = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.heap_address = getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i].sub_tree_address = trio.tree_address;
 				priorityEnqueueTrio(trio);
+			}
+			else if(cache_type == 2)
+			{
+				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
+				objects[i].name_offset = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+				strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 			}
 			enqueueObject(objects[i]);
 			
@@ -310,41 +317,102 @@ DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 	
 }
 
-
-void freeDataObjects(Data* objects, int num)
+/*use when using getDataObjects*/
+void freeDataObjects(Data** objects)
 {
-	int num_subs = 0;
-	int j;
-	for(int i = 0; i < num; i++)
+	
+	int i = 0;
+	while(objects[i]->type != UNDEF)
 	{
-		if(objects[i].char_data != NULL)
+		
+		if(objects[i]->char_data != NULL)
 		{
-			free(objects[i].char_data);
+			free(objects[i]->char_data);
 		}
-		else if(objects[i].double_data != NULL)
+		else if(objects[i]->double_data != NULL)
 		{
-			free(objects[i].double_data);
+			free(objects[i]->double_data);
 		}
-		else if(objects[i].udouble_data != NULL)
+		else if(objects[i]->udouble_data != NULL)
 		{
-			free(objects[i].udouble_data);
+			free(objects[i]->udouble_data);
 		}
-		else if(objects[i].ushort_data != NULL)
+		else if(objects[i]->ushort_data != NULL)
 		{
-			free(objects[i].ushort_data);
+			free(objects[i]->ushort_data);
 		}
-		free(objects[i].dims);
-		j = 0;
-		if(objects[i].sub_objects != NULL)
+		
+		if(objects[i]->dims != NULL)
 		{
-			while(objects->sub_objects[j].type != UNDEF)
-			{
-				num_subs++;
-				j++;
-			}
-			freeDataObjects(objects[i].sub_objects, num_subs);
+			free(objects[i]->dims);
 		}
+		
+		if(objects[i]->chunked_info.chunked_dims != NULL)
+		{
+			free(objects[i]->chunked_info.chunked_dims);
+		}
+		
+		if(objects[i]->sub_objects != NULL)
+		{
+			free(objects[i]->sub_objects);
+		}
+		
+		free(objects[i]);
+		
+		i++;
+		
 	}
+	
+	//note that nothing was malloced inside the sentinel object
+	free(objects[i]);
 	free(objects);
+
+}
+
+void freeDataObjectTree(Data* super_object)
+{
+	
+	if(super_object->type != UNDEF)
+	{
+		
+		if(super_object->char_data != NULL)
+		{
+			free(super_object->char_data);
+		}
+		else if(super_object->double_data != NULL)
+		{
+			free(super_object->double_data);
+		}
+		else if(super_object->udouble_data != NULL)
+		{
+			free(super_object->udouble_data);
+		}
+		else if(super_object->ushort_data != NULL)
+		{
+			free(super_object->ushort_data);
+		}
+		
+		if(super_object->dims != NULL)
+		{
+			free(super_object->dims);
+		}
+		
+		if(super_object->chunked_info.chunked_dims != NULL)
+		{
+			free(super_object->chunked_info.chunked_dims);
+		}
+		
+		if(super_object->sub_objects != NULL)
+		{
+			for(int i = 0; i < super_object->num_sub_objs; i++)
+			{
+				freeDataObjectTree(super_object->sub_objects[i]);
+			}
+			free(super_object->sub_objects);
+		}
+		
+	}
+	
+	free(super_object);
 	
 }

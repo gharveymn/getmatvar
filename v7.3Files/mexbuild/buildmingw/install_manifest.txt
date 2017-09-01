@@ -1,2 +1,2 @@
-C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/../bin/libgetmatvar.dll.a
-C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/../bin/getmatvar.mexw64
+C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/bin/libgetmatvar.dll.a
+C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/bin/getmatvar.mexw64

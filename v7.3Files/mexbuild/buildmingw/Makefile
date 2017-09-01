@@ -165,7 +165,7 @@ getmatvar: cmake_check_build_system
 
 # fast build rule for target.
 getmatvar/fast:
-	$(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/build
+	$(MAKE) -f mex\getmatvar\CMakeFiles\getmatvar.dir\build.make mex/getmatvar/CMakeFiles/getmatvar.dir/build
 .PHONY : getmatvar/fast
 
 # Help Target

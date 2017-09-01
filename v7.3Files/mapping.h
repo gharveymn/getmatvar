@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include "extlib/zlib/zlib.h"
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -20,12 +19,11 @@ typedef uint64_t OffsetType;
 #define TRUE 1
 #define FALSE 0
 #define FORMAT_SIG "\211HDF\r\n\032\n"
-#define MAX_Q_LENGTH 20
+#define MAX_Q_LENGTH 1000
 #define TREE 0
 #define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
-#define SYM_TABLE_ENTRY_SIZE 40
-#define MAX_OBJS 100
+#define MAX_OBJS 1000
 #define CLASS_LENGTH 20
 #define NAME_LENGTH 30
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
@@ -101,7 +99,7 @@ typedef struct
 
 typedef enum
 {
-	UNDEF, CHAR, DOUBLE, UNSIGNEDINT16, REF, STRUCT
+	UNDEF, CHAR, DOUBLE, UNSIGNEDINT16, REF, STRUCT, FUNCTION_HANDLE
 } DataType;
 
 typedef enum
@@ -150,7 +148,8 @@ struct data_
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;
 	uint64_t data_address;
-	Data* sub_objects;
+	Data** sub_objects;
+	uint32_t num_sub_objs;
 };
 
 typedef enum
@@ -196,7 +195,8 @@ void readTreeNode(char* tree_address);
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
-void freeDataObjects(Data* objects, int num);
+void freeDataObjects(Data** objects);
+void freeDataObjectTree(Data* super_object);
 
 
 //numberHelper.c
@@ -222,11 +222,12 @@ void enqueueVariableName(char* variable_name);
 
 
 //mapping.c
-Data* getDataObject(char* filename, char variable_name[], int* num_objs);
-void findHeaderAddress(char variable_name[]);
+Data* findDataObject(const char* filename, const char variable_name[]);
+Data** getDataObjects(const char* filename, const char variable_name[]);
+void findHeaderAddress(const char variable_name[]);
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
-Data* organizeObjects(Data* objects, int num_objs);
-void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index);
+Data* organizeObjects(Data** objects);
+void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c

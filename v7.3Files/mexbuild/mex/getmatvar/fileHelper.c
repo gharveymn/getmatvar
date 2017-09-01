@@ -310,41 +310,102 @@ DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size)
 	
 }
 
-
-void freeDataObjects(Data* objects, int num)
+/*use when using getDataObjects*/
+void freeDataObjects(Data** objects)
 {
-	int num_subs = 0;
-	int j;
-	for(int i = 0; i < num; i++)
+	
+	int i = 0;
+	while(objects[i]->type != UNDEF)
 	{
-		if(objects[i].char_data != NULL)
+		
+		if(objects[i]->char_data != NULL)
 		{
-			free(objects[i].char_data);
+			free(objects[i]->char_data);
 		}
-		else if(objects[i].double_data != NULL)
+		else if(objects[i]->double_data != NULL)
 		{
-			free(objects[i].double_data);
+			free(objects[i]->double_data);
 		}
-		else if(objects[i].udouble_data != NULL)
+		else if(objects[i]->udouble_data != NULL)
 		{
-			free(objects[i].udouble_data);
+			free(objects[i]->udouble_data);
 		}
-		else if(objects[i].ushort_data != NULL)
+		else if(objects[i]->ushort_data != NULL)
 		{
-			free(objects[i].ushort_data);
+			free(objects[i]->ushort_data);
 		}
-		free(objects[i].dims);
-		j = 0;
-		if(objects[i].sub_objects != NULL)
+		
+		if(objects[i]->dims != NULL)
 		{
-			while(objects->sub_objects[j].type != UNDEF)
-			{
-				num_subs++;
-				j++;
-			}
-			freeDataObjects(objects[i].sub_objects, num_subs);
+			free(objects[i]->dims);
 		}
+		
+		if(objects[i]->chunked_info.chunked_dims != NULL)
+		{
+			free(objects[i]->chunked_info.chunked_dims);
+		}
+		
+		if(objects[i]->sub_objects != NULL)
+		{
+			free(objects[i]->sub_objects);
+		}
+		
+		free(objects[i]);
+		
+		i++;
+		
 	}
+	
+	//note that nothing was malloced inside the sentinel object
+	free(objects[i]);
 	free(objects);
+
+}
+
+void freeDataObjectTree(Data* super_object)
+{
+	
+	if(super_object->type != UNDEF)
+	{
+		
+		if(super_object->char_data != NULL)
+		{
+			free(super_object->char_data);
+		}
+		else if(super_object->double_data != NULL)
+		{
+			free(super_object->double_data);
+		}
+		else if(super_object->udouble_data != NULL)
+		{
+			free(super_object->udouble_data);
+		}
+		else if(super_object->ushort_data != NULL)
+		{
+			free(super_object->ushort_data);
+		}
+		
+		if(super_object->dims != NULL)
+		{
+			free(super_object->dims);
+		}
+		
+		if(super_object->chunked_info.chunked_dims != NULL)
+		{
+			free(super_object->chunked_info.chunked_dims);
+		}
+		
+		if(super_object->sub_objects != NULL)
+		{
+			for(int i = 0; i < super_object->num_sub_objs; i++)
+			{
+				freeDataObjectTree(super_object->sub_objects[i]);
+			}
+			free(super_object->sub_objects);
+		}
+		
+	}
+	
+	free(super_object);
 	
 }

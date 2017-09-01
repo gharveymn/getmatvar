@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include "extlib/zlib/zlib.h"
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -150,7 +149,8 @@ struct data_
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;
 	uint64_t data_address;
-	Data* sub_objects;
+	Data** sub_objects;
+	uint32_t num_sub_objs;
 };
 
 typedef enum
@@ -196,7 +196,8 @@ void readTreeNode(char* tree_address);
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 uint32_t* readDataSpaceMessage(char* msg_pointer, uint16_t msg_size);
 DataType readDataTypeMessage(char* msg_pointer, uint16_t msg_size);
-void freeDataObjects(Data* objects, int num);
+void freeDataObjects(Data** objects);
+void freeDataObjectTree(Data* super_object);
 
 
 //numberHelper.c
@@ -222,11 +223,12 @@ void enqueueVariableName(char* variable_name);
 
 
 //mapping.c
-Data* getDataObject(char* filename, char variable_name[], int* num_objs);
-void findHeaderAddress(char variable_name[]);
+Data* findDataObject(const char* filename, const char variable_name[]);
+Data** getDataObjects(const char* filename, const char variable_name[]);
+void findHeaderAddress(const char variable_name[]);
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
-Data* organizeObjects(Data* objects, int num_objs);
-void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index);
+Data* organizeObjects(Data** objects);
+void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c
