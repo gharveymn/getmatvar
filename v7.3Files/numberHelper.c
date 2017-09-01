@@ -72,12 +72,12 @@ double convertHexToDouble(uint64_t hex)
 	return ret * sum;
 }
 
-double convertHexToSingle(uint32_t hex)
+float convertHexToSingle(uint32_t hex)
 {
-	double ret;
+	float ret;
 	
 	//sign bit 63
-	double sign = 1 - 2*(hex >> 31);
+	float sign = 1 - 2*(hex >> 31);
 	
 	//exponent field bits 62-52
 	int16_t exponent = (int16_t)(((hex << 1) >> (23 + 1)) - 127);
@@ -94,8 +94,8 @@ double convertHexToSingle(uint32_t hex)
 		ret = sign / (1 << (-exponent));
 	}
 	
-	double sum = 1;
-	double b_i;
+	float sum = 1;
+	float b_i;
 	for(int i = 0; i <= 22; i++)
 	{
 		b_i = (significand << i) >> 31;

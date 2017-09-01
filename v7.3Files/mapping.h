@@ -13,6 +13,8 @@
 #include "extlib/mman-win32/mman.h"
 #else
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <unistd.h>
 typedef uint64_t OffsetType;
 #endif
 
@@ -33,6 +35,14 @@ typedef uint64_t OffsetType;
 #define USE_SUPER_OBJECT_ALL 2
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
+#define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
+					"\tgetmatvar(filename,variable1,...,variableN)\n\n" \
+					"\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
+					"\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
+					"Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')"
+
+#define MATLAB_WARN_MESSAGE ""
 
 typedef struct
 {
@@ -101,13 +111,21 @@ typedef struct
 
 typedef enum
 {
-	UNDEF, CHAR, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, SINGLE, DOUBLE, REF, STRUCT, FUNCTION_HANDLE
+	UNDEF, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, SINGLE, DOUBLE, REF, STRUCT, FUNCTION_HANDLE, TABLE
 } DataType;
 
 typedef enum
 {
 	NOT_AVAILABLE, DEFLATE, SHUFFLE, FLETCHER32, SZIP, NBIT, SCALEOFFSET
 }FilterType;
+
+#ifdef LITTLE_ENDIAN
+#undef LITTLE_ENDIAN
+#endif
+
+#ifdef BIG_ENDIAN
+#undef BIG_ENDIAN
+#endif
 
 typedef enum
 {
@@ -134,15 +152,15 @@ typedef struct
 
 typedef struct
 {
-	char* char_data;
+	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
 	int8_t* i8_data;
-	uint16_t* ui16_data;
+	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
 	int16_t* i16_data;
 	uint32_t* ui32_data;
 	int32_t* i32_data;
 	uint64_t* ui64_data;
 	int64_t* i64_data;
-	double* single_data;
+	float* single_data;
 	double* double_data;
 	uint64_t* udouble_data;
 } DataArrays;
@@ -212,7 +230,7 @@ char* findSuperblock(int fd, size_t file_size);
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char* tree_address);
+void readTreeNode(char* tree_pointer, Addr_Trio this_trio);
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 void freeDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
@@ -279,6 +297,5 @@ Variable_Name_Q variable_name_queue;
 
 int fd;
 Superblock s_block;
-int is_string;
 uint64_t default_bytes;
 int variable_found;

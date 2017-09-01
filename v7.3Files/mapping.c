@@ -193,8 +193,8 @@ void allocateSpace(Data* object)
 		case INT8:
 			object->data_arrays.i8_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case CHAR:
-			object->data_arrays.char_data = malloc(object->num_elems * object->elem_size);
+		case UINT8:
+			object->data_arrays.ui8_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT16:
 			object->data_arrays.i16_data = malloc(object->num_elems * object->elem_size);
@@ -226,10 +226,15 @@ void allocateSpace(Data* object)
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
+			object->num_elems = 1;
+			object->num_dims = 2;
 			object->dims = malloc(sizeof(int) * 3);
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
+			break;
+		case TABLE:
+			//do nothing
 			break;
 		default:
 			printf("Unknown data type encountered");
@@ -249,10 +254,10 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 				object_data_index++;
 			}
 			break;
-		case CHAR:
+		case UINT8:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->data_arrays.char_data[j] = (char)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object->data_arrays.ui8_data[j] = (char)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
 				object_data_index++;
 			}
 			break;
@@ -301,7 +306,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 		case SINGLE:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->data_arrays.double_data[j] = convertHexToSingle((uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));
+				object->data_arrays.single_data[j] = convertHexToSingle((uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));
 				object_data_index++;
 			}
 			break;
@@ -322,6 +327,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
+		case TABLE:
 			//nothing to be done
 			break;
 		default:
@@ -362,8 +368,8 @@ void findHeaderAddress(const char variable_name[])
 		
 		if(strncmp("TREE", tree_pointer, 4) == 0)
 		{
-			readTreeNode(tree_pointer);
 			parent_trio = dequeueTrio();
+			readTreeNode(tree_pointer, parent_trio);
 		}
 		else if(strncmp("SNOD", tree_pointer, 4) == 0)
 		{

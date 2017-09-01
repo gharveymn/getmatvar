@@ -2,7 +2,7 @@
 
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
-	//assume version 1 and ignore max dims and permutation indices
+	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
 	uint32_t* dims = malloc(sizeof(int) * (object->num_dims + 1));
 	//uint64_t bytes_read = 0;
@@ -53,7 +53,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 					}
 					else
 					{
-						object->type = CHAR;
+						object->type = UINT8;
 					}
 					break;
 				case 2:
@@ -244,6 +244,10 @@ void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 		else if(strcmp("function_handle", object->matlab_class) == 0)
 		{
 			object->type = FUNCTION_HANDLE;
+		}
+		else if(strcmp("table", object->matlab_class) == 0)
+		{
+			object->type = TABLE;
 		}
 	}
 }

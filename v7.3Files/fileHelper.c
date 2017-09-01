@@ -142,7 +142,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 }
 
 
-void readTreeNode(char* tree_pointer)
+void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
 {
 	Addr_Trio trio;
 	uint16_t entries_used = 0;
@@ -154,18 +154,18 @@ void readTreeNode(char* tree_pointer)
 	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	if(left_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
 		trio.tree_address = left_sibling_address + s_block.base_address;
-		trio.heap_address = queue.trios[queue.front].heap_address;
+		trio.heap_address = this_trio.heap_address;
 		enqueueTrio(trio);
 	}
 	
 	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	if(right_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;;
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;;
 		trio.tree_address = right_sibling_address + s_block.base_address;
-		trio.heap_address = queue.trios[queue.front].heap_address;
+		trio.heap_address = this_trio.heap_address;
 		enqueueTrio(trio);
 	}
 	
@@ -174,11 +174,16 @@ void readTreeNode(char* tree_pointer)
 	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for(int i = 0; i < entries_used; i++)
 	{
-		trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
+		
+		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
 		trio.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		trio.heap_address = queue.trios[queue.front].heap_address;
-		enqueueTrio(trio);
+		trio.heap_address = this_trio.heap_address;
+		
+		//in the case where we encounter a struct but have more items ahead
+		priorityEnqueueTrio(trio);
+		
 		key_pointer += key_size + s_block.size_of_offsets;
+		
 	}
 	
 }
@@ -192,6 +197,10 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	Addr_Trio trio;
 	char* var_name = peekVariableName();
 	
+	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2 * s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	char* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+	
 	//get to entries
 	snod_pointer += 8;
 	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
@@ -201,7 +210,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
 		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
+		strcpy(objects[i].name, heap_data_segment_pointer + objects[i].name_offset);
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i].parent_tree_address = parent_trio.tree_address;
 		objects[i].this_tree_address = this_trio.tree_address;
@@ -267,8 +276,8 @@ void freeDataObjects(Data** objects)
 			case INT8:
 				free(objects[i]->data_arrays.i8_data);
 				break;
-			case CHAR:
-				free(objects[i]->data_arrays.char_data);
+			case UINT8:
+				free(objects[i]->data_arrays.ui8_data);
 				break;
 			case INT16:
 				free(objects[i]->data_arrays.i16_data);
@@ -295,7 +304,7 @@ void freeDataObjects(Data** objects)
 				free(objects[i]->data_arrays.double_data);
 				break;
 			default:
-				//do nothing
+				//do nothing since nothing was allocated
 				break;
 		}
 		
@@ -332,9 +341,9 @@ void freeDataObjectTree(Data* super_object)
 	if(super_object->type != UNDEF)
 	{
 		
-		if(super_object->data_arrays.char_data != NULL)
+		if(super_object->data_arrays.ui8_data != NULL)
 		{
-			free(super_object->data_arrays.char_data);
+			free(super_object->data_arrays.ui8_data);
 		}
 		else if(super_object->data_arrays.double_data != NULL)
 		{

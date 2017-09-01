@@ -1,28 +1,4 @@
-#include <mex.h>
-#include "mapping.h"
-
-#define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
-					"\tgetmatvar(filename,variable1,...,variableN)\n\n" \
-					"\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
-					"\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
-					"Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')"
-
-#define MATLAB_WARN_MESSAGE ""
-
-void makeReturnStructure(mxArray* uberStructure[], int num_elems, const char* varnames[], const char* filename);
-mxArray* makeSubstructure(mxArray* returnStructure, int num_elems, Data** objects, DataType super_structure_type);
-
-void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
-void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
-void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
-void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
-void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
-
-mwSize* makeObjDims(const uint32_t* dims, mwSize num_obj_dims);
-const char** getFieldNames(Data* object);
-
-void readMXError(const char error_id[], const char error_message[]);
-void readMXWarn(const char warn_id[], const char warn_message[]);
+#include "getmatvar.h"
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -110,14 +86,35 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	{
 		switch(objects[index]->type)
 		{
-			case DOUBLE:
-				setDblPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+			case UINT8:
+				setUI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case CHAR:
-				setCharPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+			case INT8:
+				setI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case UINT16:
-				setIntPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case INT16:
+				setI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case UINT32:
+				setUI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case INT32:
+				setI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case UINT64:
+				setUI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case INT64:
+				setI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case SINGLE:
+				setSglPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				break;
+			case DOUBLE:
+				setDblPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case REF:
 				setCellPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
@@ -126,7 +123,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case FUNCTION_HANDLE:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not supported (proprietary).");
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
+			case TABLE:
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
 			default:
 				break;
 		}
@@ -138,148 +137,10 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 }
 
 
-void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
-	mxArray* mxDblPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
-	double* mxDblPtrPr = mxGetPr(mxDblPtr);
-	
-	//must copy over because all objects are freed at the end of execution
-	for(int j = 0; j < num_obj_elems; j++)
-	{
-		mxDblPtrPr[j] = object->data_arrays.double_data[j];
-	}
-	
-	if(super_structure_type == STRUCT)
-	{
-		mxSetField(returnStructure, 0, varname, mxDblPtr);
-	}
-	else if(super_structure_type == REF)
-	{
-		//is a cell array
-		mxSetCell(returnStructure, index, mxDblPtr);
-	}
-
-}
-
-
-void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
-	char* mxCharPtrPr;
-
-	if(strncmp(object->name,"logical",7) == 0)
-	{
-		mxArray* mxCharPtr = mxCreateLogicalArray(num_obj_dims, obj_dims);
-		mxCharPtrPr = mxGetLogicals(mxCharPtr);
-	}
-	else
-	{
-		mxCharPtrPr = mxMalloc(num_obj_elems*sizeof(char));
-	}
-
-	for(int j = 0; j < num_obj_elems; j++)
-	{
-		mxCharPtrPr[j] = object->data_arrays.char_data[j];
-	}
-	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
-	
-	if(super_structure_type == STRUCT)
-	{
-		mxSetField(returnStructure, 0, varname, mxCharPtr);
-	}
-	else if(super_structure_type == REF)
-	{
-		//is a cell array
-		mxSetCell(returnStructure, index, mxCharPtr);
-	}
-	
-}
-
-
-void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	char* mxIntPtrPr = mxMalloc(num_obj_elems*sizeof(char));
-	
-	for(int j = 0; j < num_obj_elems; j++)
-	{
-		mxIntPtrPr[j] = (char)object->data_arrays.ui16_data[j];
-	}
-	mxArray* mxIntPtr = mxCreateString(mxIntPtrPr);
-	
-	if(super_structure_type == STRUCT)
-	{
-		mxSetField(returnStructure, 0, varname, mxIntPtr);
-	}
-	else if(super_structure_type == REF)
-	{
-		//is a cell array
-		mxSetCell(returnStructure, index, mxIntPtr);
-	}
-	
-}
-
-void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	DataType this_stucture_type = REF;
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
-	int num_fields = object->num_sub_objs;
-	mxArray* mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
-	
-	if(super_structure_type == STRUCT)
-	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, this_stucture_type));
-	}
-	else if(super_structure_type == REF)
-	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, this_stucture_type));
-	}
-	
-}
-
-void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	DataType this_stucture_type = STRUCT;
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
-	int num_fields = object->num_sub_objs;
-	const char** field_names = getFieldNames(object);
-	mxArray* mxStructPtr = mxCreateStructArray(num_obj_dims, obj_dims, num_fields, field_names);
-	
-	if(super_structure_type == STRUCT)
-	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, this_stucture_type));
-	}
-	else if(super_structure_type == REF)
-	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, this_stucture_type));
-	}
-
-	free(field_names);
-	
-}
-
-
 const char** getFieldNames(Data* object)
 {
 	const char** varnames = malloc(object->num_sub_objs * sizeof(char*));
-	for(int index = 0; index < object->num_sub_objs; index++)
+	for(uint16_t index = 0; index < object->num_sub_objs; index++)
 	{
 		varnames[index] = object->sub_objects[index]->name;
 	}
@@ -313,5 +174,5 @@ void readMXWarn(const char warn_id[], const char warn_message[])
 	char message_buffer[1000];
 	strcpy(message_buffer, warn_message);
 	strcat(message_buffer, MATLAB_WARN_MESSAGE);
-	mexErrMsgIdAndTxt(warn_id, warn_message);
+	mexWarnMsgIdAndTxt(warn_id, warn_message);
 }
