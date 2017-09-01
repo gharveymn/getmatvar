@@ -36,13 +36,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 		makeReturnStructure(plhs, nrhs - 1, full_variable_names, filename);
 
-		/*
-		if (nrhs == 2)
-		{
-			//just one output, don't need the struct to hold all the returns
-			plhs[0] = mxGetFieldByNumber(plhs[0], 0, 0);
-		}
-		*/
 
 		free(full_variable_names);
 
@@ -54,27 +47,42 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* full_variable_names[], const char* filename)
 {
 
-	Data*** super_objects = malloc(num_elems*sizeof(Data**));
-	Data** super_object = malloc(sizeof(Data*));
-	const char** varnames = malloc(num_elems*sizeof(char*));
-	
-	for(mwIndex i = 0; i < num_elems; i++)
-	{
-		super_object[0] = findDataObject(filename, full_variable_names[i]);
-		super_objects[i] = super_object;
-		varnames[i] = super_object[0]->name;
-	}
-
-	mwSize ret_struct_dims[1] = {1};
-	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
+	Data** pseudo_object = malloc(sizeof(Data*));
+	char** varnames = malloc(num_elems*sizeof(char*));
+	char* last_delimit;
 
 	for (mwIndex i = 0; i < num_elems; i++)
 	{
-		makeSubstructure(uberStructure[0], 1, super_objects[i], STRUCT);
+		varnames[i] = malloc(NAME_LENGTH*sizeof(char));
+		last_delimit = strrchr(full_variable_names[i], ".");
+		if (last_delimit == NULL)
+		{
+			strcpy(varnames[i], full_variable_names[i]);
+		}
+		else
+		{
+			strcpy(varnames[i], last_delimit + 1);
+		}
 	}
 
-	free(super_objects);
-	free(super_object);
+	mwSize ret_struct_dims[1] = { 1 };
+	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
+
+	Data** objects;
+	Data* hi_objects;
+
+	for(mwIndex i = 0; i < num_elems; i++)
+	{
+		
+		objects = getDataObjects(filename, full_variable_names[i]);
+		hi_objects = organizeObjects(objects);
+		pseudo_object[0] = hi_objects;
+		makeSubstructure(uberStructure[0], 1, pseudo_object, STRUCT);
+		freeMXDataObjects(objects);
+
+	}
+
+	free(pseudo_object);
 	free(varnames);
 
 }
@@ -123,9 +131,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case FUNCTION_HANDLE:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
+				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
 			case TABLE:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
+				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
 			default:
 				break;
 		}

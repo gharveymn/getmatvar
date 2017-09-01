@@ -263,8 +263,9 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	free(objects);
 }
 
+
 /*use when using getDataObjects*/
-void freeDataObjects(Data** objects)
+void freeMXDataObjects(Data** objects)
 {
 	
 	int i = 0;
@@ -274,34 +275,19 @@ void freeDataObjects(Data** objects)
 		switch(objects[i]->type)
 		{
 			case INT8:
-				free(objects[i]->data_arrays.i8_data);
-				break;
 			case UINT8:
-				free(objects[i]->data_arrays.ui8_data);
-				break;
 			case INT16:
-				free(objects[i]->data_arrays.i16_data);
-				break;
 			case UINT16:
-				free(objects[i]->data_arrays.ui16_data);
-				break;
 			case INT32:
-				free(objects[i]->data_arrays.i32_data);
-				break;
 			case UINT32:
-				free(objects[i]->data_arrays.ui32_data);
-				break;
 			case INT64:
-				free(objects[i]->data_arrays.i64_data);
-				break;
 			case UINT64:
-				free(objects[i]->data_arrays.ui64_data);
-				break;
 			case SINGLE:
-				free(objects[i]->data_arrays.single_data);
-				break;
 			case DOUBLE:
-				free(objects[i]->data_arrays.double_data);
+				break;
+			case REF:
+				//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
+				free(objects[i]->data_arrays.udouble_data);
 				break;
 			default:
 				//do nothing since nothing was allocated
@@ -316,6 +302,11 @@ void freeDataObjects(Data** objects)
 		if(objects[i]->chunked_info.chunked_dims != NULL)
 		{
 			free(objects[i]->chunked_info.chunked_dims);
+		}
+		
+		for(int j = 0; j < objects[i]->chunked_info.num_filters; j++)
+		{
+			free(objects[j]->chunked_info.filters[j].client_data);
 		}
 		
 		if(objects[i]->sub_objects != NULL)
@@ -335,27 +326,144 @@ void freeDataObjects(Data** objects)
 
 }
 
+void freeDataObjects(Data** objects)
+{
+
+	int i = 0;
+	while (objects[i]->type != UNDEF)
+	{
+
+		switch (objects[i]->type)
+		{
+		case INT8:
+			free(objects[i]->data_arrays.i8_data);
+			break;
+		case UINT8:
+			free(objects[i]->data_arrays.ui8_data);
+			break;
+		case INT16:
+			free(objects[i]->data_arrays.i16_data);
+			break;
+		case UINT16:
+			free(objects[i]->data_arrays.ui16_data);
+			break;
+		case INT32:
+			free(objects[i]->data_arrays.i32_data);
+			break;
+		case UINT32:
+			free(objects[i]->data_arrays.ui32_data);
+			break;
+		case INT64:
+			free(objects[i]->data_arrays.i64_data);
+			break;
+		case UINT64:
+			free(objects[i]->data_arrays.ui64_data);
+			break;
+		case SINGLE:
+			free(objects[i]->data_arrays.single_data);
+			break;
+		case DOUBLE:
+			free(objects[i]->data_arrays.double_data);
+			break;
+		case REF:
+			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
+			free(objects[i]->data_arrays.udouble_data);
+			break;
+		default:
+			//do nothing since nothing was allocated
+			break;
+		}
+
+		if (objects[i]->dims != NULL)
+		{
+			free(objects[i]->dims);
+		}
+
+		if (objects[i]->chunked_info.chunked_dims != NULL)
+		{
+			free(objects[i]->chunked_info.chunked_dims);
+		}
+		
+		for(int j = 0; j < objects[i]->chunked_info.num_filters; j++)
+		{
+			free(objects[i]->chunked_info.filters[j].client_data);
+		}
+
+		if (objects[i]->sub_objects != NULL)
+		{
+			free(objects[i]->sub_objects);
+		}
+
+		free(objects[i]);
+
+		i++;
+
+	}
+
+	//note that nothing was malloced inside the sentinel object
+	free(objects[i]);
+	free(objects);
+
+}
+
 void freeDataObjectTree(Data* super_object)
 {
 	
 	if(super_object->type != UNDEF)
 	{
-		
 		if(super_object->data_arrays.ui8_data != NULL)
 		{
 			free(super_object->data_arrays.ui8_data);
 		}
-		else if(super_object->data_arrays.double_data != NULL)
+		
+		if(super_object->data_arrays.i8_data != NULL)
+		{
+			free(super_object->data_arrays.i8_data);
+		}
+		
+		if(super_object->data_arrays.ui16_data != NULL)
+		{
+			free(super_object->data_arrays.ui16_data);
+		}
+		
+		if(super_object->data_arrays.i16_data != NULL)
+		{
+			free(super_object->data_arrays.i16_data);
+		}
+		
+		if(super_object->data_arrays.ui32_data != NULL)
+		{
+			free(super_object->data_arrays.ui32_data);
+		}
+		
+		if(super_object->data_arrays.i32_data != NULL)
+		{
+			free(super_object->data_arrays.i32_data);
+		}
+		
+		if(super_object->data_arrays.ui64_data != NULL)
+		{
+			free(super_object->data_arrays.ui64_data);
+		}
+		
+		if(super_object->data_arrays.i64_data != NULL)
+		{
+			free(super_object->data_arrays.i64_data);
+		}
+		
+		if(super_object->data_arrays.single_data != NULL)
+		{
+			free(super_object->data_arrays.single_data);
+		}
+		
+		if(super_object->data_arrays.double_data != NULL)
 		{
 			free(super_object->data_arrays.double_data);
 		}
-		else if(super_object->data_arrays.udouble_data != NULL)
+		
+		if(super_object->data_arrays.udouble_data != NULL)
 		{
 			free(super_object->data_arrays.udouble_data);
-		}
-		else if(super_object->data_arrays.ui16_data != NULL)
-		{
-			free(super_object->data_arrays.ui16_data);
 		}
 		
 		if(super_object->dims != NULL)
@@ -366,6 +474,11 @@ void freeDataObjectTree(Data* super_object)
 		if(super_object->chunked_info.chunked_dims != NULL)
 		{
 			free(super_object->chunked_info.chunked_dims);
+		}
+		
+		for(int j = 0; j < super_object->chunked_info.num_filters; j++)
+		{
+			free(super_object->chunked_info.filters[j].client_data);
 		}
 		
 		if(super_object->sub_objects != NULL)

@@ -2,18 +2,22 @@
 
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
+	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
-	uint32_t* dims = malloc(sizeof(int) * (object->num_dims + 1));
+	if(object->dims != NULL)
+	{
+		free(object->dims);
+	}
+	object->dims = malloc((object->num_dims + 1) * sizeof(uint32_t));
 	//uint64_t bytes_read = 0;
 	
 	for(int i = 0; i < object->num_dims; i++)
 	{
-		dims[i] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
+		object->dims[i] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
 	}
-	dims[object->num_dims] = 0;
+	object->dims[object->num_dims] = 0;
 	
-	object->dims = dims;
 	
 	object->num_elems = 1;
 	int index = 0;
