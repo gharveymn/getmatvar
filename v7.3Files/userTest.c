@@ -13,11 +13,10 @@ int main(int argc, char* argv[])
 	char* filename = argv[1];
 	char variable_name[30];
 	strcpy(variable_name, argv[2]);
-	int* num_objs = (int*) malloc(sizeof(int));
-	Data* objects = getDataObject(filename, variable_name, num_objs);
-	Data* hi_objects = organizeObjects(objects, *num_objs);
-	int index = 0;
-	
+	Data* hi_objects = findDataObject(filename, variable_name);
+	//Data* hi_objects = findDataObject(filename, variable_name);
+//	int index = 0;
+//
 //	while(hi_objects[index].type != UNDEF)
 //	{
 //		switch(hi_objects[index].type)
@@ -43,8 +42,7 @@ int main(int argc, char* argv[])
 //		index++;
 //	}
 	
-	freeDataObjects(objects, *num_objs);
-	free(hi_objects);
+	freeDataObjectTree(hi_objects);
 }
 
 
@@ -92,7 +90,7 @@ void printShort(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		string[i] = object->ushort_data[i];
+		string[i] = (char)object->ushort_data[i];
 	}
 	string[num_elems] = 0;
 	printf("\n%s:\n", object->name);
@@ -103,7 +101,7 @@ void printShort(Data* object)
 void printCell(Data* object)
 {
 	printf("\n%s:\n", object->name);
-	Data* cell_objects = object->sub_objects;
+	Data** cell_objects = object->sub_objects;
 	
 	int num_elems = 1;
 	int num_dims = 0;
@@ -117,7 +115,7 @@ void printCell(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%f ", cell_objects[i].double_data[0]);
+		printf("%f ", cell_objects[i]->double_data[0]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
@@ -135,9 +133,9 @@ void printStruct(Data* object)
 	printf("\n%s fields: \n", object->name);
 	
 	int index = 0;
-	while(object->sub_objects[index].type != UNDEF)
+	while(object->sub_objects[index]->type != UNDEF)
 	{
-		printf("%s\n", object->sub_objects[index].name);
+		printf("%s\n", object->sub_objects[index]->name);
 		index++;
 	}
 	

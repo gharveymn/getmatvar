@@ -75,3 +75,17 @@ set(SOURCE_FILES
 	   test1.c)
 
 add_executable(MatFile_Parsing_WinJB_test1 ${SOURCE_FILES})
+
+set(SOURCE_FILES
+	   ${MEX}/mex.h
+	   extlib/mman-win32/mman.c
+	   extlib/mman-win32/mman.h
+	   fileHelper.c
+	   getPageSize.c
+	   mapping.c
+	   mapping.h
+	   numberHelper.c
+	   queue.c
+	   getmatvar.c)
+
+add_executable(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})

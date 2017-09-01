@@ -204,7 +204,7 @@ MATLAB_MEX_LIBRARY:FILEPATH=C:/Program Files/MATLAB/R2017a/extern/lib/win64/micr
 MATLAB_MX_LIBRARY:FILEPATH=C:/Program Files/MATLAB/R2017a/extern/lib/win64/microsoft/libmx.lib
 
 //Value Computed by CMake
-MatFile_Parsing_Win_BINARY_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw/mex
+MatFile_Parsing_Win_BINARY_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw/mex/getmatvar
 
 //Value Computed by CMake
 MatFile_Parsing_Win_Mex_BINARY_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw
@@ -213,7 +213,7 @@ MatFile_Parsing_Win_Mex_BINARY_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile
 MatFile_Parsing_Win_Mex_SOURCE_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild
 
 //Value Computed by CMake
-MatFile_Parsing_Win_SOURCE_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/mex
+MatFile_Parsing_Win_SOURCE_DIR:STATIC=C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/mex/getmatvar
 
 //Path to a file.
 ZLIB_INCLUDE_DIR:PATH=C:/msys64/mingw64/include
@@ -320,7 +320,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=2
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=3
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

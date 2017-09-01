@@ -79,6 +79,17 @@ install/local/fast: preinstall/fast
 	C:\msys64\mingw64\bin\cmake.exe -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
 .PHONY : install/local/fast
 
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	C:\msys64\mingw64\bin\cmake-gui.exe -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
+
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -90,16 +101,15 @@ rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	C:\msys64\mingw64\bin\cmake-gui.exe -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : edit_cache
+# Special rule for the target list_install_components
+list_install_components:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
+.PHONY : list_install_components
 
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
+# Special rule for the target list_install_components
+list_install_components/fast: list_install_components
 
-.PHONY : edit_cache/fast
+.PHONY : list_install_components/fast
 
 # Special rule for the target install
 install: preinstall
@@ -112,16 +122,6 @@ install/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
 	C:\msys64\mingw64\bin\cmake.exe -P cmake_install.cmake
 .PHONY : install/fast
-
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-
-.PHONY : list_install_components/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -155,237 +155,6 @@ depend:
 	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles\Makefile.cmake 1
 .PHONY : depend
 
-# Convenience name for target.
-mex/CMakeFiles/getmatvar.dir/rule:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f CMakeFiles\Makefile2 mex/CMakeFiles/getmatvar.dir/rule
-.PHONY : mex/CMakeFiles/getmatvar.dir/rule
-
-# Convenience name for target.
-getmatvar: mex/CMakeFiles/getmatvar.dir/rule
-
-.PHONY : getmatvar
-
-# fast build rule for target.
-getmatvar/fast:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/build
-.PHONY : getmatvar/fast
-
-chunkedData.obj: chunkedData.c.obj
-
-.PHONY : chunkedData.obj
-
-# target to build an object file
-chunkedData.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/chunkedData.c.obj
-.PHONY : chunkedData.c.obj
-
-chunkedData.i: chunkedData.c.i
-
-.PHONY : chunkedData.i
-
-# target to preprocess a source file
-chunkedData.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/chunkedData.c.i
-.PHONY : chunkedData.c.i
-
-chunkedData.s: chunkedData.c.s
-
-.PHONY : chunkedData.s
-
-# target to generate assembly for a file
-chunkedData.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/chunkedData.c.s
-.PHONY : chunkedData.c.s
-
-extlib/mman-win32/mman.obj: extlib/mman-win32/mman.c.obj
-
-.PHONY : extlib/mman-win32/mman.obj
-
-# target to build an object file
-extlib/mman-win32/mman.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/extlib/mman-win32/mman.c.obj
-.PHONY : extlib/mman-win32/mman.c.obj
-
-extlib/mman-win32/mman.i: extlib/mman-win32/mman.c.i
-
-.PHONY : extlib/mman-win32/mman.i
-
-# target to preprocess a source file
-extlib/mman-win32/mman.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/extlib/mman-win32/mman.c.i
-.PHONY : extlib/mman-win32/mman.c.i
-
-extlib/mman-win32/mman.s: extlib/mman-win32/mman.c.s
-
-.PHONY : extlib/mman-win32/mman.s
-
-# target to generate assembly for a file
-extlib/mman-win32/mman.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/extlib/mman-win32/mman.c.s
-.PHONY : extlib/mman-win32/mman.c.s
-
-fileHelper.obj: fileHelper.c.obj
-
-.PHONY : fileHelper.obj
-
-# target to build an object file
-fileHelper.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/fileHelper.c.obj
-.PHONY : fileHelper.c.obj
-
-fileHelper.i: fileHelper.c.i
-
-.PHONY : fileHelper.i
-
-# target to preprocess a source file
-fileHelper.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/fileHelper.c.i
-.PHONY : fileHelper.c.i
-
-fileHelper.s: fileHelper.c.s
-
-.PHONY : fileHelper.s
-
-# target to generate assembly for a file
-fileHelper.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/fileHelper.c.s
-.PHONY : fileHelper.c.s
-
-getPageSize.obj: getPageSize.c.obj
-
-.PHONY : getPageSize.obj
-
-# target to build an object file
-getPageSize.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getPageSize.c.obj
-.PHONY : getPageSize.c.obj
-
-getPageSize.i: getPageSize.c.i
-
-.PHONY : getPageSize.i
-
-# target to preprocess a source file
-getPageSize.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getPageSize.c.i
-.PHONY : getPageSize.c.i
-
-getPageSize.s: getPageSize.c.s
-
-.PHONY : getPageSize.s
-
-# target to generate assembly for a file
-getPageSize.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getPageSize.c.s
-.PHONY : getPageSize.c.s
-
-getmatvar.obj: getmatvar.c.obj
-
-.PHONY : getmatvar.obj
-
-# target to build an object file
-getmatvar.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getmatvar.c.obj
-.PHONY : getmatvar.c.obj
-
-getmatvar.i: getmatvar.c.i
-
-.PHONY : getmatvar.i
-
-# target to preprocess a source file
-getmatvar.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getmatvar.c.i
-.PHONY : getmatvar.c.i
-
-getmatvar.s: getmatvar.c.s
-
-.PHONY : getmatvar.s
-
-# target to generate assembly for a file
-getmatvar.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/getmatvar.c.s
-.PHONY : getmatvar.c.s
-
-mapping.obj: mapping.c.obj
-
-.PHONY : mapping.obj
-
-# target to build an object file
-mapping.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/mapping.c.obj
-.PHONY : mapping.c.obj
-
-mapping.i: mapping.c.i
-
-.PHONY : mapping.i
-
-# target to preprocess a source file
-mapping.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/mapping.c.i
-.PHONY : mapping.c.i
-
-mapping.s: mapping.c.s
-
-.PHONY : mapping.s
-
-# target to generate assembly for a file
-mapping.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/mapping.c.s
-.PHONY : mapping.c.s
-
-numberHelper.obj: numberHelper.c.obj
-
-.PHONY : numberHelper.obj
-
-# target to build an object file
-numberHelper.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/numberHelper.c.obj
-.PHONY : numberHelper.c.obj
-
-numberHelper.i: numberHelper.c.i
-
-.PHONY : numberHelper.i
-
-# target to preprocess a source file
-numberHelper.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/numberHelper.c.i
-.PHONY : numberHelper.c.i
-
-numberHelper.s: numberHelper.c.s
-
-.PHONY : numberHelper.s
-
-# target to generate assembly for a file
-numberHelper.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/numberHelper.c.s
-.PHONY : numberHelper.c.s
-
-queue.obj: queue.c.obj
-
-.PHONY : queue.obj
-
-# target to build an object file
-queue.c.obj:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/queue.c.obj
-.PHONY : queue.c.obj
-
-queue.i: queue.c.i
-
-.PHONY : queue.i
-
-# target to preprocess a source file
-queue.c.i:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/queue.c.i
-.PHONY : queue.c.i
-
-queue.s: queue.c.s
-
-.PHONY : queue.s
-
-# target to generate assembly for a file
-queue.c.s:
-	cd /d C:\workspace\c\MatFile-Parsing\MatFile-Parsing-Win\v7.3Files\mexbuild\buildmingw && $(MAKE) -f mex\CMakeFiles\getmatvar.dir\build.make mex/CMakeFiles/getmatvar.dir/queue.c.s
-.PHONY : queue.c.s
-
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -394,35 +163,10 @@ help:
 	@echo ... depend
 	@echo ... install/strip
 	@echo ... install/local
-	@echo ... getmatvar
-	@echo ... rebuild_cache
 	@echo ... edit_cache
-	@echo ... install
+	@echo ... rebuild_cache
 	@echo ... list_install_components
-	@echo ... chunkedData.obj
-	@echo ... chunkedData.i
-	@echo ... chunkedData.s
-	@echo ... extlib/mman-win32/mman.obj
-	@echo ... extlib/mman-win32/mman.i
-	@echo ... extlib/mman-win32/mman.s
-	@echo ... fileHelper.obj
-	@echo ... fileHelper.i
-	@echo ... fileHelper.s
-	@echo ... getPageSize.obj
-	@echo ... getPageSize.i
-	@echo ... getPageSize.s
-	@echo ... getmatvar.obj
-	@echo ... getmatvar.i
-	@echo ... getmatvar.s
-	@echo ... mapping.obj
-	@echo ... mapping.i
-	@echo ... mapping.s
-	@echo ... numberHelper.obj
-	@echo ... numberHelper.i
-	@echo ... numberHelper.s
-	@echo ... queue.obj
-	@echo ... queue.i
-	@echo ... queue.s
+	@echo ... install
 .PHONY : help
 
 

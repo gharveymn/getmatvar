@@ -77,25 +77,30 @@ void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const ch
 		
 		Data* hi_objects = findDataObject(filename, varnames[i]);
 		
-		switch(hi_objects->type)
+		int index = 0;
+		while(hi_objects[index].type != UNDEF)
 		{
-			case DOUBLE:
-				setDblPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case CHAR:
-				setCharPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case UNSIGNEDINT16:
-				setIntPtr(hi_objects, uberStructure[0], varnames[i], i, super_structure_type);
-				break;
-			case REF:
-				setCellPtr(hi_objects, uberStructure[0], hi_objects->name, i, super_structure_type);
-				break;
-			case STRUCT:
-				setStructPtr(hi_objects, uberStructure[0], hi_objects->name, i, super_structure_type);
-				break;
-			default:
-				break;
+			switch(hi_objects[index].type)
+			{
+				case DOUBLE:
+					setDblPtr(&hi_objects[index], uberStructure[0], varnames[i], i, super_structure_type);
+					break;
+				case CHAR:
+					setCharPtr(&hi_objects[index], uberStructure[0], varnames[i], i, super_structure_type);
+					break;
+				case UNSIGNEDINT16:
+					setIntPtr(&hi_objects[index], uberStructure[0], varnames[i], i, super_structure_type);
+					break;
+				case REF:
+					setCellPtr(&hi_objects[index], uberStructure[0], hi_objects[index].name, i, super_structure_type);
+					break;
+				case STRUCT:
+					setStructPtr(&hi_objects[index], uberStructure[0], hi_objects[index].name, i, super_structure_type);
+					break;
+				default:
+					break;
+			}
+			index++;
 		}
 		
 		freeDataObjectTree(hi_objects);
@@ -145,7 +150,6 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	mxArray* mxDblPtr = mxCreateNumericArray(num_obj_dims, obj_dims, mxDOUBLE_CLASS, mxREAL);
 	double* mxDblPtrPr = mxGetPr(mxDblPtr);
 	
-	//must copy over because all objects are freed at the end of execution
 	for(int j = 0; j < num_obj_elems; j++)
 	{
 		mxDblPtrPr[j] = object->double_data[j];
@@ -167,22 +171,11 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 {
 	mwSize num_obj_dims = 0, num_obj_elems = 0;
 	getNums(object, &num_obj_dims, &num_obj_elems);
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
-	char* mxCharPtrPr;
-
-	if(strncmp(object->name,"logical",7) == 0)
-	{
-		mxArray* mxCharPtr = mxCreateLogicalArray(num_obj_dims, obj_dims);
-		mxCharPtrPr = mxGetLogicals(mxCharPtr);
-	}
-	else
-	{
-		mxCharPtrPr = mxMalloc(num_obj_elems*sizeof(char));
-	}
-
+	char* mxCharPtrPr = mxCalloc(num_obj_elems, sizeof(char));
+	
 	for(int j = 0; j < num_obj_elems; j++)
 	{
-		mxCharPtrPr[j] = object->char_data[j];
+		mxCharPtrPr[j] = (char)object->ushort_data[j];
 	}
 	mxArray* mxCharPtr = mxCreateString(mxCharPtrPr);
 	
@@ -195,6 +188,7 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 		//is a cell array
 		mxSetCell(returnStructure, index, mxCharPtr);
 	}
+	mxFree(mxCharPtrPr);
 }
 
 
@@ -202,7 +196,7 @@ void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 {
 	mwSize num_obj_dims = 0, num_obj_elems = 0;
 	getNums(object, &num_obj_dims, &num_obj_elems);
-	char* mxIntPtrPr = mxMalloc(num_obj_elems*sizeof(char));
+	char* mxIntPtrPr = mxCalloc(num_obj_elems, sizeof(char));
 	
 	for(int j = 0; j < num_obj_elems; j++)
 	{
@@ -219,6 +213,7 @@ void setIntPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
 	}
+	mxFree(mxIntPtrPr);
 }
 
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)

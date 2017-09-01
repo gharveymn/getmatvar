@@ -1,14 +1,28 @@
 #include "mapping.h"
 
 
-Data* getDataObject(char* filename, char variable_name[], int* num_objects)
+Data* findDataObject(const char* filename, const char variable_name[])
+{
+	Data** objects = getDataObjects(filename, variable_name);
+	Data* hi_objects = organizeObjects(objects);
+	
+	//free the end object because we aren't going to be using the linear object freeing system
+	int i = 0;
+	while(objects[i]->type != UNDEF)
+	{
+		i++;
+	}
+	free(objects[i]);
+	return hi_objects;
+}
+
+Data** getDataObjects(const char* filename, const char variable_name[])
 {
 	char* header_pointer;
 	uint32_t header_length;
 	uint64_t header_address;
 	//uint64_t root_tree_address;
-	int num_objs = 0;
-	Data* data_objects = (Data*)malloc((MAX_OBJS + 1) * sizeof(Data));
+	Data** data_objects_ptrs = malloc((MAX_OBJS + 1) * sizeof(Data*));
 	Object obj;
 	
 	//init maps
@@ -41,10 +55,20 @@ Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 	
 	
 	//interpret the header messages
+	int num_objs = 0;
 	while(header_queue.length > 0)
 	{
 		
-		data_objects[num_objs].sub_objects = NULL;
+		data_objects_ptrs[num_objs] = malloc(sizeof(Data));
+		
+		//initialize elements subject to malloc
+		data_objects_ptrs[num_objs]->type = UNDEF;
+		data_objects_ptrs[num_objs]->double_data = NULL;
+		data_objects_ptrs[num_objs]->udouble_data = NULL;
+		data_objects_ptrs[num_objs]->char_data = NULL;
+		data_objects_ptrs[num_objs]->ushort_data = NULL;
+		data_objects_ptrs[num_objs]->sub_objects = NULL;
+		data_objects_ptrs[num_objs]->chunked_info.chunked_dims = NULL;
 		
 		obj = dequeueObject();
 		header_address = obj.this_obj_header_address;
@@ -58,32 +82,27 @@ Data* getDataObject(char* filename, char variable_name[], int* num_objects)
 		{
 			header_pointer = navigateTo(header_address, header_length, TREE);
 		}
-		strcpy(data_objects[num_objs].name, obj.name);
-		data_objects[num_objs].parent_obj_address = obj.parent_obj_header_address;
-		data_objects[num_objs].this_obj_address = obj.this_obj_header_address;
-		collectMetaData(&data_objects[num_objs], header_address, header_pointer);
+		strcpy(data_objects_ptrs[num_objs]->name, obj.name);
+		data_objects_ptrs[num_objs]->parent_obj_address = obj.parent_obj_header_address;
+		data_objects_ptrs[num_objs]->this_obj_address = obj.this_obj_header_address;
+		collectMetaData(data_objects_ptrs[num_objs], header_address, header_pointer);
 		
 		num_objs++;
 		
 	}
 	
 	//set object at the end to trigger sentinel
-	data_objects[num_objs].type = UNDEF;
-	data_objects[num_objs].parent_obj_address = UNDEF_ADDR;
+	data_objects_ptrs[num_objs] = malloc(sizeof(Data));
+	data_objects_ptrs[num_objs]->type = UNDEF;
+	data_objects_ptrs[num_objs]->parent_obj_address = UNDEF_ADDR;
 	
-	num_objects[0] = num_objs;
 	close(fd);
-	return data_objects;
+	return data_objects_ptrs;
 }
 
 
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer)
 {
-	object->type = UNDEF;
-	object->double_data = NULL;
-	object->udouble_data = NULL;
-	object->char_data = NULL;
-	object->ushort_data = NULL;
 	
 	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	
@@ -343,7 +362,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 }
 
 
-void findHeaderAddress(char variable_name[])
+void findHeaderAddress(const char variable_name[])
 {
 	char* delim = ".";
 	char* tree_pointer;
@@ -354,7 +373,7 @@ void findHeaderAddress(char variable_name[])
 	default_bytes = (uint64_t)getAllocGran();
 	
 	flushVariableNameQueue();
-	token = strtok(variable_name, delim);
+	token = strtok(strdup(variable_name), delim);
 	while(token != NULL)
 	{
 		enqueueVariableName(token);
@@ -362,7 +381,8 @@ void findHeaderAddress(char variable_name[])
 	}
 	
 	//aka the parent address for a snod
-	Addr_Trio parent_trio, this_trio;
+	Addr_Trio parent_trio = {.parent_obj_header_address = UNDEF_ADDR, .tree_address = UNDEF_ADDR, .heap_address = UNDEF_ADDR};
+	Addr_Trio this_trio;
 	
 	//search for the object header for the variable
 	while(queue.length > 0)
@@ -386,42 +406,55 @@ void findHeaderAddress(char variable_name[])
 }
 
 
-Data* organizeObjects(Data* objects, int num_objs)
+Data* organizeObjects(Data** objects)
 {
+	
+	if(objects[0]->type == UNDEF)
+	{
+		return NULL;
+	}
+	
+	int num_total_objs = 0;
+	while(objects[num_total_objs]->type != UNDEF)
+	{
+		num_total_objs++;
+	}
+	
 	int index = 0;
-	Data* super_objects = malloc((num_objs + 1) * sizeof(Data));
-	super_objects[0] = objects[0];
-	super_objects[1].type = UNDEF;
+	Data* super_object = objects[0];
 	index++;
 	
-	placeInSuperObject(&super_objects[0], objects, num_objs, &index);
+	if(super_object[0].type == STRUCT || super_object[0].type == REF)
+	{
+		placeInSuperObject(super_object, objects, num_total_objs, &index);
+	}
 	
-	return super_objects;
+	return super_object;
+	
 }
 
 
-void placeInSuperObject(Data* super_object, Data* objects, int num_objs, int* index)
+void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index)
 {
 	//note: index should be at the starting index of the subobjects
 	
-	int j = 0;
+	uint8_t num_curr_level_objs = 0;
 	int idx = *index;
-	Data* sub_objects = malloc((num_objs - idx + 1) * sizeof(Data));
+	Data** sub_objects = malloc((num_total_objs - idx) * sizeof(Data*));
 	
-	while(super_object->this_obj_address == objects[idx].parent_obj_address)
+	while(super_object->this_obj_address == objects[idx]->parent_obj_address)
 	{
-		sub_objects[j] = objects[idx];
+		sub_objects[num_curr_level_objs] = objects[idx];
 		idx++;
-		if(sub_objects[j].type == STRUCT || sub_objects[j].type == REF)
+		if(sub_objects[num_curr_level_objs]->type == STRUCT || sub_objects[num_curr_level_objs]->type == REF)
 		{
 			//since this is a depth-first traversal
-			placeInSuperObject(&sub_objects[j], objects, num_objs, &idx);
+			placeInSuperObject(sub_objects[num_curr_level_objs], objects, num_total_objs, &idx);
 		}
-		j++;
+		num_curr_level_objs++;
 	}
 	
-	//signals the end of the objects
-	sub_objects[j].type = UNDEF;
+	super_object->num_sub_objs = num_curr_level_objs;
 	super_object->sub_objects = sub_objects;
 	*index = idx;
 	

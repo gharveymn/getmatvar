@@ -27,17 +27,9 @@ if(NOT CMAKE_INSTALL_COMPONENT)
   endif()
 endif()
 
-if("${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/../bin" TYPE STATIC_LIBRARY OPTIONAL FILES "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw/mex/libgetmatvar.dll.a")
-endif()
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for each subdirectory.
+  include("C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw/mex/getmatvar/cmake_install.cmake")
 
-if("${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/../bin" TYPE SHARED_LIBRARY FILES "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/v7.3Files/mexbuild/buildmingw/mex/getmatvar.mexw64")
-  if(EXISTS "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/../bin/getmatvar.mexw64" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/../bin/getmatvar.mexw64")
-    if(CMAKE_INSTALL_DO_STRIP)
-      execute_process(COMMAND "C:/msys64/mingw64/bin/strip.exe" "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/../bin/getmatvar.mexw64")
-    endif()
-  endif()
 endif()
 

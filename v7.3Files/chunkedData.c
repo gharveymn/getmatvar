@@ -1,4 +1,5 @@
 #include "mapping.h"
+#include "extlib/zlib/zlib.h"
 
 void getChunkedData(Data* object)
 {
@@ -7,6 +8,8 @@ void getChunkedData(Data* object)
 	fillChunkTree(&root, object->chunked_info.num_chunked_dims);
 	decompressChunk(object, &root);
 	freeTree(&root);
+	free(root.left_sibling);
+	free(root.right_sibling);
 }
 
 void decompressChunk(Data* object, TreeNode* node)
@@ -59,8 +62,8 @@ void doInflate(Data* object, TreeNode* node)
 	
 	int ret = Z_OK;
 	z_stream strm;
-	char decompressed_data_buffer[CHUNK_BUFFER_SIZE];
-	char* data_pointer;
+	Bytef decompressed_data_buffer[CHUNK_BUFFER_SIZE];
+	Bytef* data_pointer;
 	strm.zalloc = Z_NULL;
 	strm.zfree = Z_NULL;
 	strm.opaque = Z_NULL;
@@ -70,15 +73,16 @@ void doInflate(Data* object, TreeNode* node)
 	if (ret != Z_OK)
 	{
 		printf("Error in intialization of inflate, ret = %d\n", ret);
-		system(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 		
-		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
+		data_pointer = (Bytef*)navigateTo(node->children[i].address, node->keys[i].size, TREE);
 		strm.avail_in = node->keys[i].size;
 		strm.next_in = data_pointer;
+		
 		do
 		{
 			
@@ -96,14 +100,14 @@ void doInflate(Data* object, TreeNode* node)
 					case Z_MEM_ERROR:
 						(void)inflateEnd(&strm);
 						printf("There was an error with inflating the chunk at %llu. Error: ret = %d\n", node->children[i].address, ret);
-						system(EXIT_FAILURE);
+						exit(EXIT_FAILURE);
 				}
 				
 			} while (strm.avail_out == 0);
 			
-			
-			
 		} while(ret != Z_STREAM_END);
+		
+		inflateReset(&strm);
 		
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, num_dims);
 		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, num_dims);
@@ -114,30 +118,27 @@ void doInflate(Data* object, TreeNode* node)
 		{
 			if(object->double_data != NULL)
 			{
-				object->double_data[array_index] = convertHexToFloatingPoint(getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order));
-				if(object->double_data[array_index] != 1)
-				{
-					int a = TRUE;
-				}
+				object->double_data[array_index] = convertHexToFloatingPoint(getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order));
 			}
 			else if(object->ushort_data != NULL)
 			{
-				object->ushort_data[array_index] = (uint16_t)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
+				object->ushort_data[array_index] = (uint16_t)getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
 			}
 			else if(object->udouble_data != NULL)
 			{
 				//these are addresses so we have to add the offset
-				object->udouble_data[array_index] = getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order) + s_block.base_address;
+				object->udouble_data[array_index] = getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order) + s_block.base_address;
 			}
 			else if(object->char_data != NULL)
 			{
-				object->char_data[array_index] = (char)getBytesAsNumber(&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
+				object->char_data[array_index] = (char)getBytesAsNumber((char*)&decompressed_data_buffer[data_buffer_index*object->elem_size], object->elem_size, object->byte_order);
 			}
 			data_buffer_index++;
 		}
 		
 		
 	}
+	
 	(void)inflateEnd(&strm);
 	
 	
@@ -170,9 +171,16 @@ void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims)
 	fillNode(root, num_chunked_dims);
 	
 	//for the sake of completeness
+	root->left_sibling = malloc(sizeof(TreeNode));
 	root->left_sibling->address = UNDEF_ADDR;
+	root->left_sibling->keys = NULL;
+	root->left_sibling->children = NULL;
 	fillNode(root->left_sibling, num_chunked_dims);
+	
+	root->right_sibling = malloc(sizeof(TreeNode));
 	root->right_sibling->address = UNDEF_ADDR;
+	root->right_sibling->keys = NULL;
+	root->right_sibling->children = NULL;
 	fillNode(root->right_sibling, num_chunked_dims);
 }
 
@@ -182,9 +190,6 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	
 	node->node_type = NODETYPE_UNDEFINED;
 	node->leaf_type = LEAFTYPE_UNDEFINED;
-	node->left_sibling = malloc(sizeof(TreeNode*));
-	node->right_sibling = malloc(sizeof(TreeNode*));
-	
 	
 	if(node->address == UNDEF_ADDR)
 	{
@@ -289,8 +294,8 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 					node->children[i-1].right_sibling = &node->children[i];
 				}
 				
-				navigateTo(node->address, bytes_needed, TREE);
-				key_pointer += key_size + s_block.size_of_offsets;
+				tree_pointer = navigateTo(node->address, bytes_needed, TREE);
+				key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets + (i+1)*(key_size + s_block.size_of_offsets);
 				key_address += key_size + s_block.size_of_offsets;
 				
 				node->keys[i + 1].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
@@ -304,20 +309,23 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			if(node->node_level >= 0)
 			{
+				node->children[0].left_sibling = malloc(sizeof(TreeNode));
 				node->children[0].left_sibling->address = UNDEF_ADDR;
+				node->children[0].left_sibling->keys = NULL;
+				node->children[0].left_sibling->children = NULL;
 				fillNode(node->children[0].left_sibling, num_chunked_dims);
-			}
-			
-			if(node->node_level >= 0)
-			{
+				
+				node->children[node->entries_used-1].right_sibling = malloc(sizeof(TreeNode));
 				node->children[node->entries_used-1].right_sibling->address = UNDEF_ADDR;
+				node->children[node->entries_used-1].right_sibling->keys = NULL;
+				node->children[node->entries_used-1].right_sibling->children = NULL;
 				fillNode(node->children[node->entries_used-1].right_sibling, num_chunked_dims);
 			}
 			
 			break;
 		default:
 			printf("Invalid node type %d\n", node->node_type);
-			system(EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 	}
 }
 
@@ -328,16 +336,23 @@ void freeTree(TreeNode* node)
 	{
 		if(node->keys != NULL)
 		{
+			for(int i = 0; i < node->entries_used+1; i++)
+			{
+				free(node->keys[i].chunk_start);
+			}
+			
 			free(node->keys);
-		}
-		
-		for(int i = 0; i < node->entries_used; i++)
-		{
-			freeTree(&node->children[i]);
+			
 		}
 		
 		if(node->children != NULL)
 		{
+			free(node->children[0].left_sibling);
+			free(node->children[node->entries_used-1].right_sibling);
+			for(int i = 0; i < node->entries_used; i++)
+			{
+				freeTree(&node->children[i]);
+			}
 			free(node->children);
 		}
 	}
