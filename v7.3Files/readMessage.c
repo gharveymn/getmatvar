@@ -30,7 +30,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 	object->type = UNDEF;
 	//assume version 1
 	uint8_t class = (uint8_t)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
-	uint32_t size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
+	object->elem_size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	object->datatype_bit_field = (uint32_t)getBytesAsNumber(msg_pointer + 1, 3, META_DATA_BYTE_ORDER);
 	uint8_t sign;
 	
@@ -41,10 +41,10 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 			
 			//assume that the bytes wont be VAX-endian because I don't know what that is
 			object->byte_order = (ByteOrder)(object->datatype_bit_field & 1);
-			sign = object->byte_order >> 3;
+			sign = (uint8_t)(object->datatype_bit_field >> 3);
 			
 			//size in bits
-			switch(size)
+			switch(object->elem_size)
 			{
 				case 1:
 					if(sign)
@@ -97,7 +97,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 			object->byte_order = (ByteOrder)(object->datatype_bit_field & 1);
 			
 			//no mantissa normalization, 0 based padding
-			switch(size)
+			switch(object->elem_size)
 			{
 				case 4:
 					object->type = SINGLE;

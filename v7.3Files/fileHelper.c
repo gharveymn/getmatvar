@@ -262,21 +262,41 @@ void freeDataObjects(Data** objects)
 	while(objects[i]->type != UNDEF)
 	{
 		
-		if(objects[i]->data_arrays.char_data != NULL)
+		switch(objects[i]->type)
 		{
-			free(objects[i]->data_arrays.char_data);
-		}
-		else if(objects[i]->data_arrays.double_data != NULL)
-		{
-			free(objects[i]->data_arrays.double_data);
-		}
-		else if(objects[i]->data_arrays.udouble_data != NULL)
-		{
-			free(objects[i]->data_arrays.udouble_data);
-		}
-		else if(objects[i]->data_arrays.ui16_data != NULL)
-		{
-			free(objects[i]->data_arrays.ui16_data);
+			case INT8:
+				free(objects[i]->data_arrays.i8_data);
+				break;
+			case CHAR:
+				free(objects[i]->data_arrays.char_data);
+				break;
+			case INT16:
+				free(objects[i]->data_arrays.i16_data);
+				break;
+			case UINT16:
+				free(objects[i]->data_arrays.ui16_data);
+				break;
+			case INT32:
+				free(objects[i]->data_arrays.i32_data);
+				break;
+			case UINT32:
+				free(objects[i]->data_arrays.ui32_data);
+				break;
+			case INT64:
+				free(objects[i]->data_arrays.i64_data);
+				break;
+			case UINT64:
+				free(objects[i]->data_arrays.ui64_data);
+				break;
+			case SINGLE:
+				free(objects[i]->data_arrays.single_data);
+				break;
+			case DOUBLE:
+				free(objects[i]->data_arrays.double_data);
+				break;
+			default:
+				//do nothing
+				break;
 		}
 		
 		if(objects[i]->dims != NULL)

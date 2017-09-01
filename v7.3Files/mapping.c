@@ -187,45 +187,42 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 
 void allocateSpace(Data* object)
 {
+	//why not just put it into one array and cast it later? To save memory.
 	switch(object->type)
 	{
 		case INT8:
-			//
+			object->data_arrays.i8_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case CHAR:
-			object->data_arrays.char_data = malloc(object->num_elems * sizeof(char));
-			object->elem_size = sizeof(char);
+			object->data_arrays.char_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT16:
-			//
+			object->data_arrays.i16_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT16:
-			object->data_arrays.ui16_data = malloc(object->num_elems * sizeof(uint16_t));
-			object->elem_size = sizeof(uint16_t);
+			object->data_arrays.ui16_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT32:
-			//
+			object->data_arrays.i32_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT32:
-			//
+			object->data_arrays.ui32_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT64:
-			//
+			object->data_arrays.i64_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT64:
-			//
+			object->data_arrays.ui64_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case SINGLE:
-			//
+			object->data_arrays.single_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case DOUBLE:
-			object->data_arrays.double_data = malloc(object->num_elems * sizeof(double));
-			object->elem_size = sizeof(double);
+			object->data_arrays.double_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.udouble_data = malloc(object->num_elems * sizeof(uint64_t));
-			object->elem_size = sizeof(uint64_t);
+			object->data_arrays.udouble_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
@@ -246,17 +243,25 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 	switch(object->type)
 	{
 		case INT8:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.i8_data[j] = (int8_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case CHAR:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-				object->data_arrays.ui16_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object->data_arrays.char_data[j] = (char)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
 				object_data_index++;
 			}
 			break;
 		case INT16:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.i16_data[j] = (int16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case UINT16:
 			for(uint64_t j = starting_index; j < condition; j++)
@@ -266,19 +271,39 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			}
 			break;
 		case INT32:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.i32_data[j] = (int32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case UINT32:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.ui32_data[j] = (uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case INT64:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.i64_data[j] = (int64_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case UINT64:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.ui64_data[j] = (uint64_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order);
+				object_data_index++;
+			}
 			break;
 		case SINGLE:
-			//
+			for(uint64_t j = starting_index; j < condition; j++)
+			{
+				object->data_arrays.double_data[j] = convertHexToSingle((uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));
+				object_data_index++;
+			}
 			break;
 		case DOUBLE:
 			for(uint64_t j = starting_index; j < condition; j++)
@@ -297,7 +322,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
-			//
+			//nothing to be done
 			break;
 		default:
 			printf("Unknown data type encountered");
