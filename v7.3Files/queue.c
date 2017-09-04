@@ -5,7 +5,7 @@ void enqueueTrio(Addr_Trio trio)
 {
 	if(queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in trio queue\n");
+		fprintf(stderr, "Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
 	}
 	queue.trios[queue.back].parent_obj_header_address = trio.parent_obj_header_address;
@@ -28,7 +28,7 @@ void enqueueObject(Object obj)
 {
 	if(header_queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Not enough room in header queue\n");
+		fprintf(stderr, "Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
 	header_queue.objects[header_queue.back].parent_obj_header_address = obj.parent_obj_header_address;
@@ -62,7 +62,7 @@ void priorityEnqueueTrio(Addr_Trio trio)
 {
 	if(queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Trying to priority enqueue: Not enough room in trio queue\n");
+		fprintf(stderr, "Trying to priority enqueue: Not enough room in trio queue\n");
 		exit(EXIT_FAILURE);
 	}
 	if(queue.front - 1 < 0)
@@ -87,7 +87,7 @@ void priorityEnqueueObject(Object obj)
 {
 	if(header_queue.length >= MAX_Q_LENGTH)
 	{
-		printf("Trying to priority enqueue: Not enough room in header queue\n");
+		fprintf(stderr, "Trying to priority enqueue: Not enough room in header queue\n");
 		exit(EXIT_FAILURE);
 	}
 	if(header_queue.front - 1 < 0)

@@ -9,7 +9,9 @@ void getChunkedData(Data* object)
 	decompressChunk(object, &root);
 	freeTree(&root);
 	free(root.left_sibling);
+	root.left_sibling = NULL;
 	free(root.right_sibling);
+	root.right_sibling = NULL;
 }
 
 void decompressChunk(Data* object, TreeNode* node)
@@ -42,7 +44,7 @@ void doInflate(Data* object, TreeNode* node)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	
-	uint64_t chunk_start_index, chunk_end_index;
+	uint64_t chunk_start_index = 0, chunk_end_index = 0;
 	uint64_t chunk_end_index_offset = 1;
 	for(int i = 0; object->chunked_info.chunked_dims[i] > 0; i++)
 	{
@@ -50,18 +52,19 @@ void doInflate(Data* object, TreeNode* node)
 	}
 	
 	int ret = Z_OK;
-	z_stream strm;
+	z_stream* strm = malloc(sizeof(z_stream));
 	Bytef decompressed_data_buffer[CHUNK_BUFFER_SIZE];
 	Bytef* data_pointer;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.avail_in = 0;
-	strm.next_in = Z_NULL;
-	ret = inflateInit(&strm);
+	strm->zalloc = Z_NULL;
+	strm->zfree = Z_NULL;
+	strm->opaque = Z_NULL;
+	strm->avail_in = 0;
+	strm->next_in = Z_NULL;
+
+	ret = inflateInit(strm);
 	if (ret != Z_OK)
 	{
-		printf("Error in intialization of inflate, ret = %d\n", ret);
+		fprintf(stderr, "Error in intialization of inflate, ret = %d\n", ret);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -69,17 +72,17 @@ void doInflate(Data* object, TreeNode* node)
 	{
 		
 		data_pointer = (Bytef*)navigateTo(node->children[i].address, node->keys[i].size, TREE);
-		strm.avail_in = node->keys[i].size;
-		strm.next_in = data_pointer;
+		strm->avail_in = node->keys[i].size;
+		strm->next_in = data_pointer;
 		
 		do
 		{
 			
 			do
 			{
-				strm.avail_out = CHUNK_BUFFER_SIZE;
-				strm.next_out = decompressed_data_buffer;
-				ret = inflate(&strm, Z_FINISH);
+				strm->avail_out = CHUNK_BUFFER_SIZE;
+				strm->next_out = decompressed_data_buffer;
+				ret = inflate(strm, Z_FINISH);
 				assert(ret != Z_STREAM_ERROR);
 				switch(ret)
 				{
@@ -87,26 +90,27 @@ void doInflate(Data* object, TreeNode* node)
 						ret = Z_DATA_ERROR;     /* and fall through */
 					case Z_DATA_ERROR:
 					case Z_MEM_ERROR:
-						(void)inflateEnd(&strm);
-						printf("There was an error with inflating the chunk at %llu. Error: ret = %d\n", node->children[i].address, ret);
+						(void)inflateEnd(strm);
+						fprintf(stderr, "There was an error with inflating the chunk at %llu. Error: ret = %d\n", node->children[i].address, ret);
 						exit(EXIT_FAILURE);
 				}
 				
-			} while (strm.avail_out == 0);
+			} while (strm->avail_out == 0);
 			
 		} while(ret != Z_STREAM_END);
 		
-		inflateReset(&strm);
+		inflateReset(strm);
 		
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims);
-		
+
 		//copy over data
 		placeData(object, (char*)&decompressed_data_buffer[0], chunk_start_index, MIN(chunk_end_index, object->num_elems), object->elem_size, object->byte_order);
 		
 	}
 	
-	(void)inflateEnd(&strm);
+	(void)inflateEnd(strm);
+	free(strm);
 	
 	
 }
@@ -291,7 +295,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			break;
 		default:
-			printf("Invalid node type %d\n", node->node_type);
+			fprintf(stderr, "Invalid node type %d\n", node->node_type);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -306,21 +310,26 @@ void freeTree(TreeNode* node)
 			for(int i = 0; i < node->entries_used+1; i++)
 			{
 				free(node->keys[i].chunk_start);
+				node->keys[i].chunk_start = NULL;
 			}
 			
 			free(node->keys);
+			node->keys = NULL;
 			
 		}
 		
 		if(node->children != NULL)
 		{
 			free(node->children[0].left_sibling);
+			node->children[0].left_sibling = NULL;
 			free(node->children[node->entries_used-1].right_sibling);
+			node->children[node->entries_used-1].right_sibling = NULL;
 			for(int i = 0; i < node->entries_used; i++)
 			{
 				freeTree(&node->children[i]);
 			}
 			free(node->children);
+			node->children = NULL;
 		}
 	}
 }

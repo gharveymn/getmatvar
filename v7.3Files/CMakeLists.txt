@@ -3,7 +3,9 @@ project(MatFile_Parsing_WinJB)
 
 set(CMAKE_CXX_STANDARD 11)
 set(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
+set(MATLAB_LIBS "C:/Program Files/MATLAB/R2017a/extern/lib/win64/mingw64")
 
+link_directories(${MATLAB_LIBS})
 include_directories(${MEX})
 
 macro (add_executable _name)
@@ -16,6 +18,8 @@ macro (add_executable _name)
 			target_link_libraries(${_name} ${ZLIB_LIBRARIES})
 		endif (ZLIB_FOUND)
 	endif()
+
+	target_link_libraries(${_name} libmx)
 endmacro()
 
 set(SOURCE_FILES

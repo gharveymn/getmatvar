@@ -20,7 +20,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
-	printf("string test succeeded.\n");
+	fprintf(stderr, "string test succeeded.\n");
 	
 	//dbl
 	strcpy(variable_name, "dbl");
@@ -29,7 +29,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
-	printf("dbl test succeeded.\n");
+	fprintf(stderr, "dbl test succeeded.\n");
 	
 	//integer
 	strcpy(variable_name, "integer");
@@ -38,7 +38,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
-	printf("integer test succeeded.\n");
+	fprintf(stderr, "integer test succeeded.\n");
 	
 	//array
 	strcpy(variable_name, "array");
@@ -47,7 +47,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
-	printf("array test succeeded.\n");
+	fprintf(stderr, "array test succeeded.\n");
 	
 	//cell
 	strcpy(variable_name, "cell");
@@ -56,7 +56,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x288);
 	freeDataObjects(objects, *num_objs);
-	printf("cell test succeeded.\n");
+	fprintf(stderr, "cell test succeeded.\n");
 	
 	//my_struct.string
 	strcpy(variable_name, "my_struct.string");
@@ -65,7 +65,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
-	printf("my_struct.string test succeeded.\n");
+	fprintf(stderr, "my_struct.string test succeeded.\n");
 	
 	//my_struct.double
 	strcpy(variable_name, "my_struct.double");
@@ -74,7 +74,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
-	printf("my_struct.double test succeeded.\n");
+	fprintf(stderr, "my_struct.double test succeeded.\n");
 	
 	//my_struct.integer
 	strcpy(variable_name, "my_struct.integer");
@@ -83,7 +83,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
-	printf("my_struct.integer test succeeded.\n");
+	fprintf(stderr, "my_struct.integer test succeeded.\n");
 	
 	//my_struct.array
 	strcpy(variable_name, "my_struct.array");
@@ -92,7 +92,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
-	printf("my_struct.array test succeeded.\n");
+	fprintf(stderr, "my_struct.array test succeeded.\n");
 	
 	//my_struct.cell
 	strcpy(variable_name, "my_struct.cell");
@@ -101,7 +101,7 @@ int main()
 	assert(objects[0].this_obj_address == 0);
 	assert(objects[0].parent_obj_address == 0x1398);
 	freeDataObjects(objects, *num_objs);
-	printf("my_struct.cell test succeeded.\n");
+	fprintf(stderr, "my_struct.cell test succeeded.\n");
 	
 	//my_struct
 	strcpy(variable_name, "my_struct");
@@ -149,7 +149,7 @@ int main()
 		}
 	}
 	cellTest(cell_objects);
-	printf("my_struct test succeeded.\n");
+	fprintf(stderr, "my_struct test succeeded.\n");
 }
 
 
