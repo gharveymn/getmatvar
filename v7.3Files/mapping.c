@@ -8,7 +8,7 @@ Data* findDataObject(const char* filename, const char variable_name[])
 	
 	//free the end object because we aren't going to be using the linear object freeing system
 	int i = 0;
-	while(objects[i]->type != UNDEF)
+	while(objects[i]->type != SENTINEL)
 	{
 		i++;
 	}
@@ -38,7 +38,7 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	fd = open(filename, O_RDWR);
 	if(fd < 0)
 	{
-		printf("open() unsuccessful, Check errno: %d\n", errno);
+		fprintf(stderr, "open() unsuccessful, Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -50,9 +50,9 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	
 	//root_tree_address = queue.trios[queue.front].tree_address;
 	
-	//printf("\nObject header for variable %s is at 0x", variable_name);
+	//fprintf(stderr, "\nObject header for variable %s is at 0x", variable_name);
 	findHeaderAddress(variable_name);
-	//printf("%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
+	//fprintf(stderr, "%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
 	
 	
 	//interpret the header messages
@@ -87,7 +87,7 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	
 	//set object at the end to trigger sentinel
 	data_objects_ptrs[num_objs] = malloc(sizeof(Data));
-	data_objects_ptrs[num_objs]->type = UNDEF;
+	data_objects_ptrs[num_objs]->type = SENTINEL;
 	data_objects_ptrs[num_objs]->parent_obj_address = UNDEF_ADDR;
 	
 	close(fd);
@@ -96,7 +96,7 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 
 void initializeObject(Data* object, Object obj)
 {
-	
+	object->data_arrays.is_used = FALSE;
 	object->data_arrays.ui8_data = NULL;
 	object->data_arrays.i8_data = NULL;
 	object->data_arrays.ui16_data = NULL;
@@ -229,34 +229,34 @@ void allocateSpace(Data* object)
 	switch(object->type)
 	{
 		case INT8:
-			object->data_arrays.i8_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.i8_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT8:
-			object->data_arrays.ui8_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui8_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case INT16:
-			object->data_arrays.i16_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.i16_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT16:
-			object->data_arrays.ui16_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui16_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case INT32:
-			object->data_arrays.i32_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.i32_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT32:
-			object->data_arrays.ui32_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui32_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case INT64:
-			object->data_arrays.i64_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.i64_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT64:
-			object->data_arrays.ui64_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui64_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case SINGLE:
-			object->data_arrays.single_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.single_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case DOUBLE:
-			object->data_arrays.double_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.double_data = omalloc(object->num_elems * object->elem_size);
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
@@ -279,7 +279,7 @@ void allocateSpace(Data* object)
 			//do nothing
 			break;
 		default:
-			printf("Unknown data type encountered");
+			fprintf(stderr, "Unknown data type encountered");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -373,7 +373,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			//nothing to be done
 			break;
 		default:
-			printf("Unknown data type encountered");
+			fprintf(stderr, "Unknown data type encountered");
 			exit(EXIT_FAILURE);
 	}
 }
@@ -420,20 +420,20 @@ void findHeaderAddress(const char variable_name[])
 			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio);
 		}
 	}
-	//printf("0x%lx\n", header_address);
+	//fprintf(stderr, "0x%lx\n", header_address);
 }
 
 
 Data* organizeObjects(Data** objects)
 {
 	
-	if(objects[0]->type == UNDEF)
+	if(objects[0]->type == SENTINEL)
 	{
 		return NULL;
 	}
 	
 	int num_total_objs = 0;
-	while(objects[num_total_objs]->type != UNDEF)
+	while(objects[num_total_objs]->type != SENTINEL)
 	{
 		num_total_objs++;
 	}

@@ -9,7 +9,7 @@ Superblock getSuperblock(int fd, size_t file_size)
 	//unmap superblock
 	if(munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
-		printf("munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
+		fprintf(stderr, "munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 	maps[0].used = FALSE;
@@ -31,7 +31,7 @@ char* findSuperblock(int fd, size_t file_size)
 	
 	if(maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
 	{
-		printf("mmap() unsuccessful, Check errno: %d\n", errno);
+		fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -44,7 +44,7 @@ char* findSuperblock(int fd, size_t file_size)
 	
 	if((chunk_start - maps[0].map_start) >= alloc_gran)
 	{
-		printf("Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
+		fprintf(stderr, "Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -85,8 +85,8 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		{
 			if(munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
 			{
-				printf("munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
+				fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
+				fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
 				exit(EXIT_FAILURE);
 			}
 			maps[map_index].used = FALSE;
@@ -101,7 +101,7 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
-			printf("mmap() unsuccessful, Check errno: %d\n", errno);
+			fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -118,8 +118,8 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		{
 			if(munmap(map.map_start, map.bytes_mapped) != 0)
 			{
-				printf("munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				printf("1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
+				fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
+				fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
 				exit(EXIT_FAILURE);
 			}
 			map.used = FALSE;
@@ -134,7 +134,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		map.used = TRUE;
 		if(map.map_start == NULL || map.map_start == MAP_FAILED)
 		{
-			printf("mmap() unsuccessful, Check errno: %d\n", errno);
+			fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -263,138 +263,106 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	free(objects);
 }
 
-
-/*use when using getDataObjects*/
-void freeMXDataObjects(Data** objects)
+void freeDataObjects(Data** objects)
 {
-	
+
 	int i = 0;
-	while(objects[i]->type != UNDEF)
+	while (objects[i]->type != SENTINEL)
 	{
-		
-		switch(objects[i]->type)
+
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.ui8_data != NULL)
 		{
-			case INT8:
-			case UINT8:
-			case INT16:
-			case UINT16:
-			case INT32:
-			case UINT32:
-			case INT64:
-			case UINT64:
-			case SINGLE:
-			case DOUBLE:
-				break;
-			case REF:
-				//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-				free(objects[i]->data_arrays.udouble_data);
-				break;
-			default:
-				//do nothing since nothing was allocated
-				break;
+			ofree(objects[i]->data_arrays.ui8_data);
+			objects[i]->data_arrays.ui8_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.i8_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.i8_data);
+			objects[i]->data_arrays.i8_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.ui16_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.ui16_data);
+			objects[i]->data_arrays.ui16_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.i16_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.i16_data);
+			objects[i]->data_arrays.i16_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.ui32_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.ui32_data);
+			objects[i]->data_arrays.ui32_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.i32_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.i32_data);
+			objects[i]->data_arrays.i32_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.ui64_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.ui64_data);
+			objects[i]->data_arrays.ui64_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.i64_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.i64_data);
+			objects[i]->data_arrays.i64_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.single_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.single_data);
+			objects[i]->data_arrays.single_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.is_used != TRUE && objects[i]->data_arrays.double_data != NULL)
+		{
+			ofree(objects[i]->data_arrays.double_data);
+			objects[i]->data_arrays.double_data = NULL;
+		}
+		
+		if(objects[i]->data_arrays.udouble_data != NULL)
+		{
+			free(objects[i]->data_arrays.udouble_data);
+			objects[i]->data_arrays.udouble_data = NULL;
 		}
 		
 		if(objects[i]->dims != NULL)
 		{
 			free(objects[i]->dims);
+			objects[i]->dims = NULL;
 		}
 		
 		if(objects[i]->chunked_info.chunked_dims != NULL)
 		{
 			free(objects[i]->chunked_info.chunked_dims);
-		}
-		
-		for(int j = 0; j < objects[i]->chunked_info.num_filters; j++)
-		{
-			free(objects[j]->chunked_info.filters[j].client_data);
-		}
-		
-		if(objects[i]->sub_objects != NULL)
-		{
-			free(objects[i]->sub_objects);
-		}
-		
-		free(objects[i]);
-		
-		i++;
-		
-	}
-	
-	//note that nothing was malloced inside the sentinel object
-	free(objects[i]);
-	free(objects);
-
-}
-
-void freeDataObjects(Data** objects)
-{
-
-	int i = 0;
-	while (objects[i]->type != UNDEF)
-	{
-
-		switch (objects[i]->type)
-		{
-		case INT8:
-			free(objects[i]->data_arrays.i8_data);
-			break;
-		case UINT8:
-			free(objects[i]->data_arrays.ui8_data);
-			break;
-		case INT16:
-			free(objects[i]->data_arrays.i16_data);
-			break;
-		case UINT16:
-			free(objects[i]->data_arrays.ui16_data);
-			break;
-		case INT32:
-			free(objects[i]->data_arrays.i32_data);
-			break;
-		case UINT32:
-			free(objects[i]->data_arrays.ui32_data);
-			break;
-		case INT64:
-			free(objects[i]->data_arrays.i64_data);
-			break;
-		case UINT64:
-			free(objects[i]->data_arrays.ui64_data);
-			break;
-		case SINGLE:
-			free(objects[i]->data_arrays.single_data);
-			break;
-		case DOUBLE:
-			free(objects[i]->data_arrays.double_data);
-			break;
-		case REF:
-			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			free(objects[i]->data_arrays.udouble_data);
-			break;
-		default:
-			//do nothing since nothing was allocated
-			break;
-		}
-
-		if (objects[i]->dims != NULL)
-		{
-			free(objects[i]->dims);
-		}
-
-		if (objects[i]->chunked_info.chunked_dims != NULL)
-		{
-			free(objects[i]->chunked_info.chunked_dims);
+			objects[i]->chunked_info.chunked_dims = NULL;
 		}
 		
 		for(int j = 0; j < objects[i]->chunked_info.num_filters; j++)
 		{
 			free(objects[i]->chunked_info.filters[j].client_data);
+			objects[i]->chunked_info.filters[j].client_data = NULL;
 		}
-
-		if (objects[i]->sub_objects != NULL)
+		
+		if(objects[i]->sub_objects != NULL)
 		{
 			free(objects[i]->sub_objects);
+			objects[i]->sub_objects = NULL;
 		}
-
+			
+		
 		free(objects[i]);
+		objects[i] = NULL;
 
 		i++;
 
@@ -402,96 +370,110 @@ void freeDataObjects(Data** objects)
 
 	//note that nothing was malloced inside the sentinel object
 	free(objects[i]);
+	objects[i] = NULL;
 	free(objects);
 
 }
 
 void freeDataObjectTree(Data* super_object)
 {
-	
-	if(super_object->type != UNDEF)
+
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.ui8_data != NULL)
 	{
-		if(super_object->data_arrays.ui8_data != NULL)
-		{
-			free(super_object->data_arrays.ui8_data);
-		}
-		
-		if(super_object->data_arrays.i8_data != NULL)
-		{
-			free(super_object->data_arrays.i8_data);
-		}
-		
-		if(super_object->data_arrays.ui16_data != NULL)
-		{
-			free(super_object->data_arrays.ui16_data);
-		}
-		
-		if(super_object->data_arrays.i16_data != NULL)
-		{
-			free(super_object->data_arrays.i16_data);
-		}
-		
-		if(super_object->data_arrays.ui32_data != NULL)
-		{
-			free(super_object->data_arrays.ui32_data);
-		}
-		
-		if(super_object->data_arrays.i32_data != NULL)
-		{
-			free(super_object->data_arrays.i32_data);
-		}
-		
-		if(super_object->data_arrays.ui64_data != NULL)
-		{
-			free(super_object->data_arrays.ui64_data);
-		}
-		
-		if(super_object->data_arrays.i64_data != NULL)
-		{
-			free(super_object->data_arrays.i64_data);
-		}
-		
-		if(super_object->data_arrays.single_data != NULL)
-		{
-			free(super_object->data_arrays.single_data);
-		}
-		
-		if(super_object->data_arrays.double_data != NULL)
-		{
-			free(super_object->data_arrays.double_data);
-		}
-		
-		if(super_object->data_arrays.udouble_data != NULL)
-		{
-			free(super_object->data_arrays.udouble_data);
-		}
-		
-		if(super_object->dims != NULL)
-		{
-			free(super_object->dims);
-		}
-		
-		if(super_object->chunked_info.chunked_dims != NULL)
-		{
-			free(super_object->chunked_info.chunked_dims);
-		}
-		
-		for(int j = 0; j < super_object->chunked_info.num_filters; j++)
-		{
-			free(super_object->chunked_info.filters[j].client_data);
-		}
-		
-		if(super_object->sub_objects != NULL)
-		{
-			for(int i = 0; i < super_object->num_sub_objs; i++)
-			{
-				freeDataObjectTree(super_object->sub_objects[i]);
-			}
-			free(super_object->sub_objects);
-		}
-		
+		ofree(super_object->data_arrays.ui8_data);
+		super_object->data_arrays.ui8_data = NULL;
 	}
 	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.i8_data != NULL)
+	{
+		ofree(super_object->data_arrays.i8_data);
+		super_object->data_arrays.i8_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.ui16_data != NULL)
+	{
+		ofree(super_object->data_arrays.ui16_data);
+		super_object->data_arrays.ui16_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.i16_data != NULL)
+	{
+		ofree(super_object->data_arrays.i16_data);
+		super_object->data_arrays.i16_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.ui32_data != NULL)
+	{
+		ofree(super_object->data_arrays.ui32_data);
+		super_object->data_arrays.ui32_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.i32_data != NULL)
+	{
+		ofree(super_object->data_arrays.i32_data);
+		super_object->data_arrays.i32_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.ui64_data != NULL)
+	{
+		ofree(super_object->data_arrays.ui64_data);
+		super_object->data_arrays.ui64_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.i64_data != NULL)
+	{
+		ofree(super_object->data_arrays.i64_data);
+		super_object->data_arrays.i64_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.single_data != NULL)
+	{
+		ofree(super_object->data_arrays.single_data);
+		super_object->data_arrays.single_data = NULL;
+	}
+	
+	if(super_object->data_arrays.is_used != TRUE && super_object->data_arrays.double_data != NULL)
+	{
+		ofree(super_object->data_arrays.double_data);
+		super_object->data_arrays.double_data = NULL;
+	}
+	
+	if(super_object->data_arrays.udouble_data != NULL)
+	{
+		free(super_object->data_arrays.udouble_data);
+		super_object->data_arrays.udouble_data = NULL;
+	}
+	
+	if(super_object->dims != NULL)
+	{
+		free(super_object->dims);
+		super_object->dims = NULL;
+	}
+	
+	if(super_object->chunked_info.chunked_dims != NULL)
+	{
+		free(super_object->chunked_info.chunked_dims);
+		super_object->chunked_info.chunked_dims = NULL;
+	}
+	
+	for(int j = 0; j < super_object->chunked_info.num_filters; j++)
+	{
+		free(super_object->chunked_info.filters[j].client_data);
+		super_object->chunked_info.filters[j].client_data = NULL;
+	}
+	
+	if(super_object->sub_objects != NULL)
+	{
+        for(int j = 0; j < super_object->num_sub_objs; j++)
+        {
+            freeDataObjectTree(super_object->sub_objects[j]);
+        }
+		free(super_object->sub_objects);
+		super_object->sub_objects = NULL;
+	}
+		
+	
 	free(super_object);
+	super_object = NULL;
 	
 }

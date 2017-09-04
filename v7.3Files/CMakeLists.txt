@@ -1,22 +1,26 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
 PROJECT(MatFile_Parsing_WinJB)
 
-SET(CMAKE_CXX_STANDARD 11)
-SET(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
+set(CMAKE_CXX_STANDARD 11)
+set(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
+set(MATLAB_LIBS "C:/Program Files/MATLAB/R2017a/extern/lib/win64/mingw64")
 
-INCLUDE_DIRECTORIES(${MEX})
+link_directories(${MATLAB_LIBS})
+include_directories(${MEX})
 
 MACRO(ADD_EXECUTABLE _name)
 	# invoke built-in add_executable
-	_ADD_EXECUTABLE(${ARGV})
-	IF(TARGET ${_name})
-		FIND_PACKAGE(ZLIB REQUIRED)
-		IF(ZLIB_FOUND)
-			INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
-			TARGET_LINK_LIBRARIES(${_name} ${ZLIB_LIBRARIES})
-		ENDIF(ZLIB_FOUND)
-	ENDIF()
-ENDMACRO()
+	_add_executable(${ARGV})
+	if (TARGET ${_name})
+		find_package(ZLIB REQUIRED)
+		if (ZLIB_FOUND)
+			include_directories(${ZLIB_INCLUDE_DIRS})
+			target_link_libraries(${_name} ${ZLIB_LIBRARIES})
+		endif (ZLIB_FOUND)
+	endif()
+
+	target_link_libraries(${_name} libmx)
+endmacro()
 
 SET(SOURCE_FILES
     extlib/mman-win32/mman.c

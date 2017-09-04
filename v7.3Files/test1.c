@@ -23,7 +23,7 @@ int main()
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
 	arrayTest(objects);
 	freeDataObjects(objects, 1);
-	printf("array test succeeded.\n");*/
+	fprintf(stderr, "array test succeeded.\n");*/
 	
 	//strcpy(variable_name, "my_struct.logical");
 	//objects = getDataObject("my_struct1.mat", variable_name, num_objs);
@@ -33,19 +33,19 @@ int main()
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
 	cellTest(objects);
 	freeDataObjects(objects, *num_objs);
-	printf("cell test succeeded\n");
+	fprintf(stderr, "cell test succeeded\n");
 	
 	strcpy(variable_name, "my_struct.your_struct.integer");
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
 	integerTest(objects);
 	freeDataObjects(objects, *num_objs);
-	printf("integer test succeeded\n");
+	fprintf(stderr, "integer test succeeded\n");
 	
 	strcpy(variable_name, "my_struct.your_struct.double");
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
 	doubleTest(objects);
 	freeDataObjects(objects, *num_objs);
-	printf("double test succeeded.\n");
+	fprintf(stderr, "double test succeeded.\n");
 }
 
 

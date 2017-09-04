@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 //	}
 	
 	freeDataObjects(objects);
-	
+	printf("\nProgram exited without errors\n\n");
 }
 
 
@@ -60,19 +60,19 @@ void printDouble(Data* object)
 		i++;
 	}
 	
-	printf("\n%s:\n", object->name);
+	fprintf(stderr, "\n%s:\n", object->name);
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%f ", object->data_arrays.double_data[i]);
+		fprintf(stderr, "%f ", object->data_arrays.double_data[i]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
 			{
-				printf("\n");
+				fprintf(stderr, "\n");
 			}
 		}
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 }
 
 
@@ -95,14 +95,14 @@ void printShort(Data* object)
 		string[i] = (char)object->data_arrays.ui16_data[i];
 	}
 	string[num_elems] = 0;
-	printf("\n%s:\n", object->name);
-	printf("%s\n\n", string);
+	fprintf(stderr, "\n%s:\n", object->name);
+	fprintf(stderr, "%s\n\n", string);
 }
 
 
 void printCell(Data* object)
 {
-	printf("\n%s:\n", object->name);
+	fprintf(stderr, "\n%s:\n", object->name);
 	Data** cell_objects = object->sub_objects;
 	
 	int num_elems = 1;
@@ -117,37 +117,37 @@ void printCell(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%f ", cell_objects[i]->data_arrays.double_data[0]);
+		fprintf(stderr, "%f ", cell_objects[i]->data_arrays.double_data[0]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
 			{
-				printf("\n");
+				fprintf(stderr, "\n");
 			}
 		}
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 }
 
 
 void printStruct(Data* object)
 {
-	printf("\n%s fields: \n", object->name);
+	fprintf(stderr, "\n%s fields: \n", object->name);
 	
 	int index = 0;
 	while(object->sub_objects[index]->type != UNDEF)
 	{
-		printf("%s\n", object->sub_objects[index]->name);
+		fprintf(stderr, "%s\n", object->sub_objects[index]->name);
 		index++;
 	}
 	
-	printf("\n");
+	fprintf(stderr, "\n");
 }
 
 
 void printChar(Data* object)
 {
-	printf("%s:\n", object->name);
+	fprintf(stderr, "%s:\n", object->name);
 	
 	int num_elems = 1;
 	int num_dims = 0;
@@ -161,15 +161,15 @@ void printChar(Data* object)
 	
 	for(i = 0; i < num_elems; i++)
 	{
-		printf("%d ", object->data_arrays.ui8_data[i]);
+		fprintf(stderr, "%d ", object->data_arrays.ui8_data[i]);
 		for(int j = 0; j < num_dims - 1; j++)
 		{
 			if((i + 1) % object->dims[j] == 0)
 			{
-				printf("\n");
+				fprintf(stderr, "\n");
 			}
 		}
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
 	
 }
