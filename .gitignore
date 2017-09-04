@@ -1,5 +1,9 @@
 v7.3Files/extlib/mman-win32/x64
 v7.3Files/extlib/mman-win32/mman.VC.db
+v7.3Files/extlib/zlib/contrib
+v7.3Files/cmake-build-release/
+v7.3Files/cmake-build-debug/
+.vs
 
 *ipch/
 *.aps
