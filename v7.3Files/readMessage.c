@@ -135,7 +135,7 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 	//assume version 3
 	if(*msg_pointer != 3)
 	{
-		printf("Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
+		fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
 		exit(EXIT_FAILURE);
 	}
 	char* data_pointer = NULL;
@@ -163,7 +163,7 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			break;
 		default:
-			printf("Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
+			fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
 			exit(EXIT_FAILURE);
 	}
 	
@@ -223,7 +223,7 @@ void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t ms
 			
 			break;
 		default:
-			printf("Unknown data storage pipeline version %d at address 0x%llu.\n", *msg_pointer, msg_address);
+			fprintf(stderr, "Unknown data storage pipeline version %d at address 0x%llu.\n", *msg_pointer, msg_address);
 			exit(EXIT_FAILURE);
 		
 	}

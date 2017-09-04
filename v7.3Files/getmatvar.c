@@ -48,13 +48,13 @@ void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const ch
 {
 
 	Data** pseudo_object = malloc(sizeof(Data*));
-	char** varnames = malloc(num_elems*sizeof(char*));
+	char* varnames[num_elems];
 	char* last_delimit;
 
 	for (mwIndex i = 0; i < num_elems; i++)
 	{
 		varnames[i] = malloc(NAME_LENGTH*sizeof(char));
-		last_delimit = strrchr(full_variable_names[i], ".");
+		last_delimit = strrchr(full_variable_names[i], '.');
 		if (last_delimit == NULL)
 		{
 			strcpy(varnames[i], full_variable_names[i]);
@@ -74,16 +74,25 @@ void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const ch
 	for(mwIndex i = 0; i < num_elems; i++)
 	{
 		
+		fprintf(stderr,"Fetching the objects... ");
 		objects = getDataObjects(filename, full_variable_names[i]);
+		fprintf(stderr,"success.\n");
+		fprintf(stderr,"Organizing... ");
 		hi_objects = organizeObjects(objects);
+		fprintf(stderr,"success.\n");
 		pseudo_object[0] = hi_objects;
+		fprintf(stderr,"Creating the mx structure... ");
 		makeSubstructure(uberStructure[0], 1, pseudo_object, STRUCT);
-		freeMXDataObjects(objects);
+		fprintf(stderr,"success.\n");
+		fprintf(stderr,"Freeing the data objects... ");
+		freeDataObjects(objects);
+		fprintf(stderr,"success.\n");
 
 	}
 
 	free(pseudo_object);
-	free(varnames);
+
+	printf("\nProgram exited successfully.\n");
 
 }
 
@@ -92,6 +101,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	
 	for(mwIndex index = 0; index < num_elems; index++)
 	{
+
+		objects[index]->data_arrays.is_used = TRUE;
+
 		switch(objects[index]->type)
 		{
 			case UINT8:
@@ -126,15 +138,23 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				break;
 			case REF:
 				setCellPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				//Indicate we should free any memory used by this
+				objects[index]->data_arrays.is_used = FALSE;
 				break;
 			case STRUCT:
 				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				objects[index]->data_arrays.is_used = FALSE;
 				break;
 			case FUNCTION_HANDLE:
 				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
+				objects[index]->data_arrays.is_used = FALSE; 
+				break;
 			case TABLE:
 				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
+				objects[index]->data_arrays.is_used = FALSE;
+				break;
 			default:
+				objects[index]->data_arrays.is_used = FALSE;
 				break;
 		}
 		

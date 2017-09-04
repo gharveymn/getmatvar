@@ -1,6 +1,11 @@
 #include "mapping.h"
 #include <mex.h>
-#include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>
+
+#undef omalloc
+#undef ofree
+
+#define omalloc(arg) mxMalloc(arg)
+#define ofree(arg) mxFree(arg)
 
 //getmatvar.c
 void makeReturnStructure(mxArray* uberStructure[], int num_elems, const char* full_variable_names[], const char* filename);

@@ -17,7 +17,7 @@ int main()
 	fd = open(filename, O_RDWR);
 	if(fd < 0)
 	{
-		printf("open() unsuccessful, Check errno: %d\n", errno);
+		fprintf(stderr, "open() unsuccessful, Check errno: %d\n", errno);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -31,7 +31,7 @@ int main()
 	fillChunkTree(&root, 3);
 	close(fd);
 	freeTree(&root);
-	printf("Complete\n");
+	fprintf(stderr, "Complete\n");
 	
 }
 
