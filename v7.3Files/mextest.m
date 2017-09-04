@@ -1,1 +1,3 @@
-s = getmatvar('my_struct1.mat','my_struct');
+tic
+s = getmatvar('res/alltypes.mat','my_struct');
+toc
