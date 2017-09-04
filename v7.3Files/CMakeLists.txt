@@ -1,94 +1,94 @@
-cmake_minimum_required(VERSION 3.7)
-project(MatFile_Parsing_WinJB)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
+PROJECT(MatFile_Parsing_WinJB)
 
-set(CMAKE_CXX_STANDARD 11)
-set(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
+SET(CMAKE_CXX_STANDARD 11)
+SET(MEX "C:/Program Files/MATLAB/R2017a/extern/include")
 
-include_directories(${MEX})
+INCLUDE_DIRECTORIES(${MEX})
 
-macro (add_executable _name)
+MACRO(ADD_EXECUTABLE _name)
 	# invoke built-in add_executable
-	_add_executable(${ARGV})
-	if (TARGET ${_name})
-		find_package(ZLIB REQUIRED)
-		if (ZLIB_FOUND)
-			include_directories(${ZLIB_INCLUDE_DIRS})
-			target_link_libraries(${_name} ${ZLIB_LIBRARIES})
-		endif (ZLIB_FOUND)
-	endif()
-endmacro()
+	_ADD_EXECUTABLE(${ARGV})
+	IF(TARGET ${_name})
+		FIND_PACKAGE(ZLIB REQUIRED)
+		IF(ZLIB_FOUND)
+			INCLUDE_DIRECTORIES(${ZLIB_INCLUDE_DIRS})
+			TARGET_LINK_LIBRARIES(${_name} ${ZLIB_LIBRARIES})
+		ENDIF(ZLIB_FOUND)
+	ENDIF()
+ENDMACRO()
 
-set(SOURCE_FILES
-	   extlib/mman-win32/mman.c
-	   extlib/mman-win32/mman.h
-	   fileHelper.c
-	   getPageSize.c
-	   mapping.c
-	   mapping.h
-	   numberHelper.c
-	   queue.c
-	   readMessage.c
-	   chunkedData.c
-	   userTest.c)
+SET(SOURCE_FILES
+    extlib/mman-win32/mman.c
+    extlib/mman-win32/mman.h
+    fileHelper.c
+    getPageSize.c
+    mapping.c
+    mapping.h
+    numberHelper.c
+    queue.c
+    readMessage.c
+    chunkedData.c
+    userTest.c)
 
-add_executable(MatFile_Parsing_WinJB_userTest ${SOURCE_FILES})
+ADD_EXECUTABLE(MatFile_Parsing_WinJB_userTest ${SOURCE_FILES})
 
-set(SOURCE_FILES
-	   extlib/mman-win32/mman.c
-	   extlib/mman-win32/mman.h
-	   fileHelper.c
-	   getPageSize.c
-	   mapping.c
-	   mapping.h
-	   numberHelper.c
-	   queue.c
-	   readMessage.c
-	   chunkedData.c
-	   chunkedTest.c)
+SET(SOURCE_FILES
+    extlib/mman-win32/mman.c
+    extlib/mman-win32/mman.h
+    fileHelper.c
+    getPageSize.c
+    mapping.c
+    mapping.h
+    numberHelper.c
+    queue.c
+    readMessage.c
+    chunkedData.c
+    chunkedTest.c)
 
-add_executable(MatFile_Parsing_WinJB_chunkedTest ${SOURCE_FILES})
+ADD_EXECUTABLE(MatFile_Parsing_WinJB_chunkedTest ${SOURCE_FILES})
 
-set(SOURCE_FILES
-	   extlib/mman-win32/mman.c
-	   extlib/mman-win32/mman.h
-	   fileHelper.c
-	   getPageSize.c
-	   mapping.c
-	   mapping.h
-	   numberHelper.c
-	   queue.c
-	   readMessage.c
-	   test.c)
+SET(SOURCE_FILES
+    extlib/mman-win32/mman.c
+    extlib/mman-win32/mman.h
+    fileHelper.c
+    getPageSize.c
+    mapping.c
+    mapping.h
+    numberHelper.c
+    queue.c
+    readMessage.c
+    test.c)
 
-add_executable(MatFile_Parsing_WinJB_test ${SOURCE_FILES})
+ADD_EXECUTABLE(MatFile_Parsing_WinJB_test ${SOURCE_FILES})
 
-set(SOURCE_FILES
-	   extlib/mman-win32/mman.c
-	   extlib/mman-win32/mman.h
-	   fileHelper.c
-	   getPageSize.c
-	   mapping.c
-	   mapping.h
-	   numberHelper.c
-	   queue.c
-	   readMessage.c
-	   test1.c)
+SET(SOURCE_FILES
+    extlib/mman-win32/mman.c
+    extlib/mman-win32/mman.h
+    fileHelper.c
+    getPageSize.c
+    mapping.c
+    mapping.h
+    numberHelper.c
+    queue.c
+    readMessage.c
+    test1.c)
 
-add_executable(MatFile_Parsing_WinJB_test1 ${SOURCE_FILES})
+ADD_EXECUTABLE(MatFile_Parsing_WinJB_test1 ${SOURCE_FILES})
 
-set(SOURCE_FILES
-	   ${MEX}/mex.h
-	   extlib/mman-win32/mman.c
-	   extlib/mman-win32/mman.h
-	   fileHelper.c
-	   getPageSize.c
-	   mapping.c
-	   mapping.h
-	   numberHelper.c
-	   queue.c
-	   readMessage.c
-	   mexPointerSetters.c
-	   getmatvar.h
-	   getmatvar.c)
+SET(SOURCE_FILES
+    ${MEX}/mex.h
+    extlib/mman-win32/mman.c
+    extlib/mman-win32/mman.h
+    fileHelper.c
+    getPageSize.c
+    mapping.c
+    mapping.h
+    numberHelper.c
+    queue.c
+    readMessage.c
+    mexPointerSetters.c
+    getmatvar.h
+    getmatvar.c)
 
-add_executable(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})
+ADD_EXECUTABLE(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})

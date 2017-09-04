@@ -1,7 +1,10 @@
-CC=gcc
-CFLAGS = -g -o
-DEPS= decompressTest.c adler32.c compress.c crc32.c gzio.c uncompr.c deflate.c trees.c \
-       zutil.c inflate.c infback.c inftrees.c inffast.c
+CC=clang
+CFLAGS=-I. -g -Wall
+DEPS = mapping.h
+OBJ = chunkedData.o adler32.o compress.o crc32.o gzio.o uncompr.o deflate.o trees.o zutil.o inflate.o infback.o inftrees.o inffast.o mapping.o fileHelper.o numberHelper.o queue.o 
 
-decompressTest: $(DEPS)
-	$(CC) $(CFLAGS) decompressTest $(DEPS) -I.
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+chunkedData: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) -lm

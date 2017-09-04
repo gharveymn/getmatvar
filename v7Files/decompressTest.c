@@ -27,7 +27,7 @@ uint32_t numFromStr(char* str);
 int main(int argc, char* argv[])
 {
 	char filename[50];
-	strcpy(filename, "my_struct.mat");
+	strcpy(filename, "my_struct1.mat");
 	char spec[2];
 	
 	int bytesToRead, readErr, comprErr, numElem, eofAddr;
@@ -41,35 +41,20 @@ int main(int argc, char* argv[])
 	fseek(fp, 0, SEEK_END);
 	eofAddr = ftell(fp);
 	rewind(fp);
-	printf("Beginning of file address: 0x%x\n", ftell(fp));
 	if (!fp)
 	{
 		perror("Could not open compressed data file.");
 		exit(1);
 	}
-	//get eof address
-	fseek(fp, 0, SEEK_END);
-	eofAddr = ftell(fp);
-	rewind(fp);
 
 	//skip header
-	fseek(fp, HEADER_SIZE, SEEK_SET);
+	fseek(fp, 0x1320, SEEK_SET);
 
 	numElem = 0;
 	while (ftell(fp) < eofAddr)
 	{
 		printf("Current file address: 0x%x\n", ftell(fp));
-		//get number of bytes in data element
-		fseek(fp, 4, SEEK_CUR);
-		char dataSize[4];
-		if ((readErr = fread(dataSize, 1, 4, fp)) != 4)
-		{
-			fputs("Failed to read size of compressed data\n", stderr);
-			printf("Bytes read:%d\n", readErr);
-		}
-
-		bytesToRead = numFromStr(dataSize);
-		printf("Bytes to read: 0x%x, %d\n", bytesToRead, bytesToRead);
+		bytesToRead = 0xF5;
 
 		//read compressed data element into dataBuffer
 		dataBuffer = (char *)malloc(bytesToRead);
