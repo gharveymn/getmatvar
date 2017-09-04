@@ -30,9 +30,13 @@ typedef uint64_t OffsetType;
 #define NAME_LENGTH 30
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
+#define MAX_VAR_NAMES 64
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
+
+#define omalloc(arg) malloc(arg)
+#define ofree(arg) free(arg)
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -111,7 +115,7 @@ typedef struct
 
 typedef enum
 {
-	UNDEF, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, SINGLE, DOUBLE, REF, STRUCT, FUNCTION_HANDLE, TABLE
+	UNDEF, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, SINGLE, DOUBLE, REF, STRUCT, FUNCTION_HANDLE, TABLE, SENTINEL
 } DataType;
 
 typedef enum
@@ -152,6 +156,7 @@ typedef struct
 
 typedef struct
 {
+	int is_used;
 	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
 	int8_t* i8_data;
 	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
