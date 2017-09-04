@@ -3,6 +3,7 @@ v7.3Files/extlib/mman-win32/mman.VC.db
 v7.3Files/extlib/zlib/contrib
 v7.3Files/cmake-build-release/
 v7.3Files/cmake-build-debug/
+v7.3Files/mexbuild/
 .vs
 
 *ipch/

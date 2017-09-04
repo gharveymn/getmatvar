@@ -1,9 +1,9 @@
 numtests = 10000;
-m = zeros(1,numtests);
+userview = memory;
+disp(userview.MemUsedMATLAB)
 for i = 1:numtests
-	userview = memory;
-	s = getmatvar('my_struct.mat','my_struct');
-	m(i) = userview.MemUsedMATLAB;
+	s = getmatvar('res/arr.mat','array');
 end
-plot(m);
+userview = memory;
+disp(userview.MemUsedMATLAB)
 
