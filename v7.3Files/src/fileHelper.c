@@ -9,8 +9,9 @@ Superblock getSuperblock(int fd, size_t file_size)
 	//unmap superblock
 	if(munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
-		fprintf(stderr, "munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
-		exit(EXIT_FAILURE);
+		readMXError("getmatvar:internalError", "munmap() unsuccessful in getSuperblock()\n\n");
+		//fprintf(stderr, "munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
+		//exit(EXIT_FAILURE);
 	}
 	maps[0].used = FALSE;
 	
@@ -31,8 +32,9 @@ char* findSuperblock(int fd, size_t file_size)
 	
 	if(maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
 	{
-		fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-		exit(EXIT_FAILURE);
+		readMXError("getmatvar:internalError", "mmap() unsuccessful\n\n");
+		//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
+		//exit(EXIT_FAILURE);
 	}
 	
 	chunk_start = maps[0].map_start;
@@ -44,8 +46,9 @@ char* findSuperblock(int fd, size_t file_size)
 	
 	if((chunk_start - maps[0].map_start) >= alloc_gran)
 	{
-		fprintf(stderr, "Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
-		exit(EXIT_FAILURE);
+		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks\n\n");
+		//fprintf(stderr, "Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
+		//exit(EXIT_FAILURE);
 	}
 	
 	return chunk_start;
@@ -85,9 +88,10 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		{
 			if(munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
 			{
-				fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
-				exit(EXIT_FAILURE);
+				readMXError("getmatvar:internalError", "munmap() unsuccessful in navigateTo()\n\n");
+				//fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
+				//fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
+				//exit(EXIT_FAILURE);
 			}
 			maps[map_index].used = FALSE;
 		}
@@ -101,8 +105,9 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
-			fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-			exit(EXIT_FAILURE);
+			readMXError("getmatvar:internalError", "mmap() unsuccessful\n\n");
+			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
+			//exit(EXIT_FAILURE);
 		}
 	}
 	return maps[map_index].map_start + address - maps[map_index].offset;
@@ -118,9 +123,10 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		{
 			if(munmap(map.map_start, map.bytes_mapped) != 0)
 			{
-				fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
-				exit(EXIT_FAILURE);
+				readMXError("getmatvar:internalError", "munmap() unsuccessful\n\n");
+				//fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
+				//fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
+				//exit(EXIT_FAILURE);
 			}
 			map.used = FALSE;
 		}
@@ -134,8 +140,9 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		map.used = TRUE;
 		if(map.map_start == NULL || map.map_start == MAP_FAILED)
 		{
-			fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-			exit(EXIT_FAILURE);
+			readMXError("getmatvar:internalError", "mmap() unsuccessful\n\n");
+			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
+			//exit(EXIT_FAILURE);
 		}
 	}
 	return map.map_start + address - map.offset;

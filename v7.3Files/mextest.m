@@ -1,5 +1,11 @@
 addpath('res')
 addpath('src')
+file = 'res/my_struct.mat';
+var = 'my_struct';
 tic
-s = getmatvar('res/my_array.mat','my_array');
+s = getmatvar(file,var);
+toc
+
+tic
+load(file)
 toc
