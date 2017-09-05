@@ -366,6 +366,8 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			}
 			break;
 		case DOUBLE:
+			
+			//there is probably a way better way of doing this
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
 				object->data_arrays.double_data[j] = convertHexToDouble(getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, byte_order));

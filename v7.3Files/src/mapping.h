@@ -245,6 +245,7 @@ float convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness);
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);
+void reverseBytesInStrides(char* data_pointer, size_t num_bytes, size_t stride);
 
 
 //queue.c
