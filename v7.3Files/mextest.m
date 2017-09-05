@@ -1,5 +1,5 @@
 addpath('res')
 addpath('src')
 tic
-s = getmatvar('C:\workspace\matlab\RonZ\data\optData_ESTrade.mat','extPar');
+s = getmatvar('res/my_array.mat','my_array');
 toc

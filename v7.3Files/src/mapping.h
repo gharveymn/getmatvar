@@ -11,7 +11,10 @@
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
+#include "extlib/param.h"
+#define __BYTE_ORDER    BYTE_ORDER
 #else
+#include <endian.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -36,6 +39,7 @@ typedef uint64_t OffsetType;
 #define USE_SUPER_OBJECT_ALL 2
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+
 
 #define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
 					"\tgetmatvar(filename,variable1,...,variableN)\n\n" \
@@ -245,7 +249,7 @@ float convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness);
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);
-void reverseBytesInStrides(char* data_pointer, size_t num_bytes, size_t stride);
+void reverseBytes(char* data_pointer, size_t num_elems);
 
 
 //queue.c
@@ -278,7 +282,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 Data* organizeObjects(Data** objects);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
-void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder byte_order);
+void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeObject(Data* object, Object obj);
 //void deepCopy(Data* dest, Data* source);
 

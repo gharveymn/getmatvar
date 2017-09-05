@@ -1,19 +1,17 @@
 #include "mapping.h"
 
 
-void reverseBytesInStrides(char* data_pointer, size_t num_bytes, size_t stride)
+void reverseBytes(char* data_pointer, size_t num_elems)
 {
-	char tmp;
-	for(int i = 0; i < num_bytes/stride; i++)
+	char* start,* end;
+	
+	for (start = data_pointer, end = start + num_elems - 1; start < end; ++start, --end )
 	{
-		for(int j = 0; j < stride/2; j++)
-		{
-			tmp = data_pointer[i*stride + j];
-			data_pointer[i*stride + j] = data_pointer[(i+1)*stride - 1 - j];
-			data_pointer[(i+1)*stride - 1 - j] = tmp;
-		}
-		
+		char swap = *start;
+		*start = *end;
+		*end = swap;
 	}
+	
 }
 
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness)
