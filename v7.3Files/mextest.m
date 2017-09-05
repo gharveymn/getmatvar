@@ -1,3 +1,5 @@
+addpath('res')
+addpath('src')
 tic
-s = getmatvar('res/alltypes.mat','my_struct');
+s = getmatvar('C:\workspace\matlab\RonZ\data\optData_ESTrade.mat','extPar');
 toc

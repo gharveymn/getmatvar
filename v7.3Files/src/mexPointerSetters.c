@@ -81,9 +81,9 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 		//hotfix, i have no idea why they did this, 97 == 'a' though...
 		for (int i = 0; i < num_obj_elems; i++)
 		{
-			if (object->data_arrays.ui16_data == 97)
+			if (object->data_arrays.ui16_data[i] == 97)
 			{
-				object->data_arrays.ui16_data = 1;
+				object->data_arrays.ui16_data[i] = 1;
 			}
 		}
 

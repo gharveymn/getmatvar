@@ -1,6 +1,21 @@
 #include "mapping.h"
 
 
+void reverseBytesInStrides(char* data_pointer, size_t num_bytes, size_t stride)
+{
+	char tmp;
+	for(int i = 0; i < num_bytes/stride; i++)
+	{
+		for(int j = 0; j < stride/2; j++)
+		{
+			tmp = data_pointer[i*stride + j];
+			data_pointer[i*stride + j] = data_pointer[(i+1)*stride - 1 - j];
+			data_pointer[(i+1)*stride - 1 - j] = tmp;
+		}
+		
+	}
+}
+
 uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness)
 {
 	
@@ -41,25 +56,15 @@ uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endiann
 
 double convertHexToDouble(uint64_t hex)
 {
-	double ret;
 	
 	//sign bit 63
-	double sign = 1 - 2*(hex >> 63);
+	int8_t sign = 1 - 2*(hex >> 63);
 	
 	//exponent field bits 62-52
-	int32_t exponent = (int32_t)(((hex << 1) >> (52 + 1)) - 1023);
+	int32_t exponent = ((int32_t)((hex >> 52) & 0x07FF) - 0x03FF);
 	
 	//significand bits 51-0, shift back later for fewer operations
 	uint64_t significand = (hex << 12);
-	
-	if(exponent >= 0)
-	{
-		ret = sign * (1 << exponent);
-	}
-	else
-	{
-		ret = sign / (1 << (-exponent));
-	}
 	
 	double sum = 1;
 	double b_i;
@@ -69,7 +74,14 @@ double convertHexToDouble(uint64_t hex)
 		sum += b_i / ((uint64_t)1 << (i + 1));
 	}
 	
-	return ret * sum;
+	if (exponent >= 0)
+	{
+		return sign * sum * ((uint16_t)1 << exponent);
+	}
+	else
+	{
+		return sign * sum / ((uint16_t)1 << (-exponent));
+	}
 }
 
 float convertHexToSingle(uint32_t hex)
