@@ -1,4 +1,4 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -67,28 +67,26 @@ void makeReturnStructure(mxArray* uberStructure[], const int num_elems, const ch
 
 	mwSize ret_struct_dims[1] = { 1 };
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
-
-	Data** objects;
-	Data* hi_objects;
-
+	
+	fprintf(stderr,"Fetching the objects... ");
+	Data** objects = getDataObjects(filename, full_variable_names, num_elems);
+	fprintf(stderr,"success.\n");
+	
+	int starting_pos = 0;
 	for(mwIndex i = 0; i < num_elems; i++)
 	{
-		
-		fprintf(stderr,"Fetching the objects... ");
-		objects = getDataObjects(filename, full_variable_names[i]);
-		fprintf(stderr,"success.\n");
 		fprintf(stderr,"Organizing... ");
-		hi_objects = organizeObjects(objects);
+		pseudo_object[0] = organizeObjects(objects, &starting_pos);
 		fprintf(stderr,"success.\n");
-		pseudo_object[0] = hi_objects;
 		fprintf(stderr,"Creating the mx structure... ");
 		makeSubstructure(uberStructure[0], 1, pseudo_object, STRUCT);
 		fprintf(stderr,"success.\n");
-		fprintf(stderr,"Freeing the data objects... ");
-		freeDataObjects(objects);
-		fprintf(stderr,"success.\n");
 
 	}
+	
+	fprintf(stderr,"Freeing the data objects... ");
+	freeDataObjects(objects);
+	fprintf(stderr,"success.\n");
 
 	free(pseudo_object);
 	free(varnames);

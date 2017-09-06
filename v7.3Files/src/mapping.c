@@ -1,9 +1,9 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 
 Data* findDataObject(const char* filename, const char variable_name[])
 {
-	Data** objects = getDataObjects(filename, variable_name);
-	Data* hi_objects = organizeObjects(objects);
+	Data** objects = getDataObjects(filename, &variable_name, 1);
+	Data* hi_objects = organizeObjects(objects, 0);
 	
 	//free the end object because we aren't going to be using the linear object freeing system
 	int i = 0;
@@ -16,13 +16,13 @@ Data* findDataObject(const char* filename, const char variable_name[])
 	return hi_objects;
 }
 
-Data** getDataObjects(const char* filename, const char variable_name[])
+Data** getDataObjects(const char* filename, const char* variable_names[], int num_names)
 {
 	char* header_pointer;
 	uint32_t header_length;
 	uint64_t header_address;
 	//uint64_t root_tree_address;
-	Data** data_objects_ptrs = malloc((MAX_OBJS + 1) * sizeof(Data*));
+	Data** data_objects_ptrs = malloc(MAX_OBJS * sizeof(Data*));
 	Object obj;
 	
 	//init maps
@@ -50,47 +50,55 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	//find superblock
 	s_block = getSuperblock(fd, file_size);
 	
-	//root_tree_address = queue.trios[queue.front].tree_address;
-	
-	//fprintf(stderr, "\nObject header for variable %s is at 0x", variable_name);
-	findHeaderAddress(variable_name);
-	//fprintf(stderr, "%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
-	
-	
-	//interpret the header messages
 	int num_objs = 0;
-	while(header_queue.length > 0)
+	for(int i = 0; i < num_names; i++)
 	{
+
+		flushQueue();
+		flushHeaderQueue();
+		enqueueTrio(root_trio);
+
+		//fprintf(stderr, "\nObject header for variable %s is at 0x", variable_names);
+		findHeaderAddress(variable_names[i]);
+		//fprintf(stderr, "%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
 		
-		obj = dequeueObject();
-		header_address = obj.this_obj_header_address;
 		
-		//initialize elements since we have nested deallocation
-		data_objects_ptrs[num_objs] = malloc(sizeof(*(data_objects_ptrs[num_objs])));
-		initializeObject(data_objects_ptrs[num_objs], obj);
-		
-		//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
-		header_pointer = navigateTo(header_address, 16, TREE);
-		
-		//prevent error due to crossing of a page boundary
-		header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
-		if(header_address + header_length >= maps[TREE].offset + maps[TREE].bytes_mapped)
+		//interpret the header messages
+		while(header_queue.length > 0)
 		{
-			header_pointer = navigateTo(header_address, header_length, TREE);
+			
+			obj = dequeueObject();
+			header_address = obj.this_obj_header_address;
+			
+			//initialize elements since we have nested deallocation
+			data_objects_ptrs[num_objs] = malloc(sizeof(*(data_objects_ptrs[num_objs])));
+			initializeObject(data_objects_ptrs[num_objs], obj);
+			
+			//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
+			header_pointer = navigateTo(header_address, 16, TREE);
+			
+			//prevent error due to crossing of a page boundary
+			header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
+			if(header_address + header_length >= maps[TREE].offset + maps[TREE].bytes_mapped)
+			{
+				header_pointer = navigateTo(header_address, header_length, TREE);
+			}
+			strcpy(data_objects_ptrs[num_objs]->name, obj.name);
+			data_objects_ptrs[num_objs]->parent_obj_address = obj.parent_obj_header_address;
+			data_objects_ptrs[num_objs]->this_obj_address = obj.this_obj_header_address;
+			collectMetaData(data_objects_ptrs[num_objs], header_address, header_pointer);
+			
+			num_objs++;
+			
 		}
-		strcpy(data_objects_ptrs[num_objs]->name, obj.name);
-		data_objects_ptrs[num_objs]->parent_obj_address = obj.parent_obj_header_address;
-		data_objects_ptrs[num_objs]->this_obj_address = obj.this_obj_header_address;
-		collectMetaData(data_objects_ptrs[num_objs], header_address, header_pointer);
 		
+		//set object at the end to trigger sentinel
+		data_objects_ptrs[num_objs] = malloc(sizeof(Data));
+		data_objects_ptrs[num_objs]->type = SENTINEL;
+		data_objects_ptrs[num_objs]->parent_obj_address = UNDEF_ADDR;
 		num_objs++;
 		
 	}
-	
-	//set object at the end to trigger sentinel
-	data_objects_ptrs[num_objs] = malloc(sizeof(Data));
-	data_objects_ptrs[num_objs]->type = SENTINEL;
-	data_objects_ptrs[num_objs]->parent_obj_address = UNDEF_ADDR;
 
 	if (munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
@@ -414,10 +422,10 @@ void findHeaderAddress(const char variable_name[])
 	char* tree_pointer;
 	char* heap_pointer;
 	char* token;
-	variable_found = FALSE;
 	default_bytes = (uint64_t)getAllocGran();
 	char varname[NAME_LENGTH];
 	strcpy(varname, variable_name);
+	variable_found = FALSE;
 	
 	flushVariableNameQueue();
 	token = strtok(varname, delim);
@@ -453,28 +461,30 @@ void findHeaderAddress(const char variable_name[])
 }
 
 
-Data* organizeObjects(Data** objects)
+Data* organizeObjects(Data** objects, int* starting_pos)
 {
 	
-	if(objects[0]->type == SENTINEL)
+	if(objects[*starting_pos]->type == SENTINEL)
 	{
 		return NULL;
 	}
 	
-	int num_total_objs = 0;
+	int num_total_objs = *starting_pos;
 	while(objects[num_total_objs]->type != SENTINEL)
 	{
 		num_total_objs++;
 	}
 	
-	int index = 0;
-	Data* super_object = objects[0];
+	int index = *starting_pos;
+	Data* super_object = objects[*starting_pos];
 	index++;
 	
-	if(super_object[0].type == STRUCT || super_object[0].type == REF)
+	if(super_object->type == STRUCT || super_object->type == REF)
 	{
 		placeInSuperObject(super_object, objects, num_total_objs, &index);
 	}
+	
+	*starting_pos = index + 1;
 	
 	return super_object;
 	
