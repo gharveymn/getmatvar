@@ -41,16 +41,7 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	}
 	
 	//get file size
-	long sz = lseek(fd, 0, SEEK_END);
-	size_t file_size;
-	if(sz < 0)
-	{
-		file_size = (size_t)(-sz);
-	}
-	else
-	{
-		file_size = (size_t)sz;
-	}
+	size_t file_size =(size_t)lseek(fd, 0, SEEK_END);
 
 	
 	//find superblock
