@@ -1,4 +1,4 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 
 
 Superblock getSuperblock(int fd, size_t file_size)
@@ -69,12 +69,10 @@ Superblock fillSuperblock(char* superblock_pointer)
 	
 	//read scratchpad space
 	char* sps_start = superblock_pointer + 80;
-	Addr_Trio root_trio;
 	root_trio.parent_obj_header_address = UNDEF_ADDR;
 	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	root_trio.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	s_block.root_tree_address = root_trio.tree_address;
-	enqueueTrio(root_trio);
 	
 	return s_block;
 }

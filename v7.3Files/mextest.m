@@ -1,11 +1,14 @@
 addpath('res')
 addpath('src')
 file = 'res/my_struct.mat';
-var = 'my_struct';
+vars = {'my_struct','dbl', 'cell'};
+
 tic
-s = getmatvar(file, var);
+getmatvar(file, vars{:});
 toc
 
 tic
-load(file)
+%load(file)
 toc
+
+clear file vars

@@ -1,4 +1,4 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {

@@ -1,4 +1,4 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 
 //for logicals and ui8s
 void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)

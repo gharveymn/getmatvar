@@ -274,13 +274,12 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-
 //mapping.c
 Data* findDataObject(const char* filename, const char variable_name[]);
-Data** getDataObjects(const char* filename, const char variable_name[]);
+Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
 void findHeaderAddress(const char variable_name[]);
 void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
-Data* organizeObjects(Data** objects);
+Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
@@ -309,3 +308,4 @@ int fd;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
+Addr_Trio root_trio;

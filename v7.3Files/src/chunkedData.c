@@ -1,4 +1,4 @@
-#include "getmatvar.h"
+#include "getMatVar.h"
 #include "extlib/zlib/zlib.h"
 
 void getChunkedData(Data* object)
