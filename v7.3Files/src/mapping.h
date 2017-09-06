@@ -45,7 +45,7 @@ typedef uint64_t OffsetType;
 					"\tgetmatvar(filename,variable1,...,variableN)\n\n" \
 					"\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
 					"\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
-					"Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')"
+					"Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
@@ -241,6 +241,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 void freeDataObjects(Data** objects);
 void freeMXDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
+void endHooks();
 
 
 //numberHelper.c
