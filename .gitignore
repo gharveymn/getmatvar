@@ -9,6 +9,8 @@ v7.3Files/mexbuild/
 *.mexw32
 *.mexa64
 *.mexa32
+*.idea
+*res
 
 *ipch/
 *.aps
