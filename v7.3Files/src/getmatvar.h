@@ -1,12 +1,13 @@
 #include "mapping.h"
 #include <mex.h>
+#include <stdarg.h>
 
 //getmatvar.c
 void makeReturnStructure(mxArray* uberStructure[], int num_elems, const char* full_variable_names[], const char* filename);
 mxArray* makeSubstructure(mxArray* returnStructure, int num_elems, Data** objects, DataType super_structure_type);
 mwSize* makeObjDims(const uint32_t* dims, mwSize num_obj_dims);
 const char** getFieldNames(Data* object);
-void readMXError(const char error_id[], const char error_message[]);
+void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[]);
 
 //mexPointerSetters.c

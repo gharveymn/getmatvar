@@ -4,11 +4,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	if(nrhs < 2)
 	{
-		readMXError("getmatvar:invalidNumInputs", "At least two input arguments are required.\n\n");
+		readMXError("getmatvar:invalidNumInputs", "At least two input arguments are required.\n\n", "");
 	}
 	else if(nlhs > 1)
 	{
-		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than one output.\n\n");
+		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than one output.\n\n", "");
 	}
 	else
 	{
@@ -17,7 +17,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		{
 			if (mxGetClassID(prhs[i]) != mxCHAR_CLASS)
 			{
-				readMXError("getmatvar:invalidInputType", "All inputs must be character vectors\n\n");
+				readMXError("getmatvar:invalidInputType", "All inputs must be character vectors\n\n", "");
 			}
 		}
 
@@ -25,7 +25,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 		if(strstr(filename, ".mat") == NULL)
 		{
-			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n");
+			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n", "");
 		}
 
 		const char** full_variable_names = malloc((nrhs - 1) * sizeof(char*));
@@ -165,13 +165,20 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	
 }
 
-void readMXError(const char error_id[], const char error_message[])
+void readMXError(const char error_id[], const char error_message[], ...)
 {
-	endHooks();
+	
 	char message_buffer[1000];
-	strcpy(message_buffer, error_message);
+
+	va_list va;
+	va_start(va, error_message);
+	sprintf(message_buffer, error_message, va);
 	strcat(message_buffer, MATLAB_HELP_MESSAGE);
+
+	endHooks();
+	va_end(va);
 	mexErrMsgIdAndTxt(error_id, message_buffer);
+	
 }
 
 void readMXWarn(const char warn_id[], const char warn_message[])
