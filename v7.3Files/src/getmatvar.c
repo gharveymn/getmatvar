@@ -167,6 +167,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 
 void readMXError(const char error_id[], const char error_message[])
 {
+	endHooks();
 	char message_buffer[1000];
 	strcpy(message_buffer, error_message);
 	strcat(message_buffer, MATLAB_HELP_MESSAGE);
