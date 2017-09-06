@@ -37,12 +37,19 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	fd = open(filename, O_RDONLY);
 	if(fd < 0)
 	{
-		readMXError("getmatvar:fileNotFound", "File not found.\n\n");
+		char err_str[100];
+		sprintf(err_str, "File not found, check errno %d\n\n", errno);
+		readMXError("getmatvar:fileNotFound", err_str);
 	}
 	
 	//get file size
-	size_t file_size =(size_t)lseek(fd, 0, SEEK_END);
-
+	size_t file_size = (size_t)lseek(fd, 0, SEEK_END);
+	if(file_size == (size_t) - 1)
+	{
+		char err_str[100];
+		sprintf(err_str, "lseek failed, check errno %d\n\n", errno);
+		readMXError("getmatvar:internalError", err_str);
+	}
 	
 	//find superblock
 	s_block = getSuperblock(fd, file_size);

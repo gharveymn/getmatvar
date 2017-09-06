@@ -241,6 +241,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 void freeDataObjects(Data** objects);
 void freeMXDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
+void endHooks();
 
 
 //numberHelper.c
