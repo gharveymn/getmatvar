@@ -64,7 +64,7 @@ void doInflate(Data* object, TreeNode* node)
 	ret = inflateInit(&strm);
 	if (ret != Z_OK)
 	{
-		readMXError("getmatvar:internalError", "Error in intialization of inflate\n\n");
+		readMXError("getmatvar:internalError", "Error in intialization of inflate\n\n", "");
 		//fprintf(stderr, "Error in intialization of inflate, ret = %d\n", ret);
 		//exit(EXIT_FAILURE);
 	}
@@ -92,7 +92,7 @@ void doInflate(Data* object, TreeNode* node)
 					case Z_DATA_ERROR:
 					case Z_MEM_ERROR:
 						(void)inflateEnd(&strm);
-						readMXError("getmatvar:internalError", "There was an error with inflating the chunk\n\n");
+						readMXError("getmatvar:internalError", "There was an error with inflating the chunk\n\n", "");
 						//fprintf(stderr, "There was an error with inflating the chunk at %llu. Error: ret = %d\n", node->children[i].address, ret);
 						//exit(EXIT_FAILURE);
 				}
@@ -296,7 +296,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Invalid node type in fillNode()\n\n");
+			readMXError("getmatvar:internalError", "Invalid node type in fillNode()\n\n", "");
 			//fprintf(stderr, "Invalid node type %d\n", node->node_type);
 			//exit(EXIT_FAILURE);
 	}

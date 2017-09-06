@@ -37,18 +37,14 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	fd = open(filename, O_RDONLY);
 	if(fd < 0)
 	{
-		char err_str[100];
-		sprintf(err_str, "File not found, check errno %d\n\n", errno);
-		readMXError("getmatvar:fileNotFound", err_str);
+		readMXError("getmatvar:fileNotFound", "File not found, check errno %d\n\n", errno);
 	}
 	
 	//get file size
 	size_t file_size = (size_t)lseek(fd, 0, SEEK_END);
 	if(file_size == (size_t) - 1)
 	{
-		char err_str[100];
-		sprintf(err_str, "lseek failed, check errno %d\n\n", errno);
-		readMXError("getmatvar:internalError", err_str);
+		readMXError("getmatvar:internalError", "lseek failed, check errno %d\n\n", errno);
 	}
 	
 	//find superblock
@@ -235,7 +231,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			Object obj;
-			obj.this_obj_header_address = object->data_arrays.udouble_data[i];
+			obj.this_obj_header_address = object->data_arrays.udouble_data[i] + s_block.base_address;
 			obj.parent_obj_header_address = object->this_obj_address;
 			strcpy(obj.name, object->name);
 			priorityEnqueueObject(obj);
@@ -299,7 +295,7 @@ void allocateSpace(Data* object)
 			//do nothing
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n");
+			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n", "");
 			//fprintf(stderr, "Unknown data type encountered");
 			//exit(EXIT_FAILURE);
 	}
@@ -403,7 +399,7 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			//nothing to be done
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n");
+			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n", "");
 			//fprintf(stderr, "Unknown data type encountered");
 			//exit(EXIT_FAILURE);
 
