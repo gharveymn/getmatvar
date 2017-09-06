@@ -34,7 +34,7 @@ Data** getDataObjects(const char* filename, const char variable_name[])
 	flushHeaderQueue();
 	
 	//open the file descriptor
-	fd = open(filename, O_RDWR);
+	fd = open(filename, O_RDONLY);
 	if(fd < 0)
 	{
 		readMXError("getmatvar:fileNotFound", "File not found.\n\n");
@@ -153,11 +153,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	uint16_t msg_size = 0;
 	uint32_t header_length;
 	uint64_t msg_address = 0;
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 	char* msg_pointer = NULL, * data_pointer = NULL;
-=======
-	char* msg_pointer, * data_pointer = 0;
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 	int32_t bytes_read = 0;
 	
 	//interpret messages in header
@@ -296,20 +292,14 @@ void allocateSpace(Data* object)
 			//do nothing
 			break;
 		default:
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n");
 			//fprintf(stderr, "Unknown data type encountered");
 			//exit(EXIT_FAILURE);
-=======
-			fprintf(stderr, "Unknown data type encountered");
-			exit(EXIT_FAILURE);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 	}
 }
 
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
 {
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__BYTE_ORDER != data_byte_order)
@@ -321,114 +311,72 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 	}
 
 
-=======
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 	int object_data_index = 0;
 	switch(object->type)
 	{
 		case INT8:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.i8_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.i8_data[j] = (int8_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
-			break;
 		case UINT8:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.ui8_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.ui8_data[j] = (char)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case INT16:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.i16_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.i16_data[j] = (int16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case UINT16:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.ui16_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.ui16_data[j] = (uint16_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case INT32:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.i32_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.i32_data[j] = (int32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case UINT32:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.ui32_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.ui32_data[j] = (uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case INT64:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.i64_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.i64_data[j] = (int64_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case UINT64:
 			for(uint64_t j = starting_index; j < condition; j++)
 			{
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 				memcpy(&object->data_arrays.ui64_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-				object->data_arrays.ui64_data[j] = (uint64_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order);
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case SINGLE:
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 			for (uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.single_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-			for(uint64_t j = starting_index; j < condition; j++)
-			{
-				object->data_arrays.single_data[j] = convertHexToSingle((uint32_t)getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order));
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
 		case DOUBLE:
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 			for (uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.double_data[j], data_pointer + object_data_index * elem_size, elem_size);
@@ -439,37 +387,6 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			for (uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.udouble_data[j], data_pointer + object_data_index * elem_size, elem_size);
-=======
-			
-			if(__BYTE_ORDER != data_byte_order)
-				for (uint64_t j = starting_index; j < condition; j++)
-				{
-					reverseBytes(data_pointer + object_data_index * elem_size, elem_size);
-					memcpy(&object->data_arrays.double_data[j], data_pointer + object_data_index * elem_size, elem_size);
-					object_data_index++;
-				}
-			else
-			{
-				for (uint64_t j = starting_index; j < condition; j++)
-				{
-					memcpy(&object->data_arrays.double_data[j], data_pointer + object_data_index * elem_size, elem_size);
-					object_data_index++;
-				}
-			}
-
-			//there is probably a way better way of doing this
-			//for(uint64_t j = starting_index; j < condition; j++)
-			//{
-			//	object->data_arrays.double_data[j] = convertHexToDouble(getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order));
-			//	object_data_index++;
-			//}
-			break;
-		case REF:
-			for(uint64_t j = starting_index; j < condition; j++)
-			{
-				//these are addresses so we have to add the offset
-				object->data_arrays.udouble_data[j] = getBytesAsNumber(data_pointer + object_data_index * elem_size, elem_size, data_byte_order) + s_block.base_address;
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 				object_data_index++;
 			}
 			break;
@@ -479,18 +396,12 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			//nothing to be done
 			break;
 		default:
-<<<<<<< HEAD:v7.3Files/src/mapping.c
 			readMXError("getmatvar:internalError", "Unknown data type encountered\n\n");
 			//fprintf(stderr, "Unknown data type encountered");
 			//exit(EXIT_FAILURE);
 
 	}
 
-=======
-			fprintf(stderr, "Unknown data type encountered");
-			exit(EXIT_FAILURE);
-	}
->>>>>>> 65f3e9ba40a19c38f753c5c3aee953687c67aecb:v7.3Files/src/mapping.c
 }
 
 
