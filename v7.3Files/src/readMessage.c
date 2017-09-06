@@ -1,4 +1,4 @@
-#include "mapping.h"
+#include "getmatvar.h"
 
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -135,8 +135,9 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 	//assume version 3
 	if(*msg_pointer != 3)
 	{
-		fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
-		exit(EXIT_FAILURE);
+		readMXError("getmatvar:internalError", "Data layout version at address\n\n");
+		//fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
+		//exit(EXIT_FAILURE);
 	}
 	char* data_pointer = NULL;
 	
@@ -163,8 +164,9 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			break;
 		default:
-			fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
-			exit(EXIT_FAILURE);
+			readMXError("getmatvar:internalError", "Unknown data layout class\n\n");
+			//fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
+			//exit(EXIT_FAILURE);
 	}
 	
 	return data_pointer;
@@ -223,8 +225,9 @@ void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t ms
 			
 			break;
 		default:
-			fprintf(stderr, "Unknown data storage pipeline version %d at address 0x%llu.\n", *msg_pointer, msg_address);
-			exit(EXIT_FAILURE);
+			readMXError("getmatvar:internalError", "Unknown data storage pipeline version\n\n");
+			//fprintf(stderr, "Unknown data storage pipeline version %d at address 0x%llu.\n", *msg_pointer, msg_address);
+			//exit(EXIT_FAILURE);
 		
 	}
 }
@@ -244,6 +247,10 @@ void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 		if(strcmp("struct", object->matlab_class) == 0)
 		{
 			object->type = STRUCT;
+		}
+		else if(strcmp("cell", object->matlab_class) == 0)
+		{
+			object->type = REF;
 		}
 		else if(strcmp("function_handle", object->matlab_class) == 0)
 		{

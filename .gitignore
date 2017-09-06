@@ -5,6 +5,12 @@ v7.3Files/cmake-build-release/
 v7.3Files/cmake-build-debug/
 v7.3Files/mexbuild/
 .vs
+*.mexw64
+*.mexw32
+*.mexa64
+*.mexa32
+*.idea
+*res
 
 *ipch/
 *.aps
