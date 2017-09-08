@@ -274,7 +274,7 @@ void freeDataObjects(Data** objects)
 {
 
 	int i = 0;
-	while (objects[i]->type != SENTINEL)
+	while ((END_SENTINEL & objects[i]->type) != END_SENTINEL)
 	{
 
 		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui8_data != NULL)
