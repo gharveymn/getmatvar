@@ -7,7 +7,7 @@ Data* findDataObject(const char* filename, const char variable_name[])
 	
 	//free the end object because we aren't going to be using the linear object freeing system
 	int i = 0;
-	while(objects[i]->type != SENTINEL)
+	while((DELIMITER & objects[i]->type) != DELIMITER)
 	{
 		i++;
 	}
@@ -94,11 +94,12 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 		
 		//set object at the end to trigger sentinel
 		data_objects_ptrs[num_objs] = malloc(sizeof(Data));
-		data_objects_ptrs[num_objs]->type = SENTINEL;
+		data_objects_ptrs[num_objs]->type = DELIMITER;
 		data_objects_ptrs[num_objs]->parent_obj_address = UNDEF_ADDR;
 		num_objs++;
 		
 	}
+	data_objects_ptrs[num_objs-1]->type |= END_SENTINEL;
 
 	if (munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
@@ -464,13 +465,13 @@ void findHeaderAddress(const char variable_name[])
 Data* organizeObjects(Data** objects, int* starting_pos)
 {
 	
-	if(objects[*starting_pos]->type == SENTINEL)
+	if((DELIMITER & objects[*starting_pos]->type) == DELIMITER)
 	{
 		return NULL;
 	}
 	
 	int num_total_objs = *starting_pos;
-	while(objects[num_total_objs]->type != SENTINEL)
+	while((DELIMITER & objects[num_total_objs]->type) != DELIMITER)
 	{
 		num_total_objs++;
 	}

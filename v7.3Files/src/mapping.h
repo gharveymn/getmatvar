@@ -116,7 +116,23 @@ typedef struct
 
 typedef enum
 {
-	UNDEF, UINT8, INT8, UINT16, INT16, UINT32, INT32, UINT64, INT64, SINGLE, DOUBLE, REF, STRUCT, FUNCTION_HANDLE, TABLE, SENTINEL
+	UNDEF = 1 << 0, 
+	UINT8 = 1 << 1, 
+	INT8 = 1 << 2,
+	UINT16 = 1 << 3,
+	INT16 = 1 << 4,
+	UINT32 = 1 << 5,
+	INT32 = 1 << 6,
+	UINT64 = 1 << 7,
+	INT64 = 1 << 8,
+	SINGLE = 1 << 9,
+	DOUBLE = 1 << 10,
+	REF = 1 << 11,
+	STRUCT = 1 << 12,
+	FUNCTION_HANDLE = 1 << 13,
+	TABLE = 1 << 14,
+	DELIMITER = 1 << 15,
+	END_SENTINEL = 1 << 16
 } DataType;
 
 typedef enum
