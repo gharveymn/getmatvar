@@ -23,7 +23,6 @@ void enqueueTrio(Addr_Trio trio)
 	}
 }
 
-
 void enqueueObject(Object obj)
 {
 	if(header_queue.length >= MAX_Q_LENGTH)

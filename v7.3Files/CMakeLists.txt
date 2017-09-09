@@ -92,7 +92,7 @@ SET(SOURCE_FILES
     src/queue.c
     src/readMessage.c
     src/mexPointerSetters.c
-    src/getMatVar.h
+    src/getmatvar_.h
     src/getMatVar.c)
 
 ADD_EXECUTABLE(MatFile_Parsing_WinJB_mex ${SOURCE_FILES})

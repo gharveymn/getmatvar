@@ -1,4 +1,4 @@
-#include "getMatVar.h"
+#include "getmatvar_.h"
 
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -130,7 +130,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 	
 }
 
-char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	//assume version 3
 	if(*msg_pointer != 3)
@@ -139,24 +139,23 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 		//fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
 		//exit(EXIT_FAILURE);
 	}
-	char* data_pointer = NULL;
 	
 	object->layout_class = (uint8_t)*(msg_pointer + 1);
 	switch(object->layout_class)
 	{
 		case 0:
 			object->data_address = msg_address + 4;
-			data_pointer = msg_pointer + 4;
+			object->data_pointer = msg_pointer + 4;
 			break;
 		case 1:
 			object->data_address = getBytesAsNumber(msg_pointer + 2, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-			data_pointer = msg_pointer + (object->data_address - msg_address);
+			object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
 			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-			data_pointer = msg_pointer + (object->data_address - msg_address);
+			object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
 				object->chunked_info.chunked_dims[j] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4, META_DATA_BYTE_ORDER);
@@ -168,8 +167,6 @@ char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_addres
 			//fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
 			//exit(EXIT_FAILURE);
 	}
-	
-	return data_pointer;
 }
 
 void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)

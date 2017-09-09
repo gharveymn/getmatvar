@@ -1,4 +1,4 @@
-#include "getMatVar.h"
+#include "getmatvar_.h"
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -167,15 +167,18 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE:
-				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported (proprietary).");
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case TABLE:
-				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case UNDEF:
 			default:
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 		}

@@ -8,5 +8,5 @@ getmatvar(file, var);
 toc
 
 tic
-load(file)
+%load(file)
 toc

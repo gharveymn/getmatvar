@@ -1,6 +1,6 @@
 addpath('res')
 addpath('src')
-file = 'res/my_struct.mat';
+file = 'res/nested.mat';
 vars = {'my_struct'};
 
 tic
@@ -8,7 +8,7 @@ getmatvar(file, vars{:});
 toc
 
 tic
-load(file)
+%load(file)
 toc
 
 clear file vars
