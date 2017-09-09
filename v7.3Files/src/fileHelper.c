@@ -1,16 +1,15 @@
-#include "getMatVar.h"
+#include "getmatvar_.h"
 
 
-Superblock getSuperblock(int fd, size_t file_size)
+Superblock getSuperblock(int fd)
 {
-	char* superblock_pointer = findSuperblock(fd, file_size);
+	char* superblock_pointer = findSuperblock(fd);
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	
 	//unmap superblock
 	if(munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
 	{
-		close(fd);
-		readMXError("getmatvar:internalError", "munmap() unsuccessful in getSuperblock()\n\n", "");
+		readMXError("getmatvar:internalError", "munmap() unsuccessful in getSuperblock(). Check errno %d\n\n", errno);
 		//fprintf(stderr, "munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
 		//exit(EXIT_FAILURE);
 	}
@@ -20,10 +19,11 @@ Superblock getSuperblock(int fd, size_t file_size)
 }
 
 
-char* findSuperblock(int fd, size_t file_size)
+char* findSuperblock(int fd)
 {
 	char* chunk_start = "";
 	size_t alloc_gran = getAllocGran();
+	alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 	
 	//Assuming that superblock is in first 8 512 byte chunks
 	maps[0].map_start = mmap(NULL, alloc_gran, PROT_READ, MAP_PRIVATE, fd, 0);
@@ -33,8 +33,8 @@ char* findSuperblock(int fd, size_t file_size)
 	
 	if(maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
 	{
-		close(fd);
-		readMXError("getmatvar:internalError", "mmap() unsuccessful\n\n", "");
+		maps[0].used = FALSE;
+		readMXError("getmatvar:internalError", "mmap() unsuccessful in findSuperblock(). Check errno %d\n\n", errno);
 		//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 		//exit(EXIT_FAILURE);
 	}
@@ -98,14 +98,16 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
+		alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 		maps[map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
-		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
+		maps[map_index].bytes_mapped = (maps[map_index].offset + bytes_needed) - address;
 		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, maps[map_index].offset);
 		
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
-			readMXError("getmatvar:internalError", "mmap() unsuccessful, check errno %d\n\n", errno);
+			maps[map_index].used = FALSE;
+			readMXError("getmatvar:internalError", "mmap() unsuccessful int navigateTo(). Check errno %d\n\n", errno);
 			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 			//exit(EXIT_FAILURE);
 		}
@@ -123,7 +125,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		{
 			if(munmap(map.map_start, map.bytes_mapped) != 0)
 			{
-				readMXError("getmatvar:internalError", "munmap() unsuccessful\n\n", "");
+				readMXError("getmatvar:internalError", "munmap() unsuccessful, check errno %d\n\n", errno);
 				//fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
 				//fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
 				//exit(EXIT_FAILURE);
@@ -140,7 +142,7 @@ char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int ma
 		map.used = TRUE;
 		if(map.map_start == NULL || map.map_start == MAP_FAILED)
 		{
-			readMXError("getmatvar:internalError", "mmap() unsuccessful\n\n", "");
+			readMXError("getmatvar:internalError", "mmap() unsuccessful, check errno %d\n\n", errno);
 			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
 			//exit(EXIT_FAILURE);
 		}
@@ -212,7 +214,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	snod_pointer += 8;
 	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
 	
-	for(int i = 0; i < num_symbols; i++)
+	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
 		objects[i].name_offset = getBytesAsNumber(snod_pointer + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
@@ -230,11 +232,21 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 			{
 				flushHeaderQueue();
 				flushQueue();
+				dequeueVariableName();
+
+				//means this was the last token, so we've found the variable we want
+				if (variable_name_queue.length == 0)
+				{
+					variable_found = TRUE;
+					is_done = TRUE;
+				}
+
 			}
+			
+			enqueueObject(objects[i]);
+			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			
-			
 			if(cache_type == 1)
 			{
 				//if another tree exists for this object, put it on the queue
@@ -243,25 +255,14 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 				trio.heap_address = getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i].sub_tree_address = trio.tree_address;
 				priorityEnqueueTrio(trio);
+				parseHeaderTree();
+				
 			}
 			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
 				objects[i].name_offset = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 				strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
-			}
-			enqueueObject(objects[i]);
-			
-			//we found a token, but not the end variable, so we dont need to look at the rest of the variables at this level
-			if(variable_found == FALSE)
-			{
-				dequeueVariableName();
-				if(variable_name_queue.length == 0)
-				{
-					//means this was the last token, so we've found the variable we want
-					variable_found = TRUE;
-				}
-				break;
 			}
 			
 		}
@@ -485,9 +486,23 @@ void freeDataObjectTree(Data* super_object)
 	
 }
 
-void endHooks()
+void endHooks(void)
 {
-	munmap(maps[0].map_start, maps[0].bytes_mapped);
-	munmap(maps[1].map_start, maps[1].bytes_mapped);
-	close(fd);
+	if (maps[0].used == TRUE)
+	{
+		munmap(maps[0].map_start, maps[0].bytes_mapped);
+		maps[0].used == FALSE;
+	}
+
+	if (maps[1].used == TRUE)
+	{
+		munmap(maps[1].map_start, maps[1].bytes_mapped);
+		maps[0].used == TRUE;
+	}
+
+	if (fd >= 0)
+	{
+		close(fd);
+	}
+
 }

@@ -14,41 +14,15 @@ void reverseBytes(char* data_pointer, size_t num_elems)
 	
 }
 
-uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness)
+uint64_t getBytesAsNumber(char* data_pointer, size_t num_bytes, ByteOrder endianness)
 {
-	
 	uint64_t ret = 0;
-	int n = 0;
-	uint8_t byte = 0;
-	uint64_t temp = 0;
-	switch(endianness)
+	memcpy(&ret, data_pointer, num_bytes);
+	if(__BYTE_ORDER != endianness)
 	{
-		
-		case LITTLE_ENDIAN:
-			while(n < num_bytes)
-			{
-				byte = (uint8_t)*(chunk_start + n);
-				temp = byte;
-				temp = temp << (8 * n);
-				ret += temp;
-				n++;
-			}
-			break;
-		
-		case BIG_ENDIAN:
-			while(n < num_bytes)
-			{
-				byte = (uint8_t)*(chunk_start + n);
-				temp = byte;
-				temp = temp << (8 * (num_bytes - n - 1));
-				ret += temp;
-				n++;
-			}
-			break;
-		
+		reverseBytes(&ret, num_bytes);
 	}
 	return ret;
-	
 }
 
 

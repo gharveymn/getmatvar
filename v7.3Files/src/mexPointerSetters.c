@@ -1,4 +1,4 @@
-#include "getMatVar.h"
+#include "getmatvar_.h"
 
 //for logicals and ui8s
 void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
@@ -8,7 +8,6 @@ void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	mwSize num_obj_elems = object->num_elems;
 	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
 	mxArray* mxIntPtr;
-	uint8_t* mxIntPtrPr;
 	if(strncmp(object->matlab_class,"logical",7) == 0)
 	{
 		mxIntPtr = mxCreateLogicalArray(0, NULL);

@@ -29,11 +29,12 @@ typedef uint64_t OffsetType;
 #define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
 #define MAX_OBJS 1000
-#define CLASS_LENGTH 20
-#define NAME_LENGTH 30
+#define CLASS_LENGTH 200
+#define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
+#define MAX_MALLOC_VARS 1000
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
@@ -116,8 +117,8 @@ typedef struct
 
 typedef enum
 {
-	UNDEF = 1 << 0, 
-	UINT8 = 1 << 1, 
+	UNDEF = 1 << 0,
+	UINT8 = 1 << 1,
 	INT8 = 1 << 2,
 	UINT16 = 1 << 3,
 	INT16 = 1 << 4,
@@ -132,7 +133,8 @@ typedef enum
 	FUNCTION_HANDLE = 1 << 13,
 	TABLE = 1 << 14,
 	DELIMITER = 1 << 15,
-	END_SENTINEL = 1 << 16
+	END_SENTINEL = 1 << 16,
+	ERROR = 1 << 17
 } DataType;
 
 typedef enum
@@ -204,6 +206,7 @@ struct data_
 	
 	uint8_t layout_class;
 	uint64_t data_address;
+	char* data_pointer;
 	DataArrays data_arrays;
 	
 	uint64_t parent_obj_address;
@@ -247,8 +250,8 @@ struct tree_node_
 
 
 //fileHelper.c
-Superblock getSuperblock(int fd, size_t file_size);
-char* findSuperblock(int fd, size_t file_size);
+Superblock getSuperblock(int fd);
+char* findSuperblock(int fd);
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
@@ -257,7 +260,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 void freeDataObjects(Data** objects);
 void freeMXDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
-void endHooks();
+void endHooks(void);
 
 
 //numberHelper.c
@@ -286,7 +289,7 @@ void enqueueVariableName(char* variable_name);
 //readMessage.c
 void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-char* readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
@@ -294,12 +297,14 @@ void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 Data* findDataObject(const char* filename, const char variable_name[]);
 Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
 void findHeaderAddress(const char variable_name[]);
-void collectMetaData(Data* object, uint64_t header_address, char* header_pointer);
+void collectMetaData(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length);
 Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
-void initializeObject(Data* object, Object obj);
+void initializeObject(Data* object);
+uint16_t interpretMessages(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length, uint16_t message_num, uint16_t num_msgs);
+void parseHeaderTree(void);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c
@@ -321,6 +326,7 @@ Header_Q header_queue;
 Variable_Name_Q variable_name_queue;
 
 int fd;
+size_t file_size;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
