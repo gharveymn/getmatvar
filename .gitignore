@@ -1,10 +1,8 @@
-v7.3Files/extlib/mman-win32/x64
-v7.3Files/extlib/mman-win32/mman.VC.db
-v7.3Files/extlib/zlib/contrib
-v7.3Files/cmake-build-release/
-v7.3Files/cmake-build-debug/
-v7.3Files/mexbuild/buildmingw/*
-v7.3Files/mexbuild/build/*
+
+cmake-build-release/
+cmake-build-debug/
+buildmingw/*
+build/*
 !*build_script.bat
 !*rebuild.bat
 .vs
