@@ -7,13 +7,7 @@ Superblock getSuperblock(int fd)
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	
 	//unmap superblock
-	if(munmap(maps[0].map_start, maps[0].bytes_mapped) != 0)
-	{
-		readMXError("getmatvar:internalError", "munmap() unsuccessful in getSuperblock(). Check errno %d\n\n", errno);
-		//fprintf(stderr, "munmap() unsuccessful in getSuperblock(), Check errno: %d\n", errno);
-		//exit(EXIT_FAILURE);
-	}
-	maps[0].used = FALSE;
+	freeMap(TREE);
 	
 	return s_block;
 }
@@ -26,31 +20,27 @@ char* findSuperblock(int fd)
 	alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 	
 	//Assuming that superblock is in first 8 512 byte chunks
-	maps[0].map_start = mmap(NULL, alloc_gran, PROT_READ, MAP_PRIVATE, fd, 0);
-	maps[0].bytes_mapped = alloc_gran;
-	maps[0].offset = 0;
-	maps[0].used = TRUE;
+	maps[TREE].map_start = mmap(NULL, alloc_gran, PROT_READ, MAP_PRIVATE, fd, 0);
+	maps[TREE].bytes_mapped = alloc_gran;
+	maps[TREE].offset = 0;
+	maps[TREE].used = TRUE;
 	
-	if(maps[0].map_start == NULL || maps[0].map_start == MAP_FAILED)
+	if(maps[TREE].map_start == NULL || maps[TREE].map_start == MAP_FAILED)
 	{
-		maps[0].used = FALSE;
+		maps[TREE].used = FALSE;
 		readMXError("getmatvar:internalError", "mmap() unsuccessful in findSuperblock(). Check errno %d\n\n", errno);
-		//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-		//exit(EXIT_FAILURE);
 	}
 	
-	chunk_start = maps[0].map_start;
+	chunk_start = maps[TREE].map_start;
 	
-	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && (chunk_start - maps[0].map_start) < alloc_gran)
+	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && (chunk_start - maps[TREE].map_start) < alloc_gran)
 	{
 		chunk_start += 512;
 	}
 	
-	if((chunk_start - maps[0].map_start) >= alloc_gran)
+	if((chunk_start - maps[TREE].map_start) >= alloc_gran)
 	{
-		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks\n\n", "");
-		//fprintf(stderr, "Couldn't find superblock in first 8 512-byte chunks. I am quitting.\n");
-		//exit(EXIT_FAILURE);
+		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks\n\n");
 	}
 	
 	return chunk_start;
@@ -77,79 +67,45 @@ Superblock fillSuperblock(char* superblock_pointer)
 	return s_block;
 }
 
+void freeMap(int map_index)
+{
+	maps[map_index].used = FALSE;
+	if(munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
+	{
+		readMXError("getmatvar:internalError", "munmap() unsuccessful.\n\n", "");
+	}
+}
+
 
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 {
-	
-	if(!(maps[map_index].used && address >= maps[map_index].offset && address + bytes_needed < maps[map_index].offset + maps[map_index].bytes_mapped))
+
+	//only remap if we really need to (this removes the need for checks/headaches inside main functions)
+	if(!(address >= maps[map_index].offset && address + bytes_needed <= maps[map_index].offset + maps[map_index].bytes_mapped))
 	{
-		//unmap current page if used
-		if(maps[map_index].used)
-		{
-			if(munmap(maps[map_index].map_start, maps[map_index].bytes_mapped) != 0)
-			{
-				readMXError("getmatvar:internalError", "munmap() unsuccessful in navigateTo()\n\n", "");
-				//fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				//fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", maps[map_index].map_start, maps[map_index].bytes_mapped, maps[map_index].used);
-				//exit(EXIT_FAILURE);
-			}
-			maps[map_index].used = FALSE;
-		}
 		
+		//unmap current page
+		if(maps[map_index].used == TRUE)
+		{
+			freeMap(map_index);
+		}
+	
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
 		alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 		maps[map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
-		maps[map_index].bytes_mapped = (maps[map_index].offset + bytes_needed) - address;
+		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
+		maps[map_index].bytes_mapped = maps[map_index].bytes_mapped < file_size - maps[map_index].offset ? maps[map_index].bytes_mapped : file_size - maps[map_index].offset;
 		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, maps[map_index].offset);
-		
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
 			maps[map_index].used = FALSE;
 			readMXError("getmatvar:internalError", "mmap() unsuccessful int navigateTo(). Check errno %d\n\n", errno);
-			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-			//exit(EXIT_FAILURE);
 		}
 	}
 	return maps[map_index].map_start + address - maps[map_index].offset;
 }
-
-
-char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index)
-{
-	if(!(map.used && address >= map.offset && address + bytes_needed < map.offset + map.bytes_mapped))
-	{
-		//unmap current page if used
-		if(map.used)
-		{
-			if(munmap(map.map_start, map.bytes_mapped) != 0)
-			{
-				readMXError("getmatvar:internalError", "munmap() unsuccessful, check errno %d\n\n", errno);
-				//fprintf(stderr, "munmap() unsuccessful in navigateTo(), Check errno: %d\n", errno);
-				//fprintf(stderr, "1st arg: %s\n2nd arg: %lu\nUsed: %d\n", map.map_start, map.bytes_mapped, map.used);
-				//exit(EXIT_FAILURE);
-			}
-			map.used = FALSE;
-		}
-		
-		//map new page at needed location
-		size_t alloc_gran = getAllocGran();
-		map.offset = (off_t)(address / alloc_gran) * alloc_gran;
-		map.bytes_mapped = address - map.offset + bytes_needed;
-		map.map_start = mmap(NULL, map.bytes_mapped, PROT_READ, MAP_PRIVATE, fd, map.offset);
-		
-		map.used = TRUE;
-		if(map.map_start == NULL || map.map_start == MAP_FAILED)
-		{
-			readMXError("getmatvar:internalError", "mmap() unsuccessful, check errno %d\n\n", errno);
-			//fprintf(stderr, "mmap() unsuccessful, Check errno: %d\n", errno);
-			//exit(EXIT_FAILURE);
-		}
-	}
-	return map.map_start + address - map.offset;
-}
-
 
 void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
 {
@@ -211,16 +167,15 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	char* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 	
 	//get to entries
-	snod_pointer += 8;
 	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
 	
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
-		objects[i].name_offset = getBytesAsNumber(snod_pointer + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
-		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(objects[i].name, heap_data_segment_pointer + objects[i].name_offset);
-		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i].parent_tree_address = parent_trio.tree_address;
 		objects[i].this_tree_address = this_trio.tree_address;
 		objects[i].sub_tree_address = UNDEF_ADDR;
@@ -249,19 +204,22 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 			//all items in the queue should only be subobjects so this is safe
 			if(cache_type == 1)
 			{
+
 				//if another tree exists for this object, put it on the queue
 				trio.parent_obj_header_address = objects[i].this_obj_header_address;
-				trio.tree_address = getBytesAsNumber(snod_pointer + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio.heap_address = getBytesAsNumber(snod_pointer + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.tree_address = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.heap_address = getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i].sub_tree_address = trio.tree_address;
 				priorityEnqueueTrio(trio);
 				parseHeaderTree();
+				snod_pointer = navigateTo(this_trio.tree_address, default_bytes, TREE);
+				heap_pointer = navigateTo(this_trio.heap_address, default_bytes, HEAP);
 				
 			}
 			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				objects[i].name_offset = getBytesAsNumber(snod_pointer + 2*s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+				objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 				strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 			}
 			
@@ -488,19 +446,19 @@ void freeDataObjectTree(Data* super_object)
 
 void endHooks(void)
 {
-	if (maps[0].used == TRUE)
+	if(maps[0].used == TRUE)
 	{
 		munmap(maps[0].map_start, maps[0].bytes_mapped);
-		maps[0].used == FALSE;
+		maps[0].used = FALSE;
 	}
 
-	if (maps[1].used == TRUE)
+	if(maps[1].used == TRUE)
 	{
 		munmap(maps[1].map_start, maps[1].bytes_mapped);
-		maps[0].used == TRUE;
+		maps[1].used = FALSE;
 	}
 
-	if (fd >= 0)
+	if(fd >= 0)
 	{
 		close(fd);
 	}

@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	//Data* hi_objects = findDataObject(filename, variable_name);
 //	int index = 0;
 //
-//	while(hi_objects[index].type != UNDEF)
+//	while(hi_objects[index].type != NULLTYPE)
 //	{
 //		switch(hi_objects[index].type)
 //		{
@@ -135,7 +135,7 @@ void printStruct(Data* object)
 	fprintf(stderr, "\n%s fields: \n", object->name);
 	
 	int index = 0;
-	while(object->sub_objects[index]->type != UNDEF)
+	while(object->sub_objects[index]->type != NULLTYPE)
 	{
 		fprintf(stderr, "%s\n", object->sub_objects[index]->name);
 		index++;
