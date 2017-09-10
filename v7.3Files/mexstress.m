@@ -3,7 +3,7 @@ addpath('src')
 file = 'res/my_struct.mat';
 vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 
-numtests = 100;
+numtests = 10000;
 userview = memory;
 disp(userview.MemUsedMATLAB)
 for i = 1:numtests

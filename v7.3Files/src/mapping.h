@@ -35,6 +35,7 @@ typedef uint64_t OffsetType;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
+#define NUM_MAPS 2
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
@@ -251,8 +252,8 @@ struct tree_node_
 
 
 //fileHelper.c
-Superblock getSuperblock(int fd);
-char* findSuperblock(int fd);
+Superblock getSuperblock(void);
+char* findSuperblock(void);
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 void readTreeNode(char* tree_pointer, Addr_Trio this_trio);
@@ -320,7 +321,7 @@ void freeTree(TreeNode* node);
 void getChunkedData(Data* object);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
-MemMap maps[2];
+MemMap maps[NUM_MAPS];
 Addr_Q queue;
 Header_Q header_queue;
 Variable_Name_Q variable_name_queue;

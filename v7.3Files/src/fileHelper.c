@@ -1,9 +1,9 @@
 #include "getmatvar_.h"
 
 
-Superblock getSuperblock(int fd)
+Superblock getSuperblock(void)
 {
-	char* superblock_pointer = findSuperblock(fd);
+	char* superblock_pointer = findSuperblock();
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	
 	//unmap superblock
@@ -13,34 +13,23 @@ Superblock getSuperblock(int fd)
 }
 
 
-char* findSuperblock(int fd)
+char* findSuperblock(void)
 {
-	char* chunk_start = "";
 	size_t alloc_gran = getAllocGran();
-	alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 	
 	//Assuming that superblock is in first 8 512 byte chunks
-	maps[TREE].map_start = mmap(NULL, alloc_gran, PROT_READ, MAP_PRIVATE, fd, 0);
-	maps[TREE].bytes_mapped = alloc_gran;
-	maps[TREE].offset = 0;
-	maps[TREE].used = TRUE;
+	char* chunk_start = navigateTo(0, alloc_gran, TREE);
+	uint16_t chunk_address = 0;
 	
-	if(maps[TREE].map_start == NULL || maps[TREE].map_start == MAP_FAILED)
-	{
-		maps[TREE].used = FALSE;
-		readMXError("getmatvar:internalError", "mmap() unsuccessful in findSuperblock(). Check errno %d\n\n", errno);
-	}
-	
-	chunk_start = maps[TREE].map_start;
-	
-	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && (chunk_start - maps[TREE].map_start) < alloc_gran)
+	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && chunk_address < alloc_gran)
 	{
 		chunk_start += 512;
+		chunk_address += 512;
 	}
 	
-	if((chunk_start - maps[TREE].map_start) >= alloc_gran)
+	if(chunk_address >= alloc_gran)
 	{
-		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks\n\n");
+		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks.\n\n");
 	}
 	
 	return chunk_start;
@@ -67,6 +56,7 @@ Superblock fillSuperblock(char* superblock_pointer)
 	return s_block;
 }
 
+
 void freeMap(int map_index)
 {
 	maps[map_index].used = FALSE;
@@ -79,9 +69,9 @@ void freeMap(int map_index)
 
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 {
-
+	
 	//only remap if we really need to (this removes the need for checks/headaches inside main functions)
-	if(!(address >= maps[map_index].offset && address + bytes_needed <= maps[map_index].offset + maps[map_index].bytes_mapped))
+	if(!(address >= maps[map_index].offset && address + bytes_needed <= maps[map_index].offset + maps[map_index].bytes_mapped) || maps[map_index].used == FALSE)
 	{
 		
 		//unmap current page
@@ -89,14 +79,14 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		{
 			freeMap(map_index);
 		}
-	
+		
 		//map new page at needed location
 		size_t alloc_gran = getAllocGran();
 		alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 		maps[map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
 		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
 		maps[map_index].bytes_mapped = maps[map_index].bytes_mapped < file_size - maps[map_index].offset ? maps[map_index].bytes_mapped : file_size - maps[map_index].offset;
-		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, maps[map_index].offset);
+		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_SHARED, fd, maps[map_index].offset);
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
@@ -106,6 +96,7 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 	}
 	return maps[map_index].map_start + address - maps[map_index].offset;
 }
+
 
 void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
 {
@@ -167,13 +158,14 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	char* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 	
 	//get to entries
-	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
+	int sym_table_entry_size = 2 * s_block.size_of_offsets + 4 + 4 + 16;
 	
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
-		objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
-		objects[i].this_obj_header_address = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		objects[i].this_obj_header_address =
+			   getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(objects[i].name, heap_data_segment_pointer + objects[i].name_offset);
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i].parent_tree_address = parent_trio.tree_address;
@@ -188,14 +180,14 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 				flushHeaderQueue();
 				flushQueue();
 				dequeueVariableName();
-
+				
 				//means this was the last token, so we've found the variable we want
-				if (variable_name_queue.length == 0)
+				if(variable_name_queue.length == 0)
 				{
 					variable_found = TRUE;
 					is_done = TRUE;
 				}
-
+				
 			}
 			
 			enqueueObject(objects[i]);
@@ -204,11 +196,13 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 			//all items in the queue should only be subobjects so this is safe
 			if(cache_type == 1)
 			{
-
+				
 				//if another tree exists for this object, put it on the queue
 				trio.parent_obj_header_address = objects[i].this_obj_header_address;
-				trio.tree_address = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio.heap_address = getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.tree_address =
+					   getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio.heap_address =
+					   getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i].sub_tree_address = trio.tree_address;
 				priorityEnqueueTrio(trio);
 				parseHeaderTree();
@@ -219,7 +213,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+				objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 				strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
 			}
 			
@@ -229,13 +223,14 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	free(objects);
 }
 
+
 void freeDataObjects(Data** objects)
 {
-
+	
 	int i = 0;
-	while ((END_SENTINEL & objects[i]->type) != END_SENTINEL)
+	while((END_SENTINEL & objects[i]->type) != END_SENTINEL)
 	{
-
+		
 		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui8_data != NULL)
 		{
 			mxFree(objects[i]->data_arrays.ui8_data);
@@ -329,21 +324,22 @@ void freeDataObjects(Data** objects)
 		
 		free(objects[i]);
 		objects[i] = NULL;
-
+		
 		i++;
-
+		
 	}
-
+	
 	//note that nothing was malloced inside the sentinel object
 	free(objects[i]);
 	objects[i] = NULL;
 	free(objects);
-
+	
 }
+
 
 void freeDataObjectTree(Data* super_object)
 {
-
+	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui8_data != NULL)
 	{
 		mxFree(super_object->data_arrays.ui8_data);
@@ -430,10 +426,10 @@ void freeDataObjectTree(Data* super_object)
 	
 	if(super_object->sub_objects != NULL)
 	{
-        for(int j = 0; j < super_object->num_sub_objs; j++)
-        {
-            freeDataObjectTree(super_object->sub_objects[j]);
-        }
+		for(int j = 0; j < super_object->num_sub_objs; j++)
+		{
+			freeDataObjectTree(super_object->sub_objects[j]);
+		}
 		free(super_object->sub_objects);
 		super_object->sub_objects = NULL;
 	}
@@ -444,6 +440,7 @@ void freeDataObjectTree(Data* super_object)
 	
 }
 
+
 void endHooks(void)
 {
 	if(maps[0].used == TRUE)
@@ -451,16 +448,16 @@ void endHooks(void)
 		munmap(maps[0].map_start, maps[0].bytes_mapped);
 		maps[0].used = FALSE;
 	}
-
+	
 	if(maps[1].used == TRUE)
 	{
 		munmap(maps[1].map_start, maps[1].bytes_mapped);
 		maps[1].used = FALSE;
 	}
-
+	
 	if(fd >= 0)
 	{
 		close(fd);
 	}
-
+	
 }
