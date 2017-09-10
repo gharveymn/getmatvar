@@ -60,7 +60,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	}
 	
 	//find superblock
-	s_block = getSuperblock(fd);
+	s_block = getSuperblock();
 	
 	int num_objs = 0;
 	for(int name_index = 0; name_index < num_names; name_index++)
@@ -142,6 +142,17 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	
 	close(fd);
 	return objects;
+}
+
+void initializeMaps(void)
+{
+	for(int i = 0; i < NUM_MAPS; i++)
+	{
+		maps[i].used = FALSE;
+		maps[i].bytes_mapped = 0;
+		maps[i].map_start = NULL;
+		maps[i].offset = 0;
+	}
 }
 
 
@@ -576,7 +587,7 @@ Data* organizeObjects(Data** objects, int* starting_pos)
 		placeInSuperObject(super_object, objects, num_total_objs, &index);
 	}
 	
-	*starting_pos = index + 1;
+	*starting_pos = num_total_objs + 1;
 	
 	return super_object;
 	

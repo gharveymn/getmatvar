@@ -9,6 +9,9 @@ getmatvar(file, var);
 toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
+
 tic
 %load(file)
 toc
+
+clear file vars numtests userview
