@@ -1,6 +1,6 @@
 #include "getmatvar_.h"
 
-void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
@@ -29,7 +29,7 @@ void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 	
 }
 
-void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	object->type = NULLTYPE;
 	//assume version 1
@@ -130,7 +130,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 	
 }
 
-void readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	//assume version 3
 	if(*msg_pointer != 3)
@@ -169,11 +169,11 @@ void readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address
 	}
 }
 
-void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
 	
-	char* helper_pointer = NULL;
+	byte* helper_pointer = NULL;
 	uint16_t name_size = 0;
 	
 	//version number
@@ -229,7 +229,7 @@ void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t ms
 	}
 }
 
-void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	char name[NAME_LENGTH];
 	uint16_t name_size = (uint16_t)getBytesAsNumber(msg_pointer + 2, 2, META_DATA_BYTE_ORDER);

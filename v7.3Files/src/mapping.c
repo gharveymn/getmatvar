@@ -20,7 +20,7 @@ Data* findDataObject(const char* filename, const char variable_name[])
 
 Data** getDataObjects(const char* filename, const char* variable_names[], int num_names)
 {
-	char* header_pointer;
+	byte* header_pointer;
 	uint32_t header_length;
 	uint64_t header_address;
 	uint16_t num_msgs;
@@ -255,16 +255,15 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
 {
 	
-	char* header_pointer = navigateTo(header_address, header_length, TREE);
+	byte* header_pointer = navigateTo(header_address, header_length, TREE);
 	
 	uint64_t cont_header_address;
 	uint32_t cont_header_length;
-	char* cont_header_pointer;
 	
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
 	uint64_t msg_address = 0;
-	char* msg_pointer = NULL;
+	byte* msg_pointer = NULL;
 	int32_t bytes_read = 0;
 	
 	//interpret messages in header
@@ -405,7 +404,7 @@ void allocateSpace(Data* object)
 }
 
 
-void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
@@ -534,7 +533,7 @@ void findHeaderAddress(const char variable_name[])
 
 void parseHeaderTree(void)
 {
-	char* tree_pointer, * heap_pointer;
+	byte* tree_pointer, * heap_pointer;
 	
 	//aka the parent address for a snod
 	Addr_Trio parent_trio = {.parent_obj_header_address = UNDEF_ADDR, .tree_address = UNDEF_ADDR, .heap_address = UNDEF_ADDR};

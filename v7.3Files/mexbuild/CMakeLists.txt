@@ -14,7 +14,7 @@ find_package(Matlab REQUIRED)
 
 IF(MATLAB_FOUND)
     message(STATUS "MATLAB Found, MATLAB MEX will be compiled.")
-    add_subdirectory(mex)
+    add_subdirectory(src)
 ELSE(MATLAB_FOUND)
     MESSAGE("MATLAB not found...nothing will be built.")
 ENDIF(MATLAB_FOUND)

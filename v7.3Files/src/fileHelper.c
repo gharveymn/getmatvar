@@ -3,7 +3,7 @@
 
 Superblock getSuperblock(void)
 {
-	char* superblock_pointer = findSuperblock();
+	byte* superblock_pointer = findSuperblock();
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	
 	//unmap superblock
@@ -13,12 +13,12 @@ Superblock getSuperblock(void)
 }
 
 
-char* findSuperblock(void)
+byte* findSuperblock(void)
 {
 	size_t alloc_gran = getAllocGran();
 	
 	//Assuming that superblock is in first 8 512 byte chunks
-	char* chunk_start = navigateTo(0, alloc_gran, TREE);
+	byte* chunk_start = navigateTo(0, alloc_gran, TREE);
 	uint16_t chunk_address = 0;
 	
 	while(strncmp(FORMAT_SIG, chunk_start, 8) != 0 && chunk_address < alloc_gran)
@@ -36,7 +36,7 @@ char* findSuperblock(void)
 }
 
 
-Superblock fillSuperblock(char* superblock_pointer)
+Superblock fillSuperblock(byte* superblock_pointer)
 {
 	Superblock s_block;
 	//get stuff from superblock, for now assume consistent versions of stuff
@@ -47,7 +47,7 @@ Superblock fillSuperblock(char* superblock_pointer)
 	s_block.base_address = getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	
 	//read scratchpad space
-	char* sps_start = superblock_pointer + 80;
+	byte* sps_start = superblock_pointer + 80;
 	root_trio.parent_obj_header_address = UNDEF_ADDR;
 	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	root_trio.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
@@ -67,7 +67,7 @@ void freeMap(int map_index)
 }
 
 
-char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
+byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 {
 	
 	//only remap if we really need to (this removes the need for checks/headaches inside main functions)
@@ -86,7 +86,7 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 		maps[map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
 		maps[map_index].bytes_mapped = address - maps[map_index].offset + bytes_needed;
 		maps[map_index].bytes_mapped = maps[map_index].bytes_mapped < file_size - maps[map_index].offset ? maps[map_index].bytes_mapped : file_size - maps[map_index].offset;
-		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_SHARED, fd, maps[map_index].offset);
+		maps[map_index].map_start = mmap(NULL, maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, maps[map_index].offset);
 		maps[map_index].used = TRUE;
 		if(maps[map_index].map_start == NULL || maps[map_index].map_start == MAP_FAILED)
 		{
@@ -98,7 +98,7 @@ char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index)
 }
 
 
-void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
+void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 {
 	Addr_Trio trio;
 	uint16_t entries_used = 0;
@@ -127,7 +127,7 @@ void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
 	
 	//group node B-Tree traversal (version 0)
 	int key_size = s_block.size_of_lengths;
-	char* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
+	byte* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for(int i = 0; i < entries_used; i++)
 	{
 		
@@ -145,7 +145,7 @@ void readTreeNode(char* tree_pointer, Addr_Trio this_trio)
 }
 
 
-void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
+void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
 {
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	Object* objects = malloc(sizeof(Object) * num_symbols);
@@ -155,7 +155,7 @@ void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Add
 	
 	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2 * s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	char* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 	
 	//get to entries
 	int sym_table_entry_size = 2 * s_block.size_of_offsets + 4 + 4 + 16;

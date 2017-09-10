@@ -23,19 +23,19 @@
 # include <windows.h>
 
 
-DWORD getPageSize(void)
+size_t getPageSize(void)
 {
 	SYSTEM_INFO system_info;
 	GetSystemInfo(&system_info);
-	return system_info.dwPageSize;
+	return (size_t)system_info.dwPageSize;
 }
 
 
-DWORD getAllocGran(void)
+size_t getAllocGran(void)
 {
 	SYSTEM_INFO system_info;
 	GetSystemInfo(&system_info);
-	return system_info.dwAllocationGranularity;
+	return (size_t)system_info.dwAllocationGranularity;
 }
 
 
@@ -44,12 +44,12 @@ DWORD getAllocGran(void)
 
 //these are the same on unix
 
-int getPageSize(void)
+size_t getPageSize(void)
 {
 	return sysconf(_SC_PAGE_SIZE);
 }
 
-int getAllocGran(void)
+size_t getAllocGran(void)
 {
 	return sysconf(_SC_PAGE_SIZE);
 }
