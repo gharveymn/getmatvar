@@ -117,7 +117,7 @@ typedef struct
 
 typedef enum
 {
-	UNDEF = 1 << 0,
+	NULLTYPE = 1 << 0,
 	UINT8 = 1 << 1,
 	INT8 = 1 << 2,
 	UINT16 = 1 << 3,
@@ -134,7 +134,8 @@ typedef enum
 	TABLE = 1 << 14,
 	DELIMITER = 1 << 15,
 	END_SENTINEL = 1 << 16,
-	ERROR = 1 << 17
+	ERROR = 1 << 17,
+	UNDEF = 1 << 18
 } DataType;
 
 typedef enum
@@ -254,13 +255,12 @@ Superblock getSuperblock(int fd);
 char* findSuperblock(int fd);
 Superblock fillSuperblock(char* superblock_pointer);
 char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
-char* navigateTo_map(MemMap map, uint64_t address, uint64_t bytes_needed, int map_index);
 void readTreeNode(char* tree_pointer, Addr_Trio this_trio);
 void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 void freeDataObjects(Data** objects);
-void freeMXDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
 void endHooks(void);
+void freeMap(int map_index);
 
 
 //numberHelper.c
@@ -297,13 +297,13 @@ void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 Data* findDataObject(const char* filename, const char variable_name[]);
 Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
 void findHeaderAddress(const char variable_name[]);
-void collectMetaData(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length);
+void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length, uint16_t message_num, uint16_t num_msgs);
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(void);
 //void deepCopy(Data* dest, Data* source);
 

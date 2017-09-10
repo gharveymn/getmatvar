@@ -1,5 +1,6 @@
 #include "getmatvar_.h"
 
+
 Data* findDataObject(const char* filename, const char variable_name[])
 {
 	Data** objects = getDataObjects(filename, &variable_name, 1);
@@ -16,11 +17,13 @@ Data* findDataObject(const char* filename, const char variable_name[])
 	return hi_objects;
 }
 
+
 Data** getDataObjects(const char* filename, const char* variable_names[], int num_names)
 {
 	char* header_pointer;
 	uint32_t header_length;
 	uint64_t header_address;
+	uint16_t num_msgs;
 	//uint64_t root_tree_address;
 	Data** objects = malloc(MAX_OBJS * sizeof(Data*));
 	Object obj;
@@ -39,7 +42,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	if(fd < 0)
 	{
 		objects[0] = malloc(sizeof(Data));
-		objects[0]->type = ERROR|END_SENTINEL;
+		objects[0]->type = ERROR | END_SENTINEL;
 		sprintf(objects[0]->name, "getmatvar:internalError");
 		sprintf(objects[0]->matlab_class, "No file found with name \'%s\'.\n\n", filename);
 		return objects;
@@ -47,10 +50,10 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	
 	//get file size
 	file_size = (size_t)lseek(fd, 0, SEEK_END);
-	if(file_size == (size_t) - 1)
+	if(file_size == (size_t)-1)
 	{
 		objects[0] = malloc(sizeof(Data));
-		objects[0]->type = ERROR|END_SENTINEL;
+		objects[0]->type = ERROR | END_SENTINEL;
 		sprintf(objects[0]->name, "getmatvar:internalError");
 		sprintf(objects[0]->matlab_class, "lseek failed, check errno %d\n\n", errno);
 		return objects;
@@ -60,26 +63,26 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	s_block = getSuperblock(fd);
 	
 	int num_objs = 0;
-	for(int i = 0; i < num_names; i++)
+	for(int name_index = 0; name_index < num_names; name_index++)
 	{
-
+		
 		flushQueue();
 		flushHeaderQueue();
 		enqueueTrio(root_trio);
-
+		
 		//fprintf(stderr, "\nObject header for variable %s is at 0x", variable_names);
-		findHeaderAddress(variable_names[i]);
+		findHeaderAddress(variable_names[name_index]);
 		//fprintf(stderr, "%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
-
-		if (header_queue.length == 0)
+		
+		if(header_queue.length == 0)
 		{
 			objects[num_objs] = malloc(sizeof(Data));
 			initializeObject(objects[num_objs]);
 			objects[num_objs]->type = UNDEF;
 			
-			strcpy(objects[num_objs]->name,variable_name_queue.variable_names[variable_name_queue.back-1]);
+			strcpy(objects[num_objs]->name, variable_name_queue.variable_names[variable_name_queue.back - 1]);
 			num_objs++;
-			sprintf(errmsg, "Variable \'%s\' was not found.", variable_names[i]);
+			sprintf(errmsg, "Variable \'%s\' was not found.", variable_names[name_index]);
 			readMXWarn("getmatvar:variableNotFound", errmsg);
 		}
 		
@@ -96,19 +99,15 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 			
 			//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 			header_pointer = navigateTo(header_address, 16, TREE);
-			
-			//prevent error due to crossing of a page boundary
 			header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
-			if(header_address + header_length >= maps[TREE].offset + maps[TREE].bytes_mapped)
-			{
-				header_pointer = navigateTo(header_address, header_length, TREE);
-			}
+			num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
+			
 			strcpy(objects[num_objs]->name, obj.name);
 			objects[num_objs]->parent_obj_address = obj.parent_obj_header_address;
 			objects[num_objs]->this_obj_address = obj.this_obj_header_address;
-			collectMetaData(objects[num_objs], header_address, header_pointer, header_length);
+			collectMetaData(objects[num_objs], header_address, num_msgs, header_length);
 			
-			if(objects[num_objs]->type == UNDEF)
+			if(objects[num_objs]->type == ERROR)
 			{
 				objects[0]->type = ERROR;
 				strcpy(objects[0]->name, objects[num_objs]->name);
@@ -118,7 +117,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 				
 				objects[num_objs] = malloc(sizeof(Data));
 				initializeObject(objects[num_objs]);
-				objects[num_objs]->type = DELIMITER|END_SENTINEL;
+				objects[num_objs]->type = DELIMITER | END_SENTINEL;
 				objects[num_objs]->parent_obj_address = UNDEF_ADDR;
 				
 				return objects;
@@ -136,31 +135,15 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 		num_objs++;
 		
 	}
-	objects[num_objs-1]->type |= END_SENTINEL;
-
-	if (munmap(maps[TREE].map_start, maps[TREE].bytes_mapped) != 0)
-	{
-		objects[0]->type |= ERROR;
-		sprintf(objects[0]->name, "getmatvar:internalError");
-		sprintf(objects[0]->matlab_class, "munmap() unsuccessful for maps[TREE] in getDataObjects(), Check errno: %d\n", errno);
-
-		if (munmap(maps[HEAP].map_start, maps[HEAP].bytes_mapped) != 0)
-		{
-			sprintf(objects[0]->matlab_class, "munmap() unsuccessful for maps[TREE] and maps[HEAP] in getDataObjects(), Check errno: %d\n", errno);
-		}
-	}
-	else if (munmap(maps[HEAP].map_start, maps[HEAP].bytes_mapped) != 0)
-	{
-		objects[0]->type |= ERROR;
-		sprintf(objects[0]->name, "getmatvar:internalError");
-		sprintf(objects[0]->matlab_class, "munmap() unsuccessful for maps[HEAP] in getDataObjects(), Check errno: %d\n", errno);
-	}
-
-	maps[TREE].used = FALSE;
-	maps[HEAP].used = FALSE;
+	objects[num_objs - 1]->type |= END_SENTINEL;
+	
+	freeMap(TREE);
+	freeMap(HEAP);
+	
 	close(fd);
 	return objects;
 }
+
 
 void initializeObject(Data* object)
 {
@@ -188,7 +171,7 @@ void initializeObject(Data* object)
 	object->layout_class = 0;
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
-	object->type = UNDEF;
+	object->type = ERROR;
 	
 	object->num_dims = 0;
 	object->num_elems = 0;
@@ -199,13 +182,25 @@ void initializeObject(Data* object)
 }
 
 
-void collectMetaData(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length)
+void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
-	
-	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
-	interpretMessages(object, header_address, header_pointer, header_length, 0, num_msgs);
 
-	if (object->type == UNDEF)
+	interpretMessages(object, header_address, header_length, 0, num_msgs, 0);
+	
+	//you can't be one dimensional and have two elements, so matlab stores nulls like this
+	if(object->num_elems == 2 && object->num_dims == 1)
+	{
+		object->num_elems = 0;
+		for(int i = 0; i < object->num_dims; i++)
+		{
+			object->dims[i] = 0;
+		}
+		object->num_dims = 0;
+		return;
+	}
+	
+
+	if(object->type == ERROR)
 	{
 		sprintf(object->name, "getmatvar:internalError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
@@ -214,7 +209,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	
 	//allocate space for data
 	allocateSpace(object);
-
+	
 	
 	//fetch data
 	switch(object->layout_class)
@@ -233,6 +228,7 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	//if we have encountered a cell array, queue up headers for its elements
 	if(object->data_arrays.udouble_data != NULL && object->type == REF)
 	{
+
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			Object obj;
@@ -244,70 +240,93 @@ void collectMetaData(Data* object, uint64_t header_address, char* header_pointer
 	}
 }
 
-uint16_t interpretMessages(Data* object, uint64_t header_address, char* header_pointer, uint32_t header_length, uint16_t message_num, uint16_t num_msgs)
+
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
 {
+	
+	char* header_pointer = navigateTo(header_address, header_length, TREE);
+	
 	uint64_t cont_header_address;
 	uint32_t cont_header_length;
 	char* cont_header_pointer;
-
+	
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
 	uint64_t msg_address = 0;
 	char* msg_pointer = NULL;
 	int32_t bytes_read = 0;
-
+	
 	//interpret messages in header
-	for (; message_num < num_msgs && bytes_read < header_length; message_num++)
+	for(; message_num < num_msgs && bytes_read < header_length; message_num++)
 	{
 		msg_type = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read, 2, META_DATA_BYTE_ORDER);
 		msg_address = header_address + 16 + bytes_read;
 		msg_size = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
 		msg_pointer = header_pointer + 16 + bytes_read + 8;
 		msg_address = header_address + 16 + bytes_read + 8;
-
-		switch (msg_type)
+		
+		switch(msg_type)
 		{
-		case 1:
-			// Dataspace message
-			readDataSpaceMessage(object, msg_pointer, msg_address, msg_size);
-			break;
-		case 3:
-			// DataType message
-			readDataTypeMessage(object, msg_pointer, msg_address, msg_size);
-			break;
-		case 8:
-			// Data Layout message
-			readDataLayoutMessage(object, msg_pointer, msg_address, msg_size);
-			break;
-		case 11:
-			//data storage pipeline message
-			readDataStoragePipelineMessage(object, msg_pointer, msg_address, msg_size);
-			break;
-		case 12:
-			//attribute message
-			readAttributeMessage(object, msg_pointer, msg_address, msg_size);
-			break;
-		case 16:
-			//object header continuation message
-			//ie no info for the object
-			cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-			cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
-			cont_header_pointer = navigateTo(cont_header_address - 16, cont_header_length + 16, TREE);
-			message_num++;
-			message_num = interpretMessages(object, cont_header_address, cont_header_pointer, cont_header_length, message_num, num_msgs);
-			break;
-		default:
-			//ignore message
-			//case 17 -- B tree already traversed and in queue
-			break;
+			case 1:
+				// Dataspace message, not repeated
+				if((repeat_tracker & (1 << msg_type)) == FALSE)
+				{
+					readDataSpaceMessage(object, msg_pointer, msg_address, msg_size);
+					repeat_tracker |= 1 << msg_type;
+				}
+				break;
+			case 3:
+				// DataType message, not repeated
+				if((repeat_tracker & (1 << msg_type)) == FALSE)
+				{
+					readDataTypeMessage(object, msg_pointer, msg_address, msg_size);
+					repeat_tracker |= 1 << msg_type;
+				}
+				break;
+			case 8:
+				// Data Layout message, not repeated
+				if((repeat_tracker & (1 << msg_type)) == FALSE)
+				{
+					readDataLayoutMessage(object, msg_pointer, msg_address, msg_size);
+					repeat_tracker |= 1 << msg_type;
+				}
+				break;
+			case 11:
+				//data storage pipeline message, not repeated
+				if((repeat_tracker & (1 << msg_type)) == FALSE)
+				{
+					readDataStoragePipelineMessage(object, msg_pointer, msg_address, msg_size);
+					repeat_tracker |= 1 << msg_type;
+				}
+				break;
+			case 12:
+				//attribute message
+				readAttributeMessage(object, msg_pointer, msg_address, msg_size);
+				break;
+			case 16:
+				//object header continuation message
+				//ie no info for the object
+				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+				message_num++;
+				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length + 16, message_num, num_msgs, repeat_tracker);
+				//renavigate in case the continuation message was far away (automatically checks if we need to)
+				header_pointer = navigateTo(header_address, header_length, TREE);
+				
+				break;
+			default:
+				//ignore message
+				//case 17 -- B tree already traversed and in queue
+				break;
 		}
-
+		
 		bytes_read += msg_size + 8;
 	}
 	
-	return message_num;
+	return message_num - 1;
 	
 }
+
 
 void allocateSpace(Data* object)
 {
@@ -364,29 +383,30 @@ void allocateSpace(Data* object)
 		case TABLE:
 			//do nothing
 			break;
-		case UNDEF:
+		case NULLTYPE:
 		default:
 			//this shouldn't happen
-			readMXError("getmatvar:thisShouldntHappen", "Allocate space ran with an UNDEF for some reason.\n\n");
-			//object->type = UNDEF;
+			readMXError("getmatvar:thisShouldntHappen", "Allocate space ran with an NULLTYPE for some reason.\n\n");
+			//object->type = NULLTYPE;
 			//sprintf(object->name, "getmatvar:internalError");
 			//sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 	}
 }
 
+
 void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
 {
-
+	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__BYTE_ORDER != data_byte_order)
 	{
-		for(uint64_t j = 0; j < condition-starting_index; j+=elem_size)
+		for(uint64_t j = 0; j < condition - starting_index; j += elem_size)
 		{
 			reverseBytes(data_pointer + j, elem_size);
 		}
 	}
-
-
+	
+	
 	int object_data_index = 0;
 	switch(object->type)
 	{
@@ -447,21 +467,21 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 			}
 			break;
 		case SINGLE:
-			for (uint64_t j = starting_index; j < condition; j++)
+			for(uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.single_data[j], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case DOUBLE:
-			for (uint64_t j = starting_index; j < condition; j++)
+			for(uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.double_data[j], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case REF:
-			for (uint64_t j = starting_index; j < condition; j++)
+			for(uint64_t j = starting_index; j < condition; j++)
 			{
 				memcpy(&object->data_arrays.udouble_data[j], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
@@ -473,9 +493,9 @@ void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64
 		default:
 			//nothing to be done
 			break;
-
+		
 	}
-
+	
 }
 
 
@@ -500,9 +520,10 @@ void findHeaderAddress(const char variable_name[])
 	parseHeaderTree();
 }
 
+
 void parseHeaderTree(void)
 {
-	char* tree_pointer,* heap_pointer;
+	char* tree_pointer, * heap_pointer;
 	
 	//aka the parent address for a snod
 	Addr_Trio parent_trio = {.parent_obj_header_address = UNDEF_ADDR, .tree_address = UNDEF_ADDR, .heap_address = UNDEF_ADDR};
@@ -513,7 +534,10 @@ void parseHeaderTree(void)
 	{
 		tree_pointer = navigateTo(queue.trios[queue.front].tree_address, default_bytes, TREE);
 		heap_pointer = navigateTo(queue.trios[queue.front].heap_address, default_bytes, HEAP);
-		assert(strncmp("HEAP", heap_pointer, 4) == 0);
+		if(strncmp("HEAP", heap_pointer, 4) != 0)
+		{
+			readMXError("getmatvar:internalError", "Incorrect heap_pointer address in queue.\n\n", "");
+		}
 		
 		if(strncmp("TREE", tree_pointer, 4) == 0)
 		{

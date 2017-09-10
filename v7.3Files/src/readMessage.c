@@ -31,7 +31,7 @@ void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address,
 
 void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
-	object->type = UNDEF;
+	object->type = NULLTYPE;
 	//assume version 1
 	uint8_t class = (uint8_t)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
 	object->elem_size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
@@ -92,7 +92,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 					break;
 				default:
 					//this shouldn't happen
-					object->type = UNDEF;
+					object->type = NULLTYPE;
 					break;
 			}
 			break;
@@ -111,7 +111,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 					break;
 				default:
 					//this shouldn't happen
-					object->type = UNDEF;
+					object->type = NULLTYPE;
 					break;
 			}
 			break;
@@ -122,7 +122,7 @@ void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, 
 			break;
 		default:
 			//ignore
-			object->type = UNDEF;
+			object->type = NULLTYPE;
 			object->byte_order = LITTLE_ENDIAN;
 			break;
 	}

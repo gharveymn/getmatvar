@@ -176,7 +176,11 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
+			case NULLTYPE:
+				//do nothing, this is an empty array
+				break;
 			case UNDEF:
+				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
