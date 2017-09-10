@@ -51,6 +51,8 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
+typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
+
 typedef struct
 {
 	uint64_t parent_obj_header_address;
@@ -86,7 +88,7 @@ typedef struct
 
 typedef struct
 {
-	char* map_start;
+	byte* map_start;
 	uint64_t bytes_mapped;
 	OffsetType offset;
 	int used;
@@ -253,11 +255,11 @@ struct tree_node_
 
 //fileHelper.c
 Superblock getSuperblock(void);
-char* findSuperblock(void);
-Superblock fillSuperblock(char* superblock_pointer);
-char* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(char* tree_pointer, Addr_Trio this_trio);
-void readSnod(char* snod_pointer, char* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
+byte* findSuperblock(void);
+Superblock fillSuperblock(byte* superblock_pointer);
+byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
+void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
+void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 void freeDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
 void endHooks(void);
@@ -268,9 +270,9 @@ void freeMap(int map_index);
 double convertHexToDouble(uint64_t hex);
 float convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
-uint64_t getBytesAsNumber(char* chunk_start, size_t num_bytes, ByteOrder endianness);
+uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);
-void reverseBytes(char* data_pointer, size_t num_elems);
+void reverseBytes(byte* data_pointer, size_t num_elems);
 
 
 //queue.c
@@ -288,11 +290,11 @@ char* peekVariableName();
 void enqueueVariableName(char* variable_name);
 
 //readMessage.c
-void readDataSpaceMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataTypeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataLayoutMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataStoragePipelineMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readAttributeMessage(Data* object, char* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
 Data* findDataObject(const char* filename, const char variable_name[]);
@@ -302,15 +304,15 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 void allocateSpace(Data* object);
-void placeData(Data* object, char* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(void);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c
-int getPageSize(void);
-int getAllocGran(void);
+size_t getPageSize(void);
+size_t getAllocGran(void);
 
 //chunkedData.c
 void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims);

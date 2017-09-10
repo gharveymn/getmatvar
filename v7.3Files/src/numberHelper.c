@@ -1,20 +1,21 @@
 #include "mapping.h"
 
 
-void reverseBytes(char* data_pointer, size_t num_elems)
+void reverseBytes(byte* data_pointer, size_t num_elems)
 {
-	char* start,* end;
+	byte* start,* end;
 	
 	for (start = data_pointer, end = start + num_elems - 1; start < end; ++start, --end )
 	{
 		char swap = *start;
+		*start = *end;
 		*start = *end;
 		*end = swap;
 	}
 	
 }
 
-uint64_t getBytesAsNumber(char* data_pointer, size_t num_bytes, ByteOrder endianness)
+uint64_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endianness)
 {
 	uint64_t ret = 0;
 	memcpy(&ret, data_pointer, num_bytes);

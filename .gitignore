@@ -15,7 +15,7 @@ v7.3Files/mexbuild/build/*
 *.idea
 *res/
 *.pdb
-optData_ESTrade.mat
+*/optData_ESTrade.mat
 
 *ipch/
 *.aps

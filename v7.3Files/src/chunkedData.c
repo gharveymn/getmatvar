@@ -1,5 +1,12 @@
 #include "getmatvar_.h"
-#include "extlib/zlib/zlib.h"
+
+#if UINTPTR_MAX == 0xffffffff
+#include "extlib/libdeflate/x86/libdeflate.h"
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#include "extlib/libdeflate/x64/libdeflate.h"
+#else
+//you need at least 19th century hardware to run this
+#endif
 
 void getChunkedData(Data* object)
 {
@@ -51,67 +58,42 @@ void doInflate(Data* object, TreeNode* node)
 		chunk_end_index_offset *= object->chunked_info.chunked_dims[i];
 	}
 	
-	int ret = Z_OK;
-	z_stream strm;
-	Bytef decompressed_data_buffer[CHUNK_BUFFER_SIZE];
-	Bytef* data_pointer;
-	strm.zalloc = Z_NULL;
-	strm.zfree = Z_NULL;
-	strm.opaque = Z_NULL;
-	strm.avail_in = 0;
-	strm.next_in = Z_NULL;
-
-	ret = inflateInit(&strm);
-	if (ret != Z_OK)
-	{
-		readMXError("getmatvar:internalError", "Error in intialization of inflate\n\n", "");
-		//fprintf(stderr, "Error in intialization of inflate, ret = %d\n", ret);
-		//exit(EXIT_FAILURE);
-	}
+	int ret;
+	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
+	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
+	byte* data_pointer;
+	size_t actual_size; /* make sure this is non-null */
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 		
-		data_pointer = (Bytef*)navigateTo(node->children[i].address, node->keys[i].size, TREE);
-		strm.avail_in = node->keys[i].size;
-		strm.next_in = data_pointer;
+		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
+		actual_size = CHUNK_BUFFER_SIZE;
 		
-		do
+		ret = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, CHUNK_BUFFER_SIZE, &actual_size);
+		switch(ret)
 		{
-			
-			do
-			{
-				strm.avail_out = CHUNK_BUFFER_SIZE;
-				strm.next_out = decompressed_data_buffer;
-				ret = inflate(&strm, Z_FINISH);
-				assert(ret != Z_STREAM_ERROR);
-				switch(ret)
-				{
-					case Z_NEED_DICT:
-						ret = Z_DATA_ERROR;     /* and fall through */
-					case Z_DATA_ERROR:
-					case Z_MEM_ERROR:
-						(void)inflateEnd(&strm);
-						readMXError("getmatvar:internalError", "There was an error with inflating the chunk\n\n", "");
-						//fprintf(stderr, "There was an error with inflating the chunk at %llu. Error: ret = %d\n", node->children[i].address, ret);
-						//exit(EXIT_FAILURE);
-				}
-				
-			} while (strm.avail_out == 0);
-			
-		} while(ret != Z_STREAM_END);
-		
-		inflateReset(&strm);
+			case LIBDEFLATE_BAD_DATA:
+				//TODO free memory after error...
+				readMXError("getmatvar:internalError","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.");
+				break;
+			case LIBDEFLATE_SHORT_OUTPUT:
+				readMXError("getmatvar:internalError","libdeflate failed failed to decompress because a NULL 'actual_out_nbytes_ret' was provided, but the data would have"
+					   " decompressed to fewer than 'out_nbytes_avail' bytes.");
+				break;
+			case LIBDEFLATE_INSUFFICIENT_SPACE:
+				readMXError("getmatvar:internalError","libdeflate failed because the output buffer was not large enough");
+				break;
+		}
 		
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims);
 
 		//copy over data
-		placeData(object, (char*)&decompressed_data_buffer[0], chunk_start_index, MIN(chunk_end_index, object->num_elems), object->elem_size, object->byte_order);
+		placeData(object, &decompressed_data_buffer[0], chunk_start_index, MIN(chunk_end_index, object->num_elems), object->elem_size, object->byte_order);
 		
 	}
 	
-	(void)inflateEnd(&strm);
 	
 	
 }
@@ -175,7 +157,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		return;
 	}
 	
-	char* tree_pointer = navigateTo(node->address, 8, TREE);
+	byte* tree_pointer = navigateTo(node->address, 8, TREE);
 	
 	if(strncmp(tree_pointer, "TREE", 4) != 0)
 	{
@@ -211,7 +193,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	
 	uint64_t key_size;
 	uint64_t bytes_needed;
-	char* key_pointer;
+	byte* key_pointer;
 	uint64_t key_address;
 	
 	switch(node->node_type)

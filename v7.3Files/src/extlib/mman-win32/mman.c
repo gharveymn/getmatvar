@@ -79,15 +79,22 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, OffsetType o
 #pragma warning(disable: 4293)
 #endif
 	
-	const DWORD dwFileOffsetLow = (sizeof(OffsetType) <= sizeof(DWORD)) ? (DWORD) off : (DWORD) (off & 0xFFFFFFFFL);
-	const DWORD dwFileOffsetHigh = (sizeof(OffsetType) <= sizeof(DWORD)) ? (DWORD) 0 : (DWORD) ((off >> 32) & 0xFFFFFFFFL);
 	const DWORD protect = __map_mmap_prot_page(prot);
 	const DWORD desiredAccess = __map_mmap_prot_file(prot);
-	
 	const OffsetType maxSize = off + (OffsetType) len;
-	
-	const DWORD dwMaxSizeLow = (sizeof(OffsetType) <= sizeof(DWORD)) ? (DWORD) maxSize : (DWORD) (maxSize & 0xFFFFFFFFL);
-	const DWORD dwMaxSizeHigh = (sizeof(OffsetType) <= sizeof(DWORD)) ? (DWORD) 0 : (DWORD) ((maxSize >> 32) & 0xFFFFFFFFL);
+
+#if defined(_WIN64)
+	const DWORD dwFileOffsetLow = (DWORD) (off & 0xFFFFFFFFL);
+	const DWORD dwFileOffsetHigh = (DWORD) ((off >> 32) & 0xFFFFFFFFL);
+	const DWORD dwMaxSizeLow = (DWORD) (maxSize & 0xFFFFFFFFL);
+	const DWORD dwMaxSizeHigh = (DWORD) ((maxSize >> 32) & 0xFFFFFFFFL);
+#else
+	const DWORD dwFileOffsetLow = (DWORD) off;
+	const DWORD dwFileOffsetHigh = (DWORD) 0;
+	const DWORD dwMaxSizeLow = (DWORD) maxSize;
+	const DWORD dwMaxSizeHigh = (DWORD) 0;
+#endif
+
 
 #ifdef _MSC_VER
 #pragma warning(pop)
