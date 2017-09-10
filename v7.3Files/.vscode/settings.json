@@ -1,8 +1,0 @@
-{
-  "terminal.integrated.shell.windows": "C:\\WINDOWS\\System32\\bash.exe",
-  "files.associations": {
-    "*.m": "matlab",
-    "mapping.h": "c",
-    "mman.h": "c"
-  }
-}
