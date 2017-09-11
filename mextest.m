@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/my_array.mat';
+file = 'my_array.mat';
 vars = {'my_array'};
 
 %userview = memory;
