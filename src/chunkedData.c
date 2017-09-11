@@ -52,11 +52,6 @@ void doInflate(Data* object, TreeNode* node)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	
 	uint64_t chunk_start_index = 0, chunk_end_index = 0;
-	uint64_t chunk_end_index_offset = 1;
-	for(int i = 0; object->chunked_info.chunked_dims[i] > 0; i++)
-	{
-		chunk_end_index_offset *= object->chunked_info.chunked_dims[i];
-	}
 	
 	int ret;
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
@@ -66,7 +61,10 @@ void doInflate(Data* object, TreeNode* node)
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		
+
+		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
+		chunk_end_index = MIN(findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims), object->num_elems);
+
 		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
 		actual_size = CHUNK_BUFFER_SIZE;
 		
@@ -75,22 +73,19 @@ void doInflate(Data* object, TreeNode* node)
 		{
 			case LIBDEFLATE_BAD_DATA:
 				//TODO free memory after error...
-				readMXError("getmatvar:internalError","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.");
+				readMXError("getmatvar:internalError","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 				break;
 			case LIBDEFLATE_SHORT_OUTPUT:
 				readMXError("getmatvar:internalError","libdeflate failed failed to decompress because a NULL 'actual_out_nbytes_ret' was provided, but the data would have"
-					   " decompressed to fewer than 'out_nbytes_avail' bytes.");
+					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				break;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				readMXError("getmatvar:internalError","libdeflate failed because the output buffer was not large enough");
+				readMXError("getmatvar:internalError","libdeflate failed because the output buffer was not large enough (%d).\n\n", actual_size);
 				break;
 		}
-		
-		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		chunk_end_index = findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims);
 
 		//copy over data
-		placeData(object, &decompressed_data_buffer[0], chunk_start_index, MIN(chunk_end_index, object->num_elems), object->elem_size, object->byte_order);
+		placeData(object, &decompressed_data_buffer[0], chunk_start_index, chunk_end_index, object->elem_size, object->byte_order);
 		
 	}
 	
