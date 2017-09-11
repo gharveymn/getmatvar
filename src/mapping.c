@@ -43,7 +43,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	{
 		objects[0] = malloc(sizeof(Data));
 		objects[0]->type = ERROR | END_SENTINEL;
-		sprintf(objects[0]->name, "getmatvar:internalError");
+		sprintf(objects[0]->name, "getmatvar:fileNotFoundError");
 		sprintf(objects[0]->matlab_class, "No file found with name \'%s\'.\n\n", filename);
 		return objects;
 	}
