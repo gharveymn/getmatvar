@@ -1,5 +1,4 @@
 #include "getmatvar_.h"
-#include "mapping.h"
 
 
 #if UINTPTR_MAX == 0xffffffff
@@ -11,7 +10,7 @@
 #endif
 
 void getChunkedData(Data* object)
-{
+{	
 	TreeNode root;
 	root.address = object->data_address;
 	fillChunkTree(&root, object->chunked_info.num_chunked_dims);
@@ -59,14 +58,29 @@ void doInflate(Data* object, TreeNode* node)
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
 	byte* data_pointer;
+	uint32_t* chunk_pos = calloc(object->num_dims + 1, sizeof(uint32_t));
+	uint64_t* chunk_updates = malloc(object->num_dims*sizeof(uint64_t));
 	size_t actual_size; /* make sure this is non-null */
+
+	uint64_t cu, du;
+	for(int i = 0; i < object->num_dims; i++)
+	{
+		du = object->dims[i];
+		cu = object->chunked_info.chunked_dims[i];
+		for(int j = i - 1; j >= 0; j--)
+		{
+			du *= object->dims[j];
+			cu *= object->chunked_info.chunked_dims[j];
+		}
+		chunk_updates[i] = du - cu;
+	}
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-
+		
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		chunk_end_index = MIN(findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims), object->num_elems);
-		chunk_end_index = MIN(chunk_end_index, chunk_start_index + object->chunked_info.chunk_size);
+		//chunk_end_index = MIN(chunk_end_index, chunk_start_index + object->chunked_info.chunk_size);
 
 		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
 		actual_size = CHUNK_BUFFER_SIZE;
@@ -76,20 +90,34 @@ void doInflate(Data* object, TreeNode* node)
 		{
 			case LIBDEFLATE_BAD_DATA:
 				//TODO free memory after error...
-				readMXError("getmatvar:internalError","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+				readMXError("getmatvar:libdeflateBadData","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 				break;
 			case LIBDEFLATE_SHORT_OUTPUT:
-				readMXError("getmatvar:internalError","libdeflate failed failed to decompress because a NULL 'actual_out_nbytes_ret' was provided, but the data would have"
+				readMXError("getmatvar:libdeflateShortOutput","libdeflate failed failed to decompress because a NULL 'actual_out_nbytes_ret' was provided, but the data would have"
 					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				break;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				readMXError("getmatvar:internalError","libdeflate failed because the output buffer was not large enough (%d).\n\n", actual_size);
+				readMXError("getmatvar:libdeflateInsufficientSpace","libdeflate failed because the output buffer was not large enough (%d).\n\n", actual_size);
 				break;
 		}
 
 		//copy over data
-		placeData(object, &decompressed_data_buffer[0], chunk_start_index, chunk_end_index, object->elem_size, object->byte_order);
+		for(int index = chunk_start_index; index < chunk_end_index;)
+		{
+			placeData(object, &decompressed_data_buffer[0], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
+			index += object->chunked_info.chunked_dims[0];
+			chunk_pos[0] += object->chunked_info.chunked_dims[0];
+			for(int j = 0; j < object->num_dims; j++)
+			{
+				if(chunk_pos[j] >= object->chunked_info.chunked_dims[j])
+				{
+					chunk_pos[j] = 0;
+					chunk_pos[j+1]++;
+					index += chunk_updates[j];
+				}
+			}
 		
+		}
 	}
 	
 	
@@ -106,7 +134,7 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_di
 		//3*200 + 17
 		
 		temp = coordinates[i];
-		for(int j = i + 1; j < num_chunked_dims; j++)
+		for(int j = i - 1; j >= 0; j--)
 		{
 			temp *= array_dims[j];
 		}
@@ -114,8 +142,6 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_di
 	}
 	return array_pos;
 }
-
-
 
 
 void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims)
@@ -276,7 +302,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Invalid node type in fillNode()\n\n", "");
+			readMXError("getmatvar:internalInvalidNodeType", "Invalid node type in fillNode()\n\n", "");
 			//fprintf(stderr, "Invalid node type %d\n", node->node_type);
 			//exit(EXIT_FAILURE);
 	}

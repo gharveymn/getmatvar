@@ -1,7 +1,7 @@
 addpath('res')
 addpath('bin')
-file = 'res/courtney_is_wrong.mat';
-vars = {'tiny_array'};
+file = 'res/t.mat';
+vars = {'t'};
 
 userview = memory;
 disp(userview.MemUsedMATLAB)
