@@ -174,6 +174,7 @@ typedef struct
 	uint8_t num_filters;
 	Filter filters[MAX_NUM_FILTERS];
 	uint8_t num_chunked_dims;
+	uint32_t chunk_size;
 	uint32_t* chunked_dims;
 } ChunkedInfo;
 
