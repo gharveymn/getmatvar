@@ -12,7 +12,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	object->dims = malloc((object->num_dims + 1) * sizeof(uint32_t));
 	//uint64_t bytes_read = 0;
 	
-	for(int i = 0; i < object->num_dims; i++)
+	for(int i = object->num_dims; i >= 0; i--)
 	{
 		object->dims[i] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
 	}
@@ -156,7 +156,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			object->data_pointer = msg_pointer + (object->data_address - msg_address);
-			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
+			for(int j = object->chunked_info.num_chunked_dims; j >= 0; j--)
 			{
 				object->chunked_info.chunked_dims[j] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4, META_DATA_BYTE_ORDER);
 			}
