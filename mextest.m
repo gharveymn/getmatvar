@@ -1,15 +1,15 @@
 addpath('res')
 addpath('bin')
-file = 'my_array.mat';
-vars = {'my_array'};
+file = 'res/courtney_is_wrong.mat';
+vars = {'tiny_array'};
 
-%userview = memory;
-%disp(userview.MemUsedMATLAB)
+userview = memory;
+disp(userview.MemUsedMATLAB)
 tic
 getmatvar(file, vars{:});
 toc
-%userview = memory;
-%disp(userview.MemUsedMATLAB)
+userview = memory;
+disp(userview.MemUsedMATLAB)
 
 % using load function
 tic

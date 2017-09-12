@@ -1,4 +1,6 @@
 #include "getmatvar_.h"
+#include "mapping.h"
+
 
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
@@ -64,6 +66,7 @@ void doInflate(Data* object, TreeNode* node)
 
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		chunk_end_index = MIN(findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims), object->num_elems);
+		chunk_end_index = MIN(chunk_end_index, chunk_start_index + object->chunked_info.chunk_size);
 
 		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
 		actual_size = CHUNK_BUFFER_SIZE;
