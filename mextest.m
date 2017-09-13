@@ -3,18 +3,18 @@ addpath('bin')
 file = 'res/t.mat';
 vars = {'t'};
 
-userview = memory;
-disp(userview.MemUsedMATLAB)
+%userview = memory;
+%disp(userview.MemUsedMATLAB)
 tic
 getmatvar(file, vars{:});
 toc
-userview = memory;
-disp(userview.MemUsedMATLAB)
+%userview = memory;
+%disp(userview.MemUsedMATLAB)
 
 % using load function
-tic
+%tic
 %load(file);
-toc
+%toc
 
 % using matlab's partial loader
 % tic

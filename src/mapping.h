@@ -9,10 +9,12 @@
 #include <math.h>
 #include <assert.h>
 
+
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
+
 
 #define __BYTE_ORDER    BYTE_ORDER
 #else
@@ -73,7 +75,7 @@ typedef struct
 
 typedef struct
 {
-	char *variable_names[MAX_Q_LENGTH];
+	char* variable_names[MAX_Q_LENGTH];
 	int front;
 	int back;
 	int length;
@@ -91,7 +93,7 @@ typedef struct
 
 typedef struct
 {
-	byte *map_start;
+	byte* map_start;
 	uint64_t bytes_mapped;
 	OffsetType offset;
 	int used;
@@ -168,7 +170,7 @@ typedef struct
 {
 	FilterType filter_id;
 	uint16_t num_client_vals;
-	uint32_t *client_data;
+	uint32_t* client_data;
 	uint8_t optional_flag;
 } Filter;
 
@@ -185,17 +187,17 @@ typedef struct
 typedef struct
 {
 	int is_mx_used;
-	uint8_t *ui8_data; //note that ui8 stores logicals and ui8s
-	int8_t *i8_data;
-	uint16_t *ui16_data; //note that ui16 stores strings, and ui16s
-	int16_t *i16_data;
-	uint32_t *ui32_data;
-	int32_t *i32_data;
-	uint64_t *ui64_data;
-	int64_t *i64_data;
-	float *single_data;
-	double *double_data;
-	uint64_t *udouble_data;
+	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
+	int8_t* i8_data;
+	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
+	int16_t* i16_data;
+	uint32_t* ui32_data;
+	int32_t* i32_data;
+	uint64_t* ui64_data;
+	int64_t* i64_data;
+	float* single_data;
+	double* double_data;
+	uint64_t* udouble_data;
 } DataArrays;
 
 typedef struct data_ Data;
@@ -215,13 +217,13 @@ struct data_
 	
 	uint8_t layout_class;
 	uint64_t data_address;
-	char *data_pointer;
+	char* data_pointer;
 	DataArrays data_arrays;
 	
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;
 	
-	Data **sub_objects;
+	Data** sub_objects;
 	uint32_t num_sub_objs;
 };
 
@@ -251,29 +253,29 @@ struct tree_node_
 	LeafType leaf_type;
 	int16_t node_level;
 	uint16_t entries_used;
-	Key *keys;
-	TreeNode *children;
-	TreeNode *left_sibling;
-	TreeNode *right_sibling;
+	Key* keys;
+	TreeNode* children;
+	TreeNode* left_sibling;
+	TreeNode* right_sibling;
 };
 
 
 //fileHelper.c
 Superblock getSuperblock(void);
 
-byte *findSuperblock(void);
+byte* findSuperblock(void);
 
-Superblock fillSuperblock(byte *superblock_pointer);
+Superblock fillSuperblock(byte* superblock_pointer);
 
-byte *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
+byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
 
-void readTreeNode(byte *tree_pointer, Addr_Trio this_trio);
+void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
 
-void readSnod(byte *snod_pointer, byte *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
+void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
 
-void freeDataObjects(Data **objects);
+void freeDataObjects(Data** objects);
 
-void freeDataObjectTree(Data *super_object);
+void freeDataObjectTree(Data* super_object);
 
 void endHooks(void);
 
@@ -287,11 +289,11 @@ float convertHexToSingle(uint32_t hex);
 
 int roundUp(int numToRound);
 
-uint64_t getBytesAsNumber(byte *chunk_start, size_t num_bytes, ByteOrder endianness);
+uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
 
-void indToSub(int index, const uint32_t *dims, uint32_t *indices);
+void indToSub(int index, const uint32_t* dims, uint32_t* indices);
 
-void reverseBytes(byte *data_pointer, size_t num_elems);
+void reverseBytes(byte* data_pointer, size_t num_elems);
 
 
 //queue.c
@@ -313,48 +315,42 @@ void enqueueObject(Object obj);
 
 void flushVariableNameQueue();
 
-char *dequeueVariableName();
+char* dequeueVariableName();
 
-char *peekVariableName();
+char* peekVariableName();
 
-void enqueueVariableName(char *variable_name);
+void enqueueVariableName(char* variable_name);
 
 //readMessage.c
-void readDataSpaceMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-void readDataTypeMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-void readDataLayoutMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-void readDataStoragePipelineMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-void readAttributeMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
-Data *findDataObject(const char *filename, const char variable_name[]);
-
-Data **getDataObjects(const char *filename, const char *variable_names[], int num_names);
-
+Data* findDataObject(const char* filename, const char variable_name[]);
+Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
 void findHeaderAddress(const char variable_name[]);
-
-void collectMetaData(Data *object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
-
-Data *organizeObjects(Data **objects, int *starting_pos);
-
-void placeInSuperObject(Data *super_object, Data **objects, int num_total_objs, int *index);
-
-void allocateSpace(Data *object);
-
-void placeData(Data *object, byte *data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
+void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
+Data* organizeObjects(Data** objects, int* starting_pos);
+void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
+void allocateSpace(Data* object);
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
 			ByteOrder data_byte_order);
 
-void initializeObject(Data *object);
-
-uint16_t interpretMessages(Data *object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
+void
+placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order,
+				  uint64_t* index_map);
+void initializeObject(Data* object);
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
 					  uint16_t num_msgs, uint16_t repeat_tracker);
-
 void parseHeaderTree(void);
-//void deepCopy(Data* dest, Data* source);
+
 
 //getPageSize.c
 size_t getPageSize(void);
@@ -362,19 +358,19 @@ size_t getPageSize(void);
 size_t getAllocGran(void);
 
 //chunkedData.c
-void fillChunkTree(TreeNode *root, uint64_t num_chunked_dims);
+void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims);
 
-void fillNode(TreeNode *node, uint64_t num_chunked_dims);
+void fillNode(TreeNode* node, uint64_t num_chunked_dims);
 
-void decompressChunk(Data *object, TreeNode *node);
+void decompressChunk(Data* object, TreeNode* node);
 
-void doInflate(Data *object, TreeNode *node);
+void doInflate(Data* object, TreeNode* node);
 
-void freeTree(TreeNode *node);
+void freeTree(TreeNode* node);
 
-void getChunkedData(Data *object);
+void getChunkedData(Data* object);
 
-uint64_t findArrayPosition(const uint64_t *chunk_start, const uint32_t *array_dims, uint8_t num_chunked_dims);
+uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
 MemMap maps[NUM_MAPS];
 Addr_Q queue;

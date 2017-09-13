@@ -52,24 +52,22 @@ void doInflate(Data* object, TreeNode* node)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	
-	uint64_t chunk_start_index = 0, chunk_end_index = 0;
+	uint64_t chunk_start_index = 0;
 	
 	int ret;
-	int use_update = 0;
+	uint8_t use_update = 0, curr_max_dim;
+	uint64_t db_pos = 0;
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
+	uint64_t index_map[CHUNK_BUFFER_SIZE];
 	byte* data_pointer;
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	size_t actual_size; /* make sure this is non-null */
-	int curr_max_dim = 1;
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 
-
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		chunk_end_index = MIN(findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims), object->num_elems);
-		//chunk_end_index = MIN(chunk_end_index, chunk_start_index + object->chunked_info.chunk_size);
 
 		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
 		actual_size = CHUNK_BUFFER_SIZE;
@@ -88,31 +86,38 @@ void doInflate(Data* object, TreeNode* node)
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
 				readMXError("getmatvar:libdeflateInsufficientSpace","libdeflate failed because the output buffer was not large enough (%d).\n\n", actual_size);
 				break;
+			default:
+				//do nothing
+				break;
 		}
 
 		//copy over data
 		memset(chunk_pos, 0 , sizeof(chunk_pos));
-		curr_max_dim = 1;
-		for(uint64_t index = chunk_start_index, db_pos = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; db_pos += object->chunked_info.chunked_dims[0])
+		curr_max_dim = 2;
+		db_pos = 0;
+		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; anchor = db_pos)
 		{
-			placeData(object, &decompressed_data_buffer[db_pos*object->elem_size], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
-			index += object->chunked_info.chunked_dims[0];
-			chunk_pos[0] += object->chunked_info.chunked_dims[0];
-			use_update = 0;
-			for(int j = 0; j < curr_max_dim; j++)
+			for (;db_pos < anchor + object->chunked_info.chunked_dims[0]; db_pos++, index++)
 			{
-				if(chunk_pos[j] >= object->chunked_info.chunked_dims[j])
+				index_map[db_pos] = index;
+			}
+			chunk_pos[1]++;
+			use_update = 0;
+			for(uint8_t j = 1; j < curr_max_dim; j++)
+			{
+				if(chunk_pos[j] == object->chunked_info.chunked_dims[j])
 				{
 					chunk_pos[j] = 0;
 					chunk_pos[j+1]++;
-					curr_max_dim = curr_max_dim == j+1 ? curr_max_dim + 1 : curr_max_dim;
+					curr_max_dim = curr_max_dim <= j + 1 ? curr_max_dim + (uint8_t)1 : curr_max_dim;
 					use_update++;
 				}
 			}
 			index += object->chunked_info.chunk_update[use_update];
 		}
-
-
+		
+		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
+		
 	}
 	
 }
