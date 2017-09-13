@@ -10,7 +10,7 @@
 #endif
 
 void getChunkedData(Data* object)
-{	
+{
 	TreeNode root;
 	root.address = object->data_address;
 	fillChunkTree(&root, object->chunked_info.num_chunked_dims);
@@ -63,7 +63,6 @@ void doInflate(Data* object, TreeNode* node)
 	size_t actual_size; /* make sure this is non-null */
 
 	uint64_t cu, du;
-	chunk_updates[0] = object->dims[0] - object->chunked_info.chunked_dims[0];
 	for(int i = 0; i < object->num_dims; i++)
 	{
 		du = object->dims[i];
@@ -104,7 +103,7 @@ void doInflate(Data* object, TreeNode* node)
 
 		//copy over data
 
-		for(int index = chunk_start_index, db_pos = 0; index < chunk_end_index; db_pos += object->chunked_info.chunked_dims[0])
+		for(uint64_t index = chunk_start_index, db_pos = 0; index < object->num_elems && db_pos < object->chunked_info.num_chunked_dims; db_pos += object->chunked_info.chunked_dims[0])
 		{
 			placeData(object, &decompressed_data_buffer[db_pos*object->elem_size], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
 			index += object->chunked_info.chunked_dims[0];
@@ -120,7 +119,12 @@ void doInflate(Data* object, TreeNode* node)
 			}
 		
 		}
+
+
 	}
+
+	free(chunk_pos);
+	free(chunk_updates);
 	
 	
 	
