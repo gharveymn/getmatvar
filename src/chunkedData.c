@@ -55,29 +55,18 @@ void doInflate(Data* object, TreeNode* node)
 	uint64_t chunk_start_index = 0, chunk_end_index = 0;
 	
 	int ret;
+	int use_update = 0;
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
 	byte* data_pointer;
-	uint32_t* chunk_pos = calloc(object->num_dims + 1, sizeof(uint32_t));
-	uint64_t* chunk_updates = malloc(object->num_dims*sizeof(uint64_t));
+	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	size_t actual_size; /* make sure this is non-null */
-
-	uint64_t cu, du;
-	for(int i = 0; i < object->num_dims; i++)
-	{
-		du = object->dims[i];
-		cu = object->chunked_info.chunked_dims[i] - 1;
-		for(int k = 1; k <= i; k++)
-		{
-			cu += (object->chunked_info.chunked_dims[k] - 1)*du;
-			du *= object->dims[k];
-		}
-		chunk_updates[i] = du - cu - 1;
-	}
+	int curr_max_dim = 1;
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		
+
+
 		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		chunk_end_index = MIN(findArrayPosition(node->keys[i+1].chunk_start, object->dims, object->num_dims), object->num_elems);
 		//chunk_end_index = MIN(chunk_end_index, chunk_start_index + object->chunked_info.chunk_size);
@@ -102,31 +91,29 @@ void doInflate(Data* object, TreeNode* node)
 		}
 
 		//copy over data
-
-		for(uint64_t index = chunk_start_index, db_pos = 0; index < object->num_elems && db_pos < object->chunked_info.num_chunked_dims; db_pos += object->chunked_info.chunked_dims[0])
+		memset(chunk_pos, 0 , sizeof(chunk_pos));
+		curr_max_dim = 1;
+		for(uint64_t index = chunk_start_index, db_pos = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; db_pos += object->chunked_info.chunked_dims[0])
 		{
 			placeData(object, &decompressed_data_buffer[db_pos*object->elem_size], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
 			index += object->chunked_info.chunked_dims[0];
 			chunk_pos[0] += object->chunked_info.chunked_dims[0];
-			for(int j = 0; j < object->num_dims; j++)
+			use_update = 0;
+			for(int j = 0; j < curr_max_dim; j++)
 			{
 				if(chunk_pos[j] >= object->chunked_info.chunked_dims[j])
 				{
 					chunk_pos[j] = 0;
 					chunk_pos[j+1]++;
-					index += chunk_updates[j];
+					curr_max_dim = curr_max_dim == j+1 ? curr_max_dim + 1 : curr_max_dim;
+					use_update++;
 				}
 			}
-		
+			index += object->chunked_info.chunk_update[use_update];
 		}
 
 
 	}
-
-	free(chunk_pos);
-	free(chunk_updates);
-	
-	
 	
 }
 
@@ -261,11 +248,11 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			key_address = node->address + 8 + 2 * s_block.size_of_offsets;
 			node->keys[0].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 			node->keys[0].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-			node->keys[0].chunk_start = malloc((num_chunked_dims + 1) * sizeof(uint64_t));
-			for(int j = 0; j < num_chunked_dims + 1; j++)
+			for(int j = 0; j < num_chunked_dims; j++)
 			{
-				node->keys[0].chunk_start[j] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+				node->keys[0].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
 			}
+			node->keys[0].chunk_start[num_chunked_dims] = 0;
 			
 			for(int i = 0; i < node->entries_used; i++)
 			{
@@ -284,11 +271,11 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				
 				node->keys[i + 1].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 				node->keys[i + 1].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-				node->keys[i + 1].chunk_start = malloc((num_chunked_dims + 1) * sizeof(uint64_t));
-				for(int j = 0; j < num_chunked_dims + 1; j++)
+				for(int j = 0; j < num_chunked_dims; j++)
 				{
-					node->keys[i + 1].chunk_start[j] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
 				}
+				node->keys[i + 1].chunk_start[num_chunked_dims] = 0;
 			}
 			
 			if(node->node_level >= 0)
@@ -321,15 +308,8 @@ void freeTree(TreeNode* node)
 	{
 		if(node->keys != NULL)
 		{
-			for(int i = 0; i < node->entries_used+1; i++)
-			{
-				free(node->keys[i].chunk_start);
-				node->keys[i].chunk_start = NULL;
-			}
-			
 			free(node->keys);
 			node->keys = NULL;
-			
 		}
 		
 		if(node->children != NULL)

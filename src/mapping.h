@@ -10,8 +10,10 @@
 #include <assert.h>
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
+
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
+
 #define __BYTE_ORDER    BYTE_ORDER
 #else
 #include <endian.h>
@@ -32,6 +34,7 @@ typedef uint64_t OffsetType;
 #define CLASS_LENGTH 200
 #define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
+#define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
@@ -44,10 +47,10 @@ typedef uint64_t OffsetType;
 
 
 #define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
-					"\tgetmatvar(filename,variable1,...,variableN)\n\n" \
-					"\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
-					"\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
-					"Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')\n"
+                         "\tgetmatvar(filename,variable1,...,variableN)\n\n" \
+                         "\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
+                         "\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
+                         "Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
@@ -70,7 +73,7 @@ typedef struct
 
 typedef struct
 {
-	char* variable_names[MAX_Q_LENGTH];
+	char *variable_names[MAX_Q_LENGTH];
 	int front;
 	int back;
 	int length;
@@ -88,7 +91,7 @@ typedef struct
 
 typedef struct
 {
-	byte* map_start;
+	byte *map_start;
 	uint64_t bytes_mapped;
 	OffsetType offset;
 	int used;
@@ -144,7 +147,7 @@ typedef enum
 typedef enum
 {
 	NOT_AVAILABLE, DEFLATE, SHUFFLE, FLETCHER32, SZIP, NBIT, SCALEOFFSET
-}FilterType;
+} FilterType;
 
 #ifdef LITTLE_ENDIAN
 #undef LITTLE_ENDIAN
@@ -165,7 +168,7 @@ typedef struct
 {
 	FilterType filter_id;
 	uint16_t num_client_vals;
-	uint32_t* client_data;
+	uint32_t *client_data;
 	uint8_t optional_flag;
 } Filter;
 
@@ -175,23 +178,24 @@ typedef struct
 	Filter filters[MAX_NUM_FILTERS];
 	uint8_t num_chunked_dims;
 	uint32_t chunk_size;
-	uint32_t* chunked_dims;
+	uint32_t chunked_dims[HDF5_MAX_DIMS + 1];
+	uint64_t chunk_update[HDF5_MAX_DIMS];
 } ChunkedInfo;
 
 typedef struct
 {
 	int is_mx_used;
-	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
-	int8_t* i8_data;
-	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
-	int16_t* i16_data;
-	uint32_t* ui32_data;
-	int32_t* i32_data;
-	uint64_t* ui64_data;
-	int64_t* i64_data;
-	float* single_data;
-	double* double_data;
-	uint64_t* udouble_data;
+	uint8_t *ui8_data; //note that ui8 stores logicals and ui8s
+	int8_t *i8_data;
+	uint16_t *ui16_data; //note that ui16 stores strings, and ui16s
+	int16_t *i16_data;
+	uint32_t *ui32_data;
+	int32_t *i32_data;
+	uint64_t *ui64_data;
+	int64_t *i64_data;
+	float *single_data;
+	double *double_data;
+	uint64_t *udouble_data;
 } DataArrays;
 
 typedef struct data_ Data;
@@ -204,20 +208,20 @@ struct data_
 	char matlab_class[CLASS_LENGTH];
 	ChunkedInfo chunked_info;
 	
-	uint32_t* dims;
+	uint32_t dims[HDF5_MAX_DIMS + 1];
 	uint8_t num_dims;
 	uint32_t num_elems;
 	size_t elem_size;
 	
 	uint8_t layout_class;
 	uint64_t data_address;
-	char* data_pointer;
+	char *data_pointer;
 	DataArrays data_arrays;
 	
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;
 	
-	Data** sub_objects;
+	Data **sub_objects;
 	uint32_t num_sub_objs;
 };
 
@@ -235,7 +239,7 @@ typedef struct
 {
 	uint32_t size;
 	uint32_t filter_mask;
-	uint64_t* chunk_start;
+	uint64_t chunk_start[HDF5_MAX_DIMS + 1];
 	uint64_t local_heap_offset;
 } Key;
 
@@ -247,82 +251,130 @@ struct tree_node_
 	LeafType leaf_type;
 	int16_t node_level;
 	uint16_t entries_used;
-	Key* keys;
-	TreeNode* children;
-	TreeNode* left_sibling;
-	TreeNode* right_sibling;
+	Key *keys;
+	TreeNode *children;
+	TreeNode *left_sibling;
+	TreeNode *right_sibling;
 };
 
 
 //fileHelper.c
 Superblock getSuperblock(void);
-byte* findSuperblock(void);
-Superblock fillSuperblock(byte* superblock_pointer);
-byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
-void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
-void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
-void freeDataObjects(Data** objects);
-void freeDataObjectTree(Data* super_object);
+
+byte *findSuperblock(void);
+
+Superblock fillSuperblock(byte *superblock_pointer);
+
+byte *navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
+
+void readTreeNode(byte *tree_pointer, Addr_Trio this_trio);
+
+void readSnod(byte *snod_pointer, byte *heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
+
+void freeDataObjects(Data **objects);
+
+void freeDataObjectTree(Data *super_object);
+
 void endHooks(void);
+
 void freeMap(int map_index);
 
 
 //numberHelper.c
 double convertHexToDouble(uint64_t hex);
+
 float convertHexToSingle(uint32_t hex);
+
 int roundUp(int numToRound);
-uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
-void indToSub(int index, const uint32_t* dims, uint32_t* indices);
-void reverseBytes(byte* data_pointer, size_t num_elems);
+
+uint64_t getBytesAsNumber(byte *chunk_start, size_t num_bytes, ByteOrder endianness);
+
+void indToSub(int index, const uint32_t *dims, uint32_t *indices);
+
+void reverseBytes(byte *data_pointer, size_t num_elems);
 
 
 //queue.c
 void enqueueTrio(Addr_Trio trio);
+
 void flushQueue();
+
 Addr_Trio dequeueTrio();
+
 void priorityEnqueueTrio(Addr_Trio trio);
+
 void flushHeaderQueue();
+
 Object dequeueObject();
+
 void priorityEnqueueObject(Object obj);
+
 void enqueueObject(Object obj);
+
 void flushVariableNameQueue();
-char* dequeueVariableName();
-char* peekVariableName();
-void enqueueVariableName(char* variable_name);
+
+char *dequeueVariableName();
+
+char *peekVariableName();
+
+void enqueueVariableName(char *variable_name);
 
 //readMessage.c
-void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataSpaceMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+
+void readDataTypeMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+
+void readDataLayoutMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+
+void readDataStoragePipelineMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
+
+void readAttributeMessage(Data *object, byte *msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
-Data* findDataObject(const char* filename, const char variable_name[]);
-Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
+Data *findDataObject(const char *filename, const char variable_name[]);
+
+Data **getDataObjects(const char *filename, const char *variable_names[], int num_names);
+
 void findHeaderAddress(const char variable_name[]);
-void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
-Data* organizeObjects(Data** objects, int* starting_pos);
-void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
-void allocateSpace(Data* object);
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
-void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
+
+void collectMetaData(Data *object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
+
+Data *organizeObjects(Data **objects, int *starting_pos);
+
+void placeInSuperObject(Data *super_object, Data **objects, int num_total_objs, int *index);
+
+void allocateSpace(Data *object);
+
+void placeData(Data *object, byte *data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
+			ByteOrder data_byte_order);
+
+void initializeObject(Data *object);
+
+uint16_t interpretMessages(Data *object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
+					  uint16_t num_msgs, uint16_t repeat_tracker);
+
 void parseHeaderTree(void);
 //void deepCopy(Data* dest, Data* source);
 
 //getPageSize.c
 size_t getPageSize(void);
+
 size_t getAllocGran(void);
 
 //chunkedData.c
-void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims);
-void fillNode(TreeNode* node, uint64_t num_chunked_dims);
-void decompressChunk(Data* object, TreeNode* node);
-void doInflate(Data* object, TreeNode* node);
-void freeTree(TreeNode* node);
-void getChunkedData(Data* object);
-uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
+void fillChunkTree(TreeNode *root, uint64_t num_chunked_dims);
+
+void fillNode(TreeNode *node, uint64_t num_chunked_dims);
+
+void decompressChunk(Data *object, TreeNode *node);
+
+void doInflate(Data *object, TreeNode *node);
+
+void freeTree(TreeNode *node);
+
+void getChunkedData(Data *object);
+
+uint64_t findArrayPosition(const uint64_t *chunk_start, const uint32_t *array_dims, uint8_t num_chunked_dims);
 
 MemMap maps[NUM_MAPS];
 Addr_Q queue;

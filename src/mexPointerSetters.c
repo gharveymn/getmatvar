@@ -337,12 +337,10 @@ const char** getFieldNames(Data* object)
 mwSize* makeObjDims(const uint32_t* dims, const mwSize num_obj_dims)
 {
 	
-	//ie. flip them around...
-	
 	mwSize* obj_dims = malloc(num_obj_dims * sizeof(mwSize));
 	for(int i = 0; i < num_obj_dims; i++)
 	{
-		obj_dims[i] = (mwSize) dims[num_obj_dims - 1 - i];
+		obj_dims[i] = (mwSize) dims[i];
 	}
 	return obj_dims;
 	

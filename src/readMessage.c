@@ -5,12 +5,6 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
-	if(object->dims != NULL)
-	{
-		free(object->dims);
-	}
-	object->dims = malloc((object->num_dims + 1) * sizeof(uint32_t));
-	//uint64_t bytes_read = 0;
 	
 	for(int i = 0; i < object->num_dims; i++)
 	{
@@ -153,7 +147,6 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
-			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
@@ -166,6 +159,20 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			{
 				object->chunked_info.chunk_size *= object->chunked_info.chunked_dims[i];
 			}
+
+			uint64_t cu, du;
+			for(int i = 0; i < object->num_dims; i++)
+			{
+				du = 1;
+				cu = 0;
+				for(int k = 0; k < i + 1; k++)
+				{
+					cu += (object->chunked_info.chunked_dims[k] - 1)*du;
+					du *= object->dims[k];
+				}
+				object->chunked_info.chunk_update[i] = du - cu - 1;
+			}
+
 			break;
 		default:
 			readMXError("getmatvar:internalError", "Unknown data layout class\n\n", "");
