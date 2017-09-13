@@ -170,10 +170,8 @@ void initializeObject(Data* object)
 	object->data_arrays.single_data = NULL;
 	object->data_arrays.double_data = NULL;
 	object->data_arrays.udouble_data = NULL;
-	object->dims = NULL;
 	
 	object->chunked_info.num_filters = 0;
-	object->chunked_info.chunked_dims = NULL;
 	object->chunked_info.num_chunked_dims = 0;
 	
 	object->sub_objects = NULL;
@@ -385,7 +383,6 @@ void allocateSpace(Data* object)
 			}
 			object->num_elems = 1;
 			object->num_dims = 2;
-			object->dims = malloc(3 * sizeof(int));
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
