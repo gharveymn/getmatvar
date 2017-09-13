@@ -63,16 +63,17 @@ void doInflate(Data* object, TreeNode* node)
 	size_t actual_size; /* make sure this is non-null */
 
 	uint64_t cu, du;
+	chunk_updates[0] = object->dims[0] - object->chunked_info.chunked_dims[0];
 	for(int i = 0; i < object->num_dims; i++)
 	{
 		du = object->dims[i];
-		cu = object->chunked_info.chunked_dims[i];
-		for(int j = i - 1; j >= 0; j--)
+		cu = object->chunked_info.chunked_dims[i] - 1;
+		for(int k = 1; k <= i; k++)
 		{
-			du *= object->dims[j];
-			cu *= object->chunked_info.chunked_dims[j];
+			cu += (object->chunked_info.chunked_dims[k] - 1)*du;
+			du *= object->dims[k];
 		}
-		chunk_updates[i] = du - cu;
+		chunk_updates[i] = du - cu - 1;
 	}
 	
 	for(int i = 0; i < node->entries_used; i++)
@@ -102,9 +103,10 @@ void doInflate(Data* object, TreeNode* node)
 		}
 
 		//copy over data
-		for(int index = chunk_start_index; index < chunk_end_index;)
+
+		for(int index = chunk_start_index, db_pos = 0; index < chunk_end_index; db_pos += object->chunked_info.chunked_dims[0])
 		{
-			placeData(object, &decompressed_data_buffer[0], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
+			placeData(object, &decompressed_data_buffer[db_pos*object->elem_size], index, index + object->chunked_info.chunked_dims[0], object->elem_size, object->byte_order);
 			index += object->chunked_info.chunked_dims[0];
 			chunk_pos[0] += object->chunked_info.chunked_dims[0];
 			for(int j = 0; j < object->num_dims; j++)
