@@ -12,7 +12,7 @@ memvals = rand(numtests+1,1);
 lents = 0;
 userview = memory;
 disp(userview.MemUsedMATLAB)
-memvals(1) = userview.MemUsedMATLAB;
+%memvals(1) = userview.MemUsedMATLAB;
 for i = 1:numtests
 	
 	getmatvar(file, vars{:});
@@ -20,12 +20,13 @@ for i = 1:numtests
 	timestr = sprintf('%d/%d',i,numtests);
 	fprintf([repmat('\b',1,lents) timestr]);
 	lents = numel(timestr);
-	userview = memory;
-	memvals(i+1) = userview.MemUsedMATLAB;
+	%userview = memory;
+	%memvals(i+1) = userview.MemUsedMATLAB;
 end
 fprintf('\n');
 userview = memory;
 disp(userview.MemUsedMATLAB)
-plot(memvals);
+%plot(memvals);
+%xlim([0,numtests]);
 clear file vars i numtests userview
 

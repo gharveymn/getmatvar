@@ -32,6 +32,7 @@ void enqueueObject(Object obj)
 	}
 	header_queue.objects[header_queue.back].parent_obj_header_address = obj.parent_obj_header_address;
 	header_queue.objects[header_queue.back].this_obj_header_address = obj.this_obj_header_address;
+	header_queue.objects[header_queue.back].name_offset = obj.name_offset;
 	strcpy(header_queue.objects[header_queue.back].name, obj.name);
 	header_queue.objects[header_queue.back].sub_tree_address = obj.sub_tree_address;
 	header_queue.objects[header_queue.back].this_tree_address = obj.this_tree_address;
@@ -91,7 +92,7 @@ void priorityEnqueueObject(Object obj)
 	}
 	if(header_queue.front - 1 < 0)
 	{
-		
+		header_queue.objects[MAX_Q_LENGTH - 1].name_offset = obj.name_offset;
 		header_queue.objects[MAX_Q_LENGTH - 1].parent_obj_header_address = obj.parent_obj_header_address;
 		header_queue.objects[MAX_Q_LENGTH - 1].this_obj_header_address = obj.this_obj_header_address;
 		strcpy(header_queue.objects[MAX_Q_LENGTH - 1].name, obj.name);
@@ -102,6 +103,7 @@ void priorityEnqueueObject(Object obj)
 	}
 	else
 	{
+		header_queue.objects[header_queue.front - 1].name_offset = obj.name_offset;
 		header_queue.objects[header_queue.front - 1].parent_obj_header_address = obj.parent_obj_header_address;
 		header_queue.objects[header_queue.front - 1].this_obj_header_address = obj.this_obj_header_address;
 		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
@@ -136,6 +138,7 @@ Addr_Trio dequeueTrio()
 Object dequeueObject()
 {
 	Object obj;
+	obj.name_offset = header_queue.objects[header_queue.front].name_offset;
 	obj.parent_obj_header_address = header_queue.objects[header_queue.front].parent_obj_header_address;
 	obj.this_obj_header_address = header_queue.objects[header_queue.front].this_obj_header_address;
 	strcpy(obj.name, header_queue.objects[header_queue.front].name);

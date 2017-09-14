@@ -3,7 +3,7 @@ cmake-build-release/
 cmake-build-debug/
 buildmingw/*
 build/*
-!*build_script.bat
+!*build.bat
 !*rebuild.bat
 .vs
 *.mexw64

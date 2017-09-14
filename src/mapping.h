@@ -41,7 +41,7 @@ typedef uint64_t OffsetType;
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
 #define NUM_TREE_MAPS 4
-#define NUM_HEAP_MAPS 1
+#define NUM_HEAP_MAPS 2
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
