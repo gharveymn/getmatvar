@@ -124,7 +124,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
 	{
 		these_maps[map_index].used = FALSE;
-		readMXError("getmatvar:internalError", "mmap() unsuccessful int navigateTo(). Check errno %d\n\n", errno);
+		readMXError("getmatvar:internalError", "mmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
 	}
 	
 	map_queue_fronts[map_type] = map_queue_fronts[map_type] >= map_nums[map_type] - 1 ? 0 : map_queue_fronts[map_type] + 1;
@@ -243,7 +243,7 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 				parseHeaderTree();
 				snod_pointer = navigateTo(this_trio.tree_address, default_bytes, TREE);
 				heap_pointer = navigateTo(this_trio.heap_address, default_bytes, HEAP);
-				
+				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 			}
 			else if(cache_type == 2)
 			{

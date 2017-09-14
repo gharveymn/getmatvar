@@ -46,8 +46,8 @@ void decompressChunk(Data* object, TreeNode* node)
 
 void doInflate(Data* object, TreeNode* node)
 {
+	//TODO we could do some multithreading here
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
-	
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
@@ -87,7 +87,7 @@ void doInflate(Data* object, TreeNode* node)
 		uint64_t db_pos = 0;
 		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; anchor = db_pos)
 		{
-			for (;db_pos < anchor + object->chunked_info.chunked_dims[0]; db_pos++, index++)
+			for (;db_pos < anchor + object->chunked_info.chunked_dims[0] && index < object->num_elems; db_pos++, index++)
 			{
 				index_map[db_pos] = index;
 			}

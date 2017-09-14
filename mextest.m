@@ -1,7 +1,9 @@
 addpath('res')
 addpath('bin')
-file = 'res/t.mat';
-vars = {'t'};
+%file = 'res/t.mat';
+%vars = {'t'};
+file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
+vars = {'extPar'};
 
 %userview = memory;
 %disp(userview.MemUsedMATLAB)
