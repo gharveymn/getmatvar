@@ -154,10 +154,10 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4, META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
-			object->chunked_info.chunk_size = 1;
+			object->chunked_info.num_chunked_elems = 1;
 			for(int i = 0; i < object->chunked_info.num_chunked_dims; i++)
 			{
-				object->chunked_info.chunk_size *= object->chunked_info.chunked_dims[i];
+				object->chunked_info.num_chunked_elems *= object->chunked_info.chunked_dims[i];
 			}
 
 			uint64_t cu, du;

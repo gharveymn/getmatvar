@@ -42,6 +42,8 @@ typedef uint64_t OffsetType;
 #define MAX_MALLOC_VARS 1000
 #define NUM_TREE_MAPS 4
 #define NUM_HEAP_MAPS 2
+#define ERROR_BUFFER_SIZE 5000
+#define WARNING_BUFFER_SIZE 1000
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
@@ -180,7 +182,7 @@ typedef struct
 	uint8_t num_filters;
 	Filter filters[MAX_NUM_FILTERS];
 	uint8_t num_chunked_dims;
-	uint32_t chunk_size;
+	uint32_t num_chunked_elems;
 	uint32_t chunked_dims[HDF5_MAX_DIMS + 1];
 	uint64_t chunk_update[HDF5_MAX_DIMS];
 } ChunkedInfo;
@@ -312,7 +314,7 @@ void findHeaderAddress(const char variable_name[]);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
-void allocateSpace(Data* object);
+errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
 			ByteOrder data_byte_order);
 void initializeMaps(void);
@@ -331,11 +333,11 @@ size_t getAllocGran(void);
 
 //chunkedData.c
 
-void fillNode(TreeNode* node, uint64_t num_chunked_dims);
-void decompressChunk(Data* object, TreeNode* node);
-void doInflate(Data* object, TreeNode* node);
+errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
+errno_t decompressChunk(Data* object, TreeNode* node);
+errno_t doInflate(Data* object, TreeNode* node);
 void freeTree(TreeNode* node);
-void getChunkedData(Data* object);
+errno_t getChunkedData(Data* object);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
 MemMap tree_maps[NUM_TREE_MAPS];

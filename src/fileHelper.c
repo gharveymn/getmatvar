@@ -25,7 +25,7 @@ byte* findSuperblock(void)
 	
 	if(chunk_address >= alloc_gran)
 	{
-		readMXError("getmatvar:internalError", "Couldn't find superblock in first 8 512-byte chunks.\n\n");
+		readMXError("getmatvar:superblockNotFoundError", "Couldn't find superblock in first 8 512-byte chunks.\n\n");
 	}
 	
 	return chunk_start;
@@ -78,7 +78,7 @@ void freeMap(MemMap map)
 	map.used = FALSE;
 	if(munmap(map.map_start, map.bytes_mapped) != 0)
 	{
-		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap().\n\n");
+		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 	}
 }
 
@@ -124,7 +124,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
 	{
 		these_maps[map_index].used = FALSE;
-		readMXError("getmatvar:internalError", "mmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n", strerror(errno));
 	}
 	
 	map_queue_fronts[map_type] = map_queue_fronts[map_type] >= map_nums[map_type] - 1 ? 0 : map_queue_fronts[map_type] + 1;
@@ -201,7 +201,7 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
 		objects[i].this_obj_header_address =
 			   getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		strcpy(objects[i].name, heap_data_segment_pointer + objects[i].name_offset);
+		strcpy(objects[i].name, (char*)(heap_data_segment_pointer + objects[i].name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i].parent_tree_address = parent_trio.tree_address;
 		objects[i].this_tree_address = this_trio.tree_address;

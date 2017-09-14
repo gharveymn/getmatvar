@@ -3,9 +3,9 @@
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 
-	if(nrhs < 2)
+	if(nrhs < 1)
 	{
-		readMXError("getmatvar:invalidNumInputs", "At least two input arguments are required.\n\n", "");
+		readMXError("getmatvar:invalidNumInputs", "At least one input arguments are required.\n\n", "");
 	}
 	else if(nlhs > 1)
 	{
@@ -28,19 +28,33 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		{
 			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n", "");
 		}
-
-		const char** full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
-		for(int i = 0; i < nrhs - 1; i++)
+		
+		const char** full_variable_names;
+		int num_vars;
+		if(nrhs > 1)
 		{
-			full_variable_names[i] = mxArrayToString(prhs[i + 1]);
+			full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
+			for (int i = 0; i < nrhs - 1; i++)
+			{
+				full_variable_names[i] = mxArrayToString(prhs[i + 1]);
+			}
+			full_variable_names[nrhs - 1] = NULL;
+			num_vars = nrhs-1;
 		}
-		full_variable_names[nrhs-1] = NULL;
+		else
+		{
+			full_variable_names = malloc(2*sizeof(char*));
+			full_variable_names[0] = "\0";
+			full_variable_names[1] = NULL;
+			num_vars = 1;
+		}
 
-		Data** error_objects = makeReturnStructure(plhs, nrhs - 1, full_variable_names, filename);
+		Data** error_objects = makeReturnStructure(plhs, num_vars, full_variable_names, filename);
 		if(error_objects != NULL)
 		{
-			char* err_id = error_objects[0]->name;
-			char* err_string = error_objects[0]->matlab_class;
+			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
+			strcpy(err_id,error_objects[0]->name);
+			strcpy(err_string,error_objects[0]->matlab_class);
 			free(full_variable_names);
 			freeDataObjects(error_objects);
 			readMXError(err_id, err_string);
@@ -56,62 +70,61 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 Data** makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* full_variable_names[], const char* filename)
 {
-	
-	char** varnames = malloc(num_elems*sizeof(char*));
 
-	for (mwIndex i = 0; i < num_elems; i++)
-	{
-		varnames[i] = malloc(NAME_LENGTH*sizeof(char));
-		char* last_delimit = strrchr(full_variable_names[i], '.');
-		if (last_delimit == NULL)
-		{
-			strcpy(varnames[i], full_variable_names[i]);
-		}
-		else
-		{
-			strcpy(varnames[i], last_delimit + 1);
-		}
-	}
+//	for (mwIndex i = 0; i < num_elems; i++)
+//	{
+//		char* last_delimit = strrchr(full_variable_names[i], '.');
+//		if (last_delimit == NULL)
+//		{
+//			strcpy(varnames[i], full_variable_names[i]);
+//		}
+//		else
+//		{
+//			strcpy(varnames[i], last_delimit + 1);
+//		}
+//	}
 
-	mwSize ret_struct_dims[1] = { 1 };
-
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_elems, varnames);
-	#pragma GCC diagnostic pop
+	mwSize ret_struct_dims[1] = {1};
 	
 	fprintf(stderr,"Fetching the objects... ");
 	Data** objects = getDataObjects(filename, full_variable_names, num_elems);
 	if((ERROR & objects[0]->type) == ERROR)
 	{
-		for(mwIndex i = 0; i < num_elems; i++)
-		{
-			free(varnames[i]);
-		}
-		free(varnames);
 		return objects;
 	}
 	fprintf(stderr,"success.\n");
 	
-	Data** pseudo_object = malloc(sizeof(Data*));
-	
-	int starting_pos = 0;
-	for(mwIndex i = 0; i < num_elems; i++)
+	Data** super_objects = malloc(MAX_OBJS*sizeof(Data*));
+	char** varnames = malloc(MAX_OBJS*sizeof(char*));
+	int starting_pos = 0, num_objs = 0;
+	for (;num_objs < MAX_OBJS; num_objs++)
 	{
-		fprintf(stderr,"Organizing... ");
-		pseudo_object[0] = organizeObjects(objects, &starting_pos);
-		fprintf(stderr,"success.\n");
-		fprintf(stderr,"Creating the mx structure... ");
-		makeSubstructure(uberStructure[0], 1, pseudo_object, STRUCT);
-		fprintf(stderr,"success.\n");
+		varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
+		super_objects[num_objs] = organizeObjects(objects, &starting_pos);
+		if (super_objects[num_objs] == NULL)
+		{
+			break;
+		}
+		else
+		{
+			strcpy(varnames[num_objs], super_objects[num_objs]->name);
+		}
+	}
+
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
+	#pragma GCC diagnostic pop
+	
+	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT);
+	
+	freeDataObjects(objects);
+
+	free(super_objects);
+	for (int i = 0; i < num_objs; i++)
+	{
 		free(varnames[i]);
 	}
-	
-	fprintf(stderr,"Freeing the data objects... ");
-	freeDataObjects(objects);
-	fprintf(stderr,"success.\n");
-
-	free(pseudo_object);
 	free(varnames);
 
 	fprintf(stderr,"\nProgram exited successfully.\n");
@@ -199,7 +212,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 void readMXError(const char error_id[], const char error_message[], ...)
 {
 	
-	char message_buffer[1000];
+	char message_buffer[ERROR_BUFFER_SIZE];
 
 	va_list va;
 	va_start(va, error_message);
@@ -213,7 +226,7 @@ void readMXError(const char error_id[], const char error_message[], ...)
 
 void readMXWarn(const char warn_id[], const char warn_message[], ...)
 {
-	char message_buffer[1000];
+	char message_buffer[WARNING_BUFFER_SIZE];
 
 	va_list va;
 	va_start(va, warn_message);

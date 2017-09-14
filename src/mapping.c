@@ -1,23 +1,6 @@
 #include "getmatvar_.h"
 
 
-Data* findDataObject(const char* filename, const char variable_name[])
-{
-	Data** objects = getDataObjects(filename, &variable_name, 1);
-	Data* hi_objects = organizeObjects(objects, 0);
-	
-	//free the end object because we aren't going to be using the linear object freeing system
-	int i = 0;
-	while((DELIMITER & objects[i]->type) != DELIMITER)
-	{
-		i++;
-	}
-	free(objects[i]);
-	free(objects);
-	return hi_objects;
-}
-
-
 Data** getDataObjects(const char* filename, const char* variable_names[], int num_names)
 {
 	byte* header_pointer;
@@ -53,8 +36,8 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	{
 		objects[0] = malloc(sizeof(Data));
 		objects[0]->type = ERROR | END_SENTINEL;
-		sprintf(objects[0]->name, "getmatvar:internalError");
-		sprintf(objects[0]->matlab_class, "lseek failed, check errno %d\n\n", errno);
+		sprintf(objects[0]->name, "getmatvar:lseekFailedError");
+		sprintf(objects[0]->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
 	}
 	
@@ -106,12 +89,14 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 			objects[num_objs]->this_obj_address = obj.this_obj_header_address;
 			collectMetaData(objects[num_objs], header_address, num_msgs, header_length);
 			
+			//this block handles errors and sets up signals for controlled shutdown
 			if(objects[num_objs]->type == ERROR)
 			{
 				objects[0]->type = ERROR;
 				strcpy(objects[0]->name, objects[num_objs]->name);
 				strcpy(objects[0]->matlab_class, objects[num_objs]->matlab_class);
 				
+				//note this, num_objs is now the end sentinel
 				num_objs++;
 				
 				objects[num_objs] = malloc(sizeof(Data));
@@ -225,13 +210,13 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	
 	if(object->type == ERROR)
 	{
-		sprintf(object->name, "getmatvar:internalError");
+		sprintf(object->name, "getmatvar:unknownDataTypeError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 		return;
 	}
 	
 	//allocate space for data
-	allocateSpace(object);
+	if(allocateSpace(object) != 0){return;}
 	
 	
 	//fetch data
@@ -240,12 +225,21 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		case 0:
 		case 1:
 			//compact storage or contiguous storage
+			//placeData will just segfault if it has an error, ie. if this encounters an error something is very wrong
 			placeData(object, object->data_pointer, 0, object->num_elems, object->elem_size, object->byte_order);
 			break;
 		case 2:
 			//chunked storage
-			getChunkedData(object);
+			if(getChunkedData(object) != 0)
+			{
+				return;
+			}
 			break;
+		default:
+			object->type = ERROR;
+			sprintf(object->name, "getmatvar:unknownLayoutClassError");
+			sprintf(object->matlab_class, "Unknown layout class encountered.\n\n");
+			return;
 	}
 	
 	//if we have encountered a cell array, queue up headers for its elements
@@ -350,9 +344,9 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 }
 
 
-void allocateSpace(Data* object)
+errno_t allocateSpace(Data* object)
 {
-	//why not just put it into one array and cast it later? To save memory.
+	//maybe figure out a way to just pass this to a single array
 	switch(object->type)
 	{
 		case INT8:
@@ -403,11 +397,15 @@ void allocateSpace(Data* object)
 		case NULLTYPE:
 		default:
 			//this shouldn't happen
-			readMXError("getmatvar:thisShouldntHappen", "Allocate space ran with an NULLTYPE for some reason.\n\n");
-			//object->type = NULLTYPE;
-			//sprintf(object->name, "getmatvar:internalError");
-			//sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
+			object->type = ERROR;
+			sprintf(object->name, "getmatvar:thisShouldntHappen");
+			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE for some reason.\n\n");
+			return 1;
+			
 	}
+	
+	return 0;
+	
 }
 
 
@@ -582,18 +580,29 @@ void findHeaderAddress(const char variable_name[])
 	default_bytes = (uint64_t)getAllocGran();
 	default_bytes = default_bytes < file_size ? default_bytes : file_size;
 	char varname[NAME_LENGTH];
-	strcpy(varname, variable_name);
-	variable_found = FALSE;
 	
-	flushVariableNameQueue();
-	token = strtok(varname, delim);
-	while(token != NULL)
+	if(strcmp(variable_name,"\0") == 0)
 	{
-		enqueueVariableName(token);
-		token = strtok(NULL, delim);
+		flushVariableNameQueue();
+		enqueueVariableName("\0");
+		variable_found = TRUE;
+	}
+	else
+	{
+		strcpy(varname, variable_name);
+		variable_found = FALSE;
+		
+		flushVariableNameQueue();
+		token = strtok(varname, delim);
+		while(token != NULL)
+		{
+			enqueueVariableName(token);
+			token = strtok(NULL, delim);
+		}
 	}
 	
 	parseHeaderTree();
+	
 }
 
 
@@ -610,10 +619,12 @@ void parseHeaderTree(void)
 	{
 		tree_pointer = navigateTo(queue.trios[queue.front].tree_address, default_bytes, TREE);
 		heap_pointer = navigateTo(queue.trios[queue.front].heap_address, default_bytes, HEAP);
-		if(strncmp("HEAP", (char*)heap_pointer, 4) != 0)
-		{
-			readMXError("getmatvar:internalError", "Incorrect heap_pointer address in queue.\n\n", "");
-		}
+		
+		//test block, remove for release
+//		if(strncmp("HEAP", (char*)heap_pointer, 4) != 0)
+//		{
+//			readMXError("getmatvar:internalError", "Incorrect heap_pointer address in queue.\n\n", "");
+//		}
 		
 		if(strncmp("TREE", (char*)tree_pointer, 4) == 0)
 		{
@@ -632,7 +643,7 @@ void parseHeaderTree(void)
 Data* organizeObjects(Data** objects, int* starting_pos)
 {
 	
-	if((DELIMITER & objects[*starting_pos]->type) == DELIMITER)
+	if(*starting_pos > 0 && (END_SENTINEL & objects[*starting_pos-1]->type) == END_SENTINEL)
 	{
 		return NULL;
 	}
