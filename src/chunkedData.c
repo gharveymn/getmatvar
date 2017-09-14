@@ -13,13 +13,9 @@ void getChunkedData(Data* object)
 {
 	TreeNode root;
 	root.address = object->data_address;
-	fillChunkTree(&root, object->chunked_info.num_chunked_dims);
+	fillNode(&root, object->chunked_info.num_chunked_dims);
 	decompressChunk(object, &root);
 	freeTree(&root);
-	free(root.left_sibling);
-	root.left_sibling = NULL;
-	free(root.right_sibling);
-	root.right_sibling = NULL;
 }
 
 void decompressChunk(Data* object, TreeNode* node)
@@ -52,27 +48,21 @@ void doInflate(Data* object, TreeNode* node)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	
-	uint64_t chunk_start_index = 0;
 	
-	int ret;
-	uint8_t use_update = 0, curr_max_dim;
-	uint64_t db_pos = 0;
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
+	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = { 0 };
 	uint64_t index_map[CHUNK_BUFFER_SIZE];
-	byte* data_pointer;
-	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
-	size_t actual_size; /* make sure this is non-null */
+	const size_t actual_size = object->chunked_info.chunk_size*object->elem_size; /* make sure this is non-null */
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 
-		chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
+		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 
-		data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
-		actual_size = CHUNK_BUFFER_SIZE;
-		
-		ret = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, CHUNK_BUFFER_SIZE, &actual_size);
+		const byte* data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
+
+		const int ret = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
 		switch(ret)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -93,8 +83,8 @@ void doInflate(Data* object, TreeNode* node)
 
 		//copy over data
 		memset(chunk_pos, 0 , sizeof(chunk_pos));
-		curr_max_dim = 2;
-		db_pos = 0;
+		uint8_t curr_max_dim = 2;
+		uint64_t db_pos = 0;
 		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; anchor = db_pos)
 		{
 			for (;db_pos < anchor + object->chunked_info.chunked_dims[0]; db_pos++, index++)
@@ -102,7 +92,7 @@ void doInflate(Data* object, TreeNode* node)
 				index_map[db_pos] = index;
 			}
 			chunk_pos[1]++;
-			use_update = 0;
+			uint8_t use_update = 0;
 			for(uint8_t j = 1; j < curr_max_dim; j++)
 			{
 				if(chunk_pos[j] == object->chunked_info.chunked_dims[j])
@@ -125,13 +115,12 @@ void doInflate(Data* object, TreeNode* node)
 uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_dims, uint8_t num_chunked_dims)
 {
 	uint64_t array_pos = 0;
-	uint64_t temp;
 	for(int i = 0; i < num_chunked_dims; i++)
 	{
 		//[18,4] in array size [200,100]
 		//3*200 + 17
 		
-		temp = coordinates[i];
+		uint64_t temp = coordinates[i];
 		for(int j = i - 1; j >= 0; j--)
 		{
 			temp *= array_dims[j];
@@ -139,25 +128,6 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_di
 		array_pos += temp;
 	}
 	return array_pos;
-}
-
-
-void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims)
-{
-	fillNode(root, num_chunked_dims);
-	
-	//for the sake of completeness
-	root->left_sibling = malloc(sizeof(TreeNode));
-	root->left_sibling->address = UNDEF_ADDR;
-	root->left_sibling->keys = NULL;
-	root->left_sibling->children = NULL;
-	fillNode(root->left_sibling, num_chunked_dims);
-	
-	root->right_sibling = malloc(sizeof(TreeNode));
-	root->right_sibling->address = UNDEF_ADDR;
-	root->right_sibling->keys = NULL;
-	root->right_sibling->children = NULL;
-	fillNode(root->right_sibling, num_chunked_dims);
 }
 
 
@@ -173,23 +143,19 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		node->left_sibling = NULL;
-		node->right_sibling = NULL;
 		node->node_level = -2;
 		return;
 	}
 	
 	byte* tree_pointer = navigateTo(node->address, 8, TREE);
 	
-	if(strncmp(tree_pointer, "TREE", 4) != 0)
+	if(strncmp((char*)tree_pointer, "TREE", 4) != 0)
 	{
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		//node->left_sibling = NULL;
-		//node->right_sibling = NULL;
 		node->node_level = -1;
-		if(strncmp(tree_pointer, "SNOD", 4) == 0)
+		if(strncmp((char*)tree_pointer, "SNOD", 4) == 0)
 		{
 			//(from group node)
 			node->leaf_type = SYMBOL;
@@ -207,11 +173,6 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	
 	node->keys = malloc((node->entries_used + 1) * sizeof(Key));
 	node->children = malloc(node->entries_used * sizeof(TreeNode));
-	
-//	for(int k = 0; k < node->entries_used + 1; k++)
-//	{
-//		node->keys[k].chunk_start = malloc((num_chunked_dims + 1) * sizeof(uint64_t));
-//	}
 	
 	uint64_t key_size;
 	uint64_t bytes_needed;
@@ -283,21 +244,6 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				node->keys[i + 1].chunk_start[num_chunked_dims] = 0;
 			}
 			
-			if(node->node_level >= 0)
-			{
-				node->children[0].left_sibling = malloc(sizeof(TreeNode));
-				node->children[0].left_sibling->address = UNDEF_ADDR;
-				node->children[0].left_sibling->keys = NULL;
-				node->children[0].left_sibling->children = NULL;
-				fillNode(node->children[0].left_sibling, num_chunked_dims);
-				
-				node->children[node->entries_used-1].right_sibling = malloc(sizeof(TreeNode));
-				node->children[node->entries_used-1].right_sibling->address = UNDEF_ADDR;
-				node->children[node->entries_used-1].right_sibling->keys = NULL;
-				node->children[node->entries_used-1].right_sibling->children = NULL;
-				fillNode(node->children[node->entries_used-1].right_sibling, num_chunked_dims);
-			}
-			
 			break;
 		default:
 			readMXError("getmatvar:internalInvalidNodeType", "Invalid node type in fillNode()\n\n", "");
@@ -319,10 +265,6 @@ void freeTree(TreeNode* node)
 		
 		if(node->children != NULL)
 		{
-			free(node->children[0].left_sibling);
-			node->children[0].left_sibling = NULL;
-			free(node->children[node->entries_used-1].right_sibling);
-			node->children[node->entries_used-1].right_sibling = NULL;
 			for(int i = 0; i < node->entries_used; i++)
 			{
 				freeTree(&node->children[i]);

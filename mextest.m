@@ -12,9 +12,9 @@ toc
 %disp(userview.MemUsedMATLAB)
 
 % using load function
-%tic
-%load(file);
-%toc
+tic
+load(file);
+toc
 
 % using matlab's partial loader
 % tic

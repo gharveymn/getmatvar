@@ -7,7 +7,7 @@ void reverseBytes(byte* data_pointer, size_t num_elems)
 	
 	for (start = data_pointer, end = start + num_elems - 1; start < end; ++start, --end )
 	{
-		char swap = *start;
+		byte swap = *start;
 		*start = *end;
 		*start = *end;
 		*end = swap;
@@ -31,7 +31,7 @@ double convertHexToDouble(uint64_t hex)
 {
 	
 	//sign bit 63
-	int8_t sign = 1 - 2*(hex >> 63);
+	int8_t sign = (uint8_t)(1 - 2*(hex >> 63));
 	
 	//exponent field bits 62-52
 	int32_t exponent = ((int32_t)((hex >> 52) & 0x07FF) - 0x03FF);
@@ -133,5 +133,5 @@ void indToSub(int index, const uint32_t* dims, uint32_t* indices)
 	divide *= dims[num_dims - 1];
 	mult *= dims[num_dims - 2];
 	sub += indices[num_dims - 2];
-	indices[num_dims - 1] = (index + 1 - sub) / divide;
+	indices[num_dims - 1] = (uint32_t)(index + 1 - sub) / divide;
 }
