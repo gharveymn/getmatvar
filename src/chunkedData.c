@@ -9,42 +9,56 @@
 //you need at least 19th century hardware to run this
 #endif
 
-void getChunkedData(Data* object)
+errno_t getChunkedData(Data* object)
 {
 	TreeNode root;
 	root.address = object->data_address;
-	fillNode(&root, object->chunked_info.num_chunked_dims);
-	decompressChunk(object, &root);
+	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
+	if(ret != 0)
+	{
+		object->type = ERROR;
+		sprintf(object->name, "getmatvar:internalInvalidNodeType");
+		sprintf(object->matlab_class, "Invalid node type in fillNode()\n\n");
+		freeTree(&root);
+		return ret;
+	}
+	
+	ret = decompressChunk(object, &root);
 	freeTree(&root);
+	
+	return ret;
 }
 
-void decompressChunk(Data* object, TreeNode* node)
+errno_t decompressChunk(Data* object, TreeNode* node)
 {
 	//this function just filters out all nodes which aren't one level above the leaves
 	
 	if(node->address == UNDEF_ADDR || node->node_type == NODETYPE_UNDEFINED || node->node_level < 0 || node->children == NULL)
 	{
 		//don't do the decompression from the leaf level or for any undefined object
-		return;
+		return 0;
 	}
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		decompressChunk(object, &node->children[i]);
+		if(decompressChunk(object, &node->children[i]) != 0)
+		{
+			return 1;
+		}
 	}
 	
 	//there must be at least one child
 	if(node->children[0].leaf_type != RAWDATA)
 	{
 		//only want nodes which are parents of the leaves to save memory
-		return;
+		return 0;
 	}
 	
-	doInflate(object, node);
+	return doInflate(object, node);
 	
 }
 
-void doInflate(Data* object, TreeNode* node)
+errno_t doInflate(Data* object, TreeNode* node)
 {
 	//TODO we could do some multithreading here
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
@@ -53,29 +67,34 @@ void doInflate(Data* object, TreeNode* node)
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = { 0 };
 	uint64_t index_map[CHUNK_BUFFER_SIZE];
-	const size_t actual_size = object->chunked_info.chunk_size*object->elem_size; /* make sure this is non-null */
+	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-
+		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-
 		const byte* data_pointer = navigateTo(node->children[i].address, node->keys[i].size, TREE);
-
 		const int ret = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
 		switch(ret)
 		{
 			case LIBDEFLATE_BAD_DATA:
-				//TODO free memory after error...
-				readMXError("getmatvar:libdeflateBadData","libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
-				break;
+				object->type = ERROR;
+				sprintf(object->name, "getmatvar:libdeflateBadData");
+				sprintf(object->matlab_class, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+				return ret;
 			case LIBDEFLATE_SHORT_OUTPUT:
-				readMXError("getmatvar:libdeflateShortOutput","libdeflate failed failed to decompress because a NULL 'actual_out_nbytes_ret' was provided, but the data would have"
-					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
-				break;
+				object->type = ERROR;
+				sprintf(object->name, "getmatvar:libdeflateShortOutput");
+				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
+						"'actual_out_nbytes_ret' was provided, but the data would have"
+						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+				return ret;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				readMXError("getmatvar:libdeflateInsufficientSpace","libdeflate failed because the output buffer was not large enough (%d).\n\n", actual_size);
-				break;
+				object->type = ERROR;
+				sprintf(object->name, "getmatvar:libdeflateInsufficientSpace");
+				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
+						"%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
+				return ret;
 			default:
 				//do nothing
 				break;
@@ -85,7 +104,7 @@ void doInflate(Data* object, TreeNode* node)
 		memset(chunk_pos, 0 , sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
 		uint64_t db_pos = 0;
-		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.chunk_size; anchor = db_pos)
+		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.num_chunked_elems; anchor = db_pos)
 		{
 			for (;db_pos < anchor + object->chunked_info.chunked_dims[0] && index < object->num_elems; db_pos++, index++)
 			{
@@ -110,6 +129,8 @@ void doInflate(Data* object, TreeNode* node)
 		
 	}
 	
+	return 0;
+	
 }
 
 uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_dims, uint8_t num_chunked_dims)
@@ -131,7 +152,7 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_di
 }
 
 
-void fillNode(TreeNode* node, uint64_t num_chunked_dims)
+errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 {
 	
 	node->node_type = NODETYPE_UNDEFINED;
@@ -144,7 +165,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		node->keys = NULL;
 		node->children = NULL;
 		node->node_level = -2;
-		return;
+		return 0;
 	}
 	
 	byte* tree_pointer = navigateTo(node->address, 8, TREE);
@@ -164,7 +185,7 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		{
 			node->leaf_type = RAWDATA;
 		}
-		return;
+		return 0;
 	}
 	
 	node->node_type = (NodeType) getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
@@ -246,10 +267,11 @@ void fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			break;
 		default:
-			readMXError("getmatvar:internalInvalidNodeType", "Invalid node type in fillNode()\n\n", "");
-			//fprintf(stderr, "Invalid node type %d\n", node->node_type);
-			//exit(EXIT_FAILURE);
+			return 1;
 	}
+	
+	return 0;
+	
 }
 
 
