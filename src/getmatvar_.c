@@ -58,12 +58,11 @@ Data** makeReturnStructure(mxArray* uberStructure[], const int num_elems, const 
 {
 	
 	char** varnames = malloc(num_elems*sizeof(char*));
-	char* last_delimit;
 
 	for (mwIndex i = 0; i < num_elems; i++)
 	{
 		varnames[i] = malloc(NAME_LENGTH*sizeof(char));
-		last_delimit = strrchr(full_variable_names[i], '.');
+		char* last_delimit = strrchr(full_variable_names[i], '.');
 		if (last_delimit == NULL)
 		{
 			strcpy(varnames[i], full_variable_names[i]);

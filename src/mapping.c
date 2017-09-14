@@ -1,6 +1,5 @@
 #include "getmatvar_.h"
 
-
 Data* findDataObject(const char* filename, const char variable_name[])
 {
 	Data** objects = getDataObjects(filename, &variable_name, 1);
@@ -30,8 +29,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	char errmsg[NAME_LENGTH];
 	
 	//init maps
-	maps[TREE].used = FALSE;
-	maps[HEAP].used = FALSE;
+	initializeMaps();
 	
 	//init queue
 	flushQueue();
@@ -137,8 +135,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	}
 	objects[num_objs - 1]->type |= END_SENTINEL;
 	
-	freeMap(TREE);
-	freeMap(HEAP);
+	freeAllMaps();
 	
 	close(fd);
 	return objects;
@@ -147,13 +144,28 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 
 void initializeMaps(void)
 {
-	for (int i = 0; i < NUM_MAPS; i++)
+	
+	for (int i = 0; i < NUM_TREE_MAPS; i++)
 	{
-		maps[i].used = FALSE;
-		maps[i].bytes_mapped = 0;
-		maps[i].map_start = NULL;
-		maps[i].offset = 0;
+		tree_maps[i].used = FALSE;
+		tree_maps[i].bytes_mapped = 0;
+		tree_maps[i].map_start = NULL;
+		tree_maps[i].offset = 0;
 	}
+	
+	for (int i = 0; i < NUM_HEAP_MAPS; i++)
+	{
+		heap_maps[i].used = FALSE;
+		heap_maps[i].bytes_mapped = 0;
+		heap_maps[i].map_start = NULL;
+		heap_maps[i].offset = 0;
+	}
+	
+	map_nums[0] = NUM_TREE_MAPS;
+	map_nums[1] = NUM_HEAP_MAPS;
+	map_queue_fronts[0] = 0;
+	map_queue_fronts[1] = 0;
+	
 }
 
 
@@ -270,7 +282,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	for (; message_num < num_msgs && bytes_read < header_length; message_num++)
 	{
 		msg_type = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read, 2, META_DATA_BYTE_ORDER);
-		msg_address = header_address + 16 + bytes_read;
+		//msg_address = header_address + 16 + bytes_read;
 		msg_size = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
 		msg_pointer = header_pointer + 16 + bytes_read + 8;
 		msg_address = header_address + 16 + bytes_read + 8;
@@ -336,7 +348,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 		bytes_read += msg_size + 8;
 	}
 	
-	return message_num - 1;
+	return (uint16_t)(message_num - 1);
 	
 }
 
@@ -419,8 +431,6 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		}
 	}
 	
-	
-	int object_data_index = 0;
 	switch (object->type)
 	{
 		case INT8:
@@ -469,7 +479,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 
 
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order,
-				  uint64_t* index_map)
+				  const uint64_t* index_map)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
@@ -620,16 +630,16 @@ void parseHeaderTree(void)
 	{
 		tree_pointer = navigateTo(queue.trios[queue.front].tree_address, default_bytes, TREE);
 		heap_pointer = navigateTo(queue.trios[queue.front].heap_address, default_bytes, HEAP);
-		if (strncmp("HEAP", heap_pointer, 4) != 0)
+		if (strncmp("HEAP", (char*)heap_pointer, 4) != 0)
 		{
 			readMXError("getmatvar:internalError", "Incorrect heap_pointer address in queue.\n\n", "");
 		}
 		
-		if (strncmp("TREE", tree_pointer, 4) == 0)
+		if (strncmp("TREE", (char*)tree_pointer, 4) == 0)
 		{
 			parent_trio = dequeueTrio();
 			readTreeNode(tree_pointer, parent_trio);
-		} else if (strncmp("SNOD", tree_pointer, 4) == 0)
+		} else if (strncmp("SNOD", (char*)tree_pointer, 4) == 0)
 		{
 			this_trio = dequeueTrio();
 			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio);

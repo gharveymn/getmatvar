@@ -40,7 +40,8 @@ typedef uint64_t OffsetType;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
-#define NUM_MAPS 2
+#define NUM_TREE_MAPS 4
+#define NUM_HEAP_MAPS 1
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
@@ -217,7 +218,7 @@ struct data_
 	
 	uint8_t layout_class;
 	uint64_t data_address;
-	char* data_pointer;
+	byte* data_pointer;
 	DataArrays data_arrays;
 	
 	uint64_t parent_obj_address;
@@ -262,74 +263,46 @@ struct tree_node_
 
 //fileHelper.c
 Superblock getSuperblock(void);
-
 byte* findSuperblock(void);
-
 Superblock fillSuperblock(byte* superblock_pointer);
-
 byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
-
 void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
-
 void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
-
 void freeDataObjects(Data** objects);
-
 void freeDataObjectTree(Data* super_object);
-
 void endHooks(void);
-
-void freeMap(int map_index);
+void freeAllMaps(void);
+void freeMap(MemMap map);
 
 
 //numberHelper.c
 double convertHexToDouble(uint64_t hex);
-
 float convertHexToSingle(uint32_t hex);
-
 int roundUp(int numToRound);
-
 uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
-
 void indToSub(int index, const uint32_t* dims, uint32_t* indices);
-
 void reverseBytes(byte* data_pointer, size_t num_elems);
 
 
 //queue.c
 void enqueueTrio(Addr_Trio trio);
-
 void flushQueue();
-
 Addr_Trio dequeueTrio();
-
 void priorityEnqueueTrio(Addr_Trio trio);
-
 void flushHeaderQueue();
-
 Object dequeueObject();
-
 void priorityEnqueueObject(Object obj);
-
 void enqueueObject(Object obj);
-
 void flushVariableNameQueue();
-
 char* dequeueVariableName();
-
 char* peekVariableName();
-
 void enqueueVariableName(char* variable_name);
 
 //readMessage.c
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-
 void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-
 void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
@@ -342,10 +315,10 @@ void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, 
 void allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
 			ByteOrder data_byte_order);
-
+void initializeMaps(void);
 void
 placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order,
-				  uint64_t* index_map);
+				  const uint64_t* index_map);
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
 					  uint16_t num_msgs, uint16_t repeat_tracker);
@@ -354,25 +327,21 @@ void parseHeaderTree(void);
 
 //getPageSize.c
 size_t getPageSize(void);
-
 size_t getAllocGran(void);
 
 //chunkedData.c
-void fillChunkTree(TreeNode* root, uint64_t num_chunked_dims);
 
 void fillNode(TreeNode* node, uint64_t num_chunked_dims);
-
 void decompressChunk(Data* object, TreeNode* node);
-
 void doInflate(Data* object, TreeNode* node);
-
 void freeTree(TreeNode* node);
-
 void getChunkedData(Data* object);
-
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
-MemMap maps[NUM_MAPS];
+MemMap tree_maps[NUM_TREE_MAPS];
+MemMap heap_maps[NUM_HEAP_MAPS];
+int map_nums[2];
+int map_queue_fronts[2]; //cycle thru a queue so that we dont overwrite too soon
 Addr_Q queue;
 Header_Q header_queue;
 Variable_Name_Q variable_name_queue;
