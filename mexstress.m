@@ -4,10 +4,10 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/my_struct1.mat';
-vars = {''};
-domemory = true;
-numtests = 1000;
+file = 'res/t.mat';
+vars = {'t'};
+domemory = false;
+numtests = 100;
 memvals = rand(numtests+1,1);
 lents = 0;
 
