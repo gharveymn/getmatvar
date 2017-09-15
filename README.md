@@ -1,6 +1,6 @@
 # getmatvar
 
-This is a C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format Matfiles with support for all MATLAB fundamental types except for tables and function handles, which do not have MEX function support.
+This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format Matfiles with support for all MATLAB fundamental types except for tables and function handles, which do not have MEX library support.
 
 A prebuilt binary for 64-bit Windows is available in the `bin` directory, however if you're running on 32-bit you will have to build it manually.
 
@@ -44,4 +44,4 @@ Indeed this is Windows native, but it should be pretty easy to set up for compil
 
 ### Acknowledgements
 
-Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman` and to Eric Biggers for `libdeflate`, as well as Earnie Boyd for the `param.h` header. Thanks for Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
+Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, Johan Hanssen Seferidis, for `threadpool`, as well as Earnie Boyd for the `param.h` header. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
