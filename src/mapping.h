@@ -40,10 +40,11 @@ typedef uint64_t OffsetType;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
-#define NUM_TREE_MAPS 4
+#define NUM_TREE_MAPS 5
 #define NUM_HEAP_MAPS 2
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
+#define CHUNK_IN_PARALLEL FALSE
 #define MAX_SUB_OBJECTS 30
 #define USE_SUPER_OBJECT_CELL 1
 #define USE_SUPER_OBJECT_ALL 2
@@ -55,11 +56,12 @@ typedef uint64_t OffsetType;
                          "\tgetmatvar(filename,variable1,...,variableN)\n\n" \
                          "\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
                          "\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
-                         "Example:\n\ts = getmatvar('my_workspace.mat', 'my_struct')\n"
+                         "Example:\n\tgetmatvar('my_workspace.mat', 'my_struct')\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
+typedef uint8_t bool_t;
 
 typedef struct
 {
@@ -164,8 +166,7 @@ typedef enum
 
 typedef enum
 {
-	LITTLE_ENDIAN,
-	BIG_ENDIAN
+	LITTLE_ENDIAN, BIG_ENDIAN
 } ByteOrder;
 #define META_DATA_BYTE_ORDER LITTLE_ENDIAN
 
@@ -232,7 +233,7 @@ struct data_
 
 typedef enum
 {
-	NODETYPE_UNDEFINED, GROUP = (uint8_t) 0, CHUNK = (uint8_t) 1
+	NODETYPE_UNDEFINED, GROUP = (uint8_t)0, CHUNK = (uint8_t)1
 } NodeType;
 
 typedef enum
@@ -267,9 +268,10 @@ struct tree_node_
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
-byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_index);
+byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type);
+byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index);
 void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
-void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address);
+void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address, bool_t get_top_level);
 void freeDataObjects(Data** objects);
 void freeDataObjectTree(Data* super_object);
 void endHooks(void);
@@ -278,11 +280,8 @@ void freeMap(MemMap map);
 
 
 //numberHelper.c
-double convertHexToDouble(uint64_t hex);
-float convertHexToSingle(uint32_t hex);
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
-void indToSub(int index, const uint32_t* dims, uint32_t* indices);
 void reverseBytes(byte* data_pointer, size_t num_elems);
 
 
@@ -308,34 +307,30 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
-Data* findDataObject(const char* filename, const char variable_name[]);
-Data** getDataObjects(const char* filename, const char* variable_names[], int num_names);
-void findHeaderAddress(const char variable_name[]);
+Data** getDataObjects(const char* filename, char** variable_names, int num_names);
+void findHeaderAddress(const char* variable_name, bool_t get_top_level);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Data** objects, int* starting_pos);
 void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
 errno_t allocateSpace(Data* object);
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
-			ByteOrder data_byte_order);
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeMaps(void);
-void
-placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order,
-				  const uint64_t* index_map);
+void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
-					  uint16_t num_msgs, uint16_t repeat_tracker);
-void parseHeaderTree(void);
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
+void parseHeaderTree(bool_t get_top_level);
 
 
 //getPageSize.c
 size_t getPageSize(void);
 size_t getAllocGran(void);
+size_t getNumProcessors(void);
 
 //chunkedData.c
-
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
 errno_t decompressChunk(Data* object, TreeNode* node);
 errno_t doInflate(Data* object, TreeNode* node);
+void* doInflate_(void* t);
 void freeTree(TreeNode* node);
 errno_t getChunkedData(Data* object);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
@@ -354,3 +349,5 @@ Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
 Addr_Trio root_trio;
+
+size_t num_avail_threads;

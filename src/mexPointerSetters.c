@@ -70,22 +70,9 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	{
 		mxIntPtr = mxCreateCharArray(0, NULL);
 	}
-	else if(strncmp(object->matlab_class,"uint16",6) == 0)
-	{
-		mxIntPtr = mxCreateNumericArray(0, NULL, mxUINT16_CLASS, mxREAL);
-	}
 	else
 	{
-		mxIntPtr = mxCreateLogicalArray(num_obj_dims, obj_dims);
-		//hotfix, i have no idea why they did this, 97 == 'a' though...
-		for (int i = 0; i < num_obj_elems; i++)
-		{
-			if (object->data_arrays.ui16_data[i] == 97)
-			{
-				object->data_arrays.ui16_data[i] = 1;
-			}
-		}
-
+		mxIntPtr = mxCreateNumericArray(0, NULL, mxUINT16_CLASS, mxREAL);
 	}
 
 	mxSetData(mxIntPtr, object->data_arrays.ui16_data);
