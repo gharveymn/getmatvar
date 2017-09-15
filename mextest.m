@@ -1,22 +1,24 @@
 addpath('res')
 addpath('bin')
 file = 'res/t.mat';
-vars = {''};
+vars = {'t'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
 %userview = memory;
 %disp(userview.MemUsedMATLAB)
 tic
-getmatvar(file, vars{:});
+getmatvar(file,vars{:});
 toc
 %userview = memory;
 %disp(userview.MemUsedMATLAB)
 
 % using load function
 tic
-%load(file);
+load(file);
 toc
+
+
 
 % using matlab's partial loader
 % tic
@@ -28,4 +30,4 @@ toc
 % toc
 % clear i
 % 
-% clear file vars
+clear file vars

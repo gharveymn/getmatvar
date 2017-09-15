@@ -1,5 +1,805 @@
 {
-  "variant": null,
+  "variant": {
+    "label": "Debug",
+    "keywordSettings": {
+      "buildType": "debug"
+    },
+    "description": "Emit debug information without performing optimizations"
+  },
   "activeEnvironments": [],
-  "codeModel": null
+  "codeModel": {
+    "configurations": [
+      {
+        "name": "Debug",
+        "projects": [
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+            "name": "MatFile_Parsing_Win",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          },
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+            "name": "MatFile_Parsing_Win_Mex",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": true,
+                    "sources": [
+                      "build/CMakeFiles/af06ec167f6cc8a99d4175940f621876/generate.stamp.rule"
+                    ]
+                  }
+                ],
+                "fullName": "ZERO_CHECK",
+                "name": "ZERO_CHECK",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Debug/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Release",
+        "projects": [
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+            "name": "MatFile_Parsing_Win",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          },
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+            "name": "MatFile_Parsing_Win_Mex",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": true,
+                    "sources": [
+                      "build/CMakeFiles/af06ec167f6cc8a99d4175940f621876/generate.stamp.rule"
+                    ]
+                  }
+                ],
+                "fullName": "ZERO_CHECK",
+                "name": "ZERO_CHECK",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/Release/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /O2 /Ob2 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MinSizeRel",
+        "projects": [
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+            "name": "MatFile_Parsing_Win",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /O1 /Ob1 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          },
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+            "name": "MatFile_Parsing_Win_Mex",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": true,
+                    "sources": [
+                      "build/CMakeFiles/af06ec167f6cc8a99d4175940f621876/generate.stamp.rule"
+                    ]
+                  }
+                ],
+                "fullName": "ZERO_CHECK",
+                "name": "ZERO_CHECK",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/MinSizeRel/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /O1 /Ob1 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "RelWithDebInfo",
+        "projects": [
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+            "name": "MatFile_Parsing_Win",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          },
+          {
+            "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+            "name": "MatFile_Parsing_Win_Mex",
+            "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+            "targets": [
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "ALL_BUILD",
+                "name": "ALL_BUILD",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build",
+                "fileGroups": [
+                  {
+                    "isGenerated": true,
+                    "sources": [
+                      "build/CMakeFiles/af06ec167f6cc8a99d4175940f621876/generate.stamp.rule"
+                    ]
+                  }
+                ],
+                "fullName": "ZERO_CHECK",
+                "name": "ZERO_CHECK",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win",
+                "type": "UTILITY"
+              },
+              {
+                "artifacts": [
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.mexw64",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.lib",
+                  "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src/RelWithDebInfo/getmatvar_.pdb"
+                ],
+                "buildDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/build/src",
+                "fileGroups": [
+                  {
+                    "compileFlags": "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG  ",
+                    "defines": [
+                      "MATLAB_MEX_FILE",
+                      "MX_COMPAT_32",
+                      "getmatvar__EXPORTS"
+                    ],
+                    "includePath": [
+                      {
+                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                      },
+                      {
+                        "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
+                      }
+                    ],
+                    "isGenerated": false,
+                    "language": "C",
+                    "sources": [
+                      "extlib/mman-win32/mman.c",
+                      "fileHelper.c",
+                      "getSystemInfo.c",
+                      "mapping.c",
+                      "numberHelper.c",
+                      "queue.c",
+                      "chunkedData.c",
+                      "mexPointerSetters.c",
+                      "readMessage.c",
+                      "getmatvar_.c"
+                    ]
+                  },
+                  {
+                    "isGenerated": false,
+                    "sources": [
+                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "extlib/mman-win32/mman.h",
+                      "extlib/libdeflate/x64/libdeflate.h",
+                      "mapping.h",
+                      "getmatvar_.h",
+                      "../Matlabdef.def",
+                      "CMakeLists.txt"
+                    ]
+                  }
+                ],
+                "fullName": "getmatvar_.mexw64",
+                "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkerLanguage": "C",
+                "name": "getmatvar_",
+                "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
+                "type": "SHARED_LIBRARY"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "cookie": "0.9932918395221597",
+    "inReplyTo": "codemodel",
+    "type": "reply"
+  }
 }
