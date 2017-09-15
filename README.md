@@ -44,4 +44,4 @@ Indeed this is Windows native, but it should be pretty easy to set up for compil
 
 ### Acknowledgements
 
-Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, Johan Hanssen Seferidis, for `threadpool`, as well as Earnie Boyd for the `param.h` header. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
+Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, Johan Hanssen Seferidis for `threadpool`, as well as Earnie Boyd for the `param.h` header. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
