@@ -132,6 +132,47 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
 }
 
+byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index)
+{
+	MemMap* these_maps;
+	if(map_type == TREE)
+	{
+		these_maps = tree_maps;
+	}
+	else
+	{
+		these_maps = heap_maps;
+	}
+	
+	if(!(address >= these_maps[tree_map_index].offset && address + bytes_needed <= these_maps[tree_map_index].offset + these_maps[tree_map_index].bytes_mapped && these_maps[tree_map_index].used == TRUE))
+	{
+		
+		//unmap current page
+		if(these_maps[tree_map_index].used == TRUE)
+		{
+			freeMap(these_maps[tree_map_index]);
+		}
+		
+		//map new page at needed location
+		size_t alloc_gran = getAllocGran();
+		alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
+		these_maps[tree_map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
+		these_maps[tree_map_index].bytes_mapped = address - these_maps[tree_map_index].offset + bytes_needed;
+		these_maps[tree_map_index].bytes_mapped = these_maps[tree_map_index].bytes_mapped < file_size - these_maps[tree_map_index].offset ? these_maps[tree_map_index].bytes_mapped : file_size - these_maps[tree_map_index].offset;
+		these_maps[tree_map_index].map_start = mmap(NULL, these_maps[tree_map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[tree_map_index].offset);
+		these_maps[tree_map_index].used = TRUE;
+		if(these_maps[tree_map_index].map_start == NULL || these_maps[tree_map_index].map_start == MAP_FAILED)
+		{
+			these_maps[tree_map_index].used = FALSE;
+			readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateWithMapIndex(). Check errno %s\n\n", strerror(errno));
+		}
+		
+	}
+	
+	return these_maps[tree_map_index].map_start + address - these_maps[tree_map_index].offset;
+	
+}
+
 
 void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 {
@@ -180,7 +221,7 @@ void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 }
 
 
-void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio)
+void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio, bool_t get_top_level)
 {
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	Object* objects = malloc(sizeof(Object) * num_symbols);
@@ -225,11 +266,14 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 				
 			}
 			
-			enqueueObject(objects[i]);
+			if(strncmp(objects[i].name, "#", 1) != 0 && strncmp(objects[i].name, "function_handle", 15) != 0)
+			{
+				enqueueObject(objects[i]);
+			}
 			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1)
+			if(cache_type == 1 && strncmp(objects[i].name, "#", 1) != 0 && strncmp(objects[i].name, "function_handle", 15) != 0 && get_top_level == FALSE)
 			{
 				
 				//if another tree exists for this object, put it on the queue
@@ -240,10 +284,11 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 					   getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i].sub_tree_address = trio.tree_address;
 				priorityEnqueueTrio(trio);
-				parseHeaderTree();
+				parseHeaderTree(FALSE);
 				snod_pointer = navigateTo(this_trio.tree_address, default_bytes, TREE);
 				heap_pointer = navigateTo(this_trio.heap_address, default_bytes, HEAP);
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+
 			}
 			else if(cache_type == 2)
 			{

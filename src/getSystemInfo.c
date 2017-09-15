@@ -22,6 +22,13 @@ size_t getAllocGran(void)
 	return (size_t)system_info.dwAllocationGranularity;
 }
 
+size_t getNumProcessors(void)
+{
+	SYSTEM_INFO system_info;
+	GetSystemInfo(&system_info);
+	return (size_t)system_info.dwNumberOfProcessors;
+}
+
 
 #else
 #include <unistd.h>
@@ -36,6 +43,11 @@ size_t getPageSize(void)
 size_t getAllocGran(void)
 {
 	return sysconf(_SC_PAGE_SIZE);
+}
+
+size_t getNumProcessors(void)
+{
+	sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 

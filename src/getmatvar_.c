@@ -2,7 +2,11 @@
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
-
+	
+	//init maps, needed so we don't confuse ending hooks in the case of error
+	initializeMaps();
+	fd = -1;
+	
 	if(nrhs < 1)
 	{
 		readMXError("getmatvar:invalidNumInputs", "At least one input arguments are required.\n\n", "");

@@ -12,7 +12,7 @@ SET(SOURCE_FILES
 		extlib/mman-win32/mman.h
 		extlib/libdeflate/x64/libdeflate.h
 		fileHelper.c
-		getPageSize.c
+		getSystemInfo.c
 		mapping.c
 		mapping.h
 		numberHelper.c

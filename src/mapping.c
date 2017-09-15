@@ -1,19 +1,16 @@
 #include "getmatvar_.h"
 
 
-Data** getDataObjects(const char* filename, const char* variable_names[], int num_names)
+Data** getDataObjects(const char* filename, char** variable_names, int num_names)
 {
 	byte* header_pointer;
 	uint32_t header_length;
 	uint64_t header_address;
 	uint16_t num_msgs;
-	//uint64_t root_tree_address;
 	Data** objects = malloc(MAX_OBJS * sizeof(Data*));
 	Object obj;
 	char errmsg[NAME_LENGTH];
-	
-	//init maps
-	initializeMaps();
+	num_avail_threads = getNumProcessors() - 1;
 	
 	//init queue
 	flushQueue();
@@ -44,6 +41,30 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 	//find superblock
 	s_block = getSuperblock();
 	
+	bool_t load_all = FALSE;
+	for(int i = 0; i < num_names; i++)
+	{
+		if(strcmp(variable_names[i],"\0") == 0)
+		{
+			findHeaderAddress(variable_names[i], TRUE);
+			num_names = header_queue.length;
+			load_all = TRUE;
+			break;
+		}
+	}
+
+	if(load_all)
+	{
+		variable_names = malloc(num_names * sizeof(char*));
+		for(int j = 0; j < num_names; j++)
+		{
+			obj = dequeueObject();
+			variable_names[j] = malloc(NAME_LENGTH * sizeof(char));
+			strcpy(variable_names[j], obj.name);
+		}
+	}
+
+	
 	int num_objs = 0;
 	for(int name_index = 0; name_index < num_names; name_index++)
 	{
@@ -53,7 +74,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 		enqueueTrio(root_trio);
 		
 		//fprintf(stderr, "\nObject header for variable %s is at 0x", variable_names);
-		findHeaderAddress(variable_names[name_index]);
+		findHeaderAddress(variable_names[name_index], FALSE);
 		//fprintf(stderr, "%llu\n", header_queue.objects[header_queue.front].this_obj_header_address);
 		
 		if(header_queue.length == 0)
@@ -96,7 +117,7 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 				strcpy(objects[0]->name, objects[num_objs]->name);
 				strcpy(objects[0]->matlab_class, objects[num_objs]->matlab_class);
 				
-				//note this, num_objs is now the end sentinel
+				//note that num_objs is now the end sentinel
 				num_objs++;
 				
 				objects[num_objs] = malloc(sizeof(Data));
@@ -117,12 +138,22 @@ Data** getDataObjects(const char* filename, const char* variable_names[], int nu
 		objects[num_objs]->type = DELIMITER;
 		objects[num_objs]->parent_obj_address = UNDEF_ADDR;
 		num_objs++;
+
 		
 	}
 	objects[num_objs - 1]->type |= END_SENTINEL;
 	
 	freeAllMaps();
 	
+	if(load_all)
+	{
+		for(int i = 0; i < num_names; i++)
+		{
+			free(variable_names[i]);
+		}
+	}
+	free(variable_names);
+
 	close(fd);
 	return objects;
 }
@@ -179,7 +210,7 @@ void initializeObject(Data* object)
 	object->layout_class = 0;
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
-	object->type = ERROR;
+	object->type = UNDEF;
 	
 	object->num_dims = 0;
 	object->num_elems = 0;
@@ -208,8 +239,9 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	
-	if(object->type == ERROR)
+	if(object->type == UNDEF)
 	{
+		object->type == ERROR;
 		sprintf(object->name, "getmatvar:unknownDataTypeError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 		return;
@@ -573,10 +605,10 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 }
 
 
-void findHeaderAddress(const char variable_name[])
+void findHeaderAddress(const char* variable_name, bool_t get_top_level)
 {
-	char* delim = ".";
-	char* token;
+	char* delim = ".",* token;
+	enqueueTrio(root_trio);
 	default_bytes = (uint64_t)getAllocGran();
 	default_bytes = default_bytes < file_size ? default_bytes : file_size;
 	char varname[NAME_LENGTH];
@@ -601,12 +633,12 @@ void findHeaderAddress(const char variable_name[])
 		}
 	}
 	
-	parseHeaderTree();
+	parseHeaderTree(get_top_level);
 	
 }
 
 
-void parseHeaderTree(void)
+void parseHeaderTree(bool_t get_top_level)
 {
 	byte* tree_pointer, * heap_pointer;
 	
@@ -620,12 +652,6 @@ void parseHeaderTree(void)
 		tree_pointer = navigateTo(queue.trios[queue.front].tree_address, default_bytes, TREE);
 		heap_pointer = navigateTo(queue.trios[queue.front].heap_address, default_bytes, HEAP);
 		
-		//test block, remove for release
-//		if(strncmp("HEAP", (char*)heap_pointer, 4) != 0)
-//		{
-//			readMXError("getmatvar:internalError", "Incorrect heap_pointer address in queue.\n\n", "");
-//		}
-		
 		if(strncmp("TREE", (char*)tree_pointer, 4) == 0)
 		{
 			parent_trio = dequeueTrio();
@@ -634,7 +660,7 @@ void parseHeaderTree(void)
 		else if(strncmp("SNOD", (char*)tree_pointer, 4) == 0)
 		{
 			this_trio = dequeueTrio();
-			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio);
+			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio, get_top_level);
 		}
 	}
 }
