@@ -10,7 +10,7 @@ build/*
 *.mexa64
 *.mexa32
 *.idea
-*res/
+res/*
 *.pdb
 */optData_ESTrade.mat
 
@@ -51,6 +51,8 @@ build/*
 [Rr]elease/
 [Rr]eleases/
 bld/
-[Bb]in/
+[Bb]in/*
+!*pthreadVC2.dll
+!*getmatvar.m
 [Oo]bj/
 [Ll]og/

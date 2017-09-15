@@ -151,8 +151,8 @@ Data** getDataObjects(const char* filename, char** variable_names, int num_names
 		{
 			free(variable_names[i]);
 		}
+		free(variable_names);
 	}
-	free(variable_names);
 
 	close(fd);
 	return objects;
