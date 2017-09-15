@@ -1,19 +1,21 @@
 #include "getmatvar_.h"
 #include "pthread.h"
+#include "extlib/threadpool/thpool.h"
 
-typedef struct
+typedef struct  inflate_thread_obj_ inflate_thread_obj;
+struct inflate_thread_obj_
 {
-	Data* object;
 	TreeNode* node;
-	int begin_index;
-	int end_index;
 	int tree_map_index;
 	errno_t err;
-	bool_t is_actually_a_thread;
-} inflate_thread_obj;
+	inflate_thread_obj* prev;
+};
 
-static pthread_t* threads;
-static inflate_thread_obj* thread_objs;
+static inflate_thread_obj* thread_objects_front; /*this is a queue of unbounded size*/
+static threadpool* threads;
+static Data* object;
+static int map_iterator;
+static int num_threads;
 
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
@@ -23,12 +25,10 @@ static inflate_thread_obj* thread_objs;
 //you need at least 19th century hardware to run this
 #endif
 
-errno_t getChunkedData(Data* object)
+errno_t getChunkedData(Data* obj)
 {
+	object = obj;
 	TreeNode root;
-	threads = malloc(num_avail_threads*sizeof(pthread_t));
-	thread_objs = malloc(num_avail_threads*sizeof(inflate_thread_obj));
-	
 	root.address = object->data_address;
 	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
@@ -40,15 +40,38 @@ errno_t getChunkedData(Data* object)
 		return ret;
 	}
 	
-	ret = decompressChunk(object, &root);
-	freeTree(&root);
+	thread_objects_front = malloc(sizeof(inflate_thread_obj));
+	thread_objects_front->prev = NULL;
+	num_threads = MIN((int)num_avail_threads, NUM_TREE_MAPS);
+	threads = malloc(num_threads*sizeof(threadpool));
+	for (int i = 0; i < num_threads; ++i)
+	{
+		//thread pool of size 1 to restrict each thread to one map
+		threads[i] = thpool_init(1);
+	}
+	map_iterator = 0;
+	ret = decompressChunk(&root);
+	for (int j = 0; j < num_threads; ++j)
+	{
+		thpool_wait(threads[j]);
+	}
+	for (int j = 0; j < num_threads; ++j)
+	{
+		thpool_destroy(threads[j]);
+	}
 	free(threads);
-	free(thread_objs);
+	while(thread_objects_front->prev != NULL)
+	{
+		inflate_thread_obj* tmp = thread_objects_front->prev;
+		free(thread_objects_front);
+		thread_objects_front = tmp;
+	}
 	
+	freeTree(&root);
 	return ret;
 }
 
-errno_t decompressChunk(Data* object, TreeNode* node)
+errno_t decompressChunk(TreeNode* node)
 {
 	//this function just filters out all nodes which aren't one level above the leaves
 	
@@ -60,7 +83,7 @@ errno_t decompressChunk(Data* object, TreeNode* node)
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		if(decompressChunk(object, &node->children[i]) != 0)
+		if(decompressChunk(&node->children[i]) != 0)
 		{
 			return 1;
 		}
@@ -73,50 +96,14 @@ errno_t decompressChunk(Data* object, TreeNode* node)
 		return 0;
 	}
 	
-	return doInflate(object, node);
-	
-}
-
-errno_t doInflate(Data* object, TreeNode* node)
-{
-	
-	if(num_avail_threads > 0 && node->entries_used > 1 && NUM_TREE_MAPS > 1 && CHUNK_IN_PARALLEL == TRUE)
-	{
-		pthread_attr_t attr;
-		void* status;
-		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-		
-		size_t num_threads = MIN(MIN(num_avail_threads, NUM_TREE_MAPS), node->entries_used);
-		for(int i = 0; i < num_threads; i++)
-		{
-			thread_objs[i].begin_index = i*(node->entries_used/(int)num_threads);
-			thread_objs[i].end_index = i == num_threads - 1 ? node->entries_used : (i+1)*(node->entries_used/(int)num_threads);
-			thread_objs[i].object = object;
-			thread_objs[i].node = node;
-			thread_objs[i].tree_map_index = i;
-			thread_objs[i].is_actually_a_thread = TRUE;
-			pthread_create(&threads[i], &attr, doInflate_, (void*)&thread_objs[i]);
-		}
-		
-		pthread_attr_destroy(&attr);
-		for(int j = 0; j < num_threads; j++)
-		{
-			pthread_join(threads[j], &status);
-		}
-		
-	}
-	else
-	{
-		thread_objs[0].begin_index = 0;
-		thread_objs[0].end_index = node->entries_used;
-		thread_objs[0].object = object;
-		thread_objs[0].node = node;
-		thread_objs[0].tree_map_index = 0;
-		thread_objs[0].is_actually_a_thread = FALSE;
-		doInflate_((void*)&thread_objs[0]);
-	}
-	
+	inflate_thread_obj* tmp = thread_objects_front;
+	thread_objects_front = malloc(sizeof(inflate_thread_obj));
+	thread_objects_front->tree_map_index = map_iterator;
+	thread_objects_front->node = node;
+	thread_objects_front->err = 0;
+	thread_objects_front->prev = tmp;
+	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_objects_front);
+	map_iterator = map_iterator+1 < num_threads ? map_iterator+1 : 0;\
 	return 0;
 	
 }
@@ -125,10 +112,7 @@ void* doInflate_(void* t)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
-	Data* object = thread_obj->object;
 	TreeNode* node = thread_obj->node;
-	int begin_index = thread_obj->begin_index;
-	int end_index = thread_obj->end_index;
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
@@ -136,7 +120,7 @@ void* doInflate_(void* t)
 	uint64_t index_map[CHUNK_BUFFER_SIZE];
 	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	
-	for(int i = begin_index; i < end_index; i++)
+	for(int i = 0; i < node->entries_used; i++)
 	{
 		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
@@ -194,11 +178,6 @@ void* doInflate_(void* t)
 		
 		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
 		
-	}
-	
-	if(thread_obj->is_actually_a_thread == TRUE)
-	{
-		pthread_exit(NULL);
 	}
 
 }

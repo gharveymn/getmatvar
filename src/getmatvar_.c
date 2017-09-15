@@ -75,19 +75,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 Data** makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* full_variable_names[], const char* filename)
 {
 
-//	for (mwIndex i = 0; i < num_elems; i++)
-//	{
-//		char* last_delimit = strrchr(full_variable_names[i], '.');
-//		if (last_delimit == NULL)
-//		{
-//			strcpy(varnames[i], full_variable_names[i]);
-//		}
-//		else
-//		{
-//			strcpy(varnames[i], last_delimit + 1);
-//		}
-//	}
-
 	mwSize ret_struct_dims[1] = {1};
 	
 	fprintf(stderr,"Fetching the objects... ");

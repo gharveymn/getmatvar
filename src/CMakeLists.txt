@@ -10,6 +10,8 @@ SET(SOURCE_FILES
 		${MATLAB_INCLUDE_DIR}/mex.h
 		extlib/mman-win32/mman.c
 		extlib/mman-win32/mman.h
+	   	extlib/threadpool/thpool.c
+	   	extlib/threadpool/thpool.h
 		extlib/libdeflate/x64/libdeflate.h
 		fileHelper.c
 		getSystemInfo.c

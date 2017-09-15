@@ -14,8 +14,6 @@
 
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
-
-
 #define __BYTE_ORDER    BYTE_ORDER
 #else
 #include <endian.h>
@@ -328,11 +326,10 @@ size_t getNumProcessors(void);
 
 //chunkedData.c
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
-errno_t decompressChunk(Data* object, TreeNode* node);
-errno_t doInflate(Data* object, TreeNode* node);
+errno_t decompressChunk(TreeNode* node);
 void* doInflate_(void* t);
 void freeTree(TreeNode* node);
-errno_t getChunkedData(Data* object);
+errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
 MemMap tree_maps[NUM_TREE_MAPS];
