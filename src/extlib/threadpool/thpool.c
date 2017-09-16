@@ -9,7 +9,12 @@
  ********************************/
 
 #define _POSIX_C_SOURCE 200809L
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
+#include <windows.h>
+#define sleep Sleep
+#else
 #include <unistd.h>
+#endif
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
