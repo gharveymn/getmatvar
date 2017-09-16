@@ -11,7 +11,6 @@
 
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
-
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #define __BYTE_ORDER    BYTE_ORDER
@@ -38,7 +37,7 @@ typedef uint64_t OffsetType;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define MAX_VAR_NAMES 64
 #define MAX_MALLOC_VARS 1000
-#define NUM_TREE_MAPS 3
+#define NUM_TREE_MAPS 7
 #define NUM_HEAP_MAPS 2
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
