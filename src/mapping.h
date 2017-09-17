@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#include <pthread.h>
+#include "extlib/threadpool/thpool.h"
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -29,14 +31,16 @@ typedef uint64_t OffsetType;
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define TREE 0
 #define HEAP 1
+#define THREAD 2
 #define UNDEF_ADDR 0xffffffffffffffff
 #define CLASS_LENGTH 200
 #define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
-#define NUM_TREE_MAPS 7
+#define NUM_TREE_MAPS 4
 #define NUM_HEAP_MAPS 2
+#define NUM_THREAD_MAPS 7
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define CHUNK_IN_PARALLEL TRUE
@@ -233,7 +237,6 @@ struct tree_node_
 
 #include "queue.h"
 
-
 //fileHelper.c
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
@@ -262,7 +265,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 
 //mapping.c
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names);
-void findHeaderAddress(const char* variable_name, bool_t get_top_level);
+void findHeaderAddress(char* variable_name, bool_t get_top_level);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Queue* objects);
 void placeInSuperObject(Data* super_object, Queue* objects, int num_total_objs);
@@ -290,8 +293,9 @@ uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_di
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];
-int map_nums[2];
-int map_queue_fronts[2]; //cycle thru a queue so that we dont overwrite too soon
+MemMap thread_maps[NUM_THREAD_MAPS];
+int map_nums[3];
+int map_queue_fronts[3]; //cycle thru a queue so that we dont overwrite too soon
 
 Queue* addr_queue;
 Queue* varname_queue;
@@ -306,5 +310,10 @@ AddrTrio root_trio;
 
 int num_avail_threads;
 int num_threads_to_use;
+
+threadpool* threads;
+int num_threads;
+bool_t is_multithreading;
+TreeNode root;
 
 #endif

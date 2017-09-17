@@ -3,7 +3,7 @@
 typedef enum
 {
 	NOT_AN_ARGUMENT,
-	THREAD
+	THREAD_KWARG
 } kwarg;
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -11,6 +11,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	
 	//init maps, needed so we don't confuse ending hooks in the case of error
 	initializeMaps();
+	is_multithreading = FALSE;
 	addr_queue = NULL;
 	varname_queue = NULL;
 	header_queue = NULL;
@@ -66,7 +67,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			{
 				switch(kwarg_expected)
 				{
-					case THREAD:
+					case THREAD_KWARG:
 						num_threads_to_use = MIN((int)mxGetScalar(prhs[i+1]), NUM_TREE_MAPS);
 						break;
 					case NOT_AN_ARGUMENT:
@@ -77,7 +78,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 						}
 						free(full_variable_names);
 						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
-							
+						
 				}
 				kwarg_expected = NOT_AN_ARGUMENT;
 			}
@@ -85,6 +86,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		
 		if(num_vars == 0)
 		{
+			free(full_variable_names);
 			full_variable_names = malloc(2*sizeof(char*));
 			full_variable_names[0] = "\0";
 			num_vars = 1;
@@ -127,7 +129,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	
 	Data** super_objects = malloc((objects->length)*sizeof(Data*));
 	char** varnames = malloc((objects->length)*sizeof(char*));
-	int starting_pos = 0, num_objs = 0;
+	int num_objs = 0;
 	for (;objects->length  > 0; num_objs++)
 	{
 		varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));

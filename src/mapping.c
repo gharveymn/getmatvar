@@ -1,6 +1,4 @@
 #include "getmatvar_.h"
-#include "queue.h"
-#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -150,6 +148,10 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	
 	if(load_all)
 	{
+		for (int i = 0; i < num_names; i++)
+		{
+			free(variable_names[i]);
+		}
 		free(variable_names);
 	}
 
@@ -180,10 +182,20 @@ void initializeMaps(void)
 		heap_maps[i].offset = 0;
 	}
 	
+	for(int i = 0; i < NUM_THREAD_MAPS; i++)
+	{
+		thread_maps[i].used = FALSE;
+		thread_maps[i].bytes_mapped = 0;
+		thread_maps[i].map_start = NULL;
+		thread_maps[i].offset = 0;
+	}
+	
 	map_nums[0] = NUM_TREE_MAPS;
 	map_nums[1] = NUM_HEAP_MAPS;
+	map_nums[2] = NUM_THREAD_MAPS;
 	map_queue_fronts[0] = 0;
 	map_queue_fronts[1] = 0;
+	map_queue_fronts[2] = 0;
 	
 }
 
@@ -607,7 +619,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 }
 
 
-void findHeaderAddress(const char* variable_name, bool_t get_top_level)
+void findHeaderAddress(char* variable_name, bool_t get_top_level)
 {
 	char* delim = ".",* token;
 	AddrTrio* root_trio_copy = malloc(sizeof(AddrTrio));
@@ -617,7 +629,6 @@ void findHeaderAddress(const char* variable_name, bool_t get_top_level)
 	enqueue(addr_queue, root_trio_copy);
 	default_bytes = (uint64_t)getAllocGran();
 	default_bytes = default_bytes < file_size ? default_bytes : file_size;
-	char varname[NAME_LENGTH];
 	
 	flushQueue(varname_queue);
 	if(strcmp(variable_name,"\0") == 0)
@@ -627,10 +638,9 @@ void findHeaderAddress(const char* variable_name, bool_t get_top_level)
 	}
 	else
 	{
-		strcpy(varname, variable_name);
 		variable_found = FALSE;
 		
-		token = strtok(varname, delim);
+		token = strtok(variable_name, delim);
 		while(token != NULL)
 		{
 			char* vn = malloc(strlen(token)*sizeof(char));
@@ -677,13 +687,16 @@ void parseHeaderTree(bool_t get_top_level)
 
 Data* organizeObjects(Queue* objects)
 {
-	
-	if(objects->length == 0)
-	{
-		return NULL;
-	}
-	
 	Data* super_object = dequeue(objects);
+
+	while((DELIMITER & super_object->type) == DELIMITER)
+	{
+		if(objects->length == 0)
+		{
+			return NULL;
+		}
+		super_object = dequeue(objects);
+	}
 	
 	if(super_object->type == STRUCT || super_object->type == REF)
 	{
@@ -699,23 +712,20 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 {
 	//note: index should be at the starting index of the subobjects
 	
-	uint8_t num_curr_level_objs = 0;
-	Data** sub_objects = malloc(num_objs_left* sizeof(Data*));
+	super_object->num_sub_objs = 0;
+	super_object->sub_objects = malloc(num_objs_left* sizeof(Data*));
 	Data* curr = dequeue(objects);
 	
 	while(super_object->this_obj_address == curr->parent_obj_address)
 	{
-		sub_objects[num_curr_level_objs] = curr;
-		if(sub_objects[num_curr_level_objs]->type == STRUCT || sub_objects[num_curr_level_objs]->type == REF)
+		super_object->sub_objects[super_object->num_sub_objs] = curr;
+		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT || super_object->sub_objects[super_object->num_sub_objs]->type == REF)
 		{
 			//since this is a depth-first traversal
-			placeInSuperObject(sub_objects[num_curr_level_objs], objects, objects->length);
+			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length);
 		}
 		curr = dequeue(objects);
-		num_curr_level_objs++;
+		super_object->num_sub_objs++;
 	}
-	
-	super_object->num_sub_objs = num_curr_level_objs;
-	super_object->sub_objects = sub_objects;
 	
 }
