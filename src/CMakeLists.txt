@@ -23,6 +23,7 @@ SET(SOURCE_FILES
 		mexPointerSetters.c
 		readMessage.c
 		getmatvar_.h
+		queue.h
 		getmatvar_.c)
 
 ADD_LIBRARY(${MEX_FILE_NAME} SHARED ${SOURCE_FILES} ${CMAKE_SOURCE_DIR}/Matlabdef.def)
