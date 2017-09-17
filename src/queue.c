@@ -36,7 +36,7 @@ void enqueue(Queue* queue, void* data)
 	{
 		new_node->prev = queue->back;
 		new_node->next = queue->back->next;
-
+		
 		if(queue->back->next != NULL)
 		{
 			queue->back->next->prev = new_node;
@@ -65,11 +65,25 @@ void priorityEnqueue(Queue* queue, void* data)
 		queue->front = new_node;
 		queue->back = queue->front;
 	}
+	else if(queue->length == 0)
+	{
+		//means the queue is reset, so just normal queue instead so we don't confuse the total length
+		new_node->prev = queue->back;
+		new_node->next = queue->back->next;
+		if(queue->back->next != NULL)
+		{
+			queue->back->next->prev = new_node;
+		}
+		queue->back->next = new_node;
+		queue->back = new_node;
+		queue->front = new_node;
+		
+	}
 	else
 	{
 		new_node->prev = queue->front->prev;
 		new_node->next = queue->front;
-
+		
 		if(queue->front == queue->abs_front)
 		{
 			queue->abs_front = new_node;
@@ -78,14 +92,10 @@ void priorityEnqueue(Queue* queue, void* data)
 		{
 			queue->front->prev->next = new_node;
 		}
-
+		
 		queue->front->prev = new_node;
 		queue->front = new_node;
-		if(queue->length == 0)
-		{
-			queue->back = new_node;
-		}
-
+		
 	}
 	queue->length++;
 	queue->total_length++;
@@ -139,17 +149,15 @@ void flushQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
-		QueueNode* curr = queue->abs_front;
-		while(curr != NULL)
+		while(queue->abs_front != NULL)
 		{
-			QueueNode* next = curr->next;
-			if(curr->data != NULL)
+			QueueNode* next = queue->abs_front->next;
+			if(queue->abs_front->data != NULL)
 			{
-				free(curr->data);
-				curr->data = NULL;
+				queue->free_function(queue->abs_front->data);
 			}
-			free(curr);
-			curr = next;
+			free(queue->abs_front);
+			queue->abs_front = next;
 		}
 		queue->abs_front = NULL;
 		queue->front = NULL;
@@ -159,32 +167,26 @@ void flushQueue(Queue* queue)
 	}
 }
 
-//void flushQueueLeaveFront(Queue* queue)
-//{
-//	if(queue != NULL)
-//	{
-//		if(queue->abs_front != NULL)
-//		{
-//			QueueNode* curr = queue->abs_front->next;
-//			while(curr != NULL)
-//			{
-//				QueueNode* next = curr->next;
-//				if(curr->data != NULL)
-//				{
-//					queue->free_function(curr->data);
-//					curr->data = NULL;
-//				}
-//				free(curr);
-//				curr = next;
-//			}
-//			queue->abs_front->next = NULL;
-//			queue->front = queue->abs_front;
-//			queue->back = queue->abs_front;
-//			queue->length = 1;
-//			queue->total_length = 1;
-//		}
-//	}
-//}
+void cleanQueue(Queue* queue)
+{
+	//move the absolute front to the same position as front and free up the queue objects along the way
+	if(queue != NULL)
+	{
+		while(queue->abs_front != queue->front)
+		{
+			QueueNode* next = queue->abs_front->next;
+			if(queue->abs_front->data != NULL)
+			{
+				queue->free_function(queue->abs_front->data);
+			}
+			queue->abs_front->prev = NULL;
+			queue->abs_front->data = NULL;
+			free(queue->abs_front);
+			queue->abs_front = next;
+			queue->total_length--;
+		}
+	}
+}
 
 void freeQueue(Queue* queue)
 {

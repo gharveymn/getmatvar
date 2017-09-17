@@ -132,6 +132,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
 }
 
+
 byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index)
 {
 	MemMap* these_maps;
@@ -144,7 +145,8 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 		these_maps = heap_maps;
 	}
 	
-	if(!(address >= these_maps[tree_map_index].offset && address + bytes_needed <= these_maps[tree_map_index].offset + these_maps[tree_map_index].bytes_mapped && these_maps[tree_map_index].used == TRUE))
+	if(!(address >= these_maps[tree_map_index].offset && address + bytes_needed <= these_maps[tree_map_index].offset + these_maps[tree_map_index].bytes_mapped &&
+		these_maps[tree_map_index].used == TRUE))
 	{
 		
 		//unmap current page
@@ -158,7 +160,8 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 		alloc_gran = alloc_gran < file_size ? alloc_gran : file_size;
 		these_maps[tree_map_index].offset = (OffsetType)((address / alloc_gran) * alloc_gran);
 		these_maps[tree_map_index].bytes_mapped = address - these_maps[tree_map_index].offset + bytes_needed;
-		these_maps[tree_map_index].bytes_mapped = these_maps[tree_map_index].bytes_mapped < file_size - these_maps[tree_map_index].offset ? these_maps[tree_map_index].bytes_mapped : file_size - these_maps[tree_map_index].offset;
+		these_maps[tree_map_index].bytes_mapped =
+			   these_maps[tree_map_index].bytes_mapped < file_size - these_maps[tree_map_index].offset ? these_maps[tree_map_index].bytes_mapped : file_size - these_maps[tree_map_index].offset;
 		these_maps[tree_map_index].map_start = mmap(NULL, these_maps[tree_map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[tree_map_index].offset);
 		these_maps[tree_map_index].used = TRUE;
 		if(these_maps[tree_map_index].map_start == NULL || these_maps[tree_map_index].map_start == MAP_FAILED)
@@ -243,7 +246,8 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 		objects[i] = malloc(sizeof(SNODEntry));
 		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i]->parent_obj_header_address = this_trio->parent_obj_header_address;
-		objects[i]->this_obj_header_address = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		objects[i]->this_obj_header_address =
+			   getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(objects[i]->name, (char*)(heap_data_segment_pointer + objects[i]->name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i]->parent_tree_address = parent_trio->tree_address;
@@ -281,15 +285,17 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				//if another tree exists for this object, put it on the queue
 				trio = malloc(sizeof(AddrTrio));
 				trio->parent_obj_header_address = objects[i]->this_obj_header_address;
-				trio->tree_address = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio->heap_address = getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio->tree_address =
+					   getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio->heap_address =
+					   getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i]->sub_tree_address = trio->tree_address;
 				priorityEnqueue(addr_queue, trio);
 				parseHeaderTree(FALSE);
 				snod_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
 				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
-
+				
 			}
 			else if(cache_type == 2)
 			{
@@ -308,65 +314,68 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;
-
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui8_data != NULL)
-	{
-		mxFree(data_object->data_arrays.ui8_data);
-		data_object->data_arrays.ui8_data = NULL;
-	}
 	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i8_data != NULL)
+	if(data_object->data_arrays.is_mx_used != TRUE)
 	{
-		mxFree(data_object->data_arrays.i8_data);
-		data_object->data_arrays.i8_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui16_data != NULL)
-	{
-		mxFree(data_object->data_arrays.ui16_data);
-		data_object->data_arrays.ui16_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i16_data != NULL)
-	{
-		mxFree(data_object->data_arrays.i16_data);
-		data_object->data_arrays.i16_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui32_data != NULL)
-	{
-		mxFree(data_object->data_arrays.ui32_data);
-		data_object->data_arrays.ui32_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i32_data != NULL)
-	{
-		mxFree(data_object->data_arrays.i32_data);
-		data_object->data_arrays.i32_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui64_data != NULL)
-	{
-		mxFree(data_object->data_arrays.ui64_data);
-		data_object->data_arrays.ui64_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i64_data != NULL)
-	{
-		mxFree(data_object->data_arrays.i64_data);
-		data_object->data_arrays.i64_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.single_data != NULL)
-	{
-		mxFree(data_object->data_arrays.single_data);
-		data_object->data_arrays.single_data = NULL;
-	}
-	
-	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.double_data != NULL)
-	{
-		mxFree(data_object->data_arrays.double_data);
-		data_object->data_arrays.double_data = NULL;
+		if(data_object->data_arrays.ui8_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui8_data);
+			data_object->data_arrays.ui8_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i8_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i8_data);
+			data_object->data_arrays.i8_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui16_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui16_data);
+			data_object->data_arrays.ui16_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i16_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i16_data);
+			data_object->data_arrays.i16_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui32_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui32_data);
+			data_object->data_arrays.ui32_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i32_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i32_data);
+			data_object->data_arrays.i32_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui64_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui64_data);
+			data_object->data_arrays.ui64_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i64_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i64_data);
+			data_object->data_arrays.i64_data = NULL;
+		}
+		
+		if(data_object->data_arrays.single_data != NULL)
+		{
+			mxFree(data_object->data_arrays.single_data);
+			data_object->data_arrays.single_data = NULL;
+		}
+		
+		if(data_object->data_arrays.double_data != NULL)
+		{
+			mxFree(data_object->data_arrays.double_data);
+			data_object->data_arrays.double_data = NULL;
+		}
 	}
 	
 	if(data_object->data_arrays.udouble_data != NULL)

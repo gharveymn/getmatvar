@@ -4,9 +4,7 @@
 void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
 	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr;
 	if(strncmp(object->matlab_class,"logical",7) == 0)
 	{
@@ -18,7 +16,7 @@ void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 
 	mxSetData(mxIntPtr, object->data_arrays.ui8_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -36,13 +34,10 @@ void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxINT8_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.i8_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -61,10 +56,7 @@ void setI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwInd
 //for strings and ui16s
 void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr;
 	if(strncmp(object->matlab_class,"char",7) == 0)
 	{
@@ -76,7 +68,7 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	}
 
 	mxSetData(mxIntPtr, object->data_arrays.ui16_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 
 	if(super_structure_type == STRUCT)
 	{
@@ -94,13 +86,10 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 
 void setI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxINT16_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.i16_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -118,13 +107,10 @@ void setI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setUI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxUINT32_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.ui32_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -142,13 +128,10 @@ void setUI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 
 void setI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxINT32_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.i32_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -166,13 +149,10 @@ void setI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setUI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxUINT64_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.ui64_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -190,13 +170,10 @@ void setUI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 
 void setI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxINT64_CLASS, mxREAL);
 	mxSetData(mxIntPtr, object->data_arrays.i64_data);
-	mxSetDimensions(mxIntPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -215,12 +192,10 @@ void setI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
 	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxSglPtr = mxCreateNumericArray(0, NULL, mxSINGLE_CLASS, mxREAL);
 	mxSetData(mxSglPtr, object->data_arrays.single_data);
-	mxSetDimensions(mxSglPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxSglPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -238,13 +213,10 @@ void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxDblPtr = mxCreateNumericArray(0, NULL, mxDOUBLE_CLASS, mxREAL);
 	mxSetPr(mxDblPtr, object->data_arrays.double_data);
-	mxSetDimensions(mxDblPtr, obj_dims, num_obj_dims);
+	mxSetDimensions(mxDblPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
@@ -255,54 +227,43 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		//is a cell array
 		mxSetCell(returnStructure, index, mxDblPtr);
 	}
-	
+
 	free(obj_dims);
 	
 }
 
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	DataType this_stucture_type = REF;
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+{	
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	int num_fields = object->num_sub_objs;
-	mxArray* mxCellPtr = mxCreateCellArray(num_obj_dims, obj_dims);
+	mxArray* mxCellPtr = mxCreateCellArray(object->num_dims, obj_dims);
 	
 	if(super_structure_type == STRUCT)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, this_stucture_type));
+		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF));
 	}
 	else if(super_structure_type == REF)
 	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, this_stucture_type));
+		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF));
 	}
 	
 	free(obj_dims);
-	
 }
 
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-{
-	
-	DataType this_stucture_type = STRUCT;
-	
-	mwSize num_obj_dims = object->num_dims;
-	mwSize num_obj_elems = object->num_elems;
-	mwSize* obj_dims = makeObjDims(object->dims, num_obj_dims);
+{	
+	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	int num_fields = object->num_sub_objs;
 	const char** field_names = getFieldNames(object);
-	mxArray* mxStructPtr = mxCreateStructArray(num_obj_dims, obj_dims, num_fields, field_names);
+	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, field_names);
 	
 	if(super_structure_type == STRUCT)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, this_stucture_type));
+		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT));
 	}
 	else if(super_structure_type == REF)
 	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, this_stucture_type));
+		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT));
 	}
 	
 	free(field_names);
@@ -321,11 +282,11 @@ const char** getFieldNames(Data* object)
 }
 
 
-mwSize* makeObjDims(const uint32_t* dims, const mwSize num_obj_dims)
+mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims)
 {
 	
-	mwSize* obj_dims = malloc(num_obj_dims * sizeof(mwSize));
-	for(int i = 0; i < num_obj_dims; i++)
+	mwSize* obj_dims = malloc(num_dims * sizeof(mwSize));
+	for(int i = 0; i < num_dims; i++)
 	{
 		obj_dims[i] = (mwSize) dims[i];
 	}

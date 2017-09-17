@@ -2,7 +2,7 @@
 
 This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format Matfiles with support for all MATLAB fundamental types except for tables and function handles, which do not have MEX library support.
 
-A prebuilt binary for 64-bit Windows is available in the `bin` directory, however if you're running on 32-bit you will have to build it manually.
+Eventually there will be prebuilt binaries, but for now you'll have to build it yourself. Running `mexmake.m` will build it for you and output to the `bin` folder if you have all the needed dependencies.
 
 There are also some test functions and Matfiles to experiment with if you want to do some benchmarking.
 

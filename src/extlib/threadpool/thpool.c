@@ -337,7 +337,7 @@ static void* thread_do(struct thread* thread_p){
 	/* Assure all threads have been created before starting serving */
 	thpool_* thpool_p = thread_p->thpool_p;
 
-//	/* Register signal handler */
+	/* Register signal handler */
 //	struct sigaction act;
 //	sigemptyset(&act.sa_mask);
 //	act.sa_flags = 0;

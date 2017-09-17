@@ -29,8 +29,8 @@ void priorityEnqueue(Queue* queue, void* data);
 void* dequeue(Queue* queue);
 void* peekQueue(Queue* queue, int queue_location);
 void flushQueue(Queue* queue);
-//void flushQueueLeaveFront(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);
+void cleanQueue(Queue* queue);
 
 #endif //MATFILE_PARSING_WIN_MEX_QUEUE_H

@@ -1,3 +1,6 @@
+userview = memory;
+disp(userview.MemUsedMATLAB)
+
 addpath('res')
 addpath('bin')
 %file = 'res/my_struct.mat';
@@ -10,11 +13,7 @@ domemory = false;
 numtests = 1000;
 memvals = rand(numtests+1,1);
 lents = 0;
-
-
 if(domemory)
-	userview = memory;
-	disp(userview.MemUsedMATLAB)
 	memvals(1) = userview.MemUsedMATLAB;
 	for i = 1:numtests
 
@@ -27,13 +26,9 @@ if(domemory)
 		memvals(i+1) = userview.MemUsedMATLAB;
 	end
 	fprintf('\n');
-	userview = memory;
-	disp(userview.MemUsedMATLAB)
 	plot(memvals);
 	xlim([0,numtests]);
 else
-	userview = memory;
-	disp(userview.MemUsedMATLAB)
 	for i = 1:numtests
 
 		getmatvar(file, vars{:});
@@ -43,8 +38,6 @@ else
 		lents = numel(timestr);
 	end
 	fprintf('\n');
-	userview = memory;
-	disp(userview.MemUsedMATLAB)
 end
-clear file vars i numtests userview
-
+userview = memory;
+disp(userview.MemUsedMATLAB)
