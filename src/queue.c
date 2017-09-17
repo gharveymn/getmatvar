@@ -1,197 +1,196 @@
 #include "mapping.h"
+#include "queue.h"
 
 
-void enqueueTrio(Addr_Trio trio)
+Queue* initQueue(void (* free_function)(void*))
 {
-	if(queue.length >= MAX_Q_LENGTH)
+	Queue* new_queue = malloc(sizeof(Queue));
+	new_queue->abs_front = NULL;
+	new_queue->front = NULL;
+	new_queue->back = NULL;
+	new_queue->length = 0;
+	new_queue->total_length = 0;
+	if(free_function == NULL)
 	{
-		fprintf(stderr, "Not enough room in trio queue\n");
-		exit(EXIT_FAILURE);
-	}
-	queue.trios[queue.back].parent_obj_header_address = trio.parent_obj_header_address;
-	queue.trios[queue.back].tree_address = trio.tree_address;
-	queue.trios[queue.back].heap_address = trio.heap_address;
-	queue.length++;
-	
-	if(queue.back < MAX_Q_LENGTH - 1)
-	{
-		queue.back++;
+		new_queue->free_function = free;
 	}
 	else
 	{
-		queue.back = 0;
+		new_queue->free_function = free_function;
 	}
 }
 
-void enqueueObject(Object obj)
+void enqueue(Queue* queue, void* data)
 {
-	if(header_queue.length >= MAX_Q_LENGTH)
+	QueueNode* new_node = malloc(sizeof(QueueNode));
+	new_node->data = data;
+	if(queue->total_length == 0)
 	{
-		fprintf(stderr, "Not enough room in header queue\n");
-		exit(EXIT_FAILURE);
-	}
-	header_queue.objects[header_queue.back].parent_obj_header_address = obj.parent_obj_header_address;
-	header_queue.objects[header_queue.back].this_obj_header_address = obj.this_obj_header_address;
-	header_queue.objects[header_queue.back].name_offset = obj.name_offset;
-	strcpy(header_queue.objects[header_queue.back].name, obj.name);
-	header_queue.objects[header_queue.back].sub_tree_address = obj.sub_tree_address;
-	header_queue.objects[header_queue.back].this_tree_address = obj.this_tree_address;
-	header_queue.objects[header_queue.back].parent_tree_address = obj.parent_tree_address;
-	header_queue.length++;
-	
-	if(header_queue.back < MAX_Q_LENGTH - 1)
-	{
-		header_queue.back++;
+		new_node->next = NULL;
+		new_node->prev = NULL;
+		queue->abs_front = new_node;
+		queue->front = new_node;
+		queue->back = queue->front;
 	}
 	else
 	{
-		header_queue.back = 0;
+		new_node->prev = queue->back;
+		new_node->next = queue->back->next;
+
+		if(queue->back->next != NULL)
+		{
+			queue->back->next->prev = new_node;
+		}
+		queue->back->next = new_node;
+		queue->back = new_node;
+		if(queue->length == 0)
+		{
+			queue->front = new_node;
+		}
 	}
+	queue->length++;
+	queue->total_length++;
 }
 
 
-void enqueueVariableName(char* variable_name)
+void priorityEnqueue(Queue* queue, void* data)
 {
-	variable_name_queue.variable_names[variable_name_queue.back] = variable_name;
-	variable_name_queue.length++;
-	variable_name_queue.back++;
-}
-
-
-void priorityEnqueueTrio(Addr_Trio trio)
-{
-	if(queue.length >= MAX_Q_LENGTH)
+	QueueNode* new_node = malloc(sizeof(QueueNode));
+	new_node->data = data;
+	if(queue->total_length == 0)
 	{
-		fprintf(stderr, "Trying to priority enqueue: Not enough room in trio queue\n");
-		exit(EXIT_FAILURE);
-	}
-	if(queue.front - 1 < 0)
-	{
-		queue.trios[MAX_Q_LENGTH - 1].parent_obj_header_address = trio.parent_obj_header_address;
-		queue.trios[MAX_Q_LENGTH - 1].tree_address = trio.tree_address;
-		queue.trios[MAX_Q_LENGTH - 1].heap_address = trio.heap_address;
-		queue.front = MAX_Q_LENGTH - 1;
+		new_node->next = NULL;
+		new_node->prev = NULL;
+		queue->abs_front = new_node;
+		queue->front = new_node;
+		queue->back = queue->front;
 	}
 	else
 	{
-		queue.trios[queue.front - 1].parent_obj_header_address = trio.parent_obj_header_address;
-		queue.trios[queue.front - 1].tree_address = trio.tree_address;
-		queue.trios[queue.front - 1].heap_address = trio.heap_address;
-		queue.front--;
+		new_node->prev = queue->front->prev;
+		new_node->next = queue->front;
+
+		if(queue->front == queue->abs_front)
+		{
+			queue->abs_front = new_node;
+		}
+		else
+		{
+			queue->front->prev->next = new_node;
+		}
+
+		queue->front->prev = new_node;
+		queue->front = new_node;
+		if(queue->length == 0)
+		{
+			queue->back = new_node;
+		}
+
 	}
-	queue.length++;
+	queue->length++;
+	queue->total_length++;
 }
 
-
-void priorityEnqueueObject(Object obj)
+void resetQueue(Queue* queue)
 {
-	if(header_queue.length >= MAX_Q_LENGTH)
+	queue->front = queue->back;
+	queue->length = 0;
+}
+
+void* dequeue(Queue* queue)
+{
+	if(queue->front != NULL)
 	{
-		fprintf(stderr, "Trying to priority enqueue: Not enough room in header queue\n");
-		exit(EXIT_FAILURE);
-	}
-	if(header_queue.front - 1 < 0)
-	{
-		header_queue.objects[MAX_Q_LENGTH - 1].name_offset = obj.name_offset;
-		header_queue.objects[MAX_Q_LENGTH - 1].parent_obj_header_address = obj.parent_obj_header_address;
-		header_queue.objects[MAX_Q_LENGTH - 1].this_obj_header_address = obj.this_obj_header_address;
-		strcpy(header_queue.objects[MAX_Q_LENGTH - 1].name, obj.name);
-		header_queue.objects[MAX_Q_LENGTH - 1].sub_tree_address = obj.sub_tree_address;
-		header_queue.objects[MAX_Q_LENGTH - 1].this_tree_address = obj.this_tree_address;
-		header_queue.objects[MAX_Q_LENGTH - 1].parent_tree_address = obj.parent_tree_address;
-		header_queue.front = MAX_Q_LENGTH - 1;
+		void* to_return = queue->front->data;
+		QueueNode* new_front = queue->front->next;
+		if(new_front != NULL)
+		{
+			queue->front = new_front;
+		}
+		queue->length--;
+		return to_return;
 	}
 	else
 	{
-		header_queue.objects[header_queue.front - 1].name_offset = obj.name_offset;
-		header_queue.objects[header_queue.front - 1].parent_obj_header_address = obj.parent_obj_header_address;
-		header_queue.objects[header_queue.front - 1].this_obj_header_address = obj.this_obj_header_address;
-		strcpy(header_queue.objects[header_queue.front - 1].name, obj.name);
-		header_queue.objects[header_queue.front - 1].sub_tree_address = obj.sub_tree_address;
-		header_queue.objects[header_queue.front - 1].this_tree_address = obj.this_tree_address;
-		header_queue.objects[header_queue.front - 1].parent_tree_address = obj.parent_tree_address;
-		header_queue.front--;
+		return NULL;
 	}
-	header_queue.length++;
 }
 
-
-Addr_Trio dequeueTrio()
+void* peekQueue(Queue* queue, int queue_location)
 {
-	Addr_Trio trio;
-	trio.parent_obj_header_address = queue.trios[queue.front].parent_obj_header_address;
-	trio.tree_address = queue.trios[queue.front].tree_address;
-	trio.heap_address = queue.trios[queue.front].heap_address;
-	if(queue.front + 1 < MAX_Q_LENGTH)
+	if(queue->front != NULL)
 	{
-		queue.front++;
+		if(queue_location == QUEUE_FRONT)
+		{
+			return queue->front->data;
+		}
+		if(queue_location == QUEUE_BACK)
+		{
+			return queue->back->data;
+		}
 	}
 	else
 	{
-		queue.front = 0;
+		return NULL;
 	}
-	queue.length--;
-	return trio;
 }
 
-
-Object dequeueObject()
+void flushQueue(Queue* queue)
 {
-	Object obj;
-	obj.name_offset = header_queue.objects[header_queue.front].name_offset;
-	obj.parent_obj_header_address = header_queue.objects[header_queue.front].parent_obj_header_address;
-	obj.this_obj_header_address = header_queue.objects[header_queue.front].this_obj_header_address;
-	strcpy(obj.name, header_queue.objects[header_queue.front].name);
-	obj.sub_tree_address = header_queue.objects[header_queue.front].sub_tree_address;
-	obj.parent_tree_address = header_queue.objects[header_queue.front].parent_tree_address;
-	obj.this_tree_address = header_queue.objects[header_queue.front].this_tree_address;
-	if(header_queue.front + 1 < MAX_Q_LENGTH)
+	if(queue != NULL)
 	{
-		header_queue.front++;
+		QueueNode* curr = queue->abs_front;
+		while(curr != NULL)
+		{
+			QueueNode* next = curr->next;
+			if(curr->data != NULL)
+			{
+				free(curr->data);
+				curr->data = NULL;
+			}
+			free(curr);
+			curr = next;
+		}
+		queue->abs_front = NULL;
+		queue->front = NULL;
+		queue->back = NULL;
+		queue->length = 0;
+		queue->total_length = 0;
 	}
-	else
+}
+
+//void flushQueueLeaveFront(Queue* queue)
+//{
+//	if(queue != NULL)
+//	{
+//		if(queue->abs_front != NULL)
+//		{
+//			QueueNode* curr = queue->abs_front->next;
+//			while(curr != NULL)
+//			{
+//				QueueNode* next = curr->next;
+//				if(curr->data != NULL)
+//				{
+//					queue->free_function(curr->data);
+//					curr->data = NULL;
+//				}
+//				free(curr);
+//				curr = next;
+//			}
+//			queue->abs_front->next = NULL;
+//			queue->front = queue->abs_front;
+//			queue->back = queue->abs_front;
+//			queue->length = 1;
+//			queue->total_length = 1;
+//		}
+//	}
+//}
+
+void freeQueue(Queue* queue)
+{
+	if(queue != NULL)
 	{
-		header_queue.front = 0;
+		flushQueue(queue);
+		free(queue);
 	}
-	header_queue.length--;
-	return obj;
-}
-
-
-char* dequeueVariableName()
-{
-	char* variable_name = variable_name_queue.variable_names[variable_name_queue.front];
-	variable_name_queue.front++;
-	variable_name_queue.length--;
-	return variable_name;
-}
-
-
-char* peekVariableName()
-{
-	return variable_name_queue.variable_names[variable_name_queue.front];
-}
-
-
-void flushQueue()
-{
-	queue.length = 0;
-	queue.front = 0;
-	queue.back = 0;
-}
-
-
-void flushHeaderQueue()
-{
-	header_queue.length = 0;
-	header_queue.front = 0;
-	header_queue.back = 0;
-}
-
-
-void flushVariableNameQueue()
-{
-	variable_name_queue.length = 0;
-	variable_name_queue.front = 0;
-	variable_name_queue.back = 0;
 }

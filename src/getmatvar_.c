@@ -1,5 +1,6 @@
 #include "getmatvar_.h"
 
+
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
@@ -33,14 +34,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n", "");
 		}
 		
-		const char** full_variable_names;
+		char** full_variable_names;
 		int num_vars;
 		if(nrhs > 1)
 		{
 			full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
 			for (int i = 0; i < nrhs - 1; i++)
 			{
-				full_variable_names[i] = mxArrayToString(prhs[i + 1]);
+				char* vn = mxArrayToString(prhs[i + 1]);
+				full_variable_names[i] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
+				strcpy(full_variable_names[i], vn);
 			}
 			full_variable_names[nrhs - 1] = NULL;
 			num_vars = nrhs-1;
@@ -52,15 +55,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			full_variable_names[1] = NULL;
 			num_vars = 1;
 		}
-
-		Data** error_objects = makeReturnStructure(plhs, num_vars, full_variable_names, filename);
+		
+		Queue* error_objects = makeReturnStructure(plhs, num_vars, full_variable_names, filename);
 		if(error_objects != NULL)
 		{
+			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
 			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id,error_objects[0]->name);
-			strcpy(err_string,error_objects[0]->matlab_class);
+			strcpy(err_id,front_object->name);
+			strcpy(err_string,front_object->matlab_class);
 			free(full_variable_names);
-			freeDataObjects(error_objects);
+			freeQueue(error_objects);
 			readMXError(err_id, err_string);
 		}
 
@@ -72,26 +76,27 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-Data** makeReturnStructure(mxArray* uberStructure[], const int num_elems, const char* full_variable_names[], const char* filename)
+Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
 {
 
 	mwSize ret_struct_dims[1] = {1};
 	
 	fprintf(stderr,"Fetching the objects... ");
-	Data** objects = getDataObjects(filename, full_variable_names, num_elems);
-	if((ERROR & objects[0]->type) == ERROR)
+	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
+	Data* front_object = peekQueue(objects, QUEUE_FRONT);
+	if((ERROR & front_object->type) == ERROR)
 	{
 		return objects;
 	}
 	fprintf(stderr,"success.\n");
 	
-	Data** super_objects = malloc(MAX_OBJS*sizeof(Data*));
-	char** varnames = malloc(MAX_OBJS*sizeof(char*));
+	Data** super_objects = malloc((objects->length)*sizeof(Data*));
+	char** varnames = malloc((objects->length)*sizeof(char*));
 	int starting_pos = 0, num_objs = 0;
-	for (;num_objs < MAX_OBJS; num_objs++)
+	for (;objects->length  > 0; num_objs++)
 	{
 		varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
-		super_objects[num_objs] = organizeObjects(objects, &starting_pos);
+		super_objects[num_objs] = organizeObjects(objects);
 		if (super_objects[num_objs] == NULL)
 		{
 			break;
@@ -109,8 +114,7 @@ Data** makeReturnStructure(mxArray* uberStructure[], const int num_elems, const 
 	
 	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT);
 	
-	freeDataObjects(objects);
-
+	freeQueue(objects);
 	free(super_objects);
 	for (int i = 0; i < num_objs; i++)
 	{

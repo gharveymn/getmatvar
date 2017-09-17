@@ -127,7 +127,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n", strerror(errno));
 	}
 	
-	map_queue_fronts[map_type] = map_queue_fronts[map_type] >= map_nums[map_type] - 1 ? 0 : map_queue_fronts[map_type] + 1;
+	map_queue_fronts[map_type] = (map_queue_fronts[map_type] + 1) % map_nums[map_type];
 	
 	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
 }
@@ -174,9 +174,9 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 }
 
 
-void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
+void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 {
-	Addr_Trio trio;
+	AddrTrio* trio;
 	uint16_t entries_used = 0;
 	uint64_t left_sibling_address, right_sibling_address;
 	
@@ -186,19 +186,21 @@ void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	if(left_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
-		trio.tree_address = left_sibling_address + s_block.base_address;
-		trio.heap_address = this_trio.heap_address;
-		enqueueTrio(trio);
+		trio = malloc(sizeof(AddrTrio));
+		trio->parent_obj_header_address = this_trio->parent_obj_header_address;
+		trio->tree_address = left_sibling_address + s_block.base_address;
+		trio->heap_address = this_trio->heap_address;
+		enqueue(addr_queue, trio);
 	}
 	
 	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	if(right_sibling_address != UNDEF_ADDR)
 	{
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;;
-		trio.tree_address = right_sibling_address + s_block.base_address;
-		trio.heap_address = this_trio.heap_address;
-		enqueueTrio(trio);
+		trio = malloc(sizeof(AddrTrio));
+		trio->parent_obj_header_address = this_trio->parent_obj_header_address;;
+		trio->tree_address = right_sibling_address + s_block.base_address;
+		trio->heap_address = this_trio->heap_address;
+		enqueue(addr_queue, trio);
 	}
 	
 	//group node B-Tree traversal (version 0)
@@ -206,13 +208,13 @@ void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 	byte* key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 	for(int i = 0; i < entries_used; i++)
 	{
-		
-		trio.parent_obj_header_address = this_trio.parent_obj_header_address;
-		trio.tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		trio.heap_address = this_trio.heap_address;
+		trio = malloc(sizeof(AddrTrio));
+		trio->parent_obj_header_address = this_trio->parent_obj_header_address;
+		trio->tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		trio->heap_address = this_trio->heap_address;
 		
 		//in the case where we encounter a struct but have more items ahead
-		priorityEnqueueTrio(trio);
+		priorityEnqueue(addr_queue, trio);
 		
 		key_pointer += key_size + s_block.size_of_offsets;
 		
@@ -221,13 +223,13 @@ void readTreeNode(byte* tree_pointer, Addr_Trio this_trio)
 }
 
 
-void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_trio, bool_t get_top_level)
+void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_trio, bool_t get_top_level)
 {
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	Object* objects = malloc(sizeof(Object) * num_symbols);
+	SNODEntry** objects = malloc(num_symbols * sizeof(SNODEntry*));
 	uint32_t cache_type;
-	Addr_Trio trio;
-	char* var_name = peekVariableName();
+	AddrTrio* trio;
+	char* var_name = peekQueue(varname_queue, QUEUE_FRONT);
 	
 	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2 * s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
@@ -238,27 +240,27 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 	
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
-		objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
-		objects[i].parent_obj_header_address = this_trio.parent_obj_header_address;
-		objects[i].this_obj_header_address =
-			   getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		strcpy(objects[i].name, (char*)(heap_data_segment_pointer + objects[i].name_offset));
+		objects[i] = malloc(sizeof(SNODEntry));
+		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		objects[i]->parent_obj_header_address = this_trio->parent_obj_header_address;
+		objects[i]->this_obj_header_address = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		strcpy(objects[i]->name, (char*)(heap_data_segment_pointer + objects[i]->name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
-		objects[i].parent_tree_address = parent_trio.tree_address;
-		objects[i].this_tree_address = this_trio.tree_address;
-		objects[i].sub_tree_address = UNDEF_ADDR;
+		objects[i]->parent_tree_address = parent_trio->tree_address;
+		objects[i]->this_tree_address = this_trio->tree_address;
+		objects[i]->sub_tree_address = UNDEF_ADDR;
 		
 		//check if we have found the object we're looking for or if we are just adding subobjects
-		if((var_name != NULL && strcmp(var_name, objects[i].name) == 0) || variable_found == TRUE)
+		if((var_name != NULL && strcmp(var_name, objects[i]->name) == 0) || variable_found == TRUE)
 		{
 			if(variable_found == FALSE)
 			{
-				flushHeaderQueue();
-				flushQueue();
-				dequeueVariableName();
+				resetQueue(header_queue);
+				resetQueue(addr_queue);
+				dequeue(varname_queue);
 				
 				//means this was the last token, so we've found the variable we want
-				if(variable_name_queue.length == 0)
+				if(varname_queue->length == 0)
 				{
 					variable_found = TRUE;
 					is_done = TRUE;
@@ -266,35 +268,34 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 				
 			}
 			
-			if(strncmp(objects[i].name, "#", 1) != 0 && strncmp(objects[i].name, "function_handle", 15) != 0)
+			if(strncmp(objects[i]->name, "#", 1) != 0 && strncmp(objects[i]->name, "function_handle", 15) != 0)
 			{
-				enqueueObject(objects[i]);
+				enqueue(header_queue, objects[i]);
 			}
 			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1 && strncmp(objects[i].name, "#", 1) != 0 && strncmp(objects[i].name, "function_handle", 15) != 0 && get_top_level == FALSE)
+			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 && strncmp(objects[i]->name, "function_handle", 15) != 0 && get_top_level == FALSE)
 			{
 				
 				//if another tree exists for this object, put it on the queue
-				trio.parent_obj_header_address = objects[i].this_obj_header_address;
-				trio.tree_address =
-					   getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio.heap_address =
-					   getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				objects[i].sub_tree_address = trio.tree_address;
-				priorityEnqueueTrio(trio);
+				trio = malloc(sizeof(AddrTrio));
+				trio->parent_obj_header_address = objects[i]->this_obj_header_address;
+				trio->tree_address = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio->heap_address = getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				objects[i]->sub_tree_address = trio->tree_address;
+				priorityEnqueue(addr_queue, trio);
 				parseHeaderTree(FALSE);
-				snod_pointer = navigateTo(this_trio.tree_address, default_bytes, TREE);
-				heap_pointer = navigateTo(this_trio.heap_address, default_bytes, HEAP);
+				snod_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
+				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 
 			}
 			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				objects[i].name_offset = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
-				strcpy(objects[i].name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i].name_offset);
+				objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+				strcpy(objects[i]->name, heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i]->name_offset);
 			}
 			
 		}
@@ -304,103 +305,90 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Add
 }
 
 
-void freeDataObjects(Data** objects)
+void freeDataObject(void* object)
 {
-	
-	int i = 0;
-	while((END_SENTINEL & objects[i]->type) != END_SENTINEL)
+	Data* data_object = (Data*)object;
+
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui8_data != NULL)
 	{
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui8_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.ui8_data);
-			objects[i]->data_arrays.ui8_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.i8_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.i8_data);
-			objects[i]->data_arrays.i8_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui16_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.ui16_data);
-			objects[i]->data_arrays.ui16_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.i16_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.i16_data);
-			objects[i]->data_arrays.i16_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui32_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.ui32_data);
-			objects[i]->data_arrays.ui32_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.i32_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.i32_data);
-			objects[i]->data_arrays.i32_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.ui64_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.ui64_data);
-			objects[i]->data_arrays.ui64_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.i64_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.i64_data);
-			objects[i]->data_arrays.i64_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.single_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.single_data);
-			objects[i]->data_arrays.single_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.is_mx_used != TRUE && objects[i]->data_arrays.double_data != NULL)
-		{
-			mxFree(objects[i]->data_arrays.double_data);
-			objects[i]->data_arrays.double_data = NULL;
-		}
-		
-		if(objects[i]->data_arrays.udouble_data != NULL)
-		{
-			free(objects[i]->data_arrays.udouble_data);
-			objects[i]->data_arrays.udouble_data = NULL;
-		}
-		
-		for(int j = 0; j < objects[i]->chunked_info.num_filters; j++)
-		{
-			free(objects[i]->chunked_info.filters[j].client_data);
-			objects[i]->chunked_info.filters[j].client_data = NULL;
-		}
-		
-		if(objects[i]->sub_objects != NULL)
-		{
-			free(objects[i]->sub_objects);
-			objects[i]->sub_objects = NULL;
-		}
-		
-		
-		free(objects[i]);
-		objects[i] = NULL;
-		
-		i++;
-		
+		mxFree(data_object->data_arrays.ui8_data);
+		data_object->data_arrays.ui8_data = NULL;
 	}
 	
-	//note that nothing was malloced inside the sentinel object
-	free(objects[i]);
-	objects[i] = NULL;
-	free(objects);
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i8_data != NULL)
+	{
+		mxFree(data_object->data_arrays.i8_data);
+		data_object->data_arrays.i8_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui16_data != NULL)
+	{
+		mxFree(data_object->data_arrays.ui16_data);
+		data_object->data_arrays.ui16_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i16_data != NULL)
+	{
+		mxFree(data_object->data_arrays.i16_data);
+		data_object->data_arrays.i16_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui32_data != NULL)
+	{
+		mxFree(data_object->data_arrays.ui32_data);
+		data_object->data_arrays.ui32_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i32_data != NULL)
+	{
+		mxFree(data_object->data_arrays.i32_data);
+		data_object->data_arrays.i32_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.ui64_data != NULL)
+	{
+		mxFree(data_object->data_arrays.ui64_data);
+		data_object->data_arrays.ui64_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.i64_data != NULL)
+	{
+		mxFree(data_object->data_arrays.i64_data);
+		data_object->data_arrays.i64_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.single_data != NULL)
+	{
+		mxFree(data_object->data_arrays.single_data);
+		data_object->data_arrays.single_data = NULL;
+	}
+	
+	if(data_object->data_arrays.is_mx_used != TRUE && data_object->data_arrays.double_data != NULL)
+	{
+		mxFree(data_object->data_arrays.double_data);
+		data_object->data_arrays.double_data = NULL;
+	}
+	
+	if(data_object->data_arrays.udouble_data != NULL)
+	{
+		free(data_object->data_arrays.udouble_data);
+		data_object->data_arrays.udouble_data = NULL;
+	}
+	
+	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+	{
+		free(data_object->chunked_info.filters[j].client_data);
+		data_object->chunked_info.filters[j].client_data = NULL;
+	}
+	
+	if(data_object->sub_objects != NULL)
+	{
+		free(data_object->sub_objects);
+		data_object->sub_objects = NULL;
+	}
+	
+	
+	free(data_object);
 	
 }
 
@@ -500,6 +488,10 @@ void freeDataObjectTree(Data* super_object)
 void endHooks(void)
 {
 	freeAllMaps();
+	
+	freeQueue(addr_queue);
+	freeQueue(varname_queue);
+	freeQueue(header_queue);
 	
 	if(fd >= 0)
 	{

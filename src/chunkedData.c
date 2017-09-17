@@ -103,7 +103,7 @@ errno_t decompressChunk(TreeNode* node)
 	thread_objects_front->err = 0;
 	thread_objects_front->prev = tmp;
 	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_objects_front);
-	map_iterator = map_iterator+1 < num_threads ? map_iterator+1 : 0;\
+	map_iterator = (map_iterator+1) % num_threads;
 	return 0;
 	
 }

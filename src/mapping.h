@@ -1,3 +1,6 @@
+#ifndef MAPPING_H
+#define MAPPING_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +11,6 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-
 
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
 #include "extlib/mman-win32/mman.h"
@@ -25,26 +27,19 @@ typedef uint64_t OffsetType;
 #define TRUE 1
 #define FALSE 0
 #define FORMAT_SIG "\211HDF\r\n\032\n"
-#define MAX_Q_LENGTH 1000
 #define TREE 0
 #define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
-#define MAX_OBJS 1000
 #define CLASS_LENGTH 200
 #define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
-#define MAX_VAR_NAMES 64
-#define MAX_MALLOC_VARS 1000
 #define NUM_TREE_MAPS 7
 #define NUM_HEAP_MAPS 2
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define CHUNK_IN_PARALLEL TRUE
-#define MAX_SUB_OBJECTS 30
-#define USE_SUPER_OBJECT_CELL 1
-#define USE_SUPER_OBJECT_ALL 2
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
@@ -65,23 +60,23 @@ typedef struct
 	uint64_t parent_obj_header_address;
 	uint64_t tree_address;
 	uint64_t heap_address;
-} Addr_Trio;
+} AddrTrio;
 
 typedef struct
 {
-	Addr_Trio trios[MAX_Q_LENGTH];
-	int front;
-	int back;
-	int length;
-} Addr_Q;
-
-typedef struct
-{
-	char* variable_names[MAX_Q_LENGTH];
-	int front;
-	int back;
-	int length;
-} Variable_Name_Q;
+	//this is an ENTRY for a SNOD
+	
+	uint64_t name_offset;
+	char name[NAME_LENGTH];
+	
+	uint64_t parent_obj_header_address;
+	uint64_t this_obj_header_address;
+	
+	uint64_t parent_tree_address;
+	uint64_t this_tree_address;
+	uint64_t sub_tree_address; //invoked if cache type 1
+	
+} SNODEntry;
 
 typedef struct
 {
@@ -100,30 +95,6 @@ typedef struct
 	OffsetType offset;
 	int used;
 } MemMap;
-
-typedef struct
-{
-	//this is an ENTRY for a SNOD
-	
-	uint64_t name_offset;
-	char name[NAME_LENGTH];
-	
-	uint64_t parent_obj_header_address;
-	uint64_t this_obj_header_address;
-	
-	uint64_t parent_tree_address;
-	uint64_t this_tree_address;
-	uint64_t sub_tree_address; //invoked if cache type 1
-	
-} Object;
-
-typedef struct
-{
-	Object objects[MAX_Q_LENGTH];
-	int front;
-	int back;
-	int length;
-} Header_Q;
 
 typedef enum
 {
@@ -260,6 +231,8 @@ struct tree_node_
 	TreeNode* right_sibling;
 };
 
+#include "queue.h"
+
 
 //fileHelper.c
 Superblock getSuperblock(void);
@@ -267,34 +240,18 @@ byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
 byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type);
 byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index);
-void readTreeNode(byte* tree_pointer, Addr_Trio this_trio);
-void readSnod(byte* snod_pointer, byte* heap_pointer, Addr_Trio parent_trio, Addr_Trio this_address, bool_t get_top_level);
-void freeDataObjects(Data** objects);
+void readTreeNode(byte* tree_pointer, AddrTrio* this_trio);
+void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_address, bool_t get_top_level);
+void freeDataObject(void* object);
 void freeDataObjectTree(Data* super_object);
 void endHooks(void);
 void freeAllMaps(void);
 void freeMap(MemMap map);
 
-
 //numberHelper.c
 int roundUp(int numToRound);
 uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
 void reverseBytes(byte* data_pointer, size_t num_elems);
-
-
-//queue.c
-void enqueueTrio(Addr_Trio trio);
-void flushQueue();
-Addr_Trio dequeueTrio();
-void priorityEnqueueTrio(Addr_Trio trio);
-void flushHeaderQueue();
-Object dequeueObject();
-void priorityEnqueueObject(Object obj);
-void enqueueObject(Object obj);
-void flushVariableNameQueue();
-char* dequeueVariableName();
-char* peekVariableName();
-void enqueueVariableName(char* variable_name);
 
 //readMessage.c
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
@@ -304,11 +261,11 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
 //mapping.c
-Data** getDataObjects(const char* filename, char** variable_names, int num_names);
+Queue* getDataObjects(const char* filename, char** variable_names, int num_names);
 void findHeaderAddress(const char* variable_name, bool_t get_top_level);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
-Data* organizeObjects(Data** objects, int* starting_pos);
-void placeInSuperObject(Data* super_object, Data** objects, int num_total_objs, int* index);
+Data* organizeObjects(Queue* objects);
+void placeInSuperObject(Data* super_object, Queue* objects, int num_total_objs);
 errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeMaps(void);
@@ -335,15 +292,18 @@ MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];
 int map_nums[2];
 int map_queue_fronts[2]; //cycle thru a queue so that we dont overwrite too soon
-Addr_Q queue;
-Header_Q header_queue;
-Variable_Name_Q variable_name_queue;
+
+Queue* addr_queue;
+Queue* varname_queue;
+Queue* header_queue;
 
 int fd;
 size_t file_size;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
-Addr_Trio root_trio;
+AddrTrio root_trio;
 
 size_t num_avail_threads;
+
+#endif
