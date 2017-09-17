@@ -1,60 +1,95 @@
 #include "getmatvar_.h"
 
+typedef enum
+{
+	NOT_AN_ARGUMENT,
+	THREAD
+} kwarg;
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
 	//init maps, needed so we don't confuse ending hooks in the case of error
 	initializeMaps();
+	addr_queue = NULL;
+	varname_queue = NULL;
+	header_queue = NULL;
 	fd = -1;
+	num_threads_to_use = -1;
 	
 	if(nrhs < 1)
 	{
-		readMXError("getmatvar:invalidNumInputs", "At least one input arguments are required.\n\n", "");
+		readMXError("getmatvar:invalidNumInputs", "At least one input argument is required.\n\n");
 	}
 	else if(nlhs > 1)
 	{
-		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than one output.\n\n", "");
+		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than one output.\n\n");
 	}
 	else
 	{
-		
-		for (int i = 0; i < nrhs; i++)
+		if(mxGetClassID(prhs[0]) != mxCHAR_CLASS)
 		{
-			if (mxGetClassID(prhs[i]) != mxCHAR_CLASS)
-			{
-				readMXError("getmatvar:invalidInputType", "All inputs must be character vectors\n\n", "");
-			}
+			readMXError("getmatvar:invalidFileNameType", "The file name must be a character vector\n\n");
 		}
-
 		const char* filename = mxArrayToString(prhs[0]);
 
 		if(strstr(filename, ".mat") == NULL)
 		{
-			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n", "");
+			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n");
 		}
 		
 		char** full_variable_names;
-		int num_vars;
-		if(nrhs > 1)
+		int num_vars = 0;
+		full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
+		kwarg kwarg_expected = NOT_AN_ARGUMENT;
+		for (int i = 0; i < nrhs - 1; i++)
 		{
-			full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
-			for (int i = 0; i < nrhs - 1; i++)
+			if(mxGetClassID(prhs[i+1]) == mxCHAR_CLASS)
 			{
 				char* vn = mxArrayToString(prhs[i + 1]);
-				full_variable_names[i] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
-				strcpy(full_variable_names[i], vn);
+				if(strncmp(vn,"-",1) == 0)
+				{
+					if(strcmp(vn,"-threads") == 0)
+					{
+						kwarg_expected = THREAD;
+					}
+				}
+				else
+				{
+					kwarg_expected = NOT_AN_ARGUMENT;
+					full_variable_names[num_vars] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
+					strcpy(full_variable_names[num_vars], vn);
+					num_vars++;
+				}
 			}
-			full_variable_names[nrhs - 1] = NULL;
-			num_vars = nrhs-1;
+			else
+			{
+				switch(kwarg_expected)
+				{
+					case THREAD:
+						num_threads_to_use = MIN((int)mxGetScalar(prhs[i+1]), NUM_TREE_MAPS);
+						break;
+					case NOT_AN_ARGUMENT:
+					default:
+						for(int j = num_vars-1; j >= 0; j--)
+						{
+							free(full_variable_names[j]);
+						}
+						free(full_variable_names);
+						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
+							
+				}
+				kwarg_expected = NOT_AN_ARGUMENT;
+			}
 		}
-		else
+		
+		if(num_vars == 0)
 		{
 			full_variable_names = malloc(2*sizeof(char*));
 			full_variable_names[0] = "\0";
-			full_variable_names[1] = NULL;
 			num_vars = 1;
 		}
+		full_variable_names[num_vars] = NULL;
 		
 		Queue* error_objects = makeReturnStructure(plhs, num_vars, full_variable_names, filename);
 		if(error_objects != NULL)

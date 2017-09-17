@@ -42,7 +42,7 @@ typedef uint64_t OffsetType;
 #define CHUNK_IN_PARALLEL TRUE
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-
+#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
 
 #define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
                          "\tgetmatvar(filename,variable1,...,variableN)\n\n" \
@@ -304,6 +304,7 @@ uint64_t default_bytes;
 int variable_found;
 AddrTrio root_trio;
 
-size_t num_avail_threads;
+int num_avail_threads;
+int num_threads_to_use;
 
 #endif
