@@ -42,20 +42,30 @@ errno_t getChunkedData(Data* obj)
 	
 	thread_objects_front = malloc(sizeof(inflate_thread_obj));
 	thread_objects_front->prev = NULL;
-	num_threads = MIN((int)num_avail_threads, NUM_TREE_MAPS);
+	if(num_threads_to_use != -1)
+	{
+		num_threads = num_threads_to_use;
+	}
+	else
+	{
+		num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
+		num_threads = MIN(num_threads, NUM_TREE_MAPS);
+		num_threads = MIN(num_threads, num_avail_threads);
+		num_threads = MAX(num_threads, 1);
+	}
 	threads = malloc(num_threads*sizeof(threadpool));
-	for (int i = 0; i < num_threads; ++i)
+	for (int i = 0; i < num_threads; i++)
 	{
 		//thread pool of size 1 to restrict each thread to one map
 		threads[i] = thpool_init(1);
 	}
 	map_iterator = 0;
 	ret = decompressChunk(&root);
-	for (int j = 0; j < num_threads; ++j)
+	for (int j = 0; j < num_threads; j++)
 	{
 		thpool_wait(threads[j]);
 	}
-	for (int j = 0; j < num_threads; ++j)
+	for (int j = 0; j < num_threads; j++)
 	{
 		thpool_destroy(threads[j]);
 	}
