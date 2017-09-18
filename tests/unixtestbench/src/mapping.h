@@ -11,11 +11,10 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include <mex.h>
 #include <pthread.h>
 #include "extlib/threadpool/thpool.h"
 
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) && !defined(__CYGWIN__)
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #else
@@ -58,6 +57,7 @@ typedef uint64_t OffsetType;
 
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
+typedef int errno_t;
 
 typedef struct
 {
@@ -180,7 +180,7 @@ typedef struct data_ Data;
 struct data_
 {
 	DataType type;
-	mxComplexity complexity_flag;
+	int complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
 	char name[NAME_LENGTH];
@@ -277,6 +277,8 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
+void readMXError(const char error_id[], const char error_message[], ...);
+void readMXWarn(const char warn_id[], const char warn_message[], ...);
 
 
 //getPageSize.c
@@ -293,7 +295,7 @@ void freeTree(TreeNode* node);
 errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
-ByteOrder __byte_order____;
+ByteOrder __byte_order__;
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];

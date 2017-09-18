@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -110,7 +110,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			}
 			break;
 		case 6:
-			object->complexity_flag = mxCOMPLEX;
+			object->complexity_flag = 1;
 			msg_pointer = navigateTo(msg_address + 48, 20, TREE);
 			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
 			object->num_elems *= 2;
@@ -137,6 +137,8 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 	if(*msg_pointer != 3)
 	{
 		readMXError("getmatvar:internalError", "Data layout version at address\n\n");
+		//fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
+		//exit(EXIT_FAILURE);
 	}
 	
 	object->layout_class = (uint8_t)*(msg_pointer + 1);
@@ -181,6 +183,8 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			break;
 		default:
 			readMXError("getmatvar:internalError", "Unknown data layout class\n\n");
+			//fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
+			//exit(EXIT_FAILURE);
 	}
 }
 

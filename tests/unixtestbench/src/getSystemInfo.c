@@ -51,10 +51,9 @@ int getNumProcessors(void)
 	return (int)sysconf(_SC_NPROCESSORS_ONLN);
 }
 
-
 #endif
 
-ByteOrder getByteOrder(void)
+ByteOrder getByteOrder()
 {
     short int number = 0x1;
     char *numPtr = (char*)&number;

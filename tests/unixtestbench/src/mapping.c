@@ -1,4 +1,5 @@
-#include "getmatvar_.h"
+#include "mapping.h"
+#include <stdarg.h>
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -11,6 +12,14 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	char errmsg[NAME_LENGTH];
 	num_avail_threads = getNumProcessors() - 1;
 	
+	initializeMaps();
+	is_multithreading = FALSE;
+	addr_queue = NULL;
+	varname_queue = NULL;
+	header_queue = NULL;
+	fd = -1;
+	num_threads_to_use = -1;
+
 	//init queues
 	addr_queue = initQueue(NULL);
 	varname_queue = initQueue(NULL);
@@ -227,7 +236,7 @@ void initializeObject(Data* object)
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
 	object->type = UNDEF;
-	object->complexity_flag = mxREAL;
+	object->complexity_flag = 0;
 	
 	object->num_dims = 0;
 	object->num_elems = 0;
@@ -399,34 +408,34 @@ errno_t allocateSpace(Data* object)
 	switch(object->type)
 	{
 		case INT8:
-			object->data_arrays.i8_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i8_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT8:
-			object->data_arrays.ui8_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui8_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT16:
-			object->data_arrays.i16_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i16_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT16:
-			object->data_arrays.ui16_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui16_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT32:
-			object->data_arrays.i32_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i32_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT32:
-			object->data_arrays.ui32_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui32_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case INT64:
-			object->data_arrays.i64_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i64_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case UINT64:
-			object->data_arrays.ui64_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui64_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case SINGLE:
-			object->data_arrays.single_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.single_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case DOUBLE:
-			object->data_arrays.double_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.double_data = malloc(object->num_elems * object->elem_size);
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
@@ -731,4 +740,32 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 		super_object->num_sub_objs++;
 	}
 	
+}
+
+void readMXError(const char error_id[], const char error_message[], ...)
+{
+	
+	char message_buffer[ERROR_BUFFER_SIZE];
+
+	va_list va;
+	va_start(va, error_message);
+	sprintf(message_buffer, error_message, va);
+	strcat(message_buffer, MATLAB_HELP_MESSAGE);
+	endHooks();
+	va_end(va);
+	printf("%s",message_buffer);
+	exit(1);
+}
+
+void readMXWarn(const char warn_id[], const char warn_message[], ...)
+{
+	char message_buffer[WARNING_BUFFER_SIZE];
+
+	va_list va;
+	va_start(va, warn_message);
+	sprintf(message_buffer, warn_message, va);
+	strcat(message_buffer, MATLAB_WARN_MESSAGE);
+	va_end(va);
+	printf("%s",message_buffer);
+	exit(1);
 }

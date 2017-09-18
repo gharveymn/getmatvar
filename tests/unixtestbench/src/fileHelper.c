@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 
 Superblock getSuperblock(void)
@@ -338,61 +338,61 @@ void freeDataObject(void* object)
 	{
 		if(data_object->data_arrays.ui8_data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui8_data);
+			free(data_object->data_arrays.ui8_data);
 			data_object->data_arrays.ui8_data = NULL;
 		}
 		
 		if(data_object->data_arrays.i8_data != NULL)
 		{
-			mxFree(data_object->data_arrays.i8_data);
+			free(data_object->data_arrays.i8_data);
 			data_object->data_arrays.i8_data = NULL;
 		}
 		
 		if(data_object->data_arrays.ui16_data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui16_data);
+			free(data_object->data_arrays.ui16_data);
 			data_object->data_arrays.ui16_data = NULL;
 		}
 		
 		if(data_object->data_arrays.i16_data != NULL)
 		{
-			mxFree(data_object->data_arrays.i16_data);
+			free(data_object->data_arrays.i16_data);
 			data_object->data_arrays.i16_data = NULL;
 		}
 		
 		if(data_object->data_arrays.ui32_data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui32_data);
+			free(data_object->data_arrays.ui32_data);
 			data_object->data_arrays.ui32_data = NULL;
 		}
 		
 		if(data_object->data_arrays.i32_data != NULL)
 		{
-			mxFree(data_object->data_arrays.i32_data);
+			free(data_object->data_arrays.i32_data);
 			data_object->data_arrays.i32_data = NULL;
 		}
 		
 		if(data_object->data_arrays.ui64_data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui64_data);
+			free(data_object->data_arrays.ui64_data);
 			data_object->data_arrays.ui64_data = NULL;
 		}
 		
 		if(data_object->data_arrays.i64_data != NULL)
 		{
-			mxFree(data_object->data_arrays.i64_data);
+			free(data_object->data_arrays.i64_data);
 			data_object->data_arrays.i64_data = NULL;
 		}
 		
 		if(data_object->data_arrays.single_data != NULL)
 		{
-			mxFree(data_object->data_arrays.single_data);
+			free(data_object->data_arrays.single_data);
 			data_object->data_arrays.single_data = NULL;
 		}
 		
 		if(data_object->data_arrays.double_data != NULL)
 		{
-			mxFree(data_object->data_arrays.double_data);
+			free(data_object->data_arrays.double_data);
 			data_object->data_arrays.double_data = NULL;
 		}
 	}
@@ -426,61 +426,61 @@ void freeDataObjectTree(Data* super_object)
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui8_data != NULL)
 	{
-		mxFree(super_object->data_arrays.ui8_data);
+		free(super_object->data_arrays.ui8_data);
 		super_object->data_arrays.ui8_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i8_data != NULL)
 	{
-		mxFree(super_object->data_arrays.i8_data);
+		free(super_object->data_arrays.i8_data);
 		super_object->data_arrays.i8_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui16_data != NULL)
 	{
-		mxFree(super_object->data_arrays.ui16_data);
+		free(super_object->data_arrays.ui16_data);
 		super_object->data_arrays.ui16_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i16_data != NULL)
 	{
-		mxFree(super_object->data_arrays.i16_data);
+		free(super_object->data_arrays.i16_data);
 		super_object->data_arrays.i16_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui32_data != NULL)
 	{
-		mxFree(super_object->data_arrays.ui32_data);
+		free(super_object->data_arrays.ui32_data);
 		super_object->data_arrays.ui32_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i32_data != NULL)
 	{
-		mxFree(super_object->data_arrays.i32_data);
+		free(super_object->data_arrays.i32_data);
 		super_object->data_arrays.i32_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui64_data != NULL)
 	{
-		mxFree(super_object->data_arrays.ui64_data);
+		free(super_object->data_arrays.ui64_data);
 		super_object->data_arrays.ui64_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i64_data != NULL)
 	{
-		mxFree(super_object->data_arrays.i64_data);
+		free(super_object->data_arrays.i64_data);
 		super_object->data_arrays.i64_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.single_data != NULL)
 	{
-		mxFree(super_object->data_arrays.single_data);
+		free(super_object->data_arrays.single_data);
 		super_object->data_arrays.single_data = NULL;
 	}
 	
 	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.double_data != NULL)
 	{
-		mxFree(super_object->data_arrays.double_data);
+		free(super_object->data_arrays.double_data);
 		super_object->data_arrays.double_data = NULL;
 	}
 	

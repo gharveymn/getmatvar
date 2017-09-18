@@ -3,7 +3,7 @@ addpath('src')
 output_path = [pwd '\bin'];
 cd src
 
-try	
+try
 
 	libdeflate_path = ['-L' pwd '\extlib\libdeflate\x64'];
 	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))

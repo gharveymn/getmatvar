@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 
 static Data* object;
@@ -71,9 +71,11 @@ errno_t getChunkedData(Data* obj)
 	{
 		thpool_destroy(threads[j]);
 	}
+	
 	free(threads);
 	freeQueue(thread_object_queue);
 	freeTree(root);
+	free(root);
 	return ret;
 }
 
@@ -100,7 +102,7 @@ errno_t decompressChunk(TreeNode* node)
 	if(node->children[0].leaf_type != RAWDATA)
 	{
 		//only want nodes which are parents of the leaves to save memory
-		return 0;
+		return 0; 
 	}
 	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
@@ -187,6 +189,8 @@ void* doInflate_(void* t)
 		
 	}
 	
+	return NULL;
+
 }
 
 
