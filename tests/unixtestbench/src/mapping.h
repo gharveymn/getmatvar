@@ -55,7 +55,7 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
-typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
+typedef char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
 typedef int errno_t;
 

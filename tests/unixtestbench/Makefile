@@ -1,7 +1,7 @@
 CC=gcc
 
-#LIBDEFLATE_INC=./src/extlib/libdeflate/x64
-LIBDEFLATE_INC=./src/libdeflate
+LIBDEFLATE_INC=./src/extlib/libdeflate/x64
+#LIBDEFLATE_INC=./src/libdeflate
 THREADPOOL_INC=./src/extlib/threadpool
 
 LIBDEFLATE_LIB=./src/extlib/libdeflate/x64
@@ -31,11 +31,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-CFLAGS=-g -Wall -std=c11 $(INC_PARAMS) $(LIB_PARAMS)
+CFLAGS=-g -Wall --std=c99 $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mapping
 
-mapping: $(OBJ) src/libdeflate/libdeflate.a
+mapping: $(OBJ) src/extlib/libdeflate/x64/libdeflate.a
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 src/libdeflate/libdeflate.a:

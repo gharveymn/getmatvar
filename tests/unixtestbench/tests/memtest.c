@@ -18,6 +18,7 @@ void main(int argc, char* argv[])
 		super_objects[num_objs] = organizeObjects(objects);
 		if (super_objects[num_objs] == NULL)
 		{
+			num_objs++;
 			break;
 		}
 		else
@@ -33,6 +34,9 @@ void main(int argc, char* argv[])
 		free(varnames[i]);
 	}
 	free(varnames);
+
+	free(variable_name);
+	free(variable_name[0]);
 	
 	printf("\nProgram exited without errors\n\n");
 }

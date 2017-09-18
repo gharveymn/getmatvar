@@ -30,6 +30,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(fd < 0)
 	{
 		Data* data_object = malloc(sizeof(Data));
+		initializeObject(data_object);
 		data_object->type = ERROR | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:fileNotFoundError");
 		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
@@ -42,6 +43,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(file_size == (size_t)-1)
 	{
 		Data* data_object = malloc(sizeof(Data));
+		initializeObject(data_object);
 		data_object->type = ERROR | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:lseekFailedError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));

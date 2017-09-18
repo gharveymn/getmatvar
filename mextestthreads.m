@@ -17,21 +17,21 @@ lents = 0;
 
 userview = memory;
 disp(userview.MemUsedMATLAB)
-for i = 1:numtests
+for j = 1:numtests
 	rne = 0;
 	while(rne < lo || rne > hi)
-		numdims(i) = randi(maxdims-1)+1;
+		numdims(j) = randi(maxdims-1)+1;
 		numelems = randi(hi-lo) + lo;
-		avg = floor(nthroot(numelems,numdims(i)));
-		dims = zeros(1,numdims(i));
-		for j = 1:numdims(i)
+		avg = floor(nthroot(numelems,numdims(j)));
+		dims = zeros(1,numdims(j));
+		for j = 1:numdims(j)
 			dims(j) = max(avg + randi(6)-3,1);
 		end
 		rne = prod(dims);
 	end
-	realnumelems(i) = rne;
-	r = rand(dims);
-	save('res/r.mat','r');
+	realnumelems(j) = rne;
+	t = rand(dims);
+	save('res/t.mat','t');
 	
 	for j = 1:maxthreads
 		avgtimes(j) = 0;
@@ -41,9 +41,9 @@ for i = 1:numtests
 			avgtimes(j) = avgtimes(j) + toc/numsubtests;
 		end
 	end
-	[~,besttimes(i)] = min(avgtimes);
+	[~,besttimes(j)] = min(avgtimes);
 	
-	timestr = sprintf('%d/%d',i,numtests);
+	timestr = sprintf('%d/%d',j,numtests);
 	fprintf([repmat('\b',1,lents) timestr]);
 	lents = numel(timestr);
 end

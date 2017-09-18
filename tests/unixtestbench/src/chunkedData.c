@@ -188,6 +188,8 @@ void* doInflate_(void* t)
 		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
+
+	libdeflate_free_decompressor(ldd);
 	
 	return NULL;
 
