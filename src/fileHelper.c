@@ -70,6 +70,14 @@ void freeAllMaps(void)
 			freeMap(heap_maps[i]);
 		}
 	}
+	
+	for(int i = 0; i < NUM_THREAD_MAPS; i++)
+	{
+		if(thread_maps[i].used == TRUE)
+		{
+			freeMap(thread_maps[i]);
+		}
+	}
 }
 
 
@@ -87,13 +95,19 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 {
 	
 	MemMap* these_maps;
-	if(map_type == TREE)
+	switch(map_type)
 	{
-		these_maps = tree_maps;
-	}
-	else
-	{
-		these_maps = heap_maps;
+		case TREE:
+			these_maps = tree_maps;
+			break;
+		case HEAP:
+			these_maps = heap_maps;
+			break;
+		case THREAD:
+			these_maps = thread_maps;
+			break;
+		default:
+			these_maps = tree_maps;
 	}
 	
 	for(int i = 0; i < map_nums[map_type]; i++)
@@ -136,17 +150,22 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index)
 {
 	MemMap* these_maps;
-	if(map_type == TREE)
+	switch(map_type)
 	{
-		these_maps = tree_maps;
-	}
-	else
-	{
-		these_maps = heap_maps;
+		case TREE:
+			these_maps = tree_maps;
+			break;
+		case HEAP:
+			these_maps = heap_maps;
+			break;
+		case THREAD:
+			these_maps = thread_maps;
+			break;
+		default:
+			these_maps = tree_maps;
 	}
 	
-	if(!(address >= these_maps[tree_map_index].offset && address + bytes_needed <= these_maps[tree_map_index].offset + these_maps[tree_map_index].bytes_mapped &&
-		these_maps[tree_map_index].used == TRUE))
+	if(!(address >= these_maps[tree_map_index].offset && address + bytes_needed <= these_maps[tree_map_index].offset + these_maps[tree_map_index].bytes_mapped) || these_maps[tree_map_index].used == FALSE)
 	{
 		
 		//unmap current page
