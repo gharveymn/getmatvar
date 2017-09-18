@@ -43,44 +43,59 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		int num_vars = 0;
 		full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
 		kwarg kwarg_expected = NOT_AN_ARGUMENT;
+		bool_t kwarg_flag = FALSE;
 		for (int i = 0; i < nrhs - 1; i++)
 		{
-			if(mxGetClassID(prhs[i+1]) == mxCHAR_CLASS)
+			if(kwarg_flag == TRUE)
 			{
-				char* vn = mxArrayToString(prhs[i + 1]);
-				if(strncmp(vn,"-",1) == 0)
+				switch(kwarg_expected)
 				{
-					if(strcmp(vn,"-threads") == 0)
+				case THREAD_KWARG:
+					num_threads_to_use = MIN((int)mxGetScalar(prhs[i + 1]), NUM_TREE_MAPS);
+					break;
+				case NOT_AN_ARGUMENT:
+				default:
+					for(int j = num_vars - 1; j >= 0; j--)
 					{
-						kwarg_expected = THREAD;
+						free(full_variable_names[j]);
+					}
+					free(full_variable_names);
+					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
+
+				}
+				kwarg_expected = NOT_AN_ARGUMENT;
+				kwarg_flag = FALSE;
+			}
+			else
+			{
+				if(mxGetClassID(prhs[i + 1]) == mxCHAR_CLASS)
+				{
+					char* vn = mxArrayToString(prhs[i + 1]);
+					if(strncmp(vn, "-", 1) == 0)
+					{
+						kwarg_flag = TRUE;
+						if(strcmp(vn, "-threads") == 0)
+						{
+							kwarg_expected = THREAD_KWARG;
+						}
+					}
+					else
+					{
+						kwarg_expected = NOT_AN_ARGUMENT;
+						full_variable_names[num_vars] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
+						strcpy(full_variable_names[num_vars], vn);
+						num_vars++;
 					}
 				}
 				else
 				{
-					kwarg_expected = NOT_AN_ARGUMENT;
-					full_variable_names[num_vars] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
-					strcpy(full_variable_names[num_vars], vn);
-					num_vars++;
+					for(int j = num_vars - 1; j >= 0; j--)
+					{
+						free(full_variable_names[j]);
+					}
+					free(full_variable_names);
+					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
 				}
-			}
-			else
-			{
-				switch(kwarg_expected)
-				{
-					case THREAD_KWARG:
-						num_threads_to_use = MIN((int)mxGetScalar(prhs[i+1]), NUM_TREE_MAPS);
-						break;
-					case NOT_AN_ARGUMENT:
-					default:
-						for(int j = num_vars-1; j >= 0; j--)
-						{
-							free(full_variable_names[j]);
-						}
-						free(full_variable_names);
-						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
-						
-				}
-				kwarg_expected = NOT_AN_ARGUMENT;
 			}
 		}
 		
@@ -144,10 +159,10 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 		}
 	}
 
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+	//#pragma GCC diagnostic push
+	//#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
-	#pragma GCC diagnostic pop
+	//#pragma GCC diagnostic pop
 	
 	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT);
 	

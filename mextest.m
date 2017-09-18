@@ -8,7 +8,7 @@ vars = {''};
 userview = memory;
 disp(userview.MemUsedMATLAB)
 tic
-getmatvar(file);%, vars{:});
+getmatvar(file, '-threads', 3);%, vars{:});
 toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
