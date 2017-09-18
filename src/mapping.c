@@ -213,7 +213,7 @@ void initializeObject(Data* object)
 	object->data_arrays.i64_data = NULL;
 	object->data_arrays.single_data = NULL;
 	object->data_arrays.double_data = NULL;
-	object->data_arrays.udouble_data = NULL;
+	object->data_arrays.sub_object_header_offsets = NULL;
 	
 	object->chunked_info.num_filters = 0;
 	object->chunked_info.num_chunked_dims = 0;
@@ -225,6 +225,7 @@ void initializeObject(Data* object)
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
 	object->type = UNDEF;
+	object->complexity_flag = mxREAL;
 	
 	object->num_dims = 0;
 	object->num_elems = 0;
@@ -289,13 +290,13 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	//if we have encountered a cell array, queue up headers for its elements
-	if(object->data_arrays.udouble_data != NULL && object->type == REF)
+	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF)
 	{
 		
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			SNODEntry* snod_entry = malloc(sizeof(SNODEntry));
-			snod_entry->this_obj_header_address = object->data_arrays.udouble_data[i] + s_block.base_address;
+			snod_entry->this_obj_header_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			snod_entry->parent_obj_header_address = object->this_obj_address;
 			strcpy(snod_entry->name, object->name);
 			priorityEnqueue(header_queue, snod_entry);
@@ -427,7 +428,7 @@ errno_t allocateSpace(Data* object)
 			break;
 		case REF:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.udouble_data = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems * object->elem_size);
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
@@ -500,7 +501,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
 		case REF:
-			memcpy(&object->data_arrays.udouble_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
 		case STRUCT:
 		case FUNCTION_HANDLE:
@@ -603,7 +604,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case REF:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.udouble_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;

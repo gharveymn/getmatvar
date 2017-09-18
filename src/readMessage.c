@@ -109,6 +109,13 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 					break;
 			}
 			break;
+		case 6:
+			object->complexity_flag = mxCOMPLEX;
+			msg_pointer = navigateTo(msg_address + 48, 20, TREE);
+			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
+			object->num_elems *= 2;
+			navigateTo(msg_address, msg_size, TREE);
+			break;
 		case 7:
 			//reference (cell), data consists of addresses aka references
 			object->type = REF;

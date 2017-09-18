@@ -378,10 +378,10 @@ void freeDataObject(void* object)
 		}
 	}
 	
-	if(data_object->data_arrays.udouble_data != NULL)
+	if(data_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		free(data_object->data_arrays.udouble_data);
-		data_object->data_arrays.udouble_data = NULL;
+		free(data_object->data_arrays.sub_object_header_offsets);
+		data_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
 	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
@@ -465,10 +465,10 @@ void freeDataObjectTree(Data* super_object)
 		super_object->data_arrays.double_data = NULL;
 	}
 	
-	if(super_object->data_arrays.udouble_data != NULL)
+	if(super_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		free(super_object->data_arrays.udouble_data);
-		super_object->data_arrays.udouble_data = NULL;
+		free(super_object->data_arrays.sub_object_header_offsets);
+		super_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
 	for(int j = 0; j < super_object->chunked_info.num_filters; j++)

@@ -2,13 +2,12 @@
 #define GETMATVAR__H
 
 #include "mapping.h"
-#include <mex.h>
 #include <stdarg.h>
 
 //getmatvar.c
 Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename);
 mxArray* makeSubstructure(mxArray* returnStructure, int num_elems, Data** objects, DataType super_structure_type);
-mwSize* makeObjDims(const uint32_t* dims, mwSize num_obj_dims);
+mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
 const char** getFieldNames(Data* object);
 void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[], ...);
@@ -26,5 +25,6 @@ void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
+DataArrays rearrangeImaginaryData(Data* object);
 
 #endif
