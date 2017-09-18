@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#include <mex.h>
 #include <pthread.h>
 #include "extlib/threadpool/thpool.h"
 
@@ -173,13 +174,14 @@ typedef struct
 	int64_t* i64_data;
 	float* single_data;
 	double* double_data;
-	uint64_t* udouble_data;
+	uint64_t* sub_object_header_offsets;
 } DataArrays;
 
 typedef struct data_ Data;
 struct data_
 {
 	DataType type;
+	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
 	char name[NAME_LENGTH];
