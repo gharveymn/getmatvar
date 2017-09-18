@@ -144,8 +144,6 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	Data* end_object = peekQueue(objects, QUEUE_BACK);
 	end_object->type |= END_SENTINEL;
 	
-	freeAllMaps();
-	
 	if(load_all)
 	{
 		for (int i = 0; i < num_names; i++)
@@ -159,6 +157,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	freeQueue(addr_queue);
 	freeQueue(varname_queue);
 	freeQueue(header_queue);
+	freeAllMaps();
 	return objects;
 }
 
@@ -190,12 +189,12 @@ void initializeMaps(void)
 		thread_maps[i].offset = 0;
 	}
 	
-	map_nums[0] = NUM_TREE_MAPS;
-	map_nums[1] = NUM_HEAP_MAPS;
-	map_nums[2] = NUM_THREAD_MAPS;
-	map_queue_fronts[0] = 0;
-	map_queue_fronts[1] = 0;
-	map_queue_fronts[2] = 0;
+	map_nums[TREE] = NUM_TREE_MAPS;
+	map_nums[HEAP] = NUM_HEAP_MAPS;
+	map_nums[THREAD] = NUM_THREAD_MAPS;
+	map_queue_fronts[TREE] = 0;
+	map_queue_fronts[HEAP] = 0;
+	map_queue_fronts[THREAD] = 0;
 	
 }
 

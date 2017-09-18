@@ -1,9 +1,10 @@
 #include "getmatvar_.h"
 
+
 static Data* object;
 static int map_iterator;
 
-typedef struct  inflate_thread_obj_ inflate_thread_obj;
+typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
 {
 	TreeNode* node;
@@ -16,10 +17,14 @@ Queue* thread_object_queue;
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
+
 #include "extlib/libdeflate/x64/libdeflate.h"
+
+
 #else
 //you need at least 19th century hardware to run this
 #endif
+
 
 errno_t getChunkedData(Data* obj)
 {
@@ -42,15 +47,15 @@ errno_t getChunkedData(Data* obj)
 	}
 	else
 	{
-		num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
+		num_threads = (int)(-5.69E4 * pow(object->num_elems, -0.7056) + 7.502);
 		num_threads = MIN(num_threads, NUM_THREAD_MAPS);
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
 	}
-	threads = malloc(num_threads*sizeof(threadpool));
-	for (int i = 0; i < num_threads; i++)
+	threads = malloc(num_threads * sizeof(threadpool));
+	for(int i = 0; i < num_threads; i++)
 	{
-		//thread pool of size 1 to restrict each thread to one map, yes im basically just using this as a queue
+		//Thread pool of size 1 to restrict each thread to one map. Yes im basically just using this as a queue.
 		threads[i] = thpool_init(1);
 	}
 	map_iterator = 0;
@@ -60,7 +65,7 @@ errno_t getChunkedData(Data* obj)
 	{
 		thpool_wait(threads[j]);
 	}
-
+	
 	for(int j = 0; j < num_threads; j++)
 	{
 		thpool_destroy(threads[j]);
@@ -70,6 +75,7 @@ errno_t getChunkedData(Data* obj)
 	freeTree(&root);
 	return ret;
 }
+
 
 errno_t decompressChunk(TreeNode* node)
 {
@@ -102,10 +108,11 @@ errno_t decompressChunk(TreeNode* node)
 	thread_object->err = 0;
 	enqueue(thread_object_queue, thread_object);
 	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_object);
-	map_iterator = (map_iterator+1) % num_threads;
+	map_iterator = (map_iterator + 1) % num_threads;
 	return 0;
 	
 }
+
 
 void* doInflate_(void* t)
 {
@@ -115,9 +122,9 @@ void* doInflate_(void* t)
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
-	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = { 0 };
+	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t index_map[CHUNK_BUFFER_SIZE];
-	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
+	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
@@ -136,27 +143,27 @@ void* doInflate_(void* t)
 				object->type = ERROR;
 				sprintf(object->name, "getmatvar:libdeflateShortOutput");
 				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
-						"'actual_out_nbytes_ret' was provided, but the data would have"
-						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+					   "'actual_out_nbytes_ret' was provided, but the data would have"
+					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
 				object->type = ERROR;
 				sprintf(object->name, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
-						"%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
+					   "%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
 				return (void*)&thread_obj->err;
 			default:
 				//do nothing
 				break;
 		}
-
+		
 		//copy over data
-		memset(chunk_pos, 0 , sizeof(chunk_pos));
+		memset(chunk_pos, 0, sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
 		uint64_t db_pos = 0;
 		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.num_chunked_elems; anchor = db_pos)
 		{
-			for (;db_pos < anchor + object->chunked_info.chunked_dims[0] && index < object->num_elems; db_pos++, index++)
+			for(; db_pos < anchor + object->chunked_info.chunked_dims[0] && index < object->num_elems; db_pos++, index++)
 			{
 				index_map[db_pos] = index;
 			}
@@ -167,7 +174,7 @@ void* doInflate_(void* t)
 				if(chunk_pos[j] == object->chunked_info.chunked_dims[j])
 				{
 					chunk_pos[j] = 0;
-					chunk_pos[j+1]++;
+					chunk_pos[j + 1]++;
 					curr_max_dim = curr_max_dim <= j + 1 ? curr_max_dim + (uint8_t)1 : curr_max_dim;
 					use_update++;
 				}
@@ -178,8 +185,9 @@ void* doInflate_(void* t)
 		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
-
+	
 }
+
 
 uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_dims, uint8_t num_chunked_dims)
 {
@@ -236,9 +244,9 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		return 0;
 	}
 	
-	node->node_type = (NodeType) getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
-	node->node_level = (int16_t) getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
-	node->entries_used = (uint16_t) getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
+	node->node_level = (int16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
+	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	node->keys = malloc((node->entries_used + 1) * sizeof(Key));
 	node->children = malloc(node->entries_used * sizeof(TreeNode));
@@ -281,8 +289,8 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			tree_pointer = navigateTo(node->address, bytes_needed, TREE);
 			key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
 			key_address = node->address + 8 + 2 * s_block.size_of_offsets;
-			node->keys[0].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-			node->keys[0].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+			node->keys[0].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+			node->keys[0].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 			for(int j = 0; j < num_chunked_dims; j++)
 			{
 				node->keys[0].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
@@ -294,18 +302,18 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				node->children[i].address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				fillNode(&node->children[i], num_chunked_dims);
 				
-				if(i > 0 && i < node->entries_used-1 && node->node_level >= 0)
+				if(i > 0 && i < node->entries_used - 1 && node->node_level >= 0)
 				{
-					node->children[i].left_sibling = &node->children[i-1];
-					node->children[i-1].right_sibling = &node->children[i];
+					node->children[i].left_sibling = &node->children[i - 1];
+					node->children[i - 1].right_sibling = &node->children[i];
 				}
 				
 				tree_pointer = navigateTo(node->address, bytes_needed, TREE);
-				key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets + (i+1)*(key_size + s_block.size_of_offsets);
+				key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets + (i + 1) * (key_size + s_block.size_of_offsets);
 				key_address += key_size + s_block.size_of_offsets;
 				
-				node->keys[i + 1].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-				node->keys[i + 1].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+				node->keys[i + 1].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+				node->keys[i + 1].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 				for(int j = 0; j < num_chunked_dims; j++)
 				{
 					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
