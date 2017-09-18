@@ -18,6 +18,7 @@ Queue* initQueue(void (* free_function)(void*))
 	{
 		new_queue->free_function = free_function;
 	}
+	return new_queue;
 }
 
 void enqueue(Queue* queue, void* data)
@@ -134,9 +135,13 @@ void* peekQueue(Queue* queue, int queue_location)
 		{
 			return queue->front->data;
 		}
-		if(queue_location == QUEUE_BACK)
+		else if(queue_location == QUEUE_BACK)
 		{
 			return queue->back->data;
+		}
+		else
+		{
+			return NULL;
 		}
 	}
 	else

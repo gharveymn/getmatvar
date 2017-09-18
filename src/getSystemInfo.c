@@ -22,11 +22,11 @@ size_t getAllocGran(void)
 	return (size_t)system_info.dwAllocationGranularity;
 }
 
-size_t getNumProcessors(void)
+int getNumProcessors(void)
 {
 	SYSTEM_INFO system_info;
 	GetSystemInfo(&system_info);
-	return (size_t)system_info.dwNumberOfProcessors;
+	return (int)system_info.dwNumberOfProcessors;
 }
 
 
@@ -45,9 +45,9 @@ size_t getAllocGran(void)
 	return sysconf(_SC_PAGE_SIZE);
 }
 
-size_t getNumProcessors(void)
+int getNumProcessors(void)
 {
-	sysconf(_SC_NPROCESSORS_ONLN);
+	return (int)sysconf(_SC_NPROCESSORS_ONLN);
 }
 
 

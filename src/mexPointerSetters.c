@@ -413,7 +413,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 	{
 		case INT8:
 			imag_data.i8_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.i8_data[i] = object->data_arrays.i8_data[2 * i + 1];
 				object->data_arrays.i8_data[i] = object->data_arrays.i8_data[2 * i];
@@ -422,7 +422,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case UINT8:
 			imag_data.ui8_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.ui8_data[i] = object->data_arrays.ui8_data[2 * i + 1];
 				object->data_arrays.ui8_data[i] = object->data_arrays.ui8_data[2 * i];
@@ -431,7 +431,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case INT16:
 			imag_data.i16_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.i16_data[i] = object->data_arrays.i16_data[2 * i + 1];
 				object->data_arrays.i16_data[i] = object->data_arrays.i16_data[2 * i];
@@ -440,7 +440,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case UINT16:
 			imag_data.ui8_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.ui8_data[i] = object->data_arrays.ui8_data[2 * i + 1];
 				object->data_arrays.ui8_data[i] = object->data_arrays.ui8_data[2 * i];
@@ -449,7 +449,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case INT32:
 			imag_data.i32_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.i32_data[i] = object->data_arrays.i32_data[2 * i + 1];
 				object->data_arrays.i32_data[i] = object->data_arrays.i32_data[2 * i];
@@ -458,7 +458,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case UINT32:
 			imag_data.ui32_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.ui32_data[i] = object->data_arrays.ui32_data[2 * i + 1];
 				object->data_arrays.ui32_data[i] = object->data_arrays.ui32_data[2 * i];
@@ -467,7 +467,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case INT64:
 			imag_data.i64_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.i64_data[i] = object->data_arrays.i64_data[2 * i + 1];
 				object->data_arrays.i64_data[i] = object->data_arrays.i64_data[2 * i];
@@ -476,7 +476,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case UINT64:
 			imag_data.ui64_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.ui64_data[i] = object->data_arrays.ui64_data[2 * i + 1];
 				object->data_arrays.ui64_data[i] = object->data_arrays.ui64_data[2 * i];
@@ -485,7 +485,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case SINGLE:
 			imag_data.single_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems / 2; i++)
+			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
 				imag_data.single_data[i] = object->data_arrays.single_data[2 * i + 1];
 				object->data_arrays.single_data[i] = object->data_arrays.single_data[2 * i];
@@ -494,7 +494,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			break;
 		case DOUBLE:
 			imag_data.double_data = mxMalloc(object->num_elems * object->elem_size / 2);
-			for(int i = 0; i < object->num_elems/2; i++)
+			for(uint32_t i = 0; i < object->num_elems/2; i++)
 			{
 				imag_data.double_data[i] = object->data_arrays.double_data[2*i + 1];
 				object->data_arrays.double_data[i] = object->data_arrays.double_data[2*i];
