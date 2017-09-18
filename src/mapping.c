@@ -85,7 +85,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		{
 			Data* data_object = malloc(sizeof(Data));
 			initializeObject(data_object);
-			data_object->type = UNDEF;
+			data_object->type = UNDEF_DATA;
 			strcpy(data_object->name, peekQueue(varname_queue, QUEUE_BACK));
 			enqueue(objects, data_object);
 			sprintf(errmsg, "Variable \'%s\' was not found.", variable_names[name_index]);
@@ -222,11 +222,11 @@ void initializeObject(Data* object)
 	
 	object->sub_objects = NULL;
 	
-	//zero by default for REF data
+	//zero by default for REF_DATA data
 	object->layout_class = 0;
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
-	object->type = UNDEF;
+	object->type = UNDEF_DATA;
 	object->complexity_flag = mxREAL;
 	
 	object->num_dims = 0;
@@ -256,7 +256,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	
-	if(object->type == UNDEF)
+	if(object->type == UNDEF_DATA)
 	{
 		object->type = ERROR;
 		sprintf(object->name, "getmatvar:unknownDataTypeError");
@@ -292,7 +292,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	//if we have encountered a cell array, queue up headers for its elements
-	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF)
+	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF_DATA)
 	{
 		
 		for(int i = object->num_elems - 1; i >= 0; i--)
@@ -398,57 +398,57 @@ errno_t allocateSpace(Data* object)
 	//maybe figure out a way to just pass this to a single array
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			object->data_arrays.i8_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			object->data_arrays.ui8_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case INT16:
+		case INT16_DATA:
 			object->data_arrays.i16_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			object->data_arrays.ui16_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case INT32:
+		case INT32_DATA:
 			object->data_arrays.i32_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			object->data_arrays.ui32_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case INT64:
+		case INT64_DATA:
 			object->data_arrays.i64_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			object->data_arrays.ui64_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			object->data_arrays.single_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			object->data_arrays.double_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
-		case REF:
+		case REF_DATA:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
 			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems * object->elem_size);
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
 			object->num_elems = 1;
 			object->num_dims = 2;
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
 			break;
-		case TABLE:
+		case TABLE_DATA:
 			//do nothing
 			break;
-		case NULLTYPE:
+		case NULLTYPE_DATA:
 		default:
 			//this shouldn't happen
 			object->type = ERROR;
 			sprintf(object->name, "getmatvar:thisShouldntHappen");
-			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE for some reason.\n\n");
+			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
 			
 	}
@@ -472,42 +472,42 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 	
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT16:
+		case INT16_DATA:
 			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT32:
+		case INT32_DATA:
 			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT64:
+		case INT64_DATA:
 			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case REF:
+		case REF_DATA:
 			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
-		case TABLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
+		case TABLE_DATA:
 		default:
 			//nothing to be done
 			break;
@@ -533,86 +533,86 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 	int object_data_index = 0;
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT16:
+		case INT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT32:
+		case INT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT64:
+		case INT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case REF:
+		case REF_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
-		case TABLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
+		case TABLE_DATA:
 		default:
 			//nothing to be done
 			break;
@@ -701,7 +701,7 @@ Data* organizeObjects(Queue* objects)
 		super_object = dequeue(objects);
 	}
 	
-	if(super_object->type == STRUCT || super_object->type == REF)
+	if(super_object->type == STRUCT_DATA || super_object->type == REF_DATA)
 	{
 		placeInSuperObject(super_object, objects, objects->length);
 	}
@@ -722,7 +722,7 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 	while(super_object->this_obj_address == curr->parent_obj_address)
 	{
 		super_object->sub_objects[super_object->num_sub_objs] = curr;
-		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT || super_object->sub_objects[super_object->num_sub_objs]->type == REF)
+		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA || super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
 		{
 			//since this is a depth-first traversal
 			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length);

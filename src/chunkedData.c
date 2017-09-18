@@ -187,6 +187,8 @@ void* doInflate_(void* t)
 		
 	}
 	
+	libdeflate_free_decompressor(ldd);
+	
 }
 
 
