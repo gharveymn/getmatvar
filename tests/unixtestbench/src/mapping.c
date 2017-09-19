@@ -1,17 +1,11 @@
 #include "mapping.h"
-#include <stdarg.h>
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
 {
 
 	__byte_order__ = getByteOrder();
-
-	Queue* objects = initQueue(freeDataObject);
-	SNODEntry* snod_entry;
-	char errmsg[NAME_LENGTH];
-	num_avail_threads = getNumProcessors() - 1;
-	
+	alloc_gran = getAllocGran();
 	initializeMaps();
 	is_multithreading = FALSE;
 	addr_queue = NULL;
@@ -20,6 +14,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	fd = -1;
 	num_threads_to_use = -1;
 
+	Queue* objects = initQueue(freeDataObject);
+	SNODEntry* snod_entry;
+	char warn_msg[NAME_LENGTH];
+	num_avail_threads = getNumProcessors() - 1;
+	
 	//init queues
 	addr_queue = initQueue(NULL);
 	varname_queue = initQueue(NULL);
@@ -30,8 +29,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(fd < 0)
 	{
 		Data* data_object = malloc(sizeof(Data));
-		initializeObject(data_object);
-		data_object->type = ERROR | END_SENTINEL;
+		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:fileNotFoundError");
 		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
 		enqueue(objects, data_object);
@@ -43,12 +41,13 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(file_size == (size_t)-1)
 	{
 		Data* data_object = malloc(sizeof(Data));
-		initializeObject(data_object);
-		data_object->type = ERROR | END_SENTINEL;
+		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:lseekFailedError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
 	}
+	
+	initializePageObjects();
 	
 	//find superblock
 	s_block = getSuperblock();
@@ -96,11 +95,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		{
 			Data* data_object = malloc(sizeof(Data));
 			initializeObject(data_object);
-			data_object->type = UNDEF;
+			data_object->type = UNDEF_DATA;
 			strcpy(data_object->name, peekQueue(varname_queue, QUEUE_BACK));
 			enqueue(objects, data_object);
-			sprintf(errmsg, "Variable \'%s\' was not found.", variable_names[name_index]);
-			readMXWarn("getmatvar:variableNotFound", errmsg);
+			sprintf(warn_msg, "Variable \'%s\' was not found.", variable_names[name_index]);
+			readMXWarn("getmatvar:variableNotFound", warn_msg);
 		}
 		
 		//interpret the header messages
@@ -126,10 +125,10 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			enqueue(objects, data_object);
 			
 			//this block handles errors and sets up signals for controlled shutdown
-			if(data_object->type == ERROR)
+			if(data_object->type == ERROR_DATA)
 			{
 				Data* front_object = peekQueue(objects, QUEUE_FRONT);
-				front_object->type = ERROR;
+				front_object->type = ERROR_DATA;
 				strcpy(front_object->name, front_object->name);
 				strcpy(front_object->matlab_class, front_object->matlab_class);
 				
@@ -171,6 +170,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	freeQueue(addr_queue);
 	freeQueue(varname_queue);
 	freeQueue(header_queue);
+	destroyPageObjects();
 	freeAllMaps();
 	return objects;
 }
@@ -213,6 +213,45 @@ void initializeMaps(void)
 }
 
 
+void initializePageObjects(void)
+{
+	page_objects = malloc((file_size/alloc_gran + 1) * sizeof(pageObject));
+	for (int i = 0; i < file_size/alloc_gran + 1; i++)
+	{
+		pthread_cond_init(&page_objects[i].ready, NULL);
+		pthread_mutex_init(&page_objects[i].lock, NULL);
+		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
+		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
+		page_objects[i].is_cont_right = FALSE;
+		page_objects[i].is_mapped = FALSE;
+		page_objects[i].pg_start_a = alloc_gran*i;
+		page_objects[i].pg_end_a = MIN(alloc_gran*(i+1), file_size);
+		page_objects[i].pg_start_p = NULL;
+	}
+}
+
+void destroyPageObjects(void)
+{
+	
+	for (int i = 0; i < file_size/alloc_gran + 1; ++i)
+	{
+		if (page_objects[i].is_mapped == TRUE)
+		{
+			if (munmap(page_objects[i].pg_start_p, alloc_gran) != 0)
+			{
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
+					strerror(errno));
+			}
+		}
+		pthread_cond_destroy(&page_objects[i].ready);
+		pthread_mutex_destroy(&page_objects[i].lock);
+	}
+
+
+	free(page_objects);
+}
+
+
 void initializeObject(Data* object)
 {
 	object->data_arrays.is_mx_used = FALSE;
@@ -230,15 +269,20 @@ void initializeObject(Data* object)
 	
 	object->chunked_info.num_filters = 0;
 	object->chunked_info.num_chunked_dims = 0;
+	object->chunked_info.num_chunked_elems = 0;
+	for(int i = 0; i < MAX_NUM_FILTERS; i++)
+	{
+		object->chunked_info.filters[i].client_data = NULL;
+	}
 	
 	object->sub_objects = NULL;
 	
-	//zero by default for REF data
+	//zero by default for REF_DATA data
 	object->layout_class = 0;
 	object->datatype_bit_field = 0;
 	object->byte_order = LITTLE_ENDIAN;
-	object->type = UNDEF;
-	object->complexity_flag = 0;
+	object->type = UNDEF_DATA;
+	object->complexity_flag = mxREAL;
 	
 	object->num_dims = 0;
 	object->num_elems = 0;
@@ -267,9 +311,9 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	
-	if(object->type == UNDEF)
+	if(object->type == UNDEF_DATA)
 	{
-		object->type = ERROR;
+		object->type = ERROR_DATA;
 		sprintf(object->name, "getmatvar:unknownDataTypeError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 		return;
@@ -296,14 +340,14 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			}
 			break;
 		default:
-			object->type = ERROR;
+			object->type = ERROR_DATA;
 			sprintf(object->name, "getmatvar:unknownLayoutClassError");
 			sprintf(object->matlab_class, "Unknown layout class encountered.\n\n");
 			return;
 	}
 	
 	//if we have encountered a cell array, queue up headers for its elements
-	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF)
+	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF_DATA)
 	{
 		
 		for(int i = object->num_elems - 1; i >= 0; i--)
@@ -404,62 +448,62 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 }
 
 
-errno_t allocateSpace(Data* object)
+int allocateSpace(Data* object)
 {
 	//maybe figure out a way to just pass this to a single array
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			object->data_arrays.i8_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			object->data_arrays.ui8_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case INT16:
+		case INT16_DATA:
 			object->data_arrays.i16_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			object->data_arrays.ui16_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case INT32:
+		case INT32_DATA:
 			object->data_arrays.i32_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			object->data_arrays.ui32_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case INT64:
+		case INT64_DATA:
 			object->data_arrays.i64_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			object->data_arrays.ui64_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			object->data_arrays.single_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			object->data_arrays.double_data = malloc(object->num_elems * object->elem_size);
 			break;
-		case REF:
+		case REF_DATA:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
 			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems * object->elem_size);
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
 			object->num_elems = 1;
 			object->num_dims = 2;
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
 			break;
-		case TABLE:
+		case TABLE_DATA:
 			//do nothing
 			break;
-		case NULLTYPE:
+		case NULLTYPE_DATA:
 		default:
 			//this shouldn't happen
-			object->type = ERROR;
+			object->type = ERROR_DATA;
 			sprintf(object->name, "getmatvar:thisShouldntHappen");
-			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE for some reason.\n\n");
+			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
 			
 	}
@@ -483,42 +527,42 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 	
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT16:
+		case INT16_DATA:
 			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT32:
+		case INT32_DATA:
 			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case INT64:
+		case INT64_DATA:
 			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case REF:
+		case REF_DATA:
 			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index) * elem_size);
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
-		case TABLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
+		case TABLE_DATA:
 		default:
 			//nothing to be done
 			break;
@@ -544,86 +588,86 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 	int object_data_index = 0;
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT16:
+		case INT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT32:
+		case INT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case INT64:
+		case INT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case REF:
+		case REF_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case STRUCT:
-		case FUNCTION_HANDLE:
-		case TABLE:
+		case STRUCT_DATA:
+		case FUNCTION_HANDLE_DATA:
+		case TABLE_DATA:
 		default:
 			//nothing to be done
 			break;
@@ -712,7 +756,7 @@ Data* organizeObjects(Queue* objects)
 		super_object = dequeue(objects);
 	}
 	
-	if(super_object->type == STRUCT || super_object->type == REF)
+	if(super_object->type == STRUCT_DATA || super_object->type == REF_DATA)
 	{
 		placeInSuperObject(super_object, objects, objects->length);
 	}
@@ -733,7 +777,7 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 	while(super_object->this_obj_address == curr->parent_obj_address)
 	{
 		super_object->sub_objects[super_object->num_sub_objs] = curr;
-		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT || super_object->sub_objects[super_object->num_sub_objs]->type == REF)
+		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA || super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
 		{
 			//since this is a depth-first traversal
 			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length);
@@ -746,28 +790,24 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 
 void readMXError(const char error_id[], const char error_message[], ...)
 {
-	
-	char message_buffer[ERROR_BUFFER_SIZE];
-
-	va_list va;
-	va_start(va, error_message);
-	sprintf(message_buffer, error_message, va);
-	strcat(message_buffer, MATLAB_HELP_MESSAGE);
-	endHooks();
-	va_end(va);
-	printf("%s",message_buffer);
-	exit(1);
+char message_buffer[ERROR_BUFFER_SIZE];
+va_list va;
+va_start(va, error_message);
+sprintf(message_buffer, error_message, va);
+strcat(message_buffer, MATLAB_HELP_MESSAGE);
+endHooks();
+va_end(va);
+printf("%s",message_buffer);
+exit(1);
 }
-
 void readMXWarn(const char warn_id[], const char warn_message[], ...)
 {
-	char message_buffer[WARNING_BUFFER_SIZE];
-
-	va_list va;
-	va_start(va, warn_message);
-	sprintf(message_buffer, warn_message, va);
-	strcat(message_buffer, MATLAB_WARN_MESSAGE);
-	va_end(va);
-	printf("%s",message_buffer);
-	exit(1);
+char message_buffer[WARNING_BUFFER_SIZE];
+va_list va;
+va_start(va, warn_message);
+sprintf(message_buffer, warn_message, va);
+strcat(message_buffer, MATLAB_WARN_MESSAGE);
+va_end(va);
+printf("%s",message_buffer);
+exit(1);
 }

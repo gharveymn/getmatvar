@@ -11,13 +11,16 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include <pthread.h>
-#include "extlib/threadpool/thpool.h"
+#include "queue.h"
+#include <stdarg.h>
 
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) && !defined(__CYGWIN__)
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
+#include <pthread.h>
+//#include "extlib/pthreads-win32/include/pthread.h"
 #else
+#include <pthread.h>
 #include <endian.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -43,6 +46,8 @@ typedef uint64_t OffsetType;
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define CHUNK_IN_PARALLEL TRUE
+#define mxREAL 0
+#define mxCOMPLEX 1
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -55,9 +60,8 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
-typedef char byte;  /* ensure an unambiguous, readable 8 bits */
+typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
-typedef int errno_t;
 
 typedef struct
 {
@@ -102,25 +106,25 @@ typedef struct
 
 typedef enum
 {
-	NULLTYPE = 1 << 0,
-	UINT8 = 1 << 1,
-	INT8 = 1 << 2,
-	UINT16 = 1 << 3,
-	INT16 = 1 << 4,
-	UINT32 = 1 << 5,
-	INT32 = 1 << 6,
-	UINT64 = 1 << 7,
-	INT64 = 1 << 8,
-	SINGLE = 1 << 9,
-	DOUBLE = 1 << 10,
-	REF = 1 << 11,
-	STRUCT = 1 << 12,
-	FUNCTION_HANDLE = 1 << 13,
-	TABLE = 1 << 14,
+	NULLTYPE_DATA = 1 << 0,
+	UINT8_DATA = 1 << 1,
+	INT8_DATA = 1 << 2,
+	UINT16_DATA = 1 << 3,
+	INT16_DATA = 1 << 4,
+	UINT32_DATA = 1 << 5,
+	INT32_DATA = 1 << 6,
+	UINT64_DATA = 1 << 7,
+	INT64_DATA = 1 << 8,
+	SINGLE_DATA = 1 << 9,
+	DOUBLE_DATA = 1 << 10,
+	REF_DATA = 1 << 11,
+	STRUCT_DATA = 1 << 12,
+	FUNCTION_HANDLE_DATA = 1 << 13,
+	TABLE_DATA = 1 << 14,
 	DELIMITER = 1 << 15,
 	END_SENTINEL = 1 << 16,
-	ERROR = 1 << 17,
-	UNDEF = 1 << 18
+	ERROR_DATA = 1 << 17,
+	UNDEF_DATA = 1 << 18
 } DataType;
 
 typedef enum
@@ -206,7 +210,7 @@ struct data_
 
 typedef enum
 {
-	NODETYPE_UNDEFINED, GROUP = (uint8_t)0, CHUNK = (uint8_t)1
+	GROUP = (uint8_t)0, CHUNK = (uint8_t)1, NODETYPE_UNDEFINED
 } NodeType;
 
 typedef enum
@@ -236,14 +240,25 @@ struct tree_node_
 	TreeNode* right_sibling;
 };
 
-#include "queue.h"
+typedef struct
+{
+	pthread_cond_t ready;
+	pthread_mutex_t lock;
+	bool_t is_cont_right;
+	bool_t is_mapped;
+	uint64_t pg_start_a;
+	uint64_t pg_end_a;
+	byte* pg_start_p;
+} pageObject;
 
 //fileHelper.c
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
 byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type);
-byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index);
+byte* navigatePolitely(uint64_t address, uint64_t bytes_needed);
+void releasePages(uint64_t address, uint64_t bytes_needed);
+byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int map_index);
 void readTreeNode(byte* tree_pointer, AddrTrio* this_trio);
 void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_address, bool_t get_top_level);
 void freeDataObject(void* object);
@@ -251,6 +266,7 @@ void freeDataObjectTree(Data* super_object);
 void endHooks(void);
 void freeAllMaps(void);
 void freeMap(MemMap map);
+void destroyPageObjects(void);
 
 //numberHelper.c
 int roundUp(int numToRound);
@@ -270,13 +286,15 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Queue* objects);
 void placeInSuperObject(Data* super_object, Queue* objects, int num_total_objs);
-errno_t allocateSpace(Data* object);
+int allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeMaps(void);
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
+void initializePageObjects(void);
+void destroyPageObjects(void);
 void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[], ...);
 
@@ -288,14 +306,16 @@ int getNumProcessors(void);
 ByteOrder getByteOrder(void);
 
 //chunkedData.c
-errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
-errno_t decompressChunk(TreeNode* node);
+int fillNode(TreeNode* node, uint64_t num_chunked_dims);
+int decompressChunk(TreeNode* node);
 void* doInflate_(void* t);
 void freeTree(TreeNode* node);
-errno_t getChunkedData(Data* obj);
+int getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
 ByteOrder __byte_order__;
+size_t alloc_gran;
+size_t file_size;
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];
@@ -308,7 +328,6 @@ Queue* varname_queue;
 Queue* header_queue;
 
 int fd;
-size_t file_size;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
@@ -317,8 +336,7 @@ AddrTrio root_trio;
 int num_avail_threads;
 int num_threads_to_use;
 
-threadpool* threads;
-int num_threads;
 bool_t is_multithreading;
+pageObject* page_objects;
 
 #endif

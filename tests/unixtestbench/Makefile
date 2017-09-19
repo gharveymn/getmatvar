@@ -2,7 +2,7 @@ CC=gcc
 
 LIBDEFLATE_INC=./src/extlib/libdeflate/x64
 #LIBDEFLATE_INC=./src/libdeflate
-THREADPOOL_INC=./src/extlib/threadpool
+THREADPOOL_INC=./src/extlib/thpool
 
 LIBDEFLATE_LIB=./src/extlib/libdeflate/x64
 
@@ -17,13 +17,13 @@ LIB_PARAMS=$(foreach d, $(LIB), -I$d)
 
 LIBS=-lm -pthread
 
-_DEPS = mapping.h libdeflate.h threadpool.h queue.h
+_DEPS = mapping.h libdeflate.h thpool.h queue.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = ../tests/memtest.o mapping.o fileHelper.o \
 numberHelper.o queue.o getSystemInfo.o \
 readMessage.o chunkedData.o \
-extlib/threadpool/thpool.o
+extlib/thpool/thpool.o
 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 

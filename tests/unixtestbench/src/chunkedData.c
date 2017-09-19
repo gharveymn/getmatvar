@@ -1,15 +1,18 @@
 #include "mapping.h"
+#include "extlib/thpool/thpool.h"
 
-
+threadpool threads;
+int num_threads;
 static Data* object;
-static int map_iterator;
+static int decompressor_iterator;
+TreeNode root;
 
 typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
 {
 	TreeNode* node;
-	int thread_map_index;
-	errno_t err;
+	int thread_decompressor_index;
+	int err;
 };
 
 Queue* thread_object_queue;
@@ -18,27 +21,32 @@ Queue* thread_object_queue;
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
 #include "extlib/libdeflate/x64/libdeflate.h"
+#include "mapping.h"
+
+
 #else
 //you need at least 19th century hardware to run this
 #endif
 
 
-errno_t getChunkedData(Data* obj)
+int getChunkedData(Data* obj)
 {
 	object = obj;
-	TreeNode* root = malloc(sizeof(TreeNode));
-	root->address = object->data_address;
-	errno_t ret = fillNode(root, object->chunked_info.num_chunked_dims);
+	root.address = object->data_address;
+	
+	//fill the chunk tree
+	int ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
 	{
-		object->type = ERROR;
+		object->type = ERROR_DATA;
 		sprintf(object->name, "getmatvar:internalInvalidNodeType");
 		sprintf(object->matlab_class, "Invalid node type in fillNode()\n\n");
-		freeTree(root);
+		freeTree(&root);
 		return ret;
 	}
 	
 	thread_object_queue = initQueue(NULL);
+	
 	if(num_threads_to_use != -1)
 	{
 		num_threads = num_threads_to_use;
@@ -50,34 +58,25 @@ errno_t getChunkedData(Data* obj)
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
 	}
-	threads = malloc(num_threads * sizeof(threadpool));
-	for(int i = 0; i < num_threads; i++)
-	{
-		//Thread pool of size 1 to restrict each thread to one map. Yes im basically just using this as a queue.
-		threads[i] = thpool_init(1);
-	}
-	map_iterator = 0;
-	ret = decompressChunk(root);
 	
-	for(int j = 0; j < num_threads; j++)
-	{
-		thpool_wait(threads[j]);
-	}
+//	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
 	
-	for(int j = 0; j < num_threads; j++)
-	{
-		thpool_destroy(threads[j]);
-	}
 	
-	free(threads);
+	threads = thpool_init(num_threads);
+	
+	decompressor_iterator = 0;
+	ret = decompressChunk(&root);
+	
+	thpool_wait(threads);
+	thpool_destroy(threads);
+
 	freeQueue(thread_object_queue);
-	freeTree(root);
-	free(root);
+	freeTree(&root);
 	return ret;
 }
 
 
-errno_t decompressChunk(TreeNode* node)
+int decompressChunk(TreeNode* node)
 {
 	//this function just filters out all nodes which aren't one level above the leaves
 	
@@ -99,16 +98,27 @@ errno_t decompressChunk(TreeNode* node)
 	if(node->children[0].leaf_type != RAWDATA)
 	{
 		//only want nodes which are parents of the leaves to save memory
-		return 0; 
+		return 0;
 	}
 	
+//	for(int i = 0; i < node->entries_used; i++)
+//	{
+//		for (uint64_t j = node->children[i].address/alloc_gran;
+//			j <= (node->children[i].address+node->keys[i].size)/alloc_gran;
+//			j++)
+//		{
+//			pthread_mutex_init(&page_objects[j].lock, NULL);
+//		}
+//	}
+	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
-	thread_object->thread_map_index = map_iterator;
+	thread_object->thread_decompressor_index = decompressor_iterator;
 	thread_object->node = node;
 	thread_object->err = 0;
 	enqueue(thread_object_queue, thread_object);
-	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_object);
-	map_iterator = (map_iterator + 1) % num_threads;
+	thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
+	decompressor_iterator = (decompressor_iterator + 1) % num_threads;
+
 	return 0;
 	
 }
@@ -119,35 +129,40 @@ void* doInflate_(void* t)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
+
+	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
+	size_t retsz;
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
+	//struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_decompressor_index];
+	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
-	uint64_t index_map[CHUNK_BUFFER_SIZE];
-	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
+	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_map_index);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		//const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_decompressor_index);
+		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
+		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateBadData");
 				sprintf(object->matlab_class, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_SHORT_OUTPUT:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateShortOutput");
 				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
 					   "'actual_out_nbytes_ret' was provided, but the data would have"
 					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
 					   "%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
@@ -181,15 +196,28 @@ void* doInflate_(void* t)
 			}
 			index += object->chunked_info.chunk_update[use_update];
 		}
+
+		/*
+		for(int k = 0; k < db_pos; k++)
+		{
+			if(*((double*)decompressed_data_buffer + k*object->elem_size) != 1)
+			{
+				printf("");
+			}
+		}
+		*/
 		
-		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
+		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
 		
+		releasePages(node->children[i].address, node->keys[i].size);
+
 	}
-
-	libdeflate_free_decompressor(ldd);
 	
+	free(decompressed_data_buffer);
+	free(index_map);
+	libdeflate_free_decompressor(ldd);
 	return NULL;
-
+	
 }
 
 
@@ -212,7 +240,7 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_di
 }
 
 
-errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
+int fillNode(TreeNode* node, uint64_t num_chunked_dims)
 {
 	
 	node->node_type = NODETYPE_UNDEFINED;

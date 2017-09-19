@@ -35,7 +35,6 @@ void main(int argc, char* argv[])
 	free(varnames);
 
 	free(variable_name);
-	free(variable_name[0]);
 	
 	printf("\nProgram exited without errors\n\n");
 }
