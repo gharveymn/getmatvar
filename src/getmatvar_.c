@@ -3,7 +3,8 @@
 typedef enum
 {
 	NOT_AN_ARGUMENT,
-	THREAD_KWARG
+	THREAD_KWARG,
+	MT_KWARG
 } kwarg;
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])

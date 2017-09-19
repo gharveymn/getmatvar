@@ -149,6 +149,12 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 
 byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index)
 {
+	//TODO fix this...
+	//this is actually broken right now since maps aren't completely discrete from each other
+	//perhaps implement proper thread pools and use locks?
+	
+	//but hey at least there's a chance you won't get a bad block
+	
 	MemMap* these_maps;
 	switch(map_type)
 	{

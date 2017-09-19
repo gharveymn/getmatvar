@@ -1,6 +1,5 @@
 #include "getmatvar_.h"
 #include "extlib/thpool/thpool.h"
-#include <Windows.h>
 
 threadpool* threads;
 int num_threads;
@@ -189,14 +188,22 @@ void* doInflate_(void* t)
 			}
 			index += object->chunked_info.chunk_update[use_update];
 		}
+
+		for(int k = 0; k < db_pos; k++)
+		{
+			if(*((double*)decompressed_data_buffer + k*object->elem_size) != 1)
+			{
+				printf("");
+			}
+		}
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
 	
-
 	free(decompressed_data_buffer);
 	free(index_map);
+	return NULL;
 	//libdeflate_free_decompressor(ldd);
 	
 }
