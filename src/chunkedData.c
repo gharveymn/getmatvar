@@ -3,7 +3,6 @@
 
 threadpool threads;
 int num_threads;
-//struct libdeflate_decompressor** decompressors;
 static Data* object;
 static int decompressor_iterator;
 TreeNode root;
@@ -64,21 +63,13 @@ errno_t getChunkedData(Data* obj)
 	
 	
 	threads = thpool_init(num_threads);
-//	for(int i = 0; i < num_threads; i++)
-//	{
-//		decompressors[i] = libdeflate_alloc_decompressor();
-//	}
 	
 	decompressor_iterator = 0;
 	ret = decompressChunk(&root);
 	
 	thpool_wait(threads);
 	thpool_destroy(threads);
-	
-//	for(int i = 0; i < num_threads; i++)
-//	{
-//		libdeflate_free_decompressor(decompressors[i]);
-//	}
+
 	freeQueue(thread_object_queue);
 	freeTree(&root);
 	return ret;

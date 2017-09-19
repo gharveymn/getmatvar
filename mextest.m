@@ -12,15 +12,15 @@ getmatvar(file);%, vars{:});
 toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
-%a = t;
+a = t;
 
 % using load function
 tic
-%load(file);
+load(file);
 toc
 
-%disp(sum(a(:) ~= t(:)))
-disp(~isempty(find(my_struct.array ~= 1)))
+disp(sum(a(:) ~= t(:)))
+%disp(~isempty(find(my_struct.array ~= 1)))
 
 % using matlab's partial loader
 % tic

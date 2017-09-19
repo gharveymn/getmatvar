@@ -163,7 +163,6 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//acquire locks
 	for(uint64_t i = start_page; i <= end_page; i++)
 	{
-		pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
 		//wait for the page object to signal that it is ready to be locked
 		if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
 		{
