@@ -6,7 +6,7 @@
 
 //getmatvar.c
 Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename);
-mxArray* makeSubstructure(mxArray* returnStructure, int num_elems, Data** objects, DataType super_structure_type);
+mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type);
 mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
 const char** getFieldNames(Data* object);
 void readMXError(const char error_id[], const char error_message[], ...);

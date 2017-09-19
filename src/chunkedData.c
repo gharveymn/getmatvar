@@ -1,18 +1,18 @@
 #include "getmatvar_.h"
 #include "extlib/thpool/thpool.h"
 
-threadpool* threads;
+threadpool threads;
 int num_threads;
-struct libdeflate_decompressor** decompressors;
+//struct libdeflate_decompressor** decompressors;
 static Data* object;
-static int map_iterator;
+static int decompressor_iterator;
 TreeNode root;
 
 typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
 {
 	TreeNode* node;
-	int thread_map_index;
+	int thread_decompressor_index;
 	errno_t err;
 };
 
@@ -22,6 +22,9 @@ Queue* thread_object_queue;
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
 #include "extlib/libdeflate/x64/libdeflate.h"
+#include "mapping.h"
+
+
 #else
 //you need at least 19th century hardware to run this
 #endif
@@ -31,6 +34,8 @@ errno_t getChunkedData(Data* obj)
 {
 	object = obj;
 	root.address = object->data_address;
+	
+	//fill the chunk tree
 	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
 	{
@@ -42,6 +47,7 @@ errno_t getChunkedData(Data* obj)
 	}
 	
 	thread_object_queue = initQueue(NULL);
+	
 	if(num_threads_to_use != -1)
 	{
 		num_threads = num_threads_to_use;
@@ -53,28 +59,26 @@ errno_t getChunkedData(Data* obj)
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
 	}
-	threads = malloc(num_threads * sizeof(threadpool));
-	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
-	for(int i = 0; i < num_threads; i++)
-	{
-		//Thread pool of size 1 to restrict each thread to one map. Yes im basically just using this as a queue.
-		threads[i] = thpool_init(1);
-		decompressors[i] = libdeflate_alloc_decompressor();
-	}
-	map_iterator = 0;
+	
+//	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
+	
+	
+	threads = thpool_init(num_threads);
+//	for(int i = 0; i < num_threads; i++)
+//	{
+//		decompressors[i] = libdeflate_alloc_decompressor();
+//	}
+	
+	decompressor_iterator = 0;
 	ret = decompressChunk(&root);
 	
-	for(int j = 0; j < num_threads; j++)
-	{
-		thpool_wait(threads[j]);
-	}
+	thpool_wait(threads);
+	thpool_destroy(threads);
 	
-	for(int i = 0; i < num_threads; i++)
-	{
-		thpool_destroy(threads[i]);
-		libdeflate_free_decompressor(decompressors[i]);
-	}
-	free(threads);
+//	for(int i = 0; i < num_threads; i++)
+//	{
+//		libdeflate_free_decompressor(decompressors[i]);
+//	}
 	freeQueue(thread_object_queue);
 	freeTree(&root);
 	return ret;
@@ -106,13 +110,23 @@ errno_t decompressChunk(TreeNode* node)
 		return 0;
 	}
 	
+//	for(int i = 0; i < node->entries_used; i++)
+//	{
+//		for (uint64_t j = node->children[i].address/alloc_gran;
+//			j <= (node->children[i].address+node->keys[i].size)/alloc_gran;
+//			j++)
+//		{
+//			pthread_mutex_init(&page_objects[j].lock, NULL);
+//		}
+//	}
+	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
-	thread_object->thread_map_index = map_iterator;
+	thread_object->thread_decompressor_index = decompressor_iterator;
 	thread_object->node = node;
 	thread_object->err = 0;
 	enqueue(thread_object_queue, thread_object);
-	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_object);
-	map_iterator = (map_iterator + 1) % num_threads;
+	thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
+	decompressor_iterator = (decompressor_iterator + 1) % num_threads;
 
 	return 0;
 	
@@ -126,9 +140,10 @@ void* doInflate_(void* t)
 	TreeNode* node = thread_obj->node;
 
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
+	size_t retsz;
 	
-	//struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_map_index];
+	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
+	//struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_decompressor_index];
 	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
@@ -137,8 +152,10 @@ void* doInflate_(void* t)
 	{
 		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_map_index);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		//const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_decompressor_index);
+		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
+		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -189,6 +206,7 @@ void* doInflate_(void* t)
 			index += object->chunked_info.chunk_update[use_update];
 		}
 
+		/*
 		for(int k = 0; k < db_pos; k++)
 		{
 			if(*((double*)decompressed_data_buffer + k*object->elem_size) != 1)
@@ -196,15 +214,18 @@ void* doInflate_(void* t)
 				printf("");
 			}
 		}
+		*/
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
 		
+		releasePages(node->children[i].address, node->keys[i].size);
+
 	}
 	
 	free(decompressed_data_buffer);
 	free(index_map);
+	libdeflate_free_decompressor(ldd);
 	return NULL;
-	//libdeflate_free_decompressor(ldd);
 	
 }
 

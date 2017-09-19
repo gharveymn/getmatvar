@@ -1,15 +1,15 @@
 #include "getmatvar_.h"
-#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
 {
 
 	__byte_order__ = getByteOrder();
+	alloc_gran = getAllocGran();
 
 	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
-	char errmsg[NAME_LENGTH];
+	char warn_msg[NAME_LENGTH];
 	num_avail_threads = getNumProcessors() - 1;
 	
 	//init queues
@@ -39,6 +39,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
 	}
+	
+	initializePageObjects();
 	
 	//find superblock
 	s_block = getSuperblock();
@@ -89,8 +91,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			data_object->type = UNDEF_DATA;
 			strcpy(data_object->name, peekQueue(varname_queue, QUEUE_BACK));
 			enqueue(objects, data_object);
-			sprintf(errmsg, "Variable \'%s\' was not found.", variable_names[name_index]);
-			readMXWarn("getmatvar:variableNotFound", errmsg);
+			sprintf(warn_msg, "Variable \'%s\' was not found.", variable_names[name_index]);
+			readMXWarn("getmatvar:variableNotFound", warn_msg);
 		}
 		
 		//interpret the header messages
@@ -161,6 +163,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	freeQueue(addr_queue);
 	freeQueue(varname_queue);
 	freeQueue(header_queue);
+	destroyPageObjects();
 	freeAllMaps();
 	return objects;
 }
@@ -200,6 +203,34 @@ void initializeMaps(void)
 	map_queue_fronts[HEAP] = 0;
 	map_queue_fronts[THREAD] = 0;
 	
+}
+
+
+void initializePageObjects(void)
+{
+	page_objects = malloc((file_size/alloc_gran + 1) * sizeof(pageObject));
+	for (int i = 0; i < file_size/alloc_gran + 1; i++)
+	{
+		pthread_cond_init(&(page_objects[i].ready), NULL);//initialize these later if we need to?
+		pthread_mutex_init(&(page_objects[i].lock), NULL);
+		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
+		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
+		page_objects[i].is_cont_right = FALSE;
+		page_objects[i].is_mapped = FALSE;
+		page_objects[i].pg_start_a = alloc_gran*i;
+		page_objects[i].pg_end_a = MIN(alloc_gran*(i+1), file_size);
+		page_objects[i].pg_start_p = NULL;
+	}
+}
+
+void destroyPageObjects(void)
+{
+	for (int i = 0; i < file_size/alloc_gran + 1; ++i)
+	{
+		pthread_cond_destroy(&page_objects[i].ready);//initialize these later if we need to?
+		pthread_mutex_destroy(&page_objects[i].lock);
+	}
+	free(page_objects);
 }
 
 

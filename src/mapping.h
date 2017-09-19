@@ -12,6 +12,7 @@
 #include <math.h>
 #include <assert.h>
 #include <mex.h>
+#include "queue.h"
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #include "extlib/mman-win32/mman.h"
@@ -237,14 +238,25 @@ struct tree_node_
 	TreeNode* right_sibling;
 };
 
-#include "queue.h"
+typedef struct
+{
+	pthread_cond_t ready;
+	pthread_mutex_t lock;
+	bool_t is_cont_right;
+	bool_t is_mapped;
+	uint64_t pg_start_a;
+	uint64_t pg_end_a;
+	byte* pg_start_p;
+} pageObject;
 
 //fileHelper.c
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
 byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type);
-byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int tree_map_index);
+byte* navigatePolitely(uint64_t address, uint64_t bytes_needed);
+void releasePages(uint64_t address, uint64_t bytes_needed);
+byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int map_index);
 void readTreeNode(byte* tree_pointer, AddrTrio* this_trio);
 void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_address, bool_t get_top_level);
 void freeDataObject(void* object);
@@ -252,6 +264,7 @@ void freeDataObjectTree(Data* super_object);
 void endHooks(void);
 void freeAllMaps(void);
 void freeMap(MemMap map);
+void destroyPageObjects(void);
 
 //numberHelper.c
 int roundUp(int numToRound);
@@ -278,6 +291,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
+void initializePageObjects(void);
 
 
 //getPageSize.c
@@ -295,6 +309,8 @@ errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 
 ByteOrder __byte_order__;
+size_t alloc_gran;
+size_t file_size;
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];
@@ -307,7 +323,6 @@ Queue* varname_queue;
 Queue* header_queue;
 
 int fd;
-size_t file_size;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
@@ -317,5 +332,6 @@ int num_avail_threads;
 int num_threads_to_use;
 
 bool_t is_multithreading;
+pageObject* page_objects;
 
 #endif
