@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/my_struct1.mat';
+file = 'res/t.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
@@ -12,14 +12,14 @@ getmatvar(file);%, vars{:});
 toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
-%a = t;
+a = t;
 
 % using load function
 tic
 load(file);
 toc
 
-%sum(a(:) ~= t(:))
+disp(sum(a(:) ~= t(:)))
 
 % using matlab's partial loader
 % tic

@@ -1,10 +1,13 @@
 #include "getmatvar_.h"
+#include "extlib/thpool/thpool.h"
+#include <Windows.h>
 
 threadpool* threads;
 int num_threads;
 struct libdeflate_decompressor** decompressors;
 static Data* object;
 static int map_iterator;
+TreeNode root;
 
 typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
@@ -28,15 +31,14 @@ Queue* thread_object_queue;
 errno_t getChunkedData(Data* obj)
 {
 	object = obj;
-	TreeNode* root = malloc(sizeof(TreeNode));
-	root->address = object->data_address;
-	errno_t ret = fillNode(root, object->chunked_info.num_chunked_dims);
+	root.address = object->data_address;
+	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
 	{
-		object->type = ERROR;
+		object->type = ERROR_DATA;
 		sprintf(object->name, "getmatvar:internalInvalidNodeType");
 		sprintf(object->matlab_class, "Invalid node type in fillNode()\n\n");
-		freeTree(root);
+		freeTree(&root);
 		return ret;
 	}
 	
@@ -61,7 +63,7 @@ errno_t getChunkedData(Data* obj)
 		decompressors[i] = libdeflate_alloc_decompressor();
 	}
 	map_iterator = 0;
-	ret = decompressChunk(root);
+	ret = decompressChunk(&root);
 	
 	for(int j = 0; j < num_threads; j++)
 	{
@@ -75,8 +77,7 @@ errno_t getChunkedData(Data* obj)
 	}
 	free(threads);
 	freeQueue(thread_object_queue);
-	freeTree(root);
-	free(root);
+	freeTree(&root);
 	return ret;
 }
 
@@ -124,12 +125,14 @@ void* doInflate_(void* t)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
-	
-	struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_map_index];
-	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
-	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
-	uint64_t index_map[CHUNK_BUFFER_SIZE];
+
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
+	
+	//struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
+	struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_map_index];
+	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
+	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
+	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
@@ -140,19 +143,19 @@ void* doInflate_(void* t)
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateBadData");
 				sprintf(object->matlab_class, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_SHORT_OUTPUT:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateShortOutput");
 				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
 					   "'actual_out_nbytes_ret' was provided, but the data would have"
 					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				object->type = ERROR;
+				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
 					   "%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
@@ -187,9 +190,14 @@ void* doInflate_(void* t)
 			index += object->chunked_info.chunk_update[use_update];
 		}
 		
-		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
+		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
+	
+
+	free(decompressed_data_buffer);
+	free(index_map);
+	//libdeflate_free_decompressor(ldd);
 	
 }
 

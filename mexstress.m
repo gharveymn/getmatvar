@@ -10,7 +10,7 @@ addpath('bin')
 file = 'res/my_struct1.mat';
 vars = {''};
 domemory = false;
-numtests = 1000;
+numtests = 100;
 memvals = rand(numtests+1,1);
 lents = 0;
 if(domemory)
@@ -30,7 +30,7 @@ if(domemory)
 	xlim([0,numtests]);
 else
 	for i = 1:numtests
-
+		
 		getmatvar(file, vars{:});
 
 		timestr = sprintf('%d/%d',i,numtests);

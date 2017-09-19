@@ -136,7 +136,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	fprintf(stderr,"Fetching the objects... ");
 	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
 	Data* front_object = peekQueue(objects, QUEUE_FRONT);
-	if((ERROR & front_object->type) == ERROR)
+	if((ERROR_DATA & front_object->type) == ERROR_DATA)
 	{
 		return objects;
 	}

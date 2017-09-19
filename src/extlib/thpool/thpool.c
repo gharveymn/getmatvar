@@ -9,16 +9,17 @@
  ********************************/
 
 #define _POSIX_C_SOURCE 200809L
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #include <windows.h>
+#include "../pthreads-win32/include/pthread.h"
 #define sleep Sleep
 #else
+#include <pthread.h>
 #include <unistd.h>
 #endif
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <errno.h>
 #include <time.h>
 #if defined(__linux__)
@@ -210,7 +211,7 @@ void thpool_wait(thpool_* thpool_p){
 
 /* Destroy the threadpool */
 void thpool_destroy(thpool_* thpool_p){
-	/* No need to destory if it's NULL */
+	/* No need to destroy if it's NULL */
 	if (thpool_p == NULL) return ;
 
 	volatile int threads_total = thpool_p->num_threads_alive;
@@ -338,14 +339,14 @@ static void* thread_do(struct thread* thread_p){
 	thpool_* thpool_p = thread_p->thpool_p;
 
 	/* Register signal handler */
-//	struct sigaction act;
-//	sigemptyset(&act.sa_mask);
-//	act.sa_flags = 0;
-//	signal
-//	act.sa_handler = thread_hold;
-//	if (sigaction(SIGUSR1, &act, NULL) == -1) {
-//		err("thread_do(): cannot handle SIGUSR1");
-//	}
+	// struct sigaction act;
+	// sigemptyset(&act.sa_mask);
+	// act.sa_flags = 0;
+	// signal
+	// act.sa_handler = thread_hold;
+	// if (sigaction(SIGUSR1, &act, NULL) == -1) {
+	// 	err("thread_do(): cannot handle SIGUSR1");
+	// }
 
 	/* Mark thread as alive (initialized) */
 	pthread_mutex_lock(&thpool_p->thcount_lock);
@@ -392,6 +393,8 @@ static void* thread_do(struct thread* thread_p){
 
 /* Frees a thread  */
 static void thread_destroy (thread* thread_p){
+	pthread_cancel(thread_p->pthread);
+	pthread_join(thread_p->pthread, NULL);
 	free(thread_p);
 }
 

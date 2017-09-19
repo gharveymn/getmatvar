@@ -12,13 +12,14 @@
 #include <math.h>
 #include <assert.h>
 #include <mex.h>
-#include <pthread.h>
-#include "extlib/threadpool/thpool.h"
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
+#include <pthread.h>
+//#include "extlib/pthreads-win32/include/pthread.h"
 #else
+#include <pthread.h>
 #include <endian.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -119,7 +120,7 @@ typedef enum
 	TABLE_DATA = 1 << 14,
 	DELIMITER = 1 << 15,
 	END_SENTINEL = 1 << 16,
-	ERROR = 1 << 17,
+	ERROR_DATA = 1 << 17,
 	UNDEF_DATA = 1 << 18
 } DataType;
 
@@ -206,7 +207,7 @@ struct data_
 
 typedef enum
 {
-	NODETYPE_UNDEFINED, GROUP = (uint8_t)0, CHUNK = (uint8_t)1
+	GROUP = (uint8_t)0, CHUNK = (uint8_t)1, NODETYPE_UNDEFINED
 } NodeType;
 
 typedef enum

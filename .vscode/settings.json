@@ -5,6 +5,7 @@
     "mman.h": "c",
     "cstddef": "c",
     "xmemory0": "c",
-    "signal.h": "c"
+    "signal.h": "c",
+    "pthread.h": "c"
   }
 }

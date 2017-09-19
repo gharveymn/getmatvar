@@ -1,4 +1,5 @@
 #include "getmatvar_.h"
+#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -21,7 +22,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(fd < 0)
 	{
 		Data* data_object = malloc(sizeof(Data));
-		data_object->type = ERROR | END_SENTINEL;
+		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:fileNotFoundError");
 		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
 		enqueue(objects, data_object);
@@ -33,7 +34,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(file_size == (size_t)-1)
 	{
 		Data* data_object = malloc(sizeof(Data));
-		data_object->type = ERROR | END_SENTINEL;
+		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:lseekFailedError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
@@ -115,10 +116,10 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			enqueue(objects, data_object);
 			
 			//this block handles errors and sets up signals for controlled shutdown
-			if(data_object->type == ERROR)
+			if(data_object->type == ERROR_DATA)
 			{
 				Data* front_object = peekQueue(objects, QUEUE_FRONT);
-				front_object->type = ERROR;
+				front_object->type = ERROR_DATA;
 				strcpy(front_object->name, front_object->name);
 				strcpy(front_object->matlab_class, front_object->matlab_class);
 				
@@ -219,6 +220,11 @@ void initializeObject(Data* object)
 	
 	object->chunked_info.num_filters = 0;
 	object->chunked_info.num_chunked_dims = 0;
+	object->chunked_info.num_chunked_elems = 0;
+	for(int i = 0; i < MAX_NUM_FILTERS; i++)
+	{
+		object->chunked_info.filters[i].client_data = NULL;
+	}
 	
 	object->sub_objects = NULL;
 	
@@ -258,7 +264,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	
 	if(object->type == UNDEF_DATA)
 	{
-		object->type = ERROR;
+		object->type = ERROR_DATA;
 		sprintf(object->name, "getmatvar:unknownDataTypeError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 		return;
@@ -285,7 +291,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			}
 			break;
 		default:
-			object->type = ERROR;
+			object->type = ERROR_DATA;
 			sprintf(object->name, "getmatvar:unknownLayoutClassError");
 			sprintf(object->matlab_class, "Unknown layout class encountered.\n\n");
 			return;
@@ -446,7 +452,7 @@ errno_t allocateSpace(Data* object)
 		case NULLTYPE_DATA:
 		default:
 			//this shouldn't happen
-			object->type = ERROR;
+			object->type = ERROR_DATA;
 			sprintf(object->name, "getmatvar:thisShouldntHappen");
 			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
