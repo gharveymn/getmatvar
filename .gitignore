@@ -15,6 +15,7 @@ res/*
 */optData_ESTrade.mat
 *~
 *.o
+tests/unixtestbench/mapping
 
 *ipch/
 *.aps
