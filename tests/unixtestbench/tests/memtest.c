@@ -33,7 +33,7 @@ void main(int argc, char* argv[])
 		free(varnames[i]);
 	}
 	free(varnames);
-
+	free(variable_name[0]);
 	free(variable_name);
 	
 	printf("\nProgram exited without errors\n\n");
