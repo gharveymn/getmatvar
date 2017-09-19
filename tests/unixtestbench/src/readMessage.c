@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -25,7 +25,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 
 void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
-	object->type = NULLTYPE_DATA;
+	object->type = NULLTYPE;
 	//assume version 1
 	uint8_t class = (uint8_t)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
 	object->elem_size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
@@ -47,46 +47,46 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 				case 1:
 					if(sign)
 					{
-						object->type = INT8_DATA;
+						object->type = INT8;
 					}
 					else
 					{
-						object->type = UINT8_DATA;
+						object->type = UINT8;
 					}
 					break;
 				case 2:
 					if(sign)
 					{
-						object->type = INT16_DATA;
+						object->type = INT16;
 					}
 					else
 					{
-						object->type = UINT16_DATA;
+						object->type = UINT16;
 					}
 					break;
 				case 4:
 					if(sign)
 					{
-						object->type = INT32_DATA;
+						object->type = INT32;
 					}
 					else
 					{
-						object->type = UINT32_DATA;
+						object->type = UINT32;
 					}
 					break;
 				case 8:
 					if(sign)
 					{
-						object->type = INT64_DATA;
+						object->type = INT64;
 					}
 					else
 					{
-						object->type = UINT64_DATA;
+						object->type = UINT64;
 					}
 					break;
 				default:
 					//this shouldn't happen
-					object->type = NULLTYPE_DATA;
+					object->type = NULLTYPE;
 					break;
 			}
 			break;
@@ -98,19 +98,19 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			switch(object->elem_size)
 			{
 				case 4:
-					object->type = SINGLE_DATA;
+					object->type = SINGLE;
 					break;
 				case 8:
-					object->type = DOUBLE_DATA;
+					object->type = DOUBLE;
 					break;
 				default:
 					//this shouldn't happen
-					object->type = NULLTYPE_DATA;
+					object->type = NULLTYPE;
 					break;
 			}
 			break;
 		case 6:
-			object->complexity_flag = mxCOMPLEX;
+			object->complexity_flag = 1;
 			msg_pointer = navigateTo(msg_address + 48, 20, TREE);
 			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
 			object->num_elems *= 2;
@@ -118,12 +118,12 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			break;
 		case 7:
 			//reference (cell), data consists of addresses aka references
-			object->type = REF_DATA;
+			object->type = REF;
 			object->byte_order = LITTLE_ENDIAN;
 			break;
 		default:
 			//ignore
-			object->type = NULLTYPE_DATA;
+			object->type = NULLTYPE;
 			object->byte_order = LITTLE_ENDIAN;
 			break;
 	}
@@ -137,6 +137,8 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 	if(*msg_pointer != 3)
 	{
 		readMXError("getmatvar:internalError", "Data layout version at address\n\n");
+		//fprintf(stderr, "Data layout version at address 0x%llu is %d; expected version 3.\n", msg_address, *msg_pointer);
+		//exit(EXIT_FAILURE);
 	}
 	
 	object->layout_class = (uint8_t)*(msg_pointer + 1);
@@ -181,6 +183,8 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			break;
 		default:
 			readMXError("getmatvar:internalError", "Unknown data layout class\n\n");
+			//fprintf(stderr, "Unknown data layout class %d at address 0x%llu.\n", object->layout_class, msg_address + 1);
+			//exit(EXIT_FAILURE);
 	}
 }
 
@@ -258,19 +262,19 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		object->matlab_class[attribute_data_size] = 0x0;
 		if(strcmp("struct", object->matlab_class) == 0)
 		{
-			object->type = STRUCT_DATA;
+			object->type = STRUCT;
 		}
 		else if(strcmp("cell", object->matlab_class) == 0)
 		{
-			object->type = REF_DATA;
+			object->type = REF;
 		}
 		else if(strcmp("function_handle", object->matlab_class) == 0)
 		{
-			object->type = FUNCTION_HANDLE_DATA;
+			object->type = FUNCTION_HANDLE;
 		}
 		else if(strcmp("table", object->matlab_class) == 0)
 		{
-			object->type = TABLE_DATA;
+			object->type = TABLE;
 		}
 	}
 }

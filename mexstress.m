@@ -10,7 +10,7 @@ addpath('bin')
 file = 'res/my_struct1.mat';
 vars = {''};
 domemory = false;
-numtests = 100;
+numtests = 1000;
 memvals = rand(numtests+1,1);
 lents = 0;
 if(domemory)

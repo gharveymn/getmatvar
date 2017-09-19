@@ -1,8 +1,6 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
-threadpool* threads;
-int num_threads;
-struct libdeflate_decompressor** decompressors;
+
 static Data* object;
 static int map_iterator;
 
@@ -53,12 +51,10 @@ errno_t getChunkedData(Data* obj)
 		num_threads = MAX(num_threads, 1);
 	}
 	threads = malloc(num_threads * sizeof(threadpool));
-	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
 	for(int i = 0; i < num_threads; i++)
 	{
 		//Thread pool of size 1 to restrict each thread to one map. Yes im basically just using this as a queue.
 		threads[i] = thpool_init(1);
-		decompressors[i] = libdeflate_alloc_decompressor();
 	}
 	map_iterator = 0;
 	ret = decompressChunk(root);
@@ -68,11 +64,11 @@ errno_t getChunkedData(Data* obj)
 		thpool_wait(threads[j]);
 	}
 	
-	for(int i = 0; i < num_threads; i++)
+	for(int j = 0; j < num_threads; j++)
 	{
-		thpool_destroy(threads[i]);
-		libdeflate_free_decompressor(decompressors[i]);
+		thpool_destroy(threads[j]);
 	}
+	
 	free(threads);
 	freeQueue(thread_object_queue);
 	freeTree(root);
@@ -103,7 +99,7 @@ errno_t decompressChunk(TreeNode* node)
 	if(node->children[0].leaf_type != RAWDATA)
 	{
 		//only want nodes which are parents of the leaves to save memory
-		return 0;
+		return 0; 
 	}
 	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
@@ -113,7 +109,6 @@ errno_t decompressChunk(TreeNode* node)
 	enqueue(thread_object_queue, thread_object);
 	thpool_add_work(threads[map_iterator], (void*)doInflate_, (void*)thread_object);
 	map_iterator = (map_iterator + 1) % num_threads;
-
 	return 0;
 	
 }
@@ -125,7 +120,7 @@ void* doInflate_(void* t)
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
 	
-	struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_map_index];
+	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte decompressed_data_buffer[CHUNK_BUFFER_SIZE];
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t index_map[CHUNK_BUFFER_SIZE];
@@ -190,7 +185,11 @@ void* doInflate_(void* t)
 		placeDataWithIndexMap(object, &decompressed_data_buffer[0], db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
+
+	libdeflate_free_decompressor(ldd);
 	
+	return NULL;
+
 }
 
 

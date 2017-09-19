@@ -13,6 +13,8 @@ build/*
 res/*
 *.pdb
 */optData_ESTrade.mat
+*~
+*.o
 
 *ipch/
 *.aps

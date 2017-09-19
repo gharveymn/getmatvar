@@ -8,11 +8,11 @@
 //	mxSetData(mxIntPtr, object->data_arrays.i16_data);
 //	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 //
-//	if(super_structure_type == STRUCT)
+//	if(super_structure_type == STRUCT_DATA)
 //	{
 //		mxSetField(returnStructure, 0, varname, mxIntPtr);
 //	}
-//	else if(super_structure_type == REF)
+//	else if(super_structure_type == REF_DATA)
 //	{
 //		//is a cell array
 //		mxSetCell(returnStructure, index, mxIntPtr);
@@ -48,11 +48,11 @@ void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -78,11 +78,11 @@ void setI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwInd
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -118,11 +118,11 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -148,11 +148,11 @@ void setI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -178,11 +178,11 @@ void setUI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -208,11 +208,11 @@ void setI32Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -238,11 +238,11 @@ void setUI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -268,11 +268,11 @@ void setI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxIntPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxIntPtr);
@@ -299,11 +299,11 @@ void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxSglPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxSglPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxSglPtr);
@@ -329,11 +329,11 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	mxSetDimensions(mxDblPtr, obj_dims, object->num_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
 		mxSetField(returnStructure, 0, varname, mxDblPtr);
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
 		//is a cell array
 		mxSetCell(returnStructure, index, mxDblPtr);
@@ -349,13 +349,13 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	int num_fields = object->num_sub_objs;
 	mxArray* mxCellPtr = mxCreateCellArray(object->num_dims, obj_dims);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF));
+		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF_DATA));
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF));
+		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, REF_DATA));
 	}
 	
 	free(obj_dims);
@@ -368,13 +368,13 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 	const char** field_names = getFieldNames(object);
 	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, field_names);
 	
-	if(super_structure_type == STRUCT)
+	if(super_structure_type == STRUCT_DATA)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT));
+		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT_DATA));
 	}
-	else if(super_structure_type == REF)
+	else if(super_structure_type == REF_DATA)
 	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT));
+		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, STRUCT_DATA));
 	}
 	
 	free(field_names);
@@ -411,7 +411,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 	
 	switch(object->type)
 	{
-		case INT8:
+		case INT8_DATA:
 			imag_data.i8_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -420,7 +420,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.i8_data, object->num_elems * object->elem_size / 2);
 			break;
-		case UINT8:
+		case UINT8_DATA:
 			imag_data.ui8_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -429,7 +429,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.ui8_data, object->num_elems * object->elem_size / 2);
 			break;
-		case INT16:
+		case INT16_DATA:
 			imag_data.i16_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -438,7 +438,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.i16_data, object->num_elems * object->elem_size / 2);
 			break;
-		case UINT16:
+		case UINT16_DATA:
 			imag_data.ui8_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -447,7 +447,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.ui8_data, object->num_elems * object->elem_size / 2);
 			break;
-		case INT32:
+		case INT32_DATA:
 			imag_data.i32_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -456,7 +456,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.i32_data, object->num_elems * object->elem_size / 2);
 			break;
-		case UINT32:
+		case UINT32_DATA:
 			imag_data.ui32_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -465,7 +465,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.ui32_data, object->num_elems * object->elem_size / 2);
 			break;
-		case INT64:
+		case INT64_DATA:
 			imag_data.i64_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -474,7 +474,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.i64_data, object->num_elems * object->elem_size / 2);
 			break;
-		case UINT64:
+		case UINT64_DATA:
 			imag_data.ui64_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -483,7 +483,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.ui64_data, object->num_elems * object->elem_size / 2);
 			break;
-		case SINGLE:
+		case SINGLE_DATA:
 			imag_data.single_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems / 2; i++)
 			{
@@ -492,7 +492,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			}
 			mxRealloc(object->data_arrays.single_data, object->num_elems * object->elem_size / 2);
 			break;
-		case DOUBLE:
+		case DOUBLE_DATA:
 			imag_data.double_data = mxMalloc(object->num_elems * object->elem_size / 2);
 			for(uint32_t i = 0; i < object->num_elems/2; i++)
 			{

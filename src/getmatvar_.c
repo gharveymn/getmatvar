@@ -147,7 +147,6 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	int num_objs = 0;
 	for (;objects->length  > 0; num_objs++)
 	{
-		varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
 		super_objects[num_objs] = organizeObjects(objects);
 		if (super_objects[num_objs] == NULL)
 		{
@@ -155,6 +154,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 		}
 		else
 		{
+			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
 			strcpy(varnames[num_objs], super_objects[num_objs]->name);
 		}
 	}
@@ -164,7 +164,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
 	//#pragma GCC diagnostic pop
 	
-	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT);
+	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT_DATA);
 	
 	freeQueue(objects);
 	free(super_objects);
@@ -190,59 +190,59 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 		
 		switch(objects[index]->type)
 		{
-			case UINT8:
+			case UINT8_DATA:
 				setUI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case INT8:
+			case INT8_DATA:
 				setI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case UINT16:
+			case UINT16_DATA:
 				setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case INT16:
+			case INT16_DATA:
 				setI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case UINT32:
+			case UINT32_DATA:
 				setUI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case INT32:
+			case INT32_DATA:
 				setI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case UINT64:
+			case UINT64_DATA:
 				setUI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case INT64:
+			case INT64_DATA:
 				setI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case SINGLE:
+			case SINGLE_DATA:
 				setSglPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case DOUBLE:
+			case DOUBLE_DATA:
 				setDblPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
-			case REF:
+			case REF_DATA:
 				setCellPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				//Indicate we should free any memory used by this
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case STRUCT:
+			case STRUCT_DATA:
 				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case FUNCTION_HANDLE:
+			case FUNCTION_HANDLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case TABLE:
+			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case NULLTYPE:
+			case NULLTYPE_DATA:
 				//do nothing, this is an empty array
 				break;
-			case UNDEF:
+			case UNDEF_DATA:
 				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));

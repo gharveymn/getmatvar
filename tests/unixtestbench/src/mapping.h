@@ -11,11 +11,10 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include <mex.h>
 #include <pthread.h>
 #include "extlib/threadpool/thpool.h"
 
-#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) && !defined(__CYGWIN__)
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #else
@@ -56,8 +55,9 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
-typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
+typedef char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
+typedef int errno_t;
 
 typedef struct
 {
@@ -102,25 +102,25 @@ typedef struct
 
 typedef enum
 {
-	NULLTYPE_DATA = 1 << 0,
-	UINT8_DATA = 1 << 1,
-	INT8_DATA = 1 << 2,
-	UINT16_DATA = 1 << 3,
-	INT16_DATA = 1 << 4,
-	UINT32_DATA = 1 << 5,
-	INT32_DATA = 1 << 6,
-	UINT64_DATA = 1 << 7,
-	INT64_DATA = 1 << 8,
-	SINGLE_DATA = 1 << 9,
-	DOUBLE_DATA = 1 << 10,
-	REF_DATA = 1 << 11,
-	STRUCT_DATA = 1 << 12,
-	FUNCTION_HANDLE_DATA = 1 << 13,
-	TABLE_DATA = 1 << 14,
+	NULLTYPE = 1 << 0,
+	UINT8 = 1 << 1,
+	INT8 = 1 << 2,
+	UINT16 = 1 << 3,
+	INT16 = 1 << 4,
+	UINT32 = 1 << 5,
+	INT32 = 1 << 6,
+	UINT64 = 1 << 7,
+	INT64 = 1 << 8,
+	SINGLE = 1 << 9,
+	DOUBLE = 1 << 10,
+	REF = 1 << 11,
+	STRUCT = 1 << 12,
+	FUNCTION_HANDLE = 1 << 13,
+	TABLE = 1 << 14,
 	DELIMITER = 1 << 15,
 	END_SENTINEL = 1 << 16,
 	ERROR = 1 << 17,
-	UNDEF_DATA = 1 << 18
+	UNDEF = 1 << 18
 } DataType;
 
 typedef enum
@@ -180,7 +180,7 @@ typedef struct data_ Data;
 struct data_
 {
 	DataType type;
-	mxComplexity complexity_flag;
+	int complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
 	char name[NAME_LENGTH];
@@ -277,6 +277,8 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
+void readMXError(const char error_id[], const char error_message[], ...);
+void readMXWarn(const char warn_id[], const char warn_message[], ...);
 
 
 //getPageSize.c
@@ -315,6 +317,8 @@ AddrTrio root_trio;
 int num_avail_threads;
 int num_threads_to_use;
 
+threadpool* threads;
+int num_threads;
 bool_t is_multithreading;
 
 #endif
