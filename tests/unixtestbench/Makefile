@@ -1,5 +1,10 @@
 CC=gcc
 
+#===DIRECTORIES===#
+OBJ_DIR=src
+SRC_DIR=src
+
+
 LIBDEFLATE_INC=./src/extlib/libdeflate/x64
 #LIBDEFLATE_INC=./src/libdeflate
 THREADPOOL_INC=./src/extlib/thpool
@@ -9,7 +14,6 @@ LIBDEFLATE_LIB=./src/extlib/libdeflate/x64
 INC=$(LIBDEFLATE_INC) $(THREADPOOL_INC)
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 
-ODIR=src
 
 #LIB=$(LIBDEFLATE_LIB)
 LIB=.
@@ -25,10 +29,10 @@ numberHelper.o queue.o getSystemInfo.o \
 readMessage.o chunkedData.o \
 extlib/thpool/thpool.o
 
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
 
-$(ODIR)/%.o: %.c $(DEPS)
+$(OBJ_DIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 CFLAGS=-g -Wall --std=c99 $(INC_PARAMS) $(LIB_PARAMS)
@@ -39,9 +43,9 @@ mapping: $(OBJ) src/extlib/libdeflate/x64/libdeflate.a
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 src/libdeflate/libdeflate.a:
-	cd $(ODIR)/libdeflate/ && $(MAKE)
+	cd $(OBJ_DIR)/libdeflate/ && $(MAKE)
 
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+	rm -f $(OBJ_DIR)/*.o *~ core $(INCDIR)/*~

@@ -7,7 +7,6 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
 	
-	
 	if(DO_MEMDUMP == TRUE)
 	{
 		pthread_cond_init(&dump_ready, NULL);
@@ -231,12 +230,11 @@ void initializePageObjects(void)
 		pthread_mutex_init(&page_objects[i].lock, NULL);
 		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
 		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
-		page_objects[i].is_cont_right = FALSE;
 		page_objects[i].is_mapped = FALSE;
 		page_objects[i].pg_start_a = alloc_gran*i;
 		page_objects[i].pg_end_a = MIN(alloc_gran*(i+1), file_size);
-		page_objects[i].win_map_base_offset = UNDEF_ADDR;
-		page_objects[i].win_map_extends_to = UNDEF_ADDR;
+		page_objects[i].map_base = UNDEF_ADDR;
+		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
 	}
 }
@@ -248,25 +246,22 @@ void destroyPageObjects(void)
 	{
 		if (page_objects[i].is_mapped == TRUE)
 		{
-			if (munmap(page_objects[i].pg_start_p, page_objects[i].win_map_extends_to - page_objects[i].win_map_base_offset) != 0)
+			
+			if (munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
 					strerror(errno));
 			}
-
-			size_t win_base_page = page_objects[i].win_map_base_offset / alloc_gran;
-			size_t win_extend_page = page_objects[i].win_map_extends_to / alloc_gran;
 			
-			for(size_t j = win_base_page; j <= win_extend_page; j++)
-			{
-				page_objects[j].is_mapped = FALSE;
-				page_objects[j].pg_start_p = NULL;
-				page_objects[j].win_map_base_offset = UNDEF_ADDR;
-				page_objects[j].win_map_extends_to = UNDEF_ADDR;
-			}
+			page_objects[i].is_mapped = FALSE;
+			page_objects[i].pg_start_p = NULL;
+			page_objects[i].map_base = UNDEF_ADDR;
+			page_objects[i].map_end = UNDEF_ADDR;
 			
 		}
+		
 		pthread_mutex_destroy(&page_objects[i].lock);
+		
 	}
 
 	free(page_objects);

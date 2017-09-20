@@ -24,10 +24,7 @@ Queue* thread_object_queue;
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
-
 #include "extlib/libdeflate/x64/libdeflate.h"
-
-
 #else
 //you need at least 19th century hardware to run this
 #endif
@@ -39,6 +36,7 @@ errno_t getChunkedData(Data* obj)
 {
 	object = obj;
 	root.address = object->data_address;
+	pthread_mutex_init(&thread_acquisition_lock, NULL);
 	
 	//fill the chunk tree
 	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
@@ -69,7 +67,9 @@ errno_t getChunkedData(Data* obj)
 	
 	
 	threads = thpool_init(num_threads);
-
+	
+	//TODO after multithreaded mapping is stable work on GC system using global iterator
+	//TODO capture sections using the acquisition lock?
 //	pthread_t gc;
 //
 //	is_working = TRUE;
@@ -85,6 +85,8 @@ errno_t getChunkedData(Data* obj)
 
 //	is_working = FALSE;
 //	pthread_join(gc, NULL);
+
+	pthread_mutex_destroy(&thread_acquisition_lock);
 	
 	freeQueue(thread_object_queue);
 	freeTree(&root);
@@ -428,18 +430,18 @@ void memdump(const char* type)
 	fprintf(dump, "\n  ");
 	fflush(dump);
 	
-	for(int i = 0; i < num_pages; i++)
-	{
-		if(page_objects[i].is_cont_right == TRUE)
-		{
-			fprintf(dump, "R");
-		}
-		else
-		{
-			fprintf(dump, "X");
-		}
-		fflush(dump);
-	}
+//	for(int i = 0; i < num_pages; i++)
+//	{
+//		if(page_objects[i].is_cont_right == TRUE)
+//		{
+//			fprintf(dump, "R");
+//		}
+//		else
+//		{
+//			fprintf(dump, "X");
+//		}
+//		fflush(dump);
+//	}
 	
 	fprintf(dump, "\n\n");
 	

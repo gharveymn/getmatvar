@@ -12,7 +12,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	
 	//init maps, needed so we don't confuse ending hooks in the case of error
 	initializeMaps();
-	is_multithreading = FALSE;
 	addr_queue = NULL;
 	varname_queue = NULL;
 	header_queue = NULL;

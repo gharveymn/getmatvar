@@ -1,4 +1,5 @@
 #include "getmatvar_.h"
+#include "mapping.h"
 
 
 Superblock getSuperblock(void)
@@ -156,132 +157,74 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 
 byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 {
-	
-	//commented code works for unix
-	
+
 	size_t start_page = address / alloc_gran;
 	size_t end_page = (address + bytes_needed) / alloc_gran; //INCLUSIVE
-	
-	//acquire locks
-	for(uint64_t i = start_page; i <= end_page; i++)
-	{
 
-		pthread_mutex_lock(&page_objects[i].lock);
-		//this is now my lock
-		
-	}
+
+	/*-----------------------------------------WINDOWS-----------------------------------------*/
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+	
+	//in Windows the .is_mapped becomes a flag for if the mapping originally came from this object
+	//if there is a map available the map_start and map_end addresses indicate where the start and end are
+	//if the object is not associated to a map at all the map_start and map_end addresses will be at UNDEF_ADDR
+	
+	//acquire lock
+	pthread_mutex_lock(&page_objects[start_page].lock);
+	
 	
 	//check if we have continuous mapping available (if yes then return pointer)
-	
-//	bool_t is_continuous = TRUE;
-//	for(size_t i = start_page; i < end_page; i++)
+//	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 //	{
-//		if(page_objects[i].is_cont_right == FALSE || page_objects[i].is_mapped == FALSE)
+//
+//		if(DO_MEMDUMP)
 //		{
-//			is_continuous = FALSE;
-//			break;
+//			memdump("R ");
 //		}
-//	}
-//
-//	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
-//	{
-//
-//		memdump("R ");
 //
 //		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 //	}
-	
-	if(page_objects[start_page].is_mapped == TRUE  && page_objects[start_page].win_map_base_offset <= address && address + bytes_needed <= page_objects[start_page].win_map_extends_to)
-	{
-		
-		if(DO_MEMDUMP)
-		{
-			memdump("R ");
-		}
-		
-		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-	}
 	
 	//implicit else
 
 	//if this page has already been mapped unmap since we can't fit
 	if(page_objects[start_page].is_mapped == TRUE)
 	{
-		//acquire locks needed to unmap the entire allocation without conflicts
-		size_t win_base_page = page_objects[start_page].win_map_base_offset / alloc_gran;
-		size_t win_extend_page = page_objects[start_page].win_map_extends_to / alloc_gran;
-		
-		//release these locks immediately, we don't need them later
-		for(size_t i = win_base_page; i < start_page; i++)
-		{
-			//this can can cause deadlock on overlapping pages, perhaps use a flag to indicate another thread is waiting?
-			pthread_mutex_lock(&page_objects[i].lock);
-		}
-		
-		for(size_t i = end_page + 1; i < win_extend_page; i++)
-		{
-			pthread_mutex_lock(&page_objects[i].lock);
-		}
-		
-		if(munmap(page_objects[win_base_page].pg_start_p, page_objects[win_base_page].win_map_extends_to - page_objects[win_base_page].win_map_base_offset) != 0)
+		if(munmap(page_objects[start_page].pg_start_p, NULL) != 0)
 		{
 			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
 					  errno);
 		}
 		
-		//indicate these are no longer mapped
-		for(size_t i = win_base_page; i <= win_extend_page; i++)
-		{
-			page_objects[i].is_mapped = FALSE;
-			page_objects[i].pg_start_p = NULL;
-			page_objects[i].win_map_base_offset = UNDEF_ADDR;
-			page_objects[i].win_map_extends_to = UNDEF_ADDR;
-		}
-		
-		for(size_t i = win_base_page; i < start_page; i++)
-		{
-			pthread_mutex_unlock(&page_objects[i].lock);
-		}
-		
-		for(size_t i = end_page + 1; i < win_extend_page; i++)
-		{
-			pthread_mutex_unlock(&page_objects[i].lock);
-		}
+		page_objects[start_page].is_mapped = FALSE;
+		page_objects[start_page].pg_start_p = NULL;
+		page_objects[start_page].map_base = UNDEF_ADDR;
+		page_objects[start_page].map_end = UNDEF_ADDR;
 		
 	}
 	
-	
 //	for(size_t i = start_page; i <= end_page; i++)
 //	{
-//		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
+//		if(page_objects[i].is_mapped == TRUE)
 //		{
-//
-//			//munlock(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a);
-//
-//			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+//			if(munmap(page_objects[i].pg_start_p, NULL) != 0)
 //			{
 //				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
 //						  errno);
 //			}
+//
 //			page_objects[i].is_mapped = FALSE;
 //			page_objects[i].pg_start_p = NULL;
+//			page_objects[i].map_base = UNDEF_ADDR;
+//			page_objects[i].map_end = UNDEF_ADDR;
+//
 //		}
-//		page_objects[i].is_cont_right = FALSE;
 //	}
 	
 	if(DO_MEMDUMP)
 	{
 		memdump("U ");
 	}
-
-	//acquire lock for previous page
-//	if (start_page > 0)
-//	{
-//		pthread_mutex_lock(&page_objects[start_page - 1].lock);
-//		page_objects[start_page - 1].is_cont_right = FALSE;
-//		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
-//	}
-
 	
 	page_objects[start_page].pg_start_p = mmap(NULL,
 									   page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a,
@@ -296,25 +239,113 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 			errno);
 	}
 	
-	page_objects[start_page].win_map_base_offset = page_objects[start_page].pg_start_a;
-	page_objects[start_page].win_map_extends_to = page_objects[end_page].pg_end_a;
 	page_objects[start_page].is_mapped = TRUE;
+	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
+	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
 	
-	for(size_t i = start_page + 1; i <= end_page; i++)
-	{
-		page_objects[i].is_mapped = TRUE;
-		page_objects[i].pg_start_p = page_objects[i-1].pg_start_p + alloc_gran;
-		//page_objects[i-1].is_cont_right = TRUE;
-		page_objects[i].win_map_base_offset = page_objects[start_page].pg_start_a;
-		page_objects[i].win_map_extends_to = page_objects[end_page].pg_end_a;
-	}
-	
-	//page_objects[end_page].is_cont_right = FALSE;
+//	for(size_t i = start_page + 1; i <= end_page; i++)
+//	{
+//		page_objects[i].is_mapped = FALSE;
+//		page_objects[i].pg_start_p = page_objects[i-1].pg_start_p + alloc_gran;
+//		page_objects[i].map_base = page_objects[start_page].pg_start_a;
+//		page_objects[i].map_end = page_objects[end_page].pg_end_a;
+//	}
 	
 	if(DO_MEMDUMP)
 	{
 		memdump("M ");
 	}
+
+#else /*-----------------------------------------UNIX-----------------------------------------*/
+	
+	//acquire locks
+	//locking this allows for a better chance of map reuse
+	pthread_mutex_lock(&thread_acquisition_lock);
+	for(uint64_t i = start_page; i <= end_page; i++)
+	{
+		pthread_mutex_lock(&page_objects[i].lock);
+		//this is now my lock
+	}
+	pthread_mutex_unlock(&thread_acquisition_lock);
+	
+	//check if we have continuous mapping available (if yes then return pointer)
+	
+	//only check if it's actually possible (this will be mapped if these are not undef)
+	if(page_objects[start_page].map_start <= address && address + bytes_needed <= page_objects[start_page].map_end)
+	{
+		bool_t is_continuous = TRUE;
+		for(size_t i = start_page; i <= end_page; i++)
+		{
+			if(page_objects[i].map_base != page_objects[start_page].map_base || page_objects[i].is_mapped == FALSE)
+			{
+				is_continuous = FALSE;
+				break;
+			}
+		}
+		
+		if(is_continuous)
+		{
+			
+			if(DO_MEMDUMP)
+			{
+				memdump("R ");
+			}
+			
+			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+		}
+	}
+	
+	//implicit else
+	
+	for(size_t i = start_page; i <= end_page; i++)
+	{
+		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
+		{
+			
+			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+			{
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+			}
+			page_objects[i].is_mapped = FALSE;
+			page_objects[i].pg_start_p = NULL;
+			page_objects[i].map_start = UNDEF_ADDR;
+			page_objects[i].map_end = UNDEF_ADDR;
+		}
+	}
+	
+	if(DO_MEMDUMP)
+	{
+		memdump("U ");
+	}
+	
+	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
+	
+	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
+	{
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+	}
+	
+	page_objects[start_page].is_mapped = TRUE;
+	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
+	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
+	
+	for(size_t i = start_page + 1; i <= end_page; i++)
+	{
+		page_objects[i].is_mapped = TRUE;
+		page_objects[i].pg_start_p = page_objects[i - 1].pg_start_p + alloc_gran;
+		page_objects[i].map_base = page_objects[start_page].pg_start_a;
+		page_objects[i].map_end = page_objects[end_page].pg_end_a;
+	}
+	
+	page_objects[end_page].is_cont_right = FALSE;
+	
+	if(DO_MEMDUMP)
+	{
+		memdump("M ");
+	}
+
+#endif
+	
 
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	

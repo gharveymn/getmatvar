@@ -242,12 +242,11 @@ struct tree_node_
 typedef struct
 {
 	pthread_mutex_t lock;
-	bool_t is_cont_right;
 	bool_t is_mapped;
 	uint64_t pg_start_a;
 	uint64_t pg_end_a;
-	uint64_t win_map_base_offset;//if already mapped by windows, the base offset of this map
-	uint64_t win_map_extends_to; //if already mapped by windows, what offset this map extends to
+	uint64_t map_base;//if already mapped by windows, the base offset of this map
+	uint64_t map_end; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
 } pageObject;
 
@@ -336,7 +335,7 @@ AddrTrio root_trio;
 int num_avail_threads;
 int num_threads_to_use;
 
-bool_t is_multithreading;
+pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
 
 FILE* dump;
