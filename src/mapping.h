@@ -300,6 +300,7 @@ size_t getAllocGran(void);
 int getNumProcessors(void);
 ByteOrder getByteOrder(void);
 
+
 //chunkedData.c
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
 errno_t decompressChunk(TreeNode* node);
@@ -307,10 +308,12 @@ void* doInflate_(void* t);
 void freeTree(TreeNode* node);
 errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
+void memdump(const char type[]);
 
 ByteOrder __byte_order__;
 size_t alloc_gran;
 size_t file_size;
+size_t num_pages;
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];
@@ -333,5 +336,9 @@ int num_threads_to_use;
 
 bool_t is_multithreading;
 pageObject* page_objects;
+
+FILE* dump;
+pthread_cond_t dump_ready;
+pthread_mutex_t dump_lock;
 
 #endif

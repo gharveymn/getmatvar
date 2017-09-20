@@ -1,5 +1,4 @@
 #include "getmatvar_.h"
-#include "mapping.h"
 
 
 Superblock getSuperblock(void)
@@ -141,6 +140,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 																 these_maps[map_index].offset;
 	these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd,
 								    these_maps[map_index].offset);
+	
 	these_maps[map_index].used = TRUE;
 	if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
 	{
@@ -163,15 +163,13 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//acquire locks
 	for(uint64_t i = start_page; i <= end_page; i++)
 	{
+
+		pthread_mutex_lock(&page_objects[i].lock);
 		//wait for the page object to signal that it is ready to be locked
-		if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
-		{
-			pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
-			//while (pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock) != 0)
-			//{
-				//wait
-			//}
-		}
+		//if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
+		//{
+		//	pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
+		//}
 		//this is now my lock
 		
 	}
@@ -187,35 +185,45 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 			break;
 		}
 	}
-		
+	
 	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
 	{
+		
+		memdump("R ");
+		
 		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	}
-		
+	
 	//implicit else
 
 	for(size_t i = start_page; i <= end_page; i++)
 	{
-		if(page_objects[i].is_mapped == TRUE)
+		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
 		{
+			
+			//munlock(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a);
+			
 			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
 						  strerror(errno));
 			}
 			page_objects[i].is_mapped = FALSE;
+			page_objects[i].pg_start_p = NULL;
 		}
 		page_objects[i].is_cont_right = FALSE;
 	}
+	
+	memdump("U ");
 
 	//acquire lock for previous page
 	if (start_page > 0)
 	{
-		if (pthread_mutex_trylock(&page_objects[start_page-1].lock) == EBUSY)
-		{
-			pthread_cond_wait(&page_objects[start_page - 1].ready, &page_objects[start_page - 1].lock);
-		}
+		pthread_mutex_lock(&page_objects[start_page - 1].lock);
+		//if (pthread_mutex_trylock(&page_objects[start_page-1].lock) == EBUSY)
+		//{
+		//	pthread_cond_wait(&page_objects[start_page - 1].ready, &page_objects[start_page - 1].lock);
+		//}
 		//lock taken, set the variable
 		page_objects[start_page - 1].is_cont_right = FALSE;
 		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
@@ -228,6 +236,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 									   MAP_PRIVATE,
 									   fd,
 									   page_objects[start_page].pg_start_a);
+	
+	//mlock(page_objects[start_page].pg_start_p , page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a);
 	
 	if (page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
@@ -245,6 +255,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[end_page].is_cont_right = FALSE;
+	
+	memdump("M ");
 
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	
@@ -259,7 +271,7 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 	//release locks
 	for (uint64_t j = start_page; j <= end_page; j++)
 	{
-		pthread_cond_signal(&page_objects[j].ready);
+		//pthread_cond_signal(&page_objects[j].ready);
 		pthread_mutex_unlock(&page_objects[j].lock);
 	}
 }
