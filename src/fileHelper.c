@@ -205,8 +205,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 			
 			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-						  strerror(errno));
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+						  errno);
 			}
 			page_objects[i].is_mapped = FALSE;
 			page_objects[i].pg_start_p = NULL;
@@ -241,8 +241,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	if (page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n",
-			strerror(errno));
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+			errno);
 	}
 
 	page_objects[start_page].is_mapped = TRUE;

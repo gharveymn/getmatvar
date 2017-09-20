@@ -13,6 +13,15 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	header_queue = NULL;
 	fd = -1;
 	num_threads_to_use = -1;
+	
+	if(DO_MEMDUMP == TRUE)
+	{
+		pthread_cond_init(&dump_ready, NULL);
+		pthread_mutex_init(&dump_lock, NULL);
+		
+		
+		dump = fopen("memdump.log", "w+");
+	}
 
 	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
@@ -46,6 +55,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
 	}
+
+	num_pages = file_size / alloc_gran + 1;
 	
 	initializePageObjects();
 	
@@ -170,6 +181,13 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	freeQueue(header_queue);
 	destroyPageObjects();
 	freeAllMaps();
+	
+	if(DO_MEMDUMP == TRUE)
+	{
+		pthread_cond_destroy(&dump_ready);
+		pthread_mutex_destroy(&dump_lock);
+	}
+	
 	return objects;
 }
 
@@ -213,8 +231,8 @@ void initializeMaps(void)
 
 void initializePageObjects(void)
 {
-	page_objects = malloc((file_size/alloc_gran + 1) * sizeof(pageObject));
-	for (int i = 0; i < file_size/alloc_gran + 1; i++)
+	page_objects = malloc(num_pages * sizeof(pageObject));
+	for (int i = 0; i < num_pages; i++)
 	{
 		pthread_cond_init(&page_objects[i].ready, NULL);
 		pthread_mutex_init(&page_objects[i].lock, NULL);
@@ -231,21 +249,20 @@ void initializePageObjects(void)
 void destroyPageObjects(void)
 {
 	
-	for (int i = 0; i < file_size/alloc_gran + 1; ++i)
+	for (int i = 0; i < num_pages; ++i)
 	{
 		if (page_objects[i].is_mapped == TRUE)
 		{
-			if (munmap(page_objects[i].pg_start_p, alloc_gran) != 0)
+			if (munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-					strerror(errno));
+						  strerror(errno));
 			}
 		}
 		pthread_cond_destroy(&page_objects[i].ready);
 		pthread_mutex_destroy(&page_objects[i].lock);
 	}
-
-
+	
 	free(page_objects);
 }
 

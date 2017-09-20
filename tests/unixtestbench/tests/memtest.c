@@ -1,7 +1,7 @@
 #include "../src/mapping.h"
 
 
-void main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	char* filename = "../../res/t.mat";
 	char** variable_name = malloc(sizeof(char*));
@@ -36,4 +36,7 @@ void main(int argc, char* argv[])
 	free(varnames);
 	
 	printf("\nProgram exited without errors\n\n");
+
+	return 0;
+
 }

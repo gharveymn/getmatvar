@@ -6,6 +6,9 @@ int num_threads;
 static Data* object;
 static int decompressor_iterator;
 TreeNode root;
+bool_t is_working;
+pthread_t gc;
+pthread_attr_t attr;
 
 typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
@@ -28,6 +31,7 @@ Queue* thread_object_queue;
 //you need at least 19th century hardware to run this
 #endif
 
+void* garbageCollection(void* nothing);
 
 int getChunkedData(Data* obj)
 {
@@ -64,11 +68,21 @@ int getChunkedData(Data* obj)
 	
 	threads = thpool_init(num_threads);
 	
+	//	pthread_t gc;
+//
+//	is_working = TRUE;
+//	pthread_attr_init(&attr);
+//	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+//	pthread_create(&gc, &attr, garbageCollection, NULL);
+	
 	decompressor_iterator = 0;
 	ret = decompressChunk(&root);
 	
 	thpool_wait(threads);
 	thpool_destroy(threads);
+
+//	is_working = FALSE;
+//	pthread_join(gc, NULL);
 
 	freeQueue(thread_object_queue);
 	freeTree(&root);
@@ -208,7 +222,6 @@ void* doInflate_(void* t)
 		*/
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
-		
 		releasePages(node->children[i].address, node->keys[i].size);
 
 	}
@@ -383,4 +396,78 @@ void freeTree(TreeNode* node)
 			node->children = NULL;
 		}
 	}
+}
+
+void memdump(const char* type)
+{
+	
+	pthread_mutex_lock(&dump_lock);
+	
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wformat-security"
+	fprintf(dump, type);
+	#pragma GCC diagnostic pop
+	
+	fflush(dump);
+	
+	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
+	//XXXXXXXXXXXXXXXXXXXXXRRRRRRRRRRRXRXXRXX
+	for(int i = 0; i < num_pages; i++)
+	{
+		if(page_objects[i].is_mapped == TRUE)
+		{
+			fprintf(dump, "O");
+		}
+		else
+		{
+			fprintf(dump, "X");
+		}
+		fflush(dump);
+	}
+	
+	fprintf(dump, "\n  ");
+	fflush(dump);
+	
+	for(int i = 0; i < num_pages; i++)
+	{
+		if(page_objects[i].is_cont_right == TRUE)
+		{
+			fprintf(dump, "R");
+		}
+		else
+		{
+			fprintf(dump, "X");
+		}
+		fflush(dump);
+	}
+	
+	fprintf(dump, "\n\n");
+	
+	fflush(dump);
+	
+	pthread_mutex_unlock(&dump_lock);
+	
+}
+
+void* garbageCollection(void* nothing)
+{
+	while(is_working == TRUE)
+	{
+		for(int i = 0; i < num_pages; i++)
+		{
+			if(pthread_mutex_trylock(&page_objects[i].lock) != EBUSY && page_objects[i].is_mapped == TRUE)
+			{
+				if (munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+				{
+					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
+							  strerror(errno));
+				}
+			}
+		}
+	}
+	
+	pthread_exit(NULL);
+	
+	return NULL;
+	
 }

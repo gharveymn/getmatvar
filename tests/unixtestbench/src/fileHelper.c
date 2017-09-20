@@ -15,7 +15,7 @@ byte* findSuperblock(void)
 	byte* chunk_start = navigateTo(0, alloc_gran, TREE);
 	uint16_t chunk_address = 0;
 	
-	while(strncmp(FORMAT_SIG, (char*) chunk_start, 8) != 0 && chunk_address < alloc_gran)
+	while(strncmp(FORMAT_SIG, (char*)chunk_start, 8) != 0 && chunk_address < alloc_gran)
 	{
 		chunk_start += 512;
 		chunk_address += 512;
@@ -34,20 +34,17 @@ Superblock fillSuperblock(byte* superblock_pointer)
 {
 	Superblock s_block;
 	//get stuff from superblock, for now assume consistent versions of stuff
-	s_block.size_of_offsets = (uint8_t) getBytesAsNumber(superblock_pointer + 13, 1, META_DATA_BYTE_ORDER);
-	s_block.size_of_lengths = (uint8_t) getBytesAsNumber(superblock_pointer + 14, 1, META_DATA_BYTE_ORDER);
-	s_block.leaf_node_k = (uint16_t) getBytesAsNumber(superblock_pointer + 16, 2, META_DATA_BYTE_ORDER);
-	s_block.internal_node_k = (uint16_t) getBytesAsNumber(superblock_pointer + 18, 2, META_DATA_BYTE_ORDER);
+	s_block.size_of_offsets = (uint8_t)getBytesAsNumber(superblock_pointer + 13, 1, META_DATA_BYTE_ORDER);
+	s_block.size_of_lengths = (uint8_t)getBytesAsNumber(superblock_pointer + 14, 1, META_DATA_BYTE_ORDER);
+	s_block.leaf_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 16, 2, META_DATA_BYTE_ORDER);
+	s_block.internal_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 18, 2, META_DATA_BYTE_ORDER);
 	s_block.base_address = getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	
 	//read scratchpad space
 	byte* sps_start = superblock_pointer + 80;
 	root_trio.parent_obj_header_address = UNDEF_ADDR;
-	root_trio.tree_address =
-			getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	root_trio.heap_address =
-			getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) +
-			s_block.base_address;
+	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	root_trio.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	s_block.root_tree_address = root_trio.tree_address;
 	
 	return s_block;
@@ -87,8 +84,7 @@ void freeMap(MemMap map)
 	map.used = FALSE;
 	if(munmap(map.map_start, map.bytes_mapped) != 0)
 	{
-		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-				  strerror(errno));
+		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 	}
 }
 
@@ -114,8 +110,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	
 	for(int i = 0; i < map_nums[map_type]; i++)
 	{
-		if(address >= these_maps[i].offset &&
-		   address + bytes_needed <= these_maps[i].offset + these_maps[i].bytes_mapped && these_maps[i].used == TRUE)
+		if(address >= these_maps[i].offset && address + bytes_needed <= these_maps[i].offset + these_maps[i].bytes_mapped && these_maps[i].used == TRUE)
 		{
 			return these_maps[i].map_start + address - these_maps[i].offset;
 		}
@@ -133,25 +128,22 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	//map new page at needed location
 	//TODO check if we even need to do this... I don't think so
 	size_t offset_denom = alloc_gran < file_size ? alloc_gran : file_size;
-	these_maps[map_index].offset = (OffsetType) ((address / offset_denom) * offset_denom);
+	these_maps[map_index].offset = (OffsetType)((address / offset_denom) * offset_denom);
 	these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
-	these_maps[map_index].bytes_mapped = these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset
-								  ? these_maps[map_index].bytes_mapped : file_size -
-																 these_maps[map_index].offset;
-	these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd,
-								    these_maps[map_index].offset);
+	these_maps[map_index].bytes_mapped = these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset ? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
+	these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
 	these_maps[map_index].used = TRUE;
 	if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
 	{
 		these_maps[map_index].used = FALSE;
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n",
-				  strerror(errno));
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n", strerror(errno));
 	}
 	
 	map_queue_fronts[map_type] = (map_queue_fronts[map_type] + 1) % map_nums[map_type];
 	
 	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
 }
+
 
 byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 {
@@ -162,86 +154,118 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//acquire locks
 	for(uint64_t i = start_page; i <= end_page; i++)
 	{
+		
+		pthread_mutex_lock(&page_objects[i].lock);
 		//wait for the page object to signal that it is ready to be locked
-		if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
-		{
-			pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
-			//while (pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock) != 0)
-			//{
-				//wait
-			//}
-		}
+		//if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
+		//{
+		//	pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
+		//}
 		//this is now my lock
 		
 	}
 	
 	//check if we have continuous mapping available (if yes then return pointer)
-	if(page_objects[start_page].is_mapped == TRUE)
+	
+	bool_t is_continuous = TRUE;
+	for(size_t i = start_page; i < end_page; i++)
 	{
-		bool_t is_continuous = TRUE;
-		for(size_t i = start_page; i < end_page; i++)
+		if(page_objects[i].is_cont_right == FALSE || page_objects[i].is_mapped == FALSE)
 		{
-			if(page_objects[i].is_cont_right == FALSE)
-			{
-				is_continuous = FALSE;
-				break;
-			}
+			is_continuous = FALSE;
+			break;
 		}
-		
-		if(is_continuous)
-		{
-			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-		}
-		
 	}
+	
+	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
+	{
+		
+		if(DO_MEMDUMP)
+		{
+			memdump("R ");
+		}
+		
+		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+	}
+	
+	//implicit else
 	
 	for(size_t i = start_page; i <= end_page; i++)
 	{
-		if(page_objects[i].is_mapped == TRUE)
+		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
 		{
-			if(munmap(page_objects[i].pg_start_p, alloc_gran) != 0)
+			
+			//munlock(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a);
+			
+			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-						  strerror(errno));
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
 			}
+			page_objects[i].is_mapped = FALSE;
+			page_objects[i].pg_start_p = NULL;
 		}
+		page_objects[i].is_cont_right = FALSE;
 	}
 	
-	page_objects[start_page].pg_start_p = mmap(NULL,
-									   page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a,
-									   PROT_READ,
-									   MAP_PRIVATE,
-									   fd,
-									   page_objects[start_page].pg_start_a);
-	
-	if (page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
+	if(DO_MEMDUMP)
 	{
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n",
-			strerror(errno));
+		memdump("U ");
 	}
+	
+	//acquire lock for previous page
+	if(start_page > 0)
+	{
+		pthread_mutex_lock(&page_objects[start_page - 1].lock);
+		//if (pthread_mutex_trylock(&page_objects[start_page-1].lock) == EBUSY)
+		//{
+		//	pthread_cond_wait(&page_objects[start_page - 1].ready, &page_objects[start_page - 1].lock);
+		//}
+		//lock taken, set the variable
+		page_objects[start_page - 1].is_cont_right = FALSE;
+		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
+	}
+	
+	
+	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
+	
+	//mlock(page_objects[start_page].pg_start_p , page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a);
+	
+	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
+	{
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+	}
+	
+	page_objects[start_page].is_mapped = TRUE;
 	
 	for(size_t i = start_page + 1; i <= end_page; i++)
 	{
-		page_objects[i].pg_start_p = page_objects[start_page].pg_start_p + alloc_gran;
-		page_objects[i-1].is_cont_right = TRUE;
+		page_objects[i].is_mapped = TRUE;
+		page_objects[i].pg_start_p = page_objects[i - 1].pg_start_p + alloc_gran;
+		page_objects[i - 1].is_cont_right = TRUE;
 	}
 	
 	page_objects[end_page].is_cont_right = FALSE;
-
+	
+	if(DO_MEMDUMP)
+	{
+		memdump("M ");
+	}
+	
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	
 }
+
 
 void releasePages(uint64_t address, uint64_t bytes_needed)
 {
 	//call this after done with using the pointer
 	size_t start_page = address / alloc_gran;
 	size_t end_page = (address + bytes_needed) / alloc_gran; //INCLUSIVE
-
+	
 	//release locks
-	for (uint64_t j = start_page; j <= end_page; j++)
+	for(uint64_t j = start_page; j <= end_page; j++)
 	{
-		pthread_cond_signal(&page_objects[j].ready);
+		//pthread_cond_signal(&page_objects[j].ready);
 		pthread_mutex_unlock(&page_objects[j].lock);
 	}
 }
@@ -271,9 +295,7 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 			these_maps = tree_maps;
 	}
 	
-	if(!(address >= these_maps[map_index].offset &&
-		address + bytes_needed <= these_maps[map_index].offset + these_maps[map_index].bytes_mapped) ||
-	   these_maps[map_index].used == FALSE)
+	if(!(address >= these_maps[map_index].offset && address + bytes_needed <= these_maps[map_index].offset + these_maps[map_index].bytes_mapped) || these_maps[map_index].used == FALSE)
 	{
 		
 		//unmap current page
@@ -284,19 +306,16 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 		
 		//map new page at needed location
 		size_t offset_denom = alloc_gran < file_size ? alloc_gran : file_size;
-		these_maps[map_index].offset = (OffsetType) ((address / offset_denom) * offset_denom);
+		these_maps[map_index].offset = (OffsetType)((address / offset_denom) * offset_denom);
 		these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
 		these_maps[map_index].bytes_mapped =
-				these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset
-				? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
-		these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd,
-									    these_maps[map_index].offset);
+			   these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset ? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
+		these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
 		these_maps[map_index].used = TRUE;
 		if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
 		{
 			these_maps[map_index].used = FALSE;
-			readMXError("getmatvar:mmapUnsuccessfulError",
-					  "mmap() unsuccessful in navigateWithMapIndex(). Check errno %s\n\n", strerror(errno));
+			readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateWithMapIndex(). Check errno %s\n\n", strerror(errno));
 		}
 		
 	}
@@ -312,7 +331,7 @@ void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 	uint16_t entries_used = 0;
 	uint64_t left_sibling_address, right_sibling_address;
 	
-	entries_used = (uint16_t) getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	//assuming keys do not contain pertinent information
 	left_sibling_address = getBytesAsNumber(tree_pointer + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
@@ -325,8 +344,7 @@ void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 		enqueue(addr_queue, trio);
 	}
 	
-	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets,
-									 META_DATA_BYTE_ORDER);
+	right_sibling_address = getBytesAsNumber(tree_pointer + 8 + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	if(right_sibling_address != UNDEF_ADDR)
 	{
 		trio = malloc(sizeof(AddrTrio));
@@ -343,8 +361,7 @@ void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 	{
 		trio = malloc(sizeof(AddrTrio));
 		trio->parent_obj_header_address = this_trio->parent_obj_header_address;
-		trio->tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) +
-						 s_block.base_address;
+		trio->tree_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		trio->heap_address = this_trio->heap_address;
 		
 		//in the case where we encounter a struct but have more items ahead
@@ -359,17 +376,14 @@ void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 
 void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_trio, bool_t get_top_level)
 {
-	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	SNODEntry** objects = malloc(num_symbols * sizeof(SNODEntry*));
 	uint32_t cache_type;
 	AddrTrio* trio;
 	char* var_name = peekQueue(varname_queue, QUEUE_FRONT);
 	
-	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths,
-											 META_DATA_BYTE_ORDER);
-	uint64_t heap_data_segment_address =
-			getBytesAsNumber(heap_pointer + 8 + 2 * s_block.size_of_lengths, s_block.size_of_offsets,
-						  META_DATA_BYTE_ORDER) + s_block.base_address;
+	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2 * s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 	
 	//get to entries
@@ -378,15 +392,12 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
 		objects[i] = malloc(sizeof(SNODEntry));
-		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size,
-										   s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i]->parent_obj_header_address = this_trio->parent_obj_header_address;
 		objects[i]->this_obj_header_address =
-				getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets,
-							  s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		strcpy(objects[i]->name, (char*) (heap_data_segment_pointer + objects[i]->name_offset));
-		cache_type = (uint32_t) getBytesAsNumber(
-				snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+			   getBytesAsNumber(snod_pointer + 8 + i * sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		strcpy(objects[i]->name, (char*)(heap_data_segment_pointer + objects[i]->name_offset));
+		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
 		objects[i]->parent_tree_address = parent_trio->tree_address;
 		objects[i]->this_tree_address = this_trio->tree_address;
 		objects[i]->sub_tree_address = UNDEF_ADDR;
@@ -416,21 +427,16 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 &&
-			   strncmp(objects[i]->name, "function_handle", 15) != 0 && get_top_level == FALSE)
+			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 && strncmp(objects[i]->name, "function_handle", 15) != 0 && get_top_level == FALSE)
 			{
 				
 				//if another tree exists for this object, put it on the queue
 				trio = malloc(sizeof(AddrTrio));
 				trio->parent_obj_header_address = objects[i]->this_obj_header_address;
 				trio->tree_address =
-						getBytesAsNumber(
-								snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i,
-								s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+					   getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				trio->heap_address =
-						getBytesAsNumber(
-								snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i,
-								s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+					   getBytesAsNumber(snod_pointer + 8 + 3 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i]->sub_tree_address = trio->tree_address;
 				priorityEnqueue(addr_queue, trio);
 				parseHeaderTree(FALSE);
@@ -438,15 +444,12 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 				
-			} else if(cache_type == 2)
+			}
+			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				objects[i]->name_offset = getBytesAsNumber(
-						snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4,
-						META_DATA_BYTE_ORDER);
-				strcpy(objects[i]->name,
-					  (char*) (heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets +
-							 objects[i]->name_offset));
+				objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + sym_table_entry_size * i, 4, META_DATA_BYTE_ORDER);
+				strcpy(objects[i]->name, (char*)(heap_pointer + 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets + objects[i]->name_offset));
 			}
 			
 		}
@@ -458,7 +461,7 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 
 void freeDataObject(void* object)
 {
-	Data* data_object = (Data*) object;
+	Data* data_object = (Data*)object;
 	
 	if(data_object->data_arrays.is_mx_used != TRUE)
 	{

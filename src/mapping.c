@@ -7,11 +7,15 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
 	
-	pthread_cond_init(&dump_ready, NULL);
-	pthread_mutex_init(&dump_lock, NULL);
 	
-	dump = fopen("memdump.log", "w+");
-
+	if(DO_MEMDUMP == TRUE)
+	{
+		pthread_cond_init(&dump_ready, NULL);
+		pthread_mutex_init(&dump_lock, NULL);
+		
+		dump = fopen("memdump.log", "w+");
+	}
+	
 	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
 	char warn_msg[NAME_LENGTH];
@@ -171,8 +175,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	destroyPageObjects();
 	freeAllMaps();
 	
-	pthread_cond_destroy(&dump_ready);
-	pthread_mutex_destroy(&dump_lock);
+	if(DO_MEMDUMP == TRUE)
+	{
+		pthread_cond_destroy(&dump_ready);
+		pthread_mutex_destroy(&dump_lock);
+	}
 	
 	return objects;
 	

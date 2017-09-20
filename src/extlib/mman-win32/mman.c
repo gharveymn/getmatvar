@@ -144,6 +144,8 @@ void* mmap(void* addr, size_t len, int prot, int flags, int fildes, OffsetType o
 
 int munmap(void* addr, size_t len)
 {
+	//this is why it's failing
+	//partial munmaps are not supported in windows...
 	if(UnmapViewOfFile(addr))
 	{
 		return 0;

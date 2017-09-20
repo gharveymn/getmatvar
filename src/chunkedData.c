@@ -1,12 +1,12 @@
 #include "getmatvar_.h"
 #include "extlib/thpool/thpool.h"
 
+
 threadpool threads;
 int num_threads;
 static Data* object;
 static int decompressor_iterator;
 TreeNode root;
-bool_t is_used;
 bool_t is_working;
 pthread_t gc;
 pthread_attr_t attr;
@@ -24,8 +24,8 @@ Queue* thread_object_queue;
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
+
 #include "extlib/libdeflate/x64/libdeflate.h"
-#include "mapping.h"
 
 
 #else
@@ -64,12 +64,12 @@ errno_t getChunkedData(Data* obj)
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
 	}
-	
+
 //	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
 	
 	
 	threads = thpool_init(num_threads);
-	
+
 //	pthread_t gc;
 //
 //	is_working = TRUE;
@@ -82,10 +82,10 @@ errno_t getChunkedData(Data* obj)
 	
 	thpool_wait(threads);
 	thpool_destroy(threads);
-	
+
 //	is_working = FALSE;
 //	pthread_join(gc, NULL);
-
+	
 	freeQueue(thread_object_queue);
 	freeTree(&root);
 	return ret;
@@ -116,7 +116,7 @@ errno_t decompressChunk(TreeNode* node)
 		//only want nodes which are parents of the leaves to save memory
 		return 0;
 	}
-	
+
 //	for(int i = 0; i < node->entries_used; i++)
 //	{
 //		for (uint64_t j = node->children[i].address/alloc_gran;
@@ -134,7 +134,7 @@ errno_t decompressChunk(TreeNode* node)
 	enqueue(thread_object_queue, thread_object);
 	thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
 	decompressor_iterator = (decompressor_iterator + 1) % num_threads;
-
+	
 	return 0;
 	
 }
@@ -145,7 +145,7 @@ void* doInflate_(void* t)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
-
+	
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
 	size_t retsz;
 	
@@ -163,7 +163,6 @@ void* doInflate_(void* t)
 		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
 		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
 		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
-		releasePages(node->children[i].address, node->keys[i].size);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -213,7 +212,7 @@ void* doInflate_(void* t)
 			}
 			index += object->chunked_info.chunk_update[use_update];
 		}
-
+		
 		/*
 		for(int k = 0; k < db_pos; k++)
 		{
@@ -225,7 +224,9 @@ void* doInflate_(void* t)
 		*/
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
-
+		releasePages(node->children[i].address, node->keys[i].size);
+		
+		
 	}
 	
 	free(decompressed_data_buffer);
@@ -400,14 +401,11 @@ void freeTree(TreeNode* node)
 	}
 }
 
+
 void memdump(const char* type)
 {
-
+	
 	pthread_mutex_lock(&dump_lock);
-	//if(pthread_mutex_trylock(&dump_lock) == EBUSY)
-	//{
-	//	pthread_cond_wait(&dump_ready, &dump_lock);
-	//}
 	
 	fprintf(dump, type);
 	fflush(dump);
@@ -447,10 +445,10 @@ void memdump(const char* type)
 	
 	fflush(dump);
 	
-	pthread_cond_signal(&dump_ready);
 	pthread_mutex_unlock(&dump_lock);
 	
 }
+
 
 void* garbageCollection(void* nothing)
 {
@@ -460,17 +458,16 @@ void* garbageCollection(void* nothing)
 		{
 			if(pthread_mutex_trylock(&page_objects[i].lock) != EBUSY && page_objects[i].is_mapped == TRUE)
 			{
-				if (munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+				if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 				{
-					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-						strerror(errno));
+					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 				}
 			}
 		}
 	}
-
+	
 	pthread_exit(NULL);
 	
 	return NULL;
-
+	
 }

@@ -15,7 +15,7 @@ res/*
 */optData_ESTrade.mat
 *~
 *.o
-tests/unixtestbench/mapping
+/tests/unixtestbench/mapping
 
 *ipch/
 *.aps
@@ -59,4 +59,3 @@ bld/
 !*getmatvar.m
 [Oo]bj/
 [Ll]og/
-/tests/unixtestbench/mapping
