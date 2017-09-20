@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+typedef int errno_t;
 typedef uint64_t OffsetType;
 #endif
 

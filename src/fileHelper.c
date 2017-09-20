@@ -271,7 +271,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//check if we have continuous mapping available (if yes then return pointer)
 	
 	//only check if it's actually possible (this will be mapped if these are not undef)
-	if(page_objects[start_page].map_start <= address && address + bytes_needed <= page_objects[start_page].map_end)
+	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 	{
 		bool_t is_continuous = TRUE;
 		for(size_t i = start_page; i <= end_page; i++)
@@ -308,7 +308,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 			}
 			page_objects[i].is_mapped = FALSE;
 			page_objects[i].pg_start_p = NULL;
-			page_objects[i].map_start = UNDEF_ADDR;
+			page_objects[i].map_base = UNDEF_ADDR;
 			page_objects[i].map_end = UNDEF_ADDR;
 		}
 	}
@@ -335,9 +335,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		page_objects[i].pg_start_p = page_objects[i - 1].pg_start_p + alloc_gran;
 		page_objects[i].map_base = page_objects[start_page].pg_start_a;
 		page_objects[i].map_end = page_objects[end_page].pg_end_a;
-	}
-	
-	page_objects[end_page].is_cont_right = FALSE;
+    }
 	
 	if(DO_MEMDUMP)
 	{

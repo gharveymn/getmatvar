@@ -5,13 +5,13 @@ vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
-userview = memory;
-disp(userview.MemUsedMATLAB)
+%userview = memory;
+%disp(userview.MemUsedMATLAB)
 tic
 getmatvar(file);%, vars{:});
 toc
-userview = memory;
-disp(userview.MemUsedMATLAB)
+%userview = memory;
+%disp(userview.MemUsedMATLAB)
 %a = t;
 
 % using load function
