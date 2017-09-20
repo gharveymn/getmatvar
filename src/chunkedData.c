@@ -145,8 +145,9 @@ void* doInflate_(void* t)
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_decompressor_index);
 		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
-		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
+		releasePages(node->children[i].address, node->keys[i].size);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -208,8 +209,6 @@ void* doInflate_(void* t)
 		*/
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
-		
-		releasePages(node->children[i].address, node->keys[i].size);
 
 	}
 	
@@ -334,10 +333,10 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				node->children[i].address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				fillNode(&node->children[i], num_chunked_dims);
 				
-				if(i > 0 && i < node->entries_used - 1 && node->node_level >= 0)
+				if(i > 0 && node->node_level >= 0)
 				{
-					node->children[i].left_sibling = &node->children[i - 1];
 					node->children[i - 1].right_sibling = &node->children[i];
+					node->children[i].left_sibling = &node->children[i - 1];
 				}
 				
 				tree_pointer = navigateTo(node->address, bytes_needed, TREE);

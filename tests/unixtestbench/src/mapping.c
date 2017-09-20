@@ -72,14 +72,15 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 				free(variable_names[i]);
 			}
 		}
-
+		free(variable_names);
+		
 		num_names = header_queue->length;
 
 		variable_names = malloc(num_names * sizeof(char*));
 		for(int j = 0; j < num_names; j++)
 		{
 			snod_entry = dequeue(header_queue);
-			variable_names[j] = malloc(strlen(snod_entry->name) * sizeof(char));
+			variable_names[j] = malloc(NAME_LENGTH*sizeof(char));
 			strcpy(variable_names[j], snod_entry->name);
 		}
 	}
@@ -157,14 +158,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	Data* end_object = peekQueue(objects, QUEUE_BACK);
 	end_object->type |= END_SENTINEL;
 	
-	if(load_all)
+	for (int i = 0; i < num_names; i++)
 	{
-		for (int i = 0; i < num_names; i++)
-		{
-			free(variable_names[i]);
-		}
-		free(variable_names);
+		free(variable_names[i]);
 	}
+	free(variable_names);
 
 	close(fd);
 	freeQueue(addr_queue);

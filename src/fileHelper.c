@@ -177,36 +177,50 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	//check if we have continuous mapping available (if yes then return pointer)
-	if(page_objects[start_page].is_mapped == TRUE)
-	{
-		bool_t is_continuous = TRUE;
-		for(size_t i = start_page; i < end_page; i++)
-		{
-			if(page_objects[i].is_cont_right == FALSE)
-			{
-				is_continuous = FALSE;
-				break;
-			}
-		}
-		
-		if(is_continuous)
-		{
-			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-		}
-		
-	}
 	
+	bool_t is_continuous = TRUE;
+	for(size_t i = start_page; i < end_page; i++)
+	{
+		if(page_objects[i].is_cont_right == FALSE || page_objects[i].is_mapped == FALSE)
+		{
+			is_continuous = FALSE;
+			break;
+		}
+	}
+		
+	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
+	{
+		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+	}
+		
+	//implicit else
+
 	for(size_t i = start_page; i <= end_page; i++)
 	{
 		if(page_objects[i].is_mapped == TRUE)
 		{
-			if(munmap(page_objects[i].pg_start_p, alloc_gran) != 0)
+			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
 						  strerror(errno));
 			}
+			page_objects[i].is_mapped = FALSE;
 		}
+		page_objects[i].is_cont_right = FALSE;
 	}
+
+	//acquire lock for previous page
+	if (start_page > 0)
+	{
+		if (pthread_mutex_trylock(&page_objects[start_page-1].lock) == EBUSY)
+		{
+			pthread_cond_wait(&page_objects[start_page - 1].ready, &page_objects[start_page - 1].lock);
+		}
+		//lock taken, set the variable
+		page_objects[start_page - 1].is_cont_right = FALSE;
+		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
+	}
+
 	
 	page_objects[start_page].pg_start_p = mmap(NULL,
 									   page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a,
@@ -220,10 +234,13 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n",
 			strerror(errno));
 	}
+
+	page_objects[start_page].is_mapped = TRUE;
 	
 	for(size_t i = start_page + 1; i <= end_page; i++)
 	{
-		page_objects[i].pg_start_p = page_objects[start_page].pg_start_p + alloc_gran;
+		page_objects[i].is_mapped = TRUE;
+		page_objects[i].pg_start_p = page_objects[i-1].pg_start_p + alloc_gran;
 		page_objects[i-1].is_cont_right = TRUE;
 	}
 	

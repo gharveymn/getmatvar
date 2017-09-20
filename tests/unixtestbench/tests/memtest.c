@@ -5,8 +5,9 @@ void main(int argc, char* argv[])
 {
 	char* filename = "../../res/t.mat";
 	char** variable_name = malloc(sizeof(char*));
-	variable_name[0] = malloc(30*sizeof(char));
-	strcpy(variable_name[0], "t");
+	variable_name[0] = "";
+	//variable_name[0] = malloc(30*sizeof(char));
+	//strcpy(variable_name[0], "");
 	Queue* objects = getDataObjects(filename, variable_name, 1);
 	Data** super_objects = malloc((objects->length)*sizeof(Data*));
 	char** varnames = malloc((objects->length)*sizeof(char*));
@@ -33,8 +34,6 @@ void main(int argc, char* argv[])
 		free(varnames[i]);
 	}
 	free(varnames);
-	free(variable_name[0]);
-	free(variable_name);
 	
 	printf("\nProgram exited without errors\n\n");
 }

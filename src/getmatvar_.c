@@ -116,13 +116,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
 			strcpy(err_id,front_object->name);
 			strcpy(err_string,front_object->matlab_class);
-			free(full_variable_names);
 			freeQueue(error_objects);
 			readMXError(err_id, err_string);
 		}
-
-
-		free(full_variable_names);
 
 	}
 	

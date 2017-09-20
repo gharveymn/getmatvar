@@ -65,6 +65,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 				free(variable_names[i]);
 			}
 		}
+		free(variable_names);
 
 		num_names = header_queue->length;
 
@@ -72,7 +73,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		for(int j = 0; j < num_names; j++)
 		{
 			snod_entry = dequeue(header_queue);
-			variable_names[j] = malloc(strlen(snod_entry->name) * sizeof(char));
+			variable_names[j] = malloc(NAME_LENGTH * sizeof(char));
 			strcpy(variable_names[j], snod_entry->name);
 		}
 	}
@@ -150,14 +151,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	Data* end_object = peekQueue(objects, QUEUE_BACK);
 	end_object->type |= END_SENTINEL;
 	
-	if(load_all)
+	for (int i = 0; i < num_names; i++)
 	{
-		for (int i = 0; i < num_names; i++)
-		{
-			free(variable_names[i]);
-		}
-		free(variable_names);
+		free(variable_names[i]);
 	}
+	free(variable_names);
 
 	close(fd);
 	freeQueue(addr_queue);
@@ -211,8 +209,10 @@ void initializePageObjects(void)
 	page_objects = malloc((file_size/alloc_gran + 1) * sizeof(pageObject));
 	for (int i = 0; i < file_size/alloc_gran + 1; i++)
 	{
-		page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
-		page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
+		pthread_cond_init(&page_objects[i].ready, NULL);
+		pthread_mutex_init(&page_objects[i].lock, NULL);
+		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
+		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
 		page_objects[i].is_cont_right = FALSE;
 		page_objects[i].is_mapped = FALSE;
 		page_objects[i].pg_start_a = alloc_gran*i;
@@ -228,14 +228,15 @@ void destroyPageObjects(void)
 	{
 		if (page_objects[i].is_mapped == TRUE)
 		{
-			if (munmap(page_objects[i].pg_start_p, alloc_gran) != 0)
+			if (munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
 					strerror(errno));
 			}
 		}
+		pthread_cond_destroy(&page_objects[i].ready);
+		pthread_mutex_destroy(&page_objects[i].lock);
 	}
-
 
 	free(page_objects);
 }
