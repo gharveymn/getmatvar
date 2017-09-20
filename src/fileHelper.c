@@ -214,6 +214,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		//release these locks immediately, we don't need them later
 		for(size_t i = win_base_page; i < start_page; i++)
 		{
+			//this can can cause deadlock on overlapping pages, perhaps use a flag to indicate another thread is waiting?
 			pthread_mutex_lock(&page_objects[i].lock);
 		}
 		
