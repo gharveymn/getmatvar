@@ -46,7 +46,7 @@ typedef uint64_t OffsetType;
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define CHUNK_IN_PARALLEL TRUE
-#define DO_MEMDUMP TRUE
+#define DO_MEMDUMP FALSE
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -241,12 +241,13 @@ struct tree_node_
 
 typedef struct
 {
-	pthread_cond_t ready;
 	pthread_mutex_t lock;
 	bool_t is_cont_right;
 	bool_t is_mapped;
 	uint64_t pg_start_a;
 	uint64_t pg_end_a;
+	uint64_t win_map_base_offset;//if already mapped by windows, the base offset of this map
+	uint64_t win_map_extends_to; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
 } pageObject;
 

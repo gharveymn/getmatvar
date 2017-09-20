@@ -157,6 +157,8 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 {
 	
+	//commented code works for unix
+	
 	size_t start_page = address / alloc_gran;
 	size_t end_page = (address + bytes_needed) / alloc_gran; //INCLUSIVE
 	
@@ -165,69 +167,119 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	{
 
 		pthread_mutex_lock(&page_objects[i].lock);
-		//wait for the page object to signal that it is ready to be locked
-		//if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
-		//{
-		//	pthread_cond_wait(&page_objects[i].ready, &page_objects[i].lock);
-		//}
 		//this is now my lock
 		
 	}
 	
 	//check if we have continuous mapping available (if yes then return pointer)
 	
-	bool_t is_continuous = TRUE;
-	for(size_t i = start_page; i < end_page; i++)
-	{
-		if(page_objects[i].is_cont_right == FALSE || page_objects[i].is_mapped == FALSE)
-		{
-			is_continuous = FALSE;
-			break;
-		}
-	}
+//	bool_t is_continuous = TRUE;
+//	for(size_t i = start_page; i < end_page; i++)
+//	{
+//		if(page_objects[i].is_cont_right == FALSE || page_objects[i].is_mapped == FALSE)
+//		{
+//			is_continuous = FALSE;
+//			break;
+//		}
+//	}
+//
+//	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
+//	{
+//
+//		memdump("R ");
+//
+//		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+//	}
 	
-	if(is_continuous && page_objects[end_page].is_mapped == TRUE)
+	if(page_objects[start_page].is_mapped == TRUE  && page_objects[start_page].win_map_base_offset <= address && address + bytes_needed <= page_objects[start_page].win_map_extends_to)
 	{
 		
-		memdump("R ");
+		if(DO_MEMDUMP)
+		{
+			memdump("R ");
+		}
 		
 		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	}
 	
 	//implicit else
 
-	for(size_t i = start_page; i <= end_page; i++)
+	//if this page has already been mapped unmap since we can't fit
+	if(page_objects[start_page].is_mapped == TRUE)
 	{
-		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
+		//acquire locks needed to unmap the entire allocation without conflicts
+		size_t win_base_page = page_objects[start_page].win_map_base_offset / alloc_gran;
+		size_t win_extend_page = page_objects[start_page].win_map_extends_to / alloc_gran;
+		
+		//release these locks immediately, we don't need them later
+		for(size_t i = win_base_page; i < start_page; i++)
 		{
-			
-			//munlock(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a);
-			
-			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
-			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
-						  errno);
-			}
+			pthread_mutex_lock(&page_objects[i].lock);
+		}
+		
+		for(size_t i = end_page + 1; i < win_extend_page; i++)
+		{
+			pthread_mutex_lock(&page_objects[i].lock);
+		}
+		
+		if(munmap(page_objects[win_base_page].pg_start_p, page_objects[win_base_page].win_map_extends_to - page_objects[win_base_page].win_map_base_offset) != 0)
+		{
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+					  errno);
+		}
+		
+		//indicate these are no longer mapped
+		for(size_t i = win_base_page; i <= win_extend_page; i++)
+		{
 			page_objects[i].is_mapped = FALSE;
 			page_objects[i].pg_start_p = NULL;
+			page_objects[i].win_map_base_offset = UNDEF_ADDR;
+			page_objects[i].win_map_extends_to = UNDEF_ADDR;
 		}
-		page_objects[i].is_cont_right = FALSE;
+		
+		for(size_t i = win_base_page; i < start_page; i++)
+		{
+			pthread_mutex_unlock(&page_objects[i].lock);
+		}
+		
+		for(size_t i = end_page + 1; i < win_extend_page; i++)
+		{
+			pthread_mutex_unlock(&page_objects[i].lock);
+		}
+		
 	}
 	
-	memdump("U ");
+	
+//	for(size_t i = start_page; i <= end_page; i++)
+//	{
+//		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
+//		{
+//
+//			//munlock(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a);
+//
+//			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+//			{
+//				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+//						  errno);
+//			}
+//			page_objects[i].is_mapped = FALSE;
+//			page_objects[i].pg_start_p = NULL;
+//		}
+//		page_objects[i].is_cont_right = FALSE;
+//	}
+	
+	if(DO_MEMDUMP)
+	{
+		memdump("U ");
+	}
 
 	//acquire lock for previous page
-	if (start_page > 0)
-	{
-		pthread_mutex_lock(&page_objects[start_page - 1].lock);
-		//if (pthread_mutex_trylock(&page_objects[start_page-1].lock) == EBUSY)
-		//{
-		//	pthread_cond_wait(&page_objects[start_page - 1].ready, &page_objects[start_page - 1].lock);
-		//}
-		//lock taken, set the variable
-		page_objects[start_page - 1].is_cont_right = FALSE;
-		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
-	}
+//	if (start_page > 0)
+//	{
+//		pthread_mutex_lock(&page_objects[start_page - 1].lock);
+//		page_objects[start_page - 1].is_cont_right = FALSE;
+//		pthread_mutex_unlock(&page_objects[start_page - 1].lock);
+//	}
 
 	
 	page_objects[start_page].pg_start_p = mmap(NULL,
@@ -237,26 +289,31 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 									   fd,
 									   page_objects[start_page].pg_start_a);
 	
-	//mlock(page_objects[start_page].pg_start_p , page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a);
-	
 	if (page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
 			errno);
 	}
-
+	
+	page_objects[start_page].win_map_base_offset = page_objects[start_page].pg_start_a;
+	page_objects[start_page].win_map_extends_to = page_objects[end_page].pg_end_a;
 	page_objects[start_page].is_mapped = TRUE;
 	
 	for(size_t i = start_page + 1; i <= end_page; i++)
 	{
 		page_objects[i].is_mapped = TRUE;
 		page_objects[i].pg_start_p = page_objects[i-1].pg_start_p + alloc_gran;
-		page_objects[i-1].is_cont_right = TRUE;
+		//page_objects[i-1].is_cont_right = TRUE;
+		page_objects[i].win_map_base_offset = page_objects[start_page].pg_start_a;
+		page_objects[i].win_map_extends_to = page_objects[end_page].pg_end_a;
 	}
 	
-	page_objects[end_page].is_cont_right = FALSE;
+	//page_objects[end_page].is_cont_right = FALSE;
 	
-	memdump("M ");
+	if(DO_MEMDUMP)
+	{
+		memdump("M ");
+	}
 
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	
