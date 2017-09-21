@@ -5,7 +5,6 @@
 threadpool threads;
 int num_threads;
 static Data* object;
-static int decompressor_iterator;
 TreeNode root;
 bool_t is_working;
 pthread_t gc;
@@ -15,7 +14,6 @@ typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
 {
 	TreeNode* node;
-	int thread_decompressor_index;
 	errno_t err;
 };
 
@@ -32,7 +30,7 @@ Queue* thread_object_queue;
 //you need at least 19th century hardware to run this
 #endif
 
-void* garbageCollection(void* nothing);
+void* garbageCollection_(void* nothing);
 
 
 errno_t getChunkedData(Data* obj)
@@ -78,9 +76,8 @@ errno_t getChunkedData(Data* obj)
 //	is_working = TRUE;
 //	pthread_attr_init(&attr);
 //	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-//	pthread_create(&gc, &attr, garbageCollection, NULL);
+//	pthread_create(&gc, &attr, garbageCollection_, NULL);
 	
-	decompressor_iterator = 0;
 	ret = decompressChunk(&root);
 	
 	thpool_wait(threads);
@@ -121,24 +118,12 @@ errno_t decompressChunk(TreeNode* node)
 		//only want nodes which are parents of the leaves to save memory
 		return 0;
 	}
-
-//	for(int i = 0; i < node->entries_used; i++)
-//	{
-//		for (uint64_t j = node->children[i].address/alloc_gran;
-//			j <= (node->children[i].address+node->keys[i].size)/alloc_gran;
-//			j++)
-//		{
-//			pthread_mutex_init(&page_objects[j].lock, NULL);
-//		}
-//	}
 	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
-	thread_object->thread_decompressor_index = decompressor_iterator;
 	thread_object->node = node;
 	thread_object->err = 0;
 	enqueue(thread_object_queue, thread_object);
 	thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
-	decompressor_iterator = (decompressor_iterator + 1) % num_threads;
 	
 	return 0;
 	
@@ -153,24 +138,19 @@ void* doInflate_(void* t)
 	uint64_t these_num_chunked_elems = 0;
 	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1];
 	uint64_t these_chunked_updates[HDF5_MAX_DIMS];
-	
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	//struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_decompressor_index];
 	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
-	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
 		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		//const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_decompressor_index);
 		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
-		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
-		size_t retsz = 1;
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
 		releasePages(node->children[i].address, node->keys[i].size);
 		switch(thread_obj->err)
 		{
@@ -226,10 +206,13 @@ void* doInflate_(void* t)
 		memset(chunk_pos, 0, sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
 		uint64_t db_pos = 0;
-		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < these_num_chunked_elems; anchor = db_pos)
+		for(uint64_t index = chunk_start_index, anchor = 0;
+		    index < object->num_elems &&
+		    db_pos < these_num_chunked_elems;
+		    anchor = db_pos)
 		{
-			for(; db_pos < anchor + these_chunked_dims[0]
-				&& index < object->num_elems;
+			for(; index < object->num_elems &&
+				db_pos < anchor + these_chunked_dims[0];
 				db_pos++, 
 				index++)
 			{
@@ -251,29 +234,29 @@ void* doInflate_(void* t)
 		}
 		
 		
-		for(int k = 0; k < db_pos; k++)
-		{
-			if(*(double*)(decompressed_data_buffer + k*object->elem_size) != 1)
-			{
-				for (int p = k; p < db_pos; p++)
-				{
-					if(*(double*)(decompressed_data_buffer + p*object->elem_size) == 1)
-					{
-						printf("");
-					}
-				}
-				break;
-			}
-		}
+//		for(int k = 0; k < db_pos; k++)
+//		{
+//			if(*(double*)(decompressed_data_buffer + k*object->elem_size) != 1)
+//			{
+//				for (int p = k; p < db_pos; p++)
+//				{
+//					if(*(double*)(decompressed_data_buffer + p*object->elem_size) == 1)
+//					{
+//						printf("");
+//					}
+//				}
+//				break;
+//			}
+//		}
 		
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
 		
 	}
 	
+	libdeflate_free_decompressor(ldd);
 	free(decompressed_data_buffer);
 	free(index_map);
-	libdeflate_free_decompressor(ldd);
 	return NULL;
 	
 }
@@ -449,12 +432,10 @@ void memdump(const char* type)
 	
 	pthread_mutex_lock(&dump_lock);
 	
-	fprintf(dump, type);
-	fprintf(dump, " ");
+	fprintf(dump, "%s ", type);
 	fflush(dump);
 	
 	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
-	//XXXXXXXXXXXXXXXXXXXXXRRRRRRRRRRRXRXXRXX
 	for(int i = 0; i < num_pages; i++)
 	{
 		if(page_objects[i].is_mapped == TRUE)
@@ -465,24 +446,9 @@ void memdump(const char* type)
 		{
 			fprintf(dump, "X");
 		}
+		//keep flushing so that we know where it crashed if it does
 		fflush(dump);
 	}
-	
-//	fprintf(dump, "\n  ");
-//	fflush(dump);
-
-//	for(int i = 0; i < num_pages; i++)
-//	{
-//		if(page_objects[i].is_cont_right == TRUE)
-//		{
-//			fprintf(dump, "R");
-//		}
-//		else
-//		{
-//			fprintf(dump, "X");
-//		}
-//		fflush(dump);
-//	}
 	
 	fprintf(dump, "\n\n");
 	
@@ -493,7 +459,7 @@ void memdump(const char* type)
 }
 
 
-void* garbageCollection(void* nothing)
+void* garbageCollection_(void* nothing)
 {
 	while(is_working == TRUE)
 	{

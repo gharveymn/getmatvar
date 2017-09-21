@@ -1,4 +1,5 @@
 #include "getmatvar_.h"
+#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -236,7 +237,9 @@ void initializePageObjects(void)
 		page_objects[i].map_base = UNDEF_ADDR;
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
+		page_objects[i].num_using = 0;
 	}
+	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }
 
 void destroyPageObjects(void)
@@ -263,8 +266,10 @@ void destroyPageObjects(void)
 		pthread_mutex_destroy(&page_objects[i].lock);
 		
 	}
-
+	
+	pthread_spin_destroy(&if_lock);
 	free(page_objects);
+	
 }
 
 
@@ -390,7 +395,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	uint16_t msg_size = 0;
 	uint64_t msg_address = 0;
 	byte* msg_pointer = NULL;
-	int32_t bytes_read = 0;
+	uint32_t bytes_read = 0;
 	
 	//interpret messages in header
 	for(; message_num < num_msgs && bytes_read < header_length; message_num++)
@@ -670,8 +675,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				object->data_arrays.double_data[index_map[j]] = *(double*)(data_pointer + object_data_index * elem_size);
-				//memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;

@@ -155,13 +155,14 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
 }
 
+
 byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 {
-
+	
 	size_t start_page = address / alloc_gran;
 	size_t end_page = (address + bytes_needed) / alloc_gran; //INCLUSIVE
-
-
+	
+	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 	
@@ -169,30 +170,65 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//if there is a map available the map_start and map_end addresses indicate where the start and end are
 	//if the object is not associated to a map at all the map_start and map_end addresses will be at UNDEF_ADDR
 	
-	//acquire lock
-	pthread_mutex_lock(&page_objects[start_page].lock);
-	
 	
 	//TODO make a bypass here so we don't have like 5 threads waiting for 1 thread to decompress
 	//check if we have continuous mapping available (if yes then return pointer)
-	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+	
+	//acquire lock if we need to remap
+	while(TRUE)
 	{
-
-		if(DO_MEMDUMP)
+		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 		{
-			memdump("R");
+			
+			if(DO_MEMDUMP)
+			{
+				memdump("R");
+			}
+			
+			pthread_mutex_lock(&page_objects[start_page].lock);
+			page_objects[start_page].num_using++;
+			pthread_mutex_unlock(&page_objects[start_page].lock);
+			
+			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			
+		}
+		else
+		{
+			
+			//acquire lock if we need to remap
+			//lock the if so there isn't deadlock
+			pthread_spin_lock(&if_lock);
+			if(page_objects[start_page].num_using == 0)
+			{
+				pthread_mutex_lock(&page_objects[start_page].lock);
+				
+				//the state may have changed while acquiring the lock, so check again
+				if(page_objects[start_page].num_using == 0)
+				{
+					page_objects[start_page].num_using++;
+					pthread_spin_unlock(&if_lock);
+					break;
+				}
+				else
+				{
+					pthread_mutex_unlock(&page_objects[start_page].lock);
+				}
+			}
+			pthread_spin_unlock(&if_lock);
+			
 		}
 		
-		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-
 	}
-
+	
+	
+	
 	//if this page has already been mapped unmap since we can't fit
 	if(page_objects[start_page].is_mapped == TRUE)
 	{
-		if(munmap(page_objects[start_page].pg_start_p, NULL) != 0)
+		if(munmap(page_objects[start_page].pg_start_p, 0) != 0)
 		{
-			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+			readMXError("getmatvar:badMunmapError",
+					  "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
 					  errno);
 		}
 		
@@ -200,8 +236,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		page_objects[start_page].pg_start_p = NULL;
 		page_objects[start_page].map_base = UNDEF_ADDR;
 		page_objects[start_page].map_end = UNDEF_ADDR;
-
-		if (DO_MEMDUMP)
+		
+		if(DO_MEMDUMP)
 		{
 			memdump("U");
 		}
@@ -215,10 +251,11 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 									   fd,
 									   page_objects[start_page].pg_start_a);
 	
-	if (page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
+	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
-			errno);
+		readMXError("getmatvar:mmapUnsuccessfulError",
+				  "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
+				  errno);
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
@@ -229,6 +266,10 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	{
 		memdump("M");
 	}
+	
+	pthread_mutex_unlock(&page_objects[start_page].lock);
+	
+	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
 	
@@ -315,13 +356,13 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	{
 		memdump("M");
 	}
+	
+	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
 #endif
 	
-
-	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-	
 }
+
 
 void releasePages(uint64_t address, uint64_t bytes_needed)
 {
@@ -333,6 +374,8 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 	
+	pthread_mutex_lock(&page_objects[start_page].lock);
+	page_objects[start_page].num_using--;
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
@@ -539,7 +582,8 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 				
-			} else if(cache_type == 2)
+			}
+			else if(cache_type == 2)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
 				objects[i]->name_offset = getBytesAsNumber(

@@ -46,8 +46,7 @@ typedef uint64_t OffsetType;
 #define NUM_THREAD_MAPS 7
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
-#define CHUNK_IN_PARALLEL TRUE
-#define DO_MEMDUMP TRUE
+#define DO_MEMDUMP FALSE
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -263,6 +262,7 @@ typedef struct
 	uint64_t map_base;//if already mapped by windows, the base offset of this map
 	uint64_t map_end; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
+	uint8_t num_using;
 } pageObject;
 
 //fileHelper.c
@@ -357,5 +357,7 @@ pageObject* page_objects;
 FILE* dump;
 pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
+
+pthread_spinlock_t if_lock;
 
 #endif
