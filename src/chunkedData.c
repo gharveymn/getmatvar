@@ -25,6 +25,9 @@ Queue* thread_object_queue;
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
 #include "extlib/libdeflate/x64/libdeflate.h"
+#include "mapping.h"
+
+
 #else
 //you need at least 19th century hardware to run this
 #endif
@@ -147,6 +150,9 @@ void* doInflate_(void* t)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
+	uint64_t these_num_chunked_elems = 0;
+	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1];
+	uint64_t these_chunked_updates[HDF5_MAX_DIMS];
 	
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
 	
@@ -191,13 +197,41 @@ void* doInflate_(void* t)
 				break;
 		}
 		
+		//resize dims if it is on the edge
+		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
+		for(int j = 0; j < object->num_dims; j++)
+		{
+			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - 
+							    MAX((int)(node->keys[i].chunk_start[j] +
+										   object->chunked_info.chunked_dims[j] -
+										   object->dims[j]),0);
+			these_chunked_updates[j] = object->chunked_info.chunk_update[j];
+		}
+		
+		for(int j = 0; j < object->num_dims; j++)
+		{
+			if(unlikely(these_chunked_dims[j] != object->chunked_info.chunked_dims[j]))
+			{
+				makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->dims, object->num_dims);
+				these_num_chunked_elems = 1;
+				for(int k = 0; k < object->chunked_info.num_chunked_dims; k++)
+				{
+					these_num_chunked_elems *= these_chunked_dims[k];
+				}
+				break;
+			}
+		}
+
 		//copy over data
 		memset(chunk_pos, 0, sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
 		uint64_t db_pos = 0;
-		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < object->chunked_info.num_chunked_elems; anchor = db_pos)
+		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < these_num_chunked_elems; anchor = db_pos)
 		{
-			for(; db_pos < anchor + object->chunked_info.chunked_dims[0] && index < object->num_elems; db_pos++, index++)
+			for(; db_pos < anchor + these_chunked_dims[0]
+				&& index < object->num_elems;
+				db_pos++, 
+				index++)
 			{
 				index_map[db_pos] = index;
 			}
@@ -205,7 +239,7 @@ void* doInflate_(void* t)
 			uint8_t use_update = 0;
 			for(uint8_t j = 1; j < curr_max_dim; j++)
 			{
-				if(chunk_pos[j] == object->chunked_info.chunked_dims[j])
+				if(chunk_pos[j] == these_chunked_dims[j])
 				{
 					chunk_pos[j] = 0;
 					chunk_pos[j + 1]++;
@@ -213,7 +247,7 @@ void* doInflate_(void* t)
 					use_update++;
 				}
 			}
-			index += object->chunked_info.chunk_update[use_update];
+			index += these_chunked_updates[use_update];
 		}
 		
 		
@@ -221,7 +255,14 @@ void* doInflate_(void* t)
 		{
 			if(*(double*)(decompressed_data_buffer + k*object->elem_size) != 1)
 			{
-				printf("");
+				for (int p = k; p < db_pos; p++)
+				{
+					if(*(double*)(decompressed_data_buffer + p*object->elem_size) == 1)
+					{
+						printf("");
+					}
+				}
+				break;
 			}
 		}
 		
@@ -238,7 +279,7 @@ void* doInflate_(void* t)
 }
 
 
-uint64_t findArrayPosition(const uint64_t* coordinates, const uint32_t* array_dims, uint8_t num_chunked_dims)
+uint64_t findArrayPosition(const uint32_t* coordinates, const uint32_t* array_dims, uint8_t num_chunked_dims)
 {
 	uint64_t array_pos = 0;
 	for(int i = 0; i < num_chunked_dims; i++)
@@ -342,7 +383,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			node->keys[0].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 			for(int j = 0; j < num_chunked_dims; j++)
 			{
-				node->keys[0].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+				node->keys[0].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
 			}
 			node->keys[0].chunk_start[num_chunked_dims] = 0;
 			
@@ -365,7 +406,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				node->keys[i + 1].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 				for(int j = 0; j < num_chunked_dims; j++)
 				{
-					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
 				}
 				node->keys[i + 1].chunk_start[num_chunked_dims] = 0;
 			}
@@ -472,4 +513,20 @@ void* garbageCollection(void* nothing)
 	
 	return NULL;
 	
+}
+
+void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims)
+{
+	uint64_t cu, du;
+	for(int i = 0; i < num_dims; i++)
+	{
+		du = 1;
+		cu = 0;
+		for(int k = 0; k < i + 1; k++)
+		{
+			cu += (chunked_dims[k] - 1)*du;
+			du *= dims[k];
+		}
+		chunk_update[i] = du - cu - 1;
+	}
 }

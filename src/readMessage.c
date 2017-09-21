@@ -1,4 +1,6 @@
 #include "getmatvar_.h"
+#include "mapping.h"
+
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -165,18 +167,10 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 				object->chunked_info.num_chunked_elems *= object->chunked_info.chunked_dims[i];
 			}
 
-			uint64_t cu, du;
-			for(int i = 0; i < object->num_dims; i++)
-			{
-				du = 1;
-				cu = 0;
-				for(int k = 0; k < i + 1; k++)
-				{
-					cu += (object->chunked_info.chunked_dims[k] - 1)*du;
-					du *= object->dims[k];
-				}
-				object->chunked_info.chunk_update[i] = du - cu - 1;
-			}
+			makeChunkedUpdates(object->chunked_info.chunk_update,
+						    object->chunked_info.chunked_dims,
+						    object->dims,
+						    object->num_dims);
 
 			break;
 		default:

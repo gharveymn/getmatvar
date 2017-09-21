@@ -60,6 +60,20 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
+//compiler hints
+
+/* likely(expr) - hint that an expression is usually true */
+#ifndef likely
+#  define likely(expr)		(expr)
+#endif
+
+/* unlikely(expr) - hint that an expression is usually false */
+#ifndef unlikely
+#  define unlikely(expr)	(expr)
+#endif
+
+//typedefs
+
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
 
@@ -222,7 +236,7 @@ typedef struct
 {
 	uint32_t size;
 	uint32_t filter_mask;
-	uint64_t chunk_start[HDF5_MAX_DIMS + 1];
+	uint32_t chunk_start[HDF5_MAX_DIMS + 1];
 	uint64_t local_heap_offset;
 } Key;
 
@@ -309,8 +323,9 @@ errno_t decompressChunk(TreeNode* node);
 void* doInflate_(void* t);
 void freeTree(TreeNode* node);
 errno_t getChunkedData(Data* obj);
-uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
+uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
+void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
 
 ByteOrder __byte_order__;
 size_t alloc_gran;
