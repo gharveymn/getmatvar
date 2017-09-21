@@ -180,14 +180,12 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 
 		if(DO_MEMDUMP)
 		{
-			memdump("R ");
+			memdump("R");
 		}
-
+		
 		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
 	}
-	
-	//implicit else
 
 	//if this page has already been mapped unmap since we can't fit
 	if(page_objects[start_page].is_mapped == TRUE)
@@ -202,12 +200,12 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		page_objects[start_page].pg_start_p = NULL;
 		page_objects[start_page].map_base = UNDEF_ADDR;
 		page_objects[start_page].map_end = UNDEF_ADDR;
+
+		if (DO_MEMDUMP)
+		{
+			memdump("U");
+		}
 		
-	}
-	
-	if(DO_MEMDUMP)
-	{
-		memdump("U ");
 	}
 	
 	page_objects[start_page].pg_start_p = mmap(NULL,
@@ -229,7 +227,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	if(DO_MEMDUMP)
 	{
-		memdump("M ");
+		memdump("M");
 	}
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
@@ -264,7 +262,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 			
 			if(DO_MEMDUMP)
 			{
-				memdump("R ");
+				memdump("R");
 			}
 			
 			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
@@ -291,7 +289,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	if(DO_MEMDUMP)
 	{
-		memdump("U ");
+		memdump("U");
 	}
 	
 	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
@@ -315,7 +313,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	if(DO_MEMDUMP)
 	{
-		memdump("M ");
+		memdump("M");
 	}
 
 #endif

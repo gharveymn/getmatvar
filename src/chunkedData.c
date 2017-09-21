@@ -152,7 +152,7 @@ void* doInflate_(void* t)
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	//struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_decompressor_index];
-	volatile byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
+	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	
@@ -409,6 +409,7 @@ void memdump(const char* type)
 	pthread_mutex_lock(&dump_lock);
 	
 	fprintf(dump, type);
+	fprintf(dump, " ");
 	fflush(dump);
 	
 	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
@@ -426,9 +427,9 @@ void memdump(const char* type)
 		fflush(dump);
 	}
 	
-	fprintf(dump, "\n  ");
-	fflush(dump);
-	
+//	fprintf(dump, "\n  ");
+//	fflush(dump);
+
 //	for(int i = 0; i < num_pages; i++)
 //	{
 //		if(page_objects[i].is_cont_right == TRUE)
