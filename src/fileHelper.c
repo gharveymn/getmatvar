@@ -173,17 +173,19 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	pthread_mutex_lock(&page_objects[start_page].lock);
 	
 	
+	//TODO make a bypass here so we don't have like 5 threads waiting for 1 thread to decompress
 	//check if we have continuous mapping available (if yes then return pointer)
-//	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
-//	{
-//
-//		if(DO_MEMDUMP)
-//		{
-//			memdump("R ");
-//		}
-//
-//		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-//	}
+	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+	{
+
+		if(DO_MEMDUMP)
+		{
+			memdump("R ");
+		}
+
+		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+
+	}
 	
 	//implicit else
 
@@ -202,24 +204,6 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		page_objects[start_page].map_end = UNDEF_ADDR;
 		
 	}
-	
-//	for(size_t i = start_page; i <= end_page; i++)
-//	{
-//		if(page_objects[i].is_mapped == TRUE)
-//		{
-//			if(munmap(page_objects[i].pg_start_p, NULL) != 0)
-//			{
-//				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n",
-//						  errno);
-//			}
-//
-//			page_objects[i].is_mapped = FALSE;
-//			page_objects[i].pg_start_p = NULL;
-//			page_objects[i].map_base = UNDEF_ADDR;
-//			page_objects[i].map_end = UNDEF_ADDR;
-//
-//		}
-//	}
 	
 	if(DO_MEMDUMP)
 	{
@@ -242,14 +226,6 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	page_objects[start_page].is_mapped = TRUE;
 	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
 	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
-	
-//	for(size_t i = start_page + 1; i <= end_page; i++)
-//	{
-//		page_objects[i].is_mapped = FALSE;
-//		page_objects[i].pg_start_p = page_objects[i-1].pg_start_p + alloc_gran;
-//		page_objects[i].map_base = page_objects[start_page].pg_start_a;
-//		page_objects[i].map_end = page_objects[end_page].pg_end_a;
-//	}
 	
 	if(DO_MEMDUMP)
 	{
@@ -351,16 +327,26 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 
 void releasePages(uint64_t address, uint64_t bytes_needed)
 {
+	
 	//call this after done with using the pointer
 	size_t start_page = address / alloc_gran;
 	size_t end_page = (address + bytes_needed) / alloc_gran; //INCLUSIVE
+	
+	/*-----------------------------------------WINDOWS-----------------------------------------*/
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+	
+	pthread_mutex_unlock(&page_objects[start_page].lock);
 
+#else /*-----------------------------------------UNIX-----------------------------------------*/
+	
 	//release locks
 	for (uint64_t j = start_page; j <= end_page; j++)
 	{
-		//pthread_cond_signal(&page_objects[j].ready);
 		pthread_mutex_unlock(&page_objects[j].lock);
 	}
+
+#endif
+
 }
 
 

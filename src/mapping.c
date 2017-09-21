@@ -383,8 +383,8 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	
 	byte* header_pointer = navigateTo(header_address, header_length, TREE);
 	
-	uint64_t cont_header_address;
-	uint32_t cont_header_length;
+	uint64_t cont_header_address = UNDEF_ADDR;
+	uint32_t cont_header_length = 0;
 	
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
@@ -445,7 +445,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
-				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length + 16, message_num, num_msgs, repeat_tracker);
+				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length, message_num, num_msgs, repeat_tracker);
 				//renavigate in case the continuation message was far away (automatically checks if we need to)
 				header_pointer = navigateTo(header_address, header_length, TREE);
 				
@@ -670,7 +670,8 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				object->data_arrays.double_data[index_map[j]] = *(double*)(data_pointer + object_data_index * elem_size);
+				//memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;

@@ -47,7 +47,7 @@ typedef uint64_t OffsetType;
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define CHUNK_IN_PARALLEL TRUE
-#define DO_MEMDUMP FALSE
+#define DO_MEMDUMP TRUE
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))

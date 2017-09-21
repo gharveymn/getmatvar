@@ -149,11 +149,10 @@ void* doInflate_(void* t)
 	TreeNode* node = thread_obj->node;
 	
 	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
-	size_t retsz;
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	//struct libdeflate_decompressor* ldd = decompressors[thread_obj->thread_decompressor_index];
-	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
+	volatile byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	
@@ -163,8 +162,10 @@ void* doInflate_(void* t)
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = navigateWithMapIndex(node->children[i].address, node->keys[i].size, THREAD, thread_obj->thread_decompressor_index);
 		const byte* data_pointer = navigatePolitely(node->children[i].address, node->keys[i].size);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
-		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
+		//thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		size_t retsz = 1;
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, &retsz);
+		releasePages(node->children[i].address, node->keys[i].size);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -215,19 +216,17 @@ void* doInflate_(void* t)
 			index += object->chunked_info.chunk_update[use_update];
 		}
 		
-		/*
+		
 		for(int k = 0; k < db_pos; k++)
 		{
-			if(*((double*)decompressed_data_buffer + k*object->elem_size) != 1)
+			if(*(double*)(decompressed_data_buffer + k*object->elem_size) != 1)
 			{
 				printf("");
 			}
 		}
-		*/
+		
 		
 		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
-		releasePages(node->children[i].address, node->keys[i].size);
-		
 		
 	}
 	

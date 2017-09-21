@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/t.mat';
+file = 'res/my_struct1.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
@@ -16,11 +16,16 @@ toc
 
 % using load function
 tic
-load(file);
+%load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))
-%disp(~isempty(find(my_struct.array ~= 1)))
+
+if(~isempty(find(my_struct.array ~= 1)))
+	disp('my_struct1.mat is incorrect')
+else
+	disp('my_struct1.mat is correct')
+end
 
 % using matlab's partial loader
 % tic
