@@ -68,14 +68,6 @@ void freeAllMaps(void)
 			freeMap(heap_maps[i]);
 		}
 	}
-	
-	for(int i = 0; i < NUM_THREAD_MAPS; i++)
-	{
-		if(thread_maps[i].used == TRUE)
-		{
-			freeMap(thread_maps[i]);
-		}
-	}
 }
 
 
@@ -100,9 +92,6 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 			break;
 		case HEAP:
 			these_maps = heap_maps;
-			break;
-		case THREAD:
-			these_maps = thread_maps;
 			break;
 		default:
 			these_maps = tree_maps;
@@ -375,9 +364,6 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 			break;
 		case HEAP:
 			these_maps = heap_maps;
-			break;
-		case THREAD:
-			these_maps = thread_maps;
 			break;
 		default:
 			these_maps = tree_maps;

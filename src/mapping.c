@@ -4,6 +4,7 @@
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
 {
 	
+	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
 
@@ -15,7 +16,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	
 	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
-	char warn_msg[NAME_LENGTH];
+	char warn_msg[WARNING_BUFFER_SIZE];
 	num_avail_threads = getNumProcessors() - 1;
 	
 	//init queues
@@ -37,18 +38,42 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	}
 	
 	//get file size
-	file_size = (size_t)lseek(fd, 0, SEEK_END);
-	if(file_size == (size_t)-1)
+	file_size = (size_t) lseek(fd, 0, SEEK_END);
+	if(file_size == (size_t) -1)
 	{
 		Data* data_object = malloc(sizeof(Data));
 		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->name, "getmatvar:lseekFailedError");
+		sprintf(data_object->name, "getmatvar:lseekFailureError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
+		enqueue(objects, data_object);
 		return objects;
 	}
 	
-	num_pages = file_size/alloc_gran + 1;
+	byte* head = navigateTo(0, MATFILE_SIG_LENGTH, TREE);
+	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LENGTH) != 0)
+	{
+		char filetype[MATFILE_SIG_LENGTH];
+		memcpy(filetype, head, MATFILE_SIG_LENGTH);
+		Data* data_object = malloc(sizeof(Data));
+		initializeObject(data_object);
+		data_object->type = ERROR_DATA | END_SENTINEL;
+		sprintf(data_object->name, "getmatvar:wrongFormatError");
+		if(memcmp(filetype, "MATLAB", 6) == 0)
+		{
+			sprintf(data_object->matlab_class, "The input file must be a Version 7.3+ MAT-file. This is a %s.\n\n",
+				   filetype);
+		}
+		else
+		{
+			sprintf(data_object->matlab_class,
+				   "The input file must be a Version 7.3+ MAT-file. This is an unknown file format.\n\n");
+		}
+		enqueue(objects, data_object);
+		return objects;
+	}
+	
+	num_pages = file_size / alloc_gran + 1;
 	
 	initializePageObjects();
 	
@@ -79,11 +104,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		
 		num_names = header_queue->length;
 		
-		variable_names = malloc(num_names*sizeof(char*));
+		variable_names = malloc(num_names * sizeof(char*));
 		for(int j = 0; j < num_names; j++)
 		{
 			snod_entry = dequeue(header_queue);
-			variable_names[j] = malloc(NAME_LENGTH*sizeof(char));
+			variable_names[j] = malloc(NAME_LENGTH * sizeof(char));
 			strcpy(variable_names[j], snod_entry->name);
 		}
 	}
@@ -119,8 +144,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			
 			//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 			byte* header_pointer = navigateTo(header_address, 16, TREE);
-			uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
-			uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
+			uint32_t header_length = (uint32_t) getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
+			uint16_t num_msgs = (uint16_t) getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 			
 			strcpy(data_object->name, snod_entry->name);
 			data_object->parent_obj_address = snod_entry->parent_obj_header_address;
@@ -168,6 +193,12 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	free(variable_names);
 	
 	close(fd);
+	if(threads_are_started == TRUE)
+	{
+		pthread_mutex_destroy(&thread_acquisition_lock);
+		thpool_destroy(threads);
+	}
+	
 	destroyPageObjects();
 	freeAllMaps();
 
@@ -200,35 +231,25 @@ void initializeMaps(void)
 		heap_maps[i].offset = 0;
 	}
 	
-	for(int i = 0; i < NUM_THREAD_MAPS; i++)
-	{
-		thread_maps[i].used = FALSE;
-		thread_maps[i].bytes_mapped = 0;
-		thread_maps[i].map_start = NULL;
-		thread_maps[i].offset = 0;
-	}
-	
 	map_nums[TREE] = NUM_TREE_MAPS;
 	map_nums[HEAP] = NUM_HEAP_MAPS;
-	map_nums[THREAD] = NUM_THREAD_MAPS;
 	map_queue_fronts[TREE] = 0;
 	map_queue_fronts[HEAP] = 0;
-	map_queue_fronts[THREAD] = 0;
 	
 }
 
 
 void initializePageObjects(void)
 {
-	page_objects = malloc(num_pages*sizeof(pageObject));
+	page_objects = malloc(num_pages * sizeof(pageObject));
 	for(int i = 0; i < num_pages; i++)
 	{
 		pthread_mutex_init(&page_objects[i].lock, NULL);
 		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
 		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
 		page_objects[i].is_mapped = FALSE;
-		page_objects[i].pg_start_a = alloc_gran*i;
-		page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
+		page_objects[i].pg_start_a = alloc_gran * i;
+		page_objects[i].pg_end_a = MIN(alloc_gran * (i + 1), file_size);
 		page_objects[i].map_base = UNDEF_ADDR;
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
@@ -248,7 +269,8 @@ void destroyPageObjects(void)
 			
 			if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
+						  strerror(errno));
 			}
 			
 			page_objects[i].is_mapped = FALSE;
@@ -372,7 +394,8 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			SNODEntry* snod_entry = malloc(sizeof(SNODEntry));
-			snod_entry->this_obj_header_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
+			snod_entry->this_obj_header_address =
+					object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			snod_entry->parent_obj_header_address = object->this_obj_address;
 			strcpy(snod_entry->name, object->name);
 			priorityEnqueue(header_queue, snod_entry);
@@ -381,7 +404,8 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 }
 
 
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num,
+					  uint16_t num_msgs, uint16_t repeat_tracker)
 {
 	
 	byte* header_pointer = navigateTo(header_address, header_length, TREE);
@@ -398,9 +422,9 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	//interpret messages in header
 	for(; message_num < num_msgs && bytes_read < header_length; message_num++)
 	{
-		msg_type = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read, 2, META_DATA_BYTE_ORDER);
+		msg_type = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read, 2, META_DATA_BYTE_ORDER);
 		//msg_address = header_address + 16 + bytes_read;
-		msg_size = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
+		msg_size = (uint16_t) getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
 		msg_pointer = header_pointer + 16 + bytes_read + 8;
 		msg_address = header_address + 16 + bytes_read + 8;
 		
@@ -445,10 +469,13 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 			case 16:
 				//object header continuation message
 				//ie no info for the object
-				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) +
+								  s_block.base_address;
+				cont_header_length = (uint32_t) getBytesAsNumber(msg_pointer + s_block.size_of_offsets,
+													    s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
-				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length, message_num, num_msgs, repeat_tracker);
+				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length, message_num,
+										  num_msgs, repeat_tracker);
 				//renavigate in case the continuation message was far away (automatically checks if we need to)
 				header_pointer = navigateTo(header_address, header_length, TREE);
 				
@@ -462,7 +489,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 		bytes_read += msg_size + 8;
 	}
 	
-	return (uint16_t)(message_num - 1);
+	return (uint16_t) (message_num - 1);
 	
 }
 
@@ -473,38 +500,38 @@ errno_t allocateSpace(Data* object)
 	switch(object->type)
 	{
 		case INT8_DATA:
-			object->data_arrays.i8_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.i8_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT8_DATA:
-			object->data_arrays.ui8_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.ui8_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case INT16_DATA:
-			object->data_arrays.i16_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.i16_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT16_DATA:
-			object->data_arrays.ui16_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.ui16_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case INT32_DATA:
-			object->data_arrays.i32_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.i32_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT32_DATA:
-			object->data_arrays.ui32_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.ui32_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case INT64_DATA:
-			object->data_arrays.i64_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.i64_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case UINT64_DATA:
-			object->data_arrays.ui64_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.ui64_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case SINGLE_DATA:
-			object->data_arrays.single_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.single_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case DOUBLE_DATA:
-			object->data_arrays.double_data = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.double_data = mxMalloc(object->num_elems * object->elem_size);
 			break;
 		case REF_DATA:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
+			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems * object->elem_size);
 			break;
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
@@ -532,7 +559,8 @@ errno_t allocateSpace(Data* object)
 }
 
 
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
+			ByteOrder data_byte_order)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
@@ -547,37 +575,48 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 	switch(object->type)
 	{
 		case INT8_DATA:
-			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case UINT8_DATA:
-			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case INT16_DATA:
-			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case UINT16_DATA:
-			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case INT32_DATA:
-			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case UINT32_DATA:
-			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case INT64_DATA:
-			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case UINT64_DATA:
-			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case SINGLE_DATA:
-			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.single_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case DOUBLE_DATA:
-			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.double_data[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case REF_DATA:
-			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer,
+				  (condition - starting_index) * elem_size);
 			break;
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
@@ -591,7 +630,9 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 }
 
 
-void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map)
+void
+placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order,
+				  const uint64_t* index_map)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
@@ -610,70 +651,80 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case INT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case SINGLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index * elem_size,
+					  elem_size);
 				object_data_index++;
 			}
 			break;
 		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				object->data_arrays.double_data[index_map[j]] = *(double*)(data_pointer + object_data_index*elem_size);
+				object->data_arrays.double_data[index_map[j]] = *(double*) (data_pointer +
+																object_data_index * elem_size);
 				//memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
@@ -681,7 +732,8 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case REF_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]],
+					  data_pointer + object_data_index * elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
@@ -705,7 +757,7 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level)
 	root_trio_copy->heap_address = root_trio.heap_address;
 	root_trio_copy->parent_obj_header_address = root_trio.parent_obj_header_address;
 	enqueue(addr_queue, root_trio_copy);
-	default_bytes = (uint64_t)getAllocGran();
+	default_bytes = (uint64_t) getAllocGran();
 	default_bytes = default_bytes < file_size ? default_bytes : file_size;
 	
 	flushQueue(varname_queue);
@@ -747,12 +799,12 @@ void parseHeaderTree(bool_t get_top_level)
 		tree_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
 		heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
 		
-		if(strncmp("TREE", (char*)tree_pointer, 4) == 0)
+		if(strncmp("TREE", (char*) tree_pointer, 4) == 0)
 		{
 			parent_trio = dequeue(addr_queue);
 			readTreeNode(tree_pointer, parent_trio);
 		}
-		else if(strncmp("SNOD", (char*)tree_pointer, 4) == 0)
+		else if(strncmp("SNOD", (char*) tree_pointer, 4) == 0)
 		{
 			this_trio = dequeue(addr_queue);
 			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio, get_top_level);
@@ -791,13 +843,14 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 	//note: index should be at the starting index of the subobjects
 	
 	super_object->num_sub_objs = 0;
-	super_object->sub_objects = malloc(num_objs_left*sizeof(Data*));
+	super_object->sub_objects = malloc(num_objs_left * sizeof(Data*));
 	Data* curr = dequeue(objects);
 	
 	while(super_object->this_obj_address == curr->parent_obj_address)
 	{
 		super_object->sub_objects[super_object->num_sub_objs] = curr;
-		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA || super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
+		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA ||
+		   super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
 		{
 			//since this is a depth-first traversal
 			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length);
@@ -811,7 +864,7 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 
 void freeVarname(void* vn)
 {
-	char* varname = (char*)vn;
+	char* varname = (char*) vn;
 	if(varname != NULL && strcmp(varname, "\0") != 0)
 	{
 		free(varname);

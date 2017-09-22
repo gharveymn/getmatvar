@@ -1,8 +1,6 @@
 #include "getmatvar_.h"
-#include "extlib/thpool/thpool.h"
 
 
-threadpool threads;
 int num_threads;
 static Data* object;
 TreeNode root;
@@ -37,7 +35,6 @@ errno_t getChunkedData(Data* obj)
 {
 	object = obj;
 	root.address = object->data_address;
-	pthread_mutex_init(&thread_acquisition_lock, NULL);
 	
 	//fill the chunk tree
 	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
@@ -59,15 +56,16 @@ errno_t getChunkedData(Data* obj)
 	else
 	{
 		num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
-		num_threads = MIN(num_threads, NUM_THREAD_MAPS);
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
 	}
-
-//	decompressors = malloc(num_threads* sizeof(struct libdeflate_decompressor*));
 	
-	
-	threads = thpool_init(num_threads);
+	if(threads_are_started == FALSE)
+	{
+		pthread_mutex_init(&thread_acquisition_lock, NULL);
+		threads = thpool_init(num_threads);
+		threads_are_started = TRUE;
+	}
 	
 	//TODO after multithreaded mapping is stable work on GC system using global iterator
 	//TODO capture sections using the acquisition lock?
@@ -79,14 +77,10 @@ errno_t getChunkedData(Data* obj)
 //	pthread_create(&gc, &attr, garbageCollection_, NULL);
 	
 	ret = decompressChunk(&root);
-	
 	thpool_wait(threads);
-	thpool_destroy(threads);
 
 //	is_working = FALSE;
 //	pthread_join(gc, NULL);
-	
-	pthread_mutex_destroy(&thread_acquisition_lock);
 	
 	freeQueue(thread_object_queue);
 	freeTree(&root);
