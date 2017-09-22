@@ -1,11 +1,11 @@
 #include "getmatvar_.h"
 
+
 typedef enum
 {
-	NOT_AN_ARGUMENT,
-	THREAD_KWARG,
-	MT_KWARG
+	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG
 } kwarg;
+
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -33,7 +33,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			readMXError("getmatvar:invalidFileNameType", "The file name must be a character vector\n\n");
 		}
 		const char* filename = mxArrayToString(prhs[0]);
-
+		
 		if(strstr(filename, ".mat") == NULL)
 		{
 			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n");
@@ -41,27 +41,27 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		
 		char** full_variable_names;
 		int num_vars = 0;
-		full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
+		full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
 		kwarg kwarg_expected = NOT_AN_ARGUMENT;
 		bool_t kwarg_flag = FALSE;
-		for (int i = 0; i < nrhs - 1; i++)
+		for(int i = 0; i < nrhs - 1; i++)
 		{
 			if(kwarg_flag == TRUE)
 			{
 				switch(kwarg_expected)
 				{
-				case THREAD_KWARG:
-					num_threads_to_use = MIN((int)mxGetScalar(prhs[i + 1]), NUM_TREE_MAPS);
-					break;
-				case NOT_AN_ARGUMENT:
-				default:
-					for(int j = num_vars - 1; j >= 0; j--)
-					{
-						free(full_variable_names[j]);
-					}
-					free(full_variable_names);
-					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
-
+					case THREAD_KWARG:
+						num_threads_to_use = MIN((int)mxGetScalar(prhs[i + 1]), NUM_TREE_MAPS);
+						break;
+					case NOT_AN_ARGUMENT:
+					default:
+						for(int j = num_vars - 1; j >= 0; j--)
+						{
+							free(full_variable_names[j]);
+						}
+						free(full_variable_names);
+						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
+					
 				}
 				kwarg_expected = NOT_AN_ARGUMENT;
 				kwarg_flag = FALSE;
@@ -82,7 +82,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 					else
 					{
 						kwarg_expected = NOT_AN_ARGUMENT;
-						full_variable_names[num_vars] = malloc(strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
+						full_variable_names[num_vars] = malloc(strlen(vn)*sizeof(char)); /*this gets freed in getDataObjects*/
 						strcpy(full_variable_names[num_vars], vn);
 						num_vars++;
 					}
@@ -113,12 +113,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		{
 			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
 			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id,front_object->name);
-			strcpy(err_string,front_object->matlab_class);
+			strcpy(err_id, front_object->name);
+			strcpy(err_string, front_object->matlab_class);
 			freeQueue(error_objects);
 			readMXError(err_id, err_string);
 		}
-
+		
 	}
 	
 }
@@ -126,25 +126,25 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
 {
-
+	
 	mwSize ret_struct_dims[1] = {1};
 	
-	fprintf(stderr,"Fetching the objects... ");
+	fprintf(stderr, "Fetching the objects... ");
 	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
 	Data* front_object = peekQueue(objects, QUEUE_FRONT);
 	if((ERROR_DATA & front_object->type) == ERROR_DATA)
 	{
 		return objects;
 	}
-	fprintf(stderr,"success.\n");
+	fprintf(stderr, "success.\n");
 	
 	Data** super_objects = malloc((objects->length)*sizeof(Data*));
 	char** varnames = malloc((objects->length)*sizeof(char*));
 	int num_objs = 0;
-	for (;objects->length  > 0; num_objs++)
+	for(; objects->length > 0; num_objs++)
 	{
 		super_objects[num_objs] = organizeObjects(objects);
-		if (super_objects[num_objs] == NULL)
+		if(super_objects[num_objs] == NULL)
 		{
 			break;
 		}
@@ -154,7 +154,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 			strcpy(varnames[num_objs], super_objects[num_objs]->name);
 		}
 	}
-
+	
 	//#pragma GCC diagnostic push
 	//#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
@@ -164,24 +164,25 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	
 	freeQueue(objects);
 	free(super_objects);
-	for (int i = 0; i < num_objs; i++)
+	for(int i = 0; i < num_objs; i++)
 	{
 		free(varnames[i]);
 	}
 	free(varnames);
-
-	fprintf(stderr,"\nProgram exited successfully.\n");
+	
+	fprintf(stderr, "\nProgram exited successfully.\n");
 	
 	return NULL;
 	
 }
+
 
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type)
 {
 	
 	for(mwIndex index = 0; index < num_elems; index++)
 	{
-
+		
 		objects[index]->data_arrays.is_mx_used = TRUE;
 		
 		switch(objects[index]->type)
@@ -252,11 +253,12 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	
 }
 
+
 void readMXError(const char error_id[], const char error_message[], ...)
 {
 	
 	char message_buffer[ERROR_BUFFER_SIZE];
-
+	
 	va_list va;
 	va_start(va, error_message);
 	sprintf(message_buffer, error_message, va);
@@ -267,10 +269,11 @@ void readMXError(const char error_id[], const char error_message[], ...)
 	
 }
 
+
 void readMXWarn(const char warn_id[], const char warn_message[], ...)
 {
 	char message_buffer[WARNING_BUFFER_SIZE];
-
+	
 	va_list va;
 	va_start(va, warn_message);
 	sprintf(message_buffer, warn_message, va);

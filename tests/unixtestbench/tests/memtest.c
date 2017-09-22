@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-	char* filename = "../../res/t.mat";
+	char* filename = "../../../res/my_struct1.mat";
 	char** variable_name = malloc(sizeof(char*));
 	variable_name[0] = "";
 	//variable_name[0] = malloc(30*sizeof(char));
@@ -34,6 +34,8 @@ int main(int argc, char* argv[])
 		free(varnames[i]);
 	}
 	free(varnames);
+
+	free(variable_name);
 	
 	printf("\nProgram exited without errors\n\n");
 

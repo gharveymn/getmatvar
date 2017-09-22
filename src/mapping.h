@@ -12,14 +12,18 @@
 #include <math.h>
 #include <assert.h>
 #include <mex.h>
-#include "queue.h"
+#include <stdarg.h>
+#include "ezq.h"
+
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+#pragma message ("getmatvar is compiling on WINDOWS")
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #include <pthread.h>
 //#include "extlib/pthreads-win32/include/pthread.h"
 #else
+#pragma message ("getmatvar is compiling on UNIX")
 #include <pthread.h>
 #include <endian.h>
 #include <sys/mman.h>
@@ -46,7 +50,7 @@ typedef uint64_t OffsetType;
 #define NUM_THREAD_MAPS 7
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
-#define DO_MEMDUMP FALSE
+//#define DO_MEMDUMP
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -63,12 +67,12 @@ typedef uint64_t OffsetType;
 
 /* likely(expr) - hint that an expression is usually true */
 #ifndef likely
-#  define likely(expr)		(expr)
+#  define likely(expr)          (expr)
 #endif
 
 /* unlikely(expr) - hint that an expression is usually false */
 #ifndef unlikely
-#  define unlikely(expr)	(expr)
+#  define unlikely(expr)     (expr)
 #endif
 
 //typedefs
@@ -308,6 +312,7 @@ void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
 void initializePageObjects(void);
+void freeVarname(void* vn);
 
 
 //getPageSize.c
@@ -354,9 +359,11 @@ int num_threads_to_use;
 pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
 
+#ifdef DO_MEMDUMP
 FILE* dump;
 pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
+#endif
 
 pthread_spinlock_t if_lock;
 

@@ -22,8 +22,8 @@ Queue* thread_object_queue;
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
+
 #include "extlib/libdeflate/x64/libdeflate.h"
-#include "mapping.h"
 
 
 #else
@@ -58,7 +58,7 @@ errno_t getChunkedData(Data* obj)
 	}
 	else
 	{
-		num_threads = (int)(-5.69E4 * pow(object->num_elems, -0.7056) + 7.502);
+		num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
 		num_threads = MIN(num_threads, NUM_THREAD_MAPS);
 		num_threads = MIN(num_threads, num_avail_threads);
 		num_threads = MAX(num_threads, 1);
@@ -85,7 +85,7 @@ errno_t getChunkedData(Data* obj)
 
 //	is_working = FALSE;
 //	pthread_join(gc, NULL);
-
+	
 	pthread_mutex_destroy(&thread_acquisition_lock);
 	
 	freeQueue(thread_object_queue);
@@ -138,11 +138,11 @@ void* doInflate_(void* t)
 	uint64_t these_num_chunked_elems = 0;
 	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1];
 	uint64_t these_chunked_updates[HDF5_MAX_DIMS];
-	const size_t actual_size = object->chunked_info.num_chunked_elems * object->elem_size; /* make sure this is non-null */
+	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems * object->elem_size);
-	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems*object->elem_size);
+	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	
 	for(int i = 0; i < node->entries_used; i++)
@@ -177,14 +177,25 @@ void* doInflate_(void* t)
 				break;
 		}
 		
-		//resize dims if it is on the edge
+		/* resize chunked dims if the chunk collides with the edge
+		 *  ie
+		 *   ==================================================
+		 *  ||                     |                          ||
+		 *  ||      (chunk)        |                          ||
+		 *  ||                     |                          ||
+		 *  ||---------------------|                          ||
+		 *  ||                     |                          ||
+		 *  ||      (chunk)        |                          ||
+		 *  ||                     |                          ||
+		 *  ||---------------------|                          ||
+		 *  ||                     |                          ||
+		 *  ||  chunk (collides)   |                          ||
+		 *   ==================================================
+		 */
 		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
 		for(int j = 0; j < object->num_dims; j++)
 		{
-			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - 
-							    MAX((int)(node->keys[i].chunk_start[j] +
-										   object->chunked_info.chunked_dims[j] -
-										   object->dims[j]),0);
+			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - MAX((int)(node->keys[i].chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]), 0);
 			these_chunked_updates[j] = object->chunked_info.chunk_update[j];
 		}
 		
@@ -201,20 +212,14 @@ void* doInflate_(void* t)
 				break;
 			}
 		}
-
+		
 		//copy over data
 		memset(chunk_pos, 0, sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
 		uint64_t db_pos = 0;
-		for(uint64_t index = chunk_start_index, anchor = 0;
-		    index < object->num_elems &&
-		    db_pos < these_num_chunked_elems;
-		    anchor = db_pos)
+		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < these_num_chunked_elems; anchor = db_pos)
 		{
-			for(; index < object->num_elems &&
-				db_pos < anchor + these_chunked_dims[0];
-				db_pos++, 
-				index++)
+			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++)
 			{
 				index_map[db_pos] = index;
 			}
@@ -232,8 +237,8 @@ void* doInflate_(void* t)
 			}
 			index += these_chunked_updates[use_update];
 		}
-		
-		
+
+
 //		for(int k = 0; k < db_pos; k++)
 //		{
 //			if(*(double*)(decompressed_data_buffer + k*object->elem_size) != 1)
@@ -246,6 +251,14 @@ void* doInflate_(void* t)
 //					}
 //				}
 //				break;
+//			}
+//		}
+
+//		for(int j = 0; j < db_pos; j++)
+//		{
+//			if(index_map[j] >= object->num_elems)
+//			{
+//				exit(1);
 //			}
 //		}
 		
@@ -321,8 +334,8 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	node->node_level = (int16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
-	node->keys = malloc((node->entries_used + 1) * sizeof(Key));
-	node->children = malloc(node->entries_used * sizeof(TreeNode));
+	node->keys = malloc((node->entries_used + 1)*sizeof(Key));
+	node->children = malloc(node->entries_used*sizeof(TreeNode));
 	
 	uint64_t key_size;
 	uint64_t bytes_needed;
@@ -336,11 +349,11 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		case GROUP:
 			key_size = s_block.size_of_lengths;
 			
-			bytes_needed = 8 + 2 * s_block.size_of_offsets + 2 * (node->entries_used + 1) * key_size + 2 * (node->entries_used) * s_block.size_of_offsets;
+			bytes_needed = 8 + 2*s_block.size_of_offsets + 2*(node->entries_used + 1)*key_size + 2*(node->entries_used)*s_block.size_of_offsets;
 			
 			tree_pointer = navigateTo(node->address, bytes_needed, TREE);
-			key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
-			key_address = node->address + 8 + 2 * s_block.size_of_offsets;
+			key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+			key_address = node->address + 8 + 2*s_block.size_of_offsets;
 			for(int i = 0; i < node->entries_used; i++)
 			{
 				node->keys[i].local_heap_offset = getBytesAsNumber(key_pointer, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
@@ -355,18 +368,18 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			//1-4: Size of chunk in bytes
 			//4-8 Filter mask
 			//(Dimensionality+1)*16 bytes
-			key_size = 4 + 4 + (num_chunked_dims + 1) * 8;
+			key_size = 4 + 4 + (num_chunked_dims + 1)*8;
 			
-			bytes_needed = 8 + 2 * s_block.size_of_offsets + 2 * (node->entries_used + 1) * key_size + 2 * (node->entries_used) * s_block.size_of_offsets;
+			bytes_needed = 8 + 2*s_block.size_of_offsets + 2*(node->entries_used + 1)*key_size + 2*(node->entries_used)*s_block.size_of_offsets;
 			
 			tree_pointer = navigateTo(node->address, bytes_needed, TREE);
-			key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets;
-			key_address = node->address + 8 + 2 * s_block.size_of_offsets;
+			key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+			key_address = node->address + 8 + 2*s_block.size_of_offsets;
 			node->keys[0].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 			node->keys[0].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 			for(int j = 0; j < num_chunked_dims; j++)
 			{
-				node->keys[0].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+				node->keys[0].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
 			}
 			node->keys[0].chunk_start[num_chunked_dims] = 0;
 			
@@ -382,14 +395,14 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				}
 				
 				tree_pointer = navigateTo(node->address, bytes_needed, TREE);
-				key_pointer = tree_pointer + 8 + 2 * s_block.size_of_offsets + (i + 1) * (key_size + s_block.size_of_offsets);
+				key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets + (i + 1)*(key_size + s_block.size_of_offsets);
 				key_address += key_size + s_block.size_of_offsets;
 				
 				node->keys[i + 1].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 				node->keys[i + 1].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 				for(int j = 0; j < num_chunked_dims; j++)
 				{
-					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j * 8, 8, META_DATA_BYTE_ORDER);
+					node->keys[i + 1].chunk_start[num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
 				}
 				node->keys[i + 1].chunk_start[num_chunked_dims] = 0;
 			}
@@ -426,7 +439,7 @@ void freeTree(TreeNode* node)
 	}
 }
 
-
+#ifdef DO_MEMDUMP
 void memdump(const char* type)
 {
 	
@@ -457,6 +470,7 @@ void memdump(const char* type)
 	pthread_mutex_unlock(&dump_lock);
 	
 }
+#endif
 
 
 void* garbageCollection_(void* nothing)
@@ -480,6 +494,7 @@ void* garbageCollection_(void* nothing)
 	return NULL;
 	
 }
+
 
 void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims)
 {

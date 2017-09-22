@@ -3,9 +3,9 @@
 
 void reverseBytes(byte* data_pointer, size_t num_elems)
 {
-	byte* start,* end;
+	byte* start, * end;
 	
-	for (start = data_pointer, end = start + num_elems - 1; start < end; ++start, --end )
+	for(start = data_pointer, end = start + num_elems - 1; start < end; ++start, --end)
 	{
 		byte swap = *start;
 		*start = *end;
@@ -13,6 +13,7 @@ void reverseBytes(byte* data_pointer, size_t num_elems)
 	}
 	
 }
+
 
 uint64_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endianness)
 {
@@ -25,9 +26,10 @@ uint64_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endian
 	return ret;
 }
 
+
 int roundUp(int numToRound)
 {
-	int remainder = numToRound % 8;
+	int remainder = numToRound%8;
 	if(remainder == 0)
 	{
 		return numToRound;

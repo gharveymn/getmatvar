@@ -1,20 +1,17 @@
 #include "getmatvar_.h"
-#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
 {
-
+	
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
-	
-	if(DO_MEMDUMP == TRUE)
-	{
-		pthread_cond_init(&dump_ready, NULL);
-		pthread_mutex_init(&dump_lock, NULL);
-		
-		dump = fopen("memdump.log", "w+");
-	}
+
+#ifdef DO_MEMDUMP
+	pthread_cond_init(&dump_ready, NULL);
+	pthread_mutex_init(&dump_lock, NULL);
+	dump = fopen("memdump.log", "w+");
+#endif
 	
 	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
@@ -23,7 +20,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	
 	//init queues
 	addr_queue = initQueue(NULL);
-	varname_queue = initQueue(NULL);
+	varname_queue = initQueue(freeVarname);
 	header_queue = initQueue(NULL);
 	
 	//open the file descriptor
@@ -31,6 +28,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(fd < 0)
 	{
 		Data* data_object = malloc(sizeof(Data));
+		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:fileNotFoundError");
 		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
@@ -43,13 +41,14 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	if(file_size == (size_t)-1)
 	{
 		Data* data_object = malloc(sizeof(Data));
+		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
 		sprintf(data_object->name, "getmatvar:lseekFailedError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		return objects;
 	}
 	
-	num_pages = file_size / alloc_gran + 1;
+	num_pages = file_size/alloc_gran + 1;
 	
 	initializePageObjects();
 	
@@ -59,17 +58,17 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	bool_t load_all = FALSE;
 	for(int i = 0; i < num_names; i++)
 	{
-		if(strcmp(variable_names[i],"\0") == 0)
+		if(strcmp(variable_names[i], "\0") == 0)
 		{
 			findHeaderAddress(variable_names[i], TRUE);
 			load_all = TRUE;
 			break;
 		}
 	}
-
+	
 	if(load_all)
 	{
-		for (int i = 0; i < num_names; i++)
+		for(int i = 0; i < num_names; i++)
 		{
 			if(variable_names[i] != NULL && strcmp(variable_names[i], "\0") != 0)
 			{
@@ -77,14 +76,14 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			}
 		}
 		free(variable_names);
-
+		
 		num_names = header_queue->length;
-
-		variable_names = malloc(num_names * sizeof(char*));
+		
+		variable_names = malloc(num_names*sizeof(char*));
 		for(int j = 0; j < num_names; j++)
 		{
 			snod_entry = dequeue(header_queue);
-			variable_names[j] = malloc(NAME_LENGTH * sizeof(char));
+			variable_names[j] = malloc(NAME_LENGTH*sizeof(char));
 			strcpy(variable_names[j], snod_entry->name);
 		}
 	}
@@ -156,30 +155,29 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		delimit_object->type = DELIMITER;
 		delimit_object->parent_obj_address = UNDEF_ADDR;
 		enqueue(objects, delimit_object);
-
+		
 		
 	}
 	Data* end_object = peekQueue(objects, QUEUE_BACK);
 	end_object->type |= END_SENTINEL;
 	
-	for (int i = 0; i < num_names; i++)
+	for(int i = 0; i < num_names; i++)
 	{
 		free(variable_names[i]);
 	}
 	free(variable_names);
-
+	
 	close(fd);
 	freeQueue(addr_queue);
 	freeQueue(varname_queue);
 	freeQueue(header_queue);
 	destroyPageObjects();
 	freeAllMaps();
-	
-	if(DO_MEMDUMP == TRUE)
-	{
-		pthread_cond_destroy(&dump_ready);
-		pthread_mutex_destroy(&dump_lock);
-	}
+
+#ifdef DO_MEMDUMP
+	pthread_cond_destroy(&dump_ready);
+	pthread_mutex_destroy(&dump_lock);
+#endif
 	
 	return objects;
 	
@@ -225,15 +223,15 @@ void initializeMaps(void)
 
 void initializePageObjects(void)
 {
-	page_objects = malloc(num_pages * sizeof(pageObject));
-	for (int i = 0; i < num_pages; i++)
+	page_objects = malloc(num_pages*sizeof(pageObject));
+	for(int i = 0; i < num_pages; i++)
 	{
 		pthread_mutex_init(&page_objects[i].lock, NULL);
 		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
 		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
 		page_objects[i].is_mapped = FALSE;
 		page_objects[i].pg_start_a = alloc_gran*i;
-		page_objects[i].pg_end_a = MIN(alloc_gran*(i+1), file_size);
+		page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
 		page_objects[i].map_base = UNDEF_ADDR;
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
@@ -242,18 +240,18 @@ void initializePageObjects(void)
 	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }
 
+
 void destroyPageObjects(void)
 {
 	
-	for (int i = 0; i < num_pages; ++i)
+	for(int i = 0; i < num_pages; ++i)
 	{
-		if (page_objects[i].is_mapped == TRUE)
+		if(page_objects[i].is_mapped == TRUE)
 		{
 			
-			if (munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
+			if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n",
-					strerror(errno));
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 			}
 			
 			page_objects[i].is_mapped = FALSE;
@@ -341,7 +339,10 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	//allocate space for data
-	if(allocateSpace(object) != 0){return;}
+	if(allocateSpace(object) != 0)
+	{
+		return;
+	}
 	
 	
 	//fetch data
@@ -475,38 +476,38 @@ errno_t allocateSpace(Data* object)
 	switch(object->type)
 	{
 		case INT8_DATA:
-			object->data_arrays.i8_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i8_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case UINT8_DATA:
-			object->data_arrays.ui8_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui8_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case INT16_DATA:
-			object->data_arrays.i16_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i16_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case UINT16_DATA:
-			object->data_arrays.ui16_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui16_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case INT32_DATA:
-			object->data_arrays.i32_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i32_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case UINT32_DATA:
-			object->data_arrays.ui32_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui32_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case INT64_DATA:
-			object->data_arrays.i64_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.i64_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case UINT64_DATA:
-			object->data_arrays.ui64_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.ui64_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case SINGLE_DATA:
-			object->data_arrays.single_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.single_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case DOUBLE_DATA:
-			object->data_arrays.double_data = mxMalloc(object->num_elems * object->elem_size);
+			object->data_arrays.double_data = mxMalloc(object->num_elems*object->elem_size);
 			break;
 		case REF_DATA:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems * object->elem_size);
+			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
 			break;
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
@@ -526,7 +527,7 @@ errno_t allocateSpace(Data* object)
 			sprintf(object->name, "getmatvar:thisShouldntHappen");
 			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
-			
+		
 	}
 	
 	return 0;
@@ -549,37 +550,37 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 	switch(object->type)
 	{
 		case INT8_DATA:
-			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case UINT8_DATA:
-			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case INT16_DATA:
-			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case UINT16_DATA:
-			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case INT32_DATA:
-			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case UINT32_DATA:
-			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case INT64_DATA:
-			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case UINT64_DATA:
-			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case SINGLE_DATA:
-			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case DOUBLE_DATA:
-			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case REF_DATA:
-			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index) * elem_size);
+			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
@@ -612,77 +613,78 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case INT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT8_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT16_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT32_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case INT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case UINT64_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case SINGLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case DOUBLE_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				object->data_arrays.double_data[index_map[j]] = *(double*)(data_pointer + object_data_index*elem_size);
+				//memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
 		case REF_DATA:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index * elem_size, elem_size);
+				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
@@ -700,7 +702,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 
 void findHeaderAddress(char* variable_name, bool_t get_top_level)
 {
-	char* delim = ".",* token;
+	char* delim = ".", * token;
 	AddrTrio* root_trio_copy = malloc(sizeof(AddrTrio));
 	root_trio_copy->tree_address = root_trio.tree_address;
 	root_trio_copy->heap_address = root_trio.heap_address;
@@ -710,7 +712,7 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level)
 	default_bytes = default_bytes < file_size ? default_bytes : file_size;
 	
 	flushQueue(varname_queue);
-	if(strcmp(variable_name,"\0") == 0)
+	if(strcmp(variable_name, "\0") == 0)
 	{
 		enqueue(varname_queue, NULL);
 		variable_found = TRUE;
@@ -722,7 +724,7 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level)
 		token = strtok(variable_name, delim);
 		while(token != NULL)
 		{
-			char* vn = malloc(sizeof(token));
+			char* vn = malloc((strlen(token) + 1) * sizeof(char));
 			strcpy(vn, token);
 			enqueue(varname_queue, vn);
 			token = strtok(NULL, delim);
@@ -739,7 +741,7 @@ void parseHeaderTree(bool_t get_top_level)
 	byte* tree_pointer, * heap_pointer;
 	
 	//aka the parent address for a snod
-	AddrTrio* parent_trio,* this_trio;
+	AddrTrio* parent_trio, * this_trio;
 	
 	//search for the object header for the variable
 	while(addr_queue->length > 0)
@@ -758,8 +760,8 @@ void parseHeaderTree(bool_t get_top_level)
 			this_trio = dequeue(addr_queue);
 			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio, get_top_level);
 		}
+		
 	}
-	
 	
 }
 
@@ -767,7 +769,7 @@ void parseHeaderTree(bool_t get_top_level)
 Data* organizeObjects(Queue* objects)
 {
 	Data* super_object = dequeue(objects);
-
+	
 	while((DELIMITER & super_object->type) == DELIMITER)
 	{
 		if(objects->length == 0)
@@ -792,7 +794,7 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 	//note: index should be at the starting index of the subobjects
 	
 	super_object->num_sub_objs = 0;
-	super_object->sub_objects = malloc(num_objs_left* sizeof(Data*));
+	super_object->sub_objects = malloc(num_objs_left*sizeof(Data*));
 	Data* curr = dequeue(objects);
 	
 	while(super_object->this_obj_address == curr->parent_obj_address)
@@ -807,4 +809,14 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 		super_object->num_sub_objs++;
 	}
 	
+}
+
+
+void freeVarname(void* vn)
+{
+	char* varname = (char*)vn;
+	if(varname != NULL && strcmp(varname, "\0") != 0)
+	{
+		free(varname);
+	}
 }

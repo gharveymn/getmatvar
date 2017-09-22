@@ -8,6 +8,7 @@
 
 # include <windows.h>
 
+
 size_t getPageSize(void)
 {
 	SYSTEM_INFO system_info;
@@ -22,6 +23,7 @@ size_t getAllocGran(void)
 	GetSystemInfo(&system_info);
 	return (size_t)system_info.dwAllocationGranularity;
 }
+
 
 int getNumProcessors(void)
 {
@@ -54,16 +56,17 @@ int getNumProcessors(void)
 
 #endif
 
+
 ByteOrder getByteOrder(void)
 {
-    short int number = 0x1;
-    char *numPtr = (char*)&number;
-    if(numPtr[0] == 1)
-    {
-	    return LITTLE_ENDIAN;
-    }
-    else
-    {
-	    return BIG_ENDIAN;
-    }
+	short int number = 0x1;
+	char* numPtr = (char*)&number;
+	if(numPtr[0] == 1)
+	{
+		return LITTLE_ENDIAN;
+	}
+	else
+	{
+		return BIG_ENDIAN;
+	}
 }

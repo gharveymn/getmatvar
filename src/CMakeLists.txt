@@ -10,8 +10,8 @@ SET(SOURCE_FILES
 		${MATLAB_INCLUDE_DIR}/mex.h
 		extlib/mman-win32/mman.c
 		extlib/mman-win32/mman.h
-	   	extlib/thpool/thpool.c
-	   	extlib/thpool/thpool.h
+		extlib/thpool/thpool.c
+		extlib/thpool/thpool.h
 		extlib/libdeflate/x64/libdeflate.h
 		extlib/pthreads-win32/include/pthread.h
 		fileHelper.c
@@ -19,12 +19,12 @@ SET(SOURCE_FILES
 		mapping.c
 		mapping.h
 		numberHelper.c
-		queue.c
+		ezq.c
 		chunkedData.c
 		mexPointerSetters.c
 		readMessage.c
 		getmatvar_.h
-		queue.h
+		ezq.h
 		getmatvar_.c)
 
 ADD_LIBRARY(${MEX_FILE_NAME} SHARED ${SOURCE_FILES} ${CMAKE_SOURCE_DIR}/Matlabdef.def)

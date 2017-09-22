@@ -42,8 +42,8 @@ all: mapping
 mapping: $(OBJ) src/extlib/libdeflate/x64/libdeflate.a
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
-src/libdeflate/libdeflate.a:
-	cd $(OBJ_DIR)/libdeflate/ && $(MAKE)
+src/extlib/libdeflate/x64/libdeflate.a:
+	cd $(OBJ_DIR)/extlib/libdeflate/x64/ && $(MAKE)
 
 .PHONY: clean
 

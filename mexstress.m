@@ -7,10 +7,11 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/t.mat';
+file = 'res/my_struct1.mat';
 vars = {''};
 domemory = false;
-numtests = 1000;
+numtests = 10000;
+avgtime = 0;
 memvals = rand(numtests+1,1);
 lents = 0;
 if(domemory)
@@ -30,10 +31,10 @@ if(domemory)
 	xlim([0,numtests]);
 else
 	for i = 1:numtests
-		
+		tic
 		getmatvar(file, vars{:});
-
-		timestr = sprintf('%d/%d',i,numtests);
+		avgtime = avgtime + toc;
+		timestr = sprintf('%d/%d | avg:%5.8f',i,numtests,avgtime/i);
 		fprintf([repmat('\b',1,lents) timestr]);
 		lents = numel(timestr);
 	end

@@ -1,5 +1,4 @@
 #include "getmatvar_.h"
-#include "mapping.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
@@ -10,7 +9,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	
 	for(int i = 0; i < object->num_dims; i++)
 	{
-		object->dims[object->num_dims-i-1] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i * s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
+		object->dims[object->num_dims - i - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
 	}
 	object->dims[object->num_dims] = 0;
 	
@@ -24,6 +23,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	}
 	
 }
+
 
 void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -133,6 +133,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 	
 }
 
+
 void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	//assume version 3
@@ -158,7 +159,8 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
-				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4 * j, 4, META_DATA_BYTE_ORDER);
+				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
+																										META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			object->chunked_info.num_chunked_elems = 1;
@@ -166,17 +168,15 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			{
 				object->chunked_info.num_chunked_elems *= object->chunked_info.chunked_dims[i];
 			}
-
-			makeChunkedUpdates(object->chunked_info.chunk_update,
-						    object->chunked_info.chunked_dims,
-						    object->dims,
-						    object->num_dims);
-
+			
+			makeChunkedUpdates(object->chunked_info.chunk_update, object->chunked_info.chunked_dims, object->dims, object->num_dims);
+			
 			break;
 		default:
 			readMXError("getmatvar:internalError", "Unknown data layout class\n\n");
 	}
 }
+
 
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
@@ -197,7 +197,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 				name_size = (uint16_t)getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER);
 				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER) & 1);
 				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 6, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals * sizeof(uint32_t));
+				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
 				helper_pointer += 8 + name_size;
 				
 				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
@@ -218,7 +218,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 				object->chunked_info.filters[j].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2, META_DATA_BYTE_ORDER);
 				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER) & 1);
 				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals * sizeof(uint32_t));
+				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
 				helper_pointer += 6;
 				
 				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
@@ -237,6 +237,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 		
 	}
 }
+
 
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {

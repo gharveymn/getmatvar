@@ -11,8 +11,8 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
-#include "queue.h"
 #include <stdarg.h>
+#include "queue.h"
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #include "extlib/mman-win32/mman.h"
@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+typedef int errno_t;
 typedef uint64_t OffsetType;
 #endif
 
@@ -45,10 +46,7 @@ typedef uint64_t OffsetType;
 #define NUM_THREAD_MAPS 7
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
-#define CHUNK_IN_PARALLEL TRUE
-#define mxREAL 0
-#define mxCOMPLEX 1
-#define DO_MEMDUMP FALSE
+//#define DO_MEMDUMP
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -61,8 +59,23 @@ typedef uint64_t OffsetType;
 
 #define MATLAB_WARN_MESSAGE ""
 
+//compiler hints
+
+/* likely(expr) - hint that an expression is usually true */
+#ifndef likely
+#  define likely(expr)		(expr)
+#endif
+
+/* unlikely(expr) - hint that an expression is usually false */
+#ifndef unlikely
+#  define unlikely(expr)	(expr)
+#endif
+
+//typedefs
+
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
+typedef int mxComplexity;
 
 typedef struct
 {
@@ -185,7 +198,7 @@ typedef struct data_ Data;
 struct data_
 {
 	DataType type;
-	int complexity_flag;
+	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
 	char name[NAME_LENGTH];
@@ -223,7 +236,7 @@ typedef struct
 {
 	uint32_t size;
 	uint32_t filter_mask;
-	uint64_t chunk_start[HDF5_MAX_DIMS + 1];
+	uint32_t chunk_start[HDF5_MAX_DIMS + 1];
 	uint64_t local_heap_offset;
 } Key;
 
@@ -243,13 +256,14 @@ struct tree_node_
 
 typedef struct
 {
-	pthread_cond_t ready;
 	pthread_mutex_t lock;
-	bool_t is_cont_right;
 	bool_t is_mapped;
 	uint64_t pg_start_a;
 	uint64_t pg_end_a;
+	uint64_t map_base;//if already mapped by windows, the base offset of this map
+	uint64_t map_end; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
+	uint8_t num_using;
 } pageObject;
 
 //fileHelper.c
@@ -287,7 +301,7 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Queue* objects);
 void placeInSuperObject(Data* super_object, Queue* objects, int num_total_objs);
-int allocateSpace(Data* object);
+errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeMaps(void);
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
@@ -295,10 +309,9 @@ void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
 void parseHeaderTree(bool_t get_top_level);
 void initializePageObjects(void);
-void destroyPageObjects(void);
+void freeVarname(void* vn);
 void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[], ...);
-
 
 //getPageSize.c
 size_t getPageSize(void);
@@ -306,14 +319,16 @@ size_t getAllocGran(void);
 int getNumProcessors(void);
 ByteOrder getByteOrder(void);
 
+
 //chunkedData.c
-int fillNode(TreeNode* node, uint64_t num_chunked_dims);
-int decompressChunk(TreeNode* node);
+errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
+errno_t decompressChunk(TreeNode* node);
 void* doInflate_(void* t);
 void freeTree(TreeNode* node);
-int getChunkedData(Data* obj);
-uint64_t findArrayPosition(const uint64_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
+errno_t getChunkedData(Data* obj);
+uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
+void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
 
 ByteOrder __byte_order__;
 size_t alloc_gran;
@@ -339,11 +354,13 @@ AddrTrio root_trio;
 int num_avail_threads;
 int num_threads_to_use;
 
-bool_t is_multithreading;
+pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
 
 FILE* dump;
 pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
+
+pthread_mutex_t if_lock;
 
 #endif

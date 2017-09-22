@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/t.mat';
+file = 'res/my_struct1.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
@@ -13,20 +13,20 @@ getmatvar(file);%, vars{:});
 toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
-a = t;
+%a = t;
 
 % using load function
 tic
 load(file);
 toc
 
-disp(sum(a(:) ~= t(:)))
+%disp(sum(a(:) ~= t(:)))
 
-% if(~isempty(find(my_struct.array ~= 1)))
-% 	disp('my_struct1.mat is incorrect')
-% else
-% 	disp('my_struct1.mat is correct')
-% end
+if(~isempty(find(my_struct.array ~= 1)))
+	disp('my_struct1.mat is incorrect')
+else
+	disp('my_struct1.mat is correct')
+end
 
 % using matlab's partial loader
 % tic
