@@ -27,6 +27,9 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	freeQueue(addr_queue);
+	freeQueue(varname_queue);
+	freeQueue(header_queue);
 	freeQueue(objects);
 	free(super_objects);
 	for (int i = 0; i < num_objs; i++)

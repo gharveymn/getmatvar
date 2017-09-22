@@ -176,9 +176,6 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	free(variable_names);
 	
 	close(fd);
-	freeQueue(addr_queue);
-	freeQueue(varname_queue);
-	freeQueue(header_queue);
 	destroyPageObjects();
 	freeAllMaps();
 

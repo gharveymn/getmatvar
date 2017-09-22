@@ -162,6 +162,9 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	
 	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT_DATA);
 	
+	freeQueue(addr_queue);
+	freeQueue(varname_queue);
+	freeQueue(header_queue);
 	freeQueue(objects);
 	free(super_objects);
 	for(int i = 0; i < num_objs; i++)
