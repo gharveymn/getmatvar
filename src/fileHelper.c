@@ -143,7 +143,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
-#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+#if !((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
 	
 	//in Windows the .is_mapped becomes a flag for if the mapping originally came from this object
 	//if there is a map available the map_start and map_end addresses indicate where the start and end are
@@ -158,7 +158,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		//				already mapped, in use, remapped while waiting, use that map
 		//				not mapped, acquire lock to map
 		//				not mapped, mapped while waiting for map lock, use that map
-		//				not mapped,
+		//				not mapped
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
@@ -248,41 +248,180 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	//TODO this doesn't work right now. Try Windows!
 	
-	//acquire locks
-	//locking this allows for a better chance of map reuse
-	pthread_mutex_lock(&thread_acquisition_lock);
-	for(uint64_t i = start_page; i <= end_page; i++)
-	{
-		pthread_mutex_lock(&page_objects[i].lock);
-		//this is now my lock
-	}
-	pthread_mutex_unlock(&thread_acquisition_lock);
-	
-	//check if we have continuous mapping available (if yes then return pointer)
-	
-	//only check if it's actually possible (this will be mapped if these are not undef)
-	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
-	{
-		bool_t is_continuous = TRUE;
-		for(size_t i = start_page; i <= end_page; i++)
+//	while(TRUE)
+//	{
+		
+		//this can change while waiting
+		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 		{
-			if(page_objects[i].map_base != page_objects[start_page].map_base || page_objects[i].is_mapped == FALSE)
+			
+			//If this is true I'm going to try to acquire all of the locks for the pages I need
+			//and signal my intent to use them. If I can't get one of the locks then
+			//I'll signal that I'm done and release all of them
+			
+			bool_t is_continuous = TRUE;
+			for(size_t i = start_page; i <= end_page; i++)
 			{
-				is_continuous = FALSE;
-				break;
+				
+				//passive lock mechanism
+				if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
+				{
+					for(size_t j = i - 1; j >= start_page; j--)
+					{
+						pthread_mutex_unlock(&page_objects[j].lock);
+					}
+					is_continuous = FALSE;
+					break;
+				}
+				
+				
+				if(page_objects[i].map_base != page_objects[start_page].map_base || page_objects[i].is_mapped == FALSE)
+				{
+					//we acquired this lock as well, so make sure j = i is the start
+					for(size_t j = i; j >= start_page; j--)
+					{
+						pthread_mutex_unlock(&page_objects[j].lock);
+					}
+					is_continuous = FALSE;
+					break;
+				}
 			}
-		}
-		
-		if(is_continuous)
-		{
-		
+			
+			//if is_continuous true I should still have all the locks in this address space
+			
+			if(is_continuous == TRUE)
+			{
+
 #ifdef DO_MEMDUMP
 				memdump("R");
 #endif
-			
-			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+				
+				//I confirmed that I added my intent to each of the pages, now I can release
+				//all of my locks knowing that the pages cant be remapped while im using them
+				
+				for(size_t i = start_page; i <= end_page; i++)
+				{
+					page_objects[i].num_using++;
+					pthread_mutex_unlock(&page_objects[i].lock);
+				}
+				
+				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			}
 		}
-	}
+		else
+		{
+			
+			//same method, try to acquire all of the locks, but give priority to the reusers, so don't lock on check
+			pthread_spin_lock(&if_lock);
+			
+			//this section is locked, so safe to check all nums
+			
+			//quick entry check
+//			if(page_objects[start_page].num_using == 0)
+//			{
+//				bool_t is_clear = TRUE;
+//				for(size_t i = start_page; i <= end_page; i++)
+//				{
+//					if(page_objects[i].num_using != 0)
+//					{
+//						is_clear = FALSE;
+//						break;
+//					}
+//				}
+//
+//				if(is_clear == TRUE)
+//				{
+//
+//					//ensure locking of the rest of the pages
+//
+//					for(size_t i = start_page; i <= end_page; i++)
+//					{
+//						pthread_mutex_lock(&page_objects[i].lock);
+//					}
+//
+//					//recheck because some object may have started using it while waiting for locks
+//					while(TRUE)
+//					{
+//						bool_t recheck_is_clear = TRUE;
+//						for(size_t i = start_page; i <= end_page; i++)
+//						{
+//							if(page_objects[i].num_using != 0)
+//							{
+//								//these pages can't get remapped by another thread because of if_lock, so unlock them so they can
+//								//signal they are done being used
+//								recheck_is_clear = FALSE;
+//								page_objects[i].needs_relock = TRUE;
+//								pthread_mutex_unlock(&page_objects[i].lock);
+//							}
+//							else
+//							{
+//								page_objects[i].num_using++;
+//							}
+//						}
+//
+//						if(recheck_is_clear == TRUE)
+//						{
+//							break;
+//						}
+//
+//
+//						//after unlocking for processes to finish relock those pages
+//						for(size_t i = start_page; i <= end_page; i++)
+//						{
+//							if(page_objects[i].needs_relock == TRUE)
+//							{
+//								while(TRUE)
+//								{
+//									//loop until we absolutely have a clean lock
+//									pthread_mutex_lock(&page_objects[i].lock);
+//									if(page_objects[i].num_using != 0)
+//									{
+//										break;
+//									}
+//									else
+//									{
+//										pthread_mutex_unlock(&page_objects[i].lock);
+//									}
+//
+//								}
+//							}
+//							page_objects[i].needs_relock = FALSE;
+//
+//						}
+//
+//					}
+//
+//					pthread_spin_unlock(&if_lock);
+//					break;
+//
+//
+//				}
+//
+//			}
+
+			for(size_t i = start_page; i <= end_page; i++)
+			{
+				//note that no other threads can remap while doing this
+				while(TRUE)
+				{
+					pthread_mutex_lock(&page_objects[i].lock);
+					if(page_objects[i].num_using != 0)
+					{
+						pthread_mutex_unlock(&page_objects[i].lock);
+					}
+					else
+					{
+						page_objects[i].num_using++;
+						break;
+					}
+				}
+			}
+			
+			pthread_spin_unlock(&if_lock);
+		
+		}
+		
+	//}
 	
 	//implicit else
 	
@@ -290,7 +429,6 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	{
 		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
 		{
-			
 			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
@@ -329,6 +467,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		memdump("M");
 #endif
 	
+	pthread_mutex_unlock(&page_objects[start_page].lock);
+	
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
 #endif
@@ -353,9 +493,11 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 #else /*-----------------------------------------UNIX-----------------------------------------*/
 	
 	//release locks
-	for (uint64_t j = start_page; j <= end_page; j++)
+	for(size_t i = start_page; i <= end_page; i++)
 	{
-		pthread_mutex_unlock(&page_objects[j].lock);
+		pthread_mutex_lock(&page_objects[i].lock);
+		page_objects[i].num_using--;
+		pthread_mutex_unlock(&page_objects[i].lock);
 	}
 
 #endif
@@ -462,7 +604,6 @@ void readTreeNode(byte* tree_pointer, AddrTrio* this_trio)
 void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_trio, bool_t get_top_level)
 {
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	SNODEntry** objects = malloc(num_symbols*sizeof(SNODEntry*));
 	uint32_t cache_type;
 	AddrTrio* trio;
 	char* var_name = peekQueue(varname_queue, QUEUE_FRONT);
@@ -476,19 +617,19 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 	
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
-		objects[i] = malloc(sizeof(SNODEntry));
-		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
-		objects[i]->parent_obj_header_address = this_trio->parent_obj_header_address;
-		objects[i]->this_obj_header_address =
+		SNODEntry* snod_entry = malloc(sizeof(SNODEntry));
+		snod_entry->name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		snod_entry->parent_obj_header_address = this_trio->parent_obj_header_address;
+		snod_entry->this_obj_header_address =
 				getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		strcpy(objects[i]->name, (char*)(heap_data_segment_pointer + objects[i]->name_offset));
+		strcpy(snod_entry->name, (char*)(heap_data_segment_pointer + snod_entry->name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
-		objects[i]->parent_tree_address = parent_trio->tree_address;
-		objects[i]->this_tree_address = this_trio->tree_address;
-		objects[i]->sub_tree_address = UNDEF_ADDR;
+		snod_entry->parent_tree_address = parent_trio->tree_address;
+		snod_entry->this_tree_address = this_trio->tree_address;
+		snod_entry->sub_tree_address = UNDEF_ADDR;
 		
 		//check if we have found the object we're looking for or if we are just adding subobjects
-		if((var_name != NULL && strcmp(var_name, objects[i]->name) == 0) || variable_found == TRUE)
+		if((variable_found == TRUE || (var_name != NULL && strcmp(var_name, snod_entry->name) == 0)) && strncmp(snod_entry->name, "#", 1) != 0)
 		{
 			if(variable_found == FALSE)
 			{
@@ -506,24 +647,22 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				
 			}
 			
-			if(strncmp(objects[i]->name, "#", 1) != 0)// && strncmp(objects[i]->name, "function_handle", 15) != 0)
-			{
-				enqueue(header_queue, objects[i]);
-			}
+			
+			enqueue(header_queue, snod_entry);
 			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 && get_top_level == FALSE)//&& strncmp(objects[i]->name, "function_handle", 15) != 0)
+			if(cache_type == 1 && get_top_level == FALSE)
 			{
 				
 				//if another tree exists for this object, put it on the queue
 				trio = malloc(sizeof(AddrTrio));
-				trio->parent_obj_header_address = objects[i]->this_obj_header_address;
+				trio->parent_obj_header_address = snod_entry->this_obj_header_address;
 				trio->tree_address =
 						getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				trio->heap_address =
 						getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				objects[i]->sub_tree_address = trio->tree_address;
+				snod_entry->sub_tree_address = trio->tree_address;
 				priorityEnqueue(addr_queue, trio);
 				parseHeaderTree(FALSE);
 				snod_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
@@ -531,17 +670,22 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 				
 			}
-			else if(cache_type == 2)
+			else if(cache_type == 2  && get_top_level == FALSE)
 			{
 				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
-				strcpy(objects[i]->name, (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + objects[i]->name_offset));
+				snod_entry->name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+				strcpy(snod_entry->name, (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + snod_entry->name_offset));
 			}
-			
+
 		}
+		else
+		{
+			free(snod_entry);
+		}
+
 	}
 	
-	free(objects);
+	
 }
 
 

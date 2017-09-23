@@ -50,11 +50,11 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		return objects;
 	}
 	
-	byte* head = navigateTo(0, MATFILE_SIG_LENGTH, TREE);
-	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LENGTH) != 0)
+	byte* head = navigateTo(0, MATFILE_SIG_LEN, TREE);
+	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
-		char filetype[MATFILE_SIG_LENGTH];
-		memcpy(filetype, head, MATFILE_SIG_LENGTH);
+		char filetype[MATFILE_SIG_LEN];
+		memcpy(filetype, head, MATFILE_SIG_LEN);
 		Data* data_object = malloc(sizeof(Data));
 		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
@@ -156,8 +156,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			{
 				Data* front_object = peekQueue(objects, QUEUE_FRONT);
 				front_object->type = ERROR_DATA;
-				strcpy(front_object->name, front_object->name);
-				strcpy(front_object->matlab_class, front_object->matlab_class);
+				strcpy(front_object->name, data_object->name);
+				strcpy(front_object->matlab_class, data_object->matlab_class);
 				
 				//note that num_objs is now the end sentinel
 				
@@ -168,6 +168,112 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 				enqueue(objects, end_object);
 				
 				return objects;
+			}
+			
+			if(data_object->type == FUNCTION_HANDLE_DATA)
+			{
+				
+				//skip objects to the "function" object
+				
+				do
+				{
+					//should skip "function_handle" and "file" objects
+					snod_entry = dequeue(header_queue);
+					
+					//need to check for the underscore since there is also an object called "function_handle"
+				} while(strncmp(snod_entry->name, "function", 8) != 0 || snod_entry->name[8] == '_');
+				
+				//get the function handle data
+				
+				header_address = snod_entry->this_obj_header_address;
+				Data* fh = malloc(sizeof(Data));
+				initializeObject(fh);
+				header_pointer = navigateTo(header_address, 16, TREE);
+				header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
+				num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
+				strcpy(fh->name, snod_entry->name);
+				fh->parent_obj_address = snod_entry->parent_obj_header_address;
+				fh->this_obj_address = snod_entry->this_obj_header_address;
+				collectMetaData(fh, header_address, num_msgs, header_length);
+				
+				//dont use strchr because we need to know the length of the copied string
+				uint32_t fh_len = fh->num_elems;
+				char* func_name = NULL;
+				for(; fh_len > 0; fh_len--)
+				{
+					func_name = (char*)&fh->data_arrays.ui16_data[fh->num_elems - fh_len];
+					if(*func_name == '@')
+					{
+						break;
+					}
+				}
+				
+				if(fh_len == 0)
+				{
+					data_object->data_arrays.ui16_data = mxMalloc((fh->num_elems + FUNCTION_HANDLE_SIG_LEN + 1) * fh->elem_size);
+					for (int i = 0; i < FUNCTION_HANDLE_SIG_LEN; i++)
+					{
+						data_object->data_arrays.ui16_data[i] = (uint16_t)FUNCTION_HANDLE_SIG[i];
+					}
+					data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN] = 64; //this is the '@' character
+					memcpy(&data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN + 1], fh->data_arrays.ui16_data, fh->num_elems*fh->elem_size);
+					data_object->num_elems = FUNCTION_HANDLE_SIG_LEN + 1 + fh->num_elems; //+ 1 for the seperator
+				}
+				else
+				{
+					data_object->data_arrays.ui16_data = mxMalloc((fh_len + FUNCTION_HANDLE_SIG_LEN) * fh->elem_size);
+					for (int i = 0; i < FUNCTION_HANDLE_SIG_LEN; i++)
+					{
+						data_object->data_arrays.ui16_data[i] = (uint16_t)FUNCTION_HANDLE_SIG[i];
+					}
+					memcpy(&data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN], func_name, fh_len * fh->elem_size);
+					data_object->num_elems = FUNCTION_HANDLE_SIG_LEN + fh_len;
+				}
+				
+				data_object->num_dims = 2;
+				data_object->dims[0] = 1;
+				data_object->dims[1] = data_object->num_elems;
+				data_object->dims[2] = 0;
+				
+				//free the temporary "function" object
+				freeDataObject(fh);
+				
+				//skip "type" object
+				dequeue(header_queue);
+				
+				//if this is "within_file_path" then this is an anonymous function, if it is "matlabroot" then it is just a name
+				snod_entry = dequeue(header_queue);
+				if(strncmp(snod_entry->name, "matlabroot", 10) == 0)
+				{
+					dequeue(header_queue); //"sentinel"
+					dequeue(header_queue); //"separator"
+				}
+				else if(strncmp(snod_entry->name, "within_file_path", 16) == 0)
+				{
+					dequeue(header_queue); //"workspace"
+					dequeue(header_queue); //"matlabroot"
+					dequeue(header_queue); //"sentinel"
+					dequeue(header_queue); //"separator"
+				}
+				else
+				{
+					Data* front_object = peekQueue(objects, QUEUE_FRONT);
+					front_object->type = ERROR_DATA;
+					strcpy(front_object->name, "getmatvar:unexpectedFunctionHandleObjectOrder");
+					sprintf(front_object->matlab_class, "The order of objects within the \"%s\" function handle subtree was unexpected", data_object->name);
+					
+					//note that num_objs is now the end sentinel
+					
+					Data* end_object = malloc(sizeof(Data));
+					initializeObject(end_object);
+					end_object->type = DELIMITER | END_SENTINEL;
+					end_object->parent_obj_address = UNDEF_ADDR;
+					enqueue(objects, end_object);
+					
+					return objects;
+				}
+				
+				
 			}
 			
 		}
@@ -197,6 +303,9 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		thpool_destroy(threads);
 	}
 	
+	freeQueue(addr_queue);
+	freeQueue(varname_queue);
+	freeQueue(header_queue);
 	destroyPageObjects();
 	freeAllMaps();
 
@@ -252,6 +361,7 @@ void initializePageObjects(void)
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
 		page_objects[i].num_using = 0;
+		page_objects[i].needs_relock = FALSE;
 	}
 	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }
@@ -289,6 +399,7 @@ void destroyPageObjects(void)
 
 void initializeObject(Data* object)
 {
+	
 	object->data_arrays.is_mx_used = FALSE;
 	object->data_arrays.ui8_data = NULL;
 	object->data_arrays.i8_data = NULL;
@@ -793,31 +904,6 @@ Data* organizeObjects(Queue* objects)
 			return NULL;
 		}
 		super_object = dequeue(objects);
-	}
-	
-	if(unlikely(super_object->type == FUNCTION_HANDLE_DATA))
-	{
-		//skip function_handle and file objects
-		dequeue(objects); //function_handle
-		dequeue(objects); //file
-		//place function handle data in the matlab_class field since it's easier and the field isn't needed in this case
-		Data* fh = dequeue(objects); //function
-		strcpy(super_object->matlab_class, FUNCTION_HANDLE_SIGNATURE);
-		char* func = strchr((char*)fh->data_arrays.ui16_data, '@');
-		if(func == NULL)
-		{
-			super_object->matlab_class[20] = '@';
-			memcpy(super_object->matlab_class + 21, fh->data_arrays.ui16_data, fh->num_elems*fh->elem_size);
-		}
-		else
-		{
-			strcpy(super_object->matlab_class + 20, func);
-		}
-
-		while((DELIMITER & fh->type) == DELIMITER)
-		{
-			fh = dequeue(objects);
-		}
 	}
 	
 	if(super_object->type == STRUCT_DATA || super_object->type == REF_DATA)

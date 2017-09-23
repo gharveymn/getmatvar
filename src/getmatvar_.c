@@ -229,9 +229,6 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 	
 	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT_DATA);
 	
-	freeQueue(addr_queue);
-	freeQueue(varname_queue);
-	freeQueue(header_queue);
 	freeQueue(objects);
 	free(super_objects);
 	for(int i = 0; i < num_objs; i++)
@@ -297,8 +294,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				setFHPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
-				objects[index]->data_arrays.is_mx_used = FALSE; //the data stored by this object is irrelevant
+				setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
 				break;
 			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");

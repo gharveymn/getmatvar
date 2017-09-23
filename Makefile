@@ -18,7 +18,7 @@ INC_PARAMS=$(foreach d, $(INC), -I$d)
 LIB=.
 LIB_PARAMS=$(foreach d, $(LIB), -I$d)
 
-LIBS=-lm -lpthread -lrt
+LIBS=-lm -lpthread
 
 _DEPS = mapping.h libdeflate.h thpool.h queue.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
@@ -34,7 +34,7 @@ OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 $(OBJ_DIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-CFLAGS=-g -Wall --std=c99 $(INC_PARAMS) $(LIB_PARAMS)
+CFLAGS=-g -Wall --std=c99 -DNO_MEX=TRUE $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mapping
 

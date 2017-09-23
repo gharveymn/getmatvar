@@ -1,24 +1,5 @@
 #include "mapping.h"
 
-//void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
-//{
-//	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
-//	mxArray* mxIntPtr = mxCreateNumericArray(0, NULL, mxINT16_CLASS, object->complexity_flag);
-//	mxSetData(mxIntPtr, object->data_arrays.i16_data);
-//	mxSetDimensions(mxIntPtr, obj_dims, object->num_dims);
-//
-//	if(super_structure_type == STRUCT_DATA)
-//	{
-//		mxSetField(returnStructure, 0, varname, mxIntPtr);
-//	}
-//	else if(super_structure_type == REF_DATA)
-//	{
-//		//is a cell array
-//		mxSetCell(returnStructure, index, mxIntPtr);
-//	}
-//
-//	free(obj_dims);
-//}
 
 //for logicals and ui8s
 void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
@@ -98,7 +79,8 @@ void setUI16Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 {
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxIntPtr;
-	if(strncmp(object->matlab_class, "char", 7) == 0)
+	
+	if(object->type == FUNCTION_HANDLE_DATA || strncmp(object->matlab_class, "char", 7) == 0)
 	{
 		mxIntPtr = mxCreateCharArray(0, NULL);
 	}

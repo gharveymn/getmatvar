@@ -129,7 +129,7 @@ void* doInflate_(void* t)
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
 	uint64_t these_num_chunked_elems = 0;
-	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1];
+	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t these_chunked_updates[HDF5_MAX_DIMS];
 	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	

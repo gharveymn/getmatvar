@@ -1,8 +1,12 @@
 #ifndef MAPPING_H
 #define MAPPING_H
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 //#define DO_MEMDUMP
-//#define NO_MEX
+//#define NO_MEX		pass this through gcc -DNO_MEX=TRUE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +54,9 @@ typedef uint64_t OffsetType;
 #define FALSE 0
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
-#define FUNCTION_HANDLE_SIGNATURE "R2VuZSBIYXJ2ZXkgOik="
+#define MATFILE_SIG_LEN 19
+#define FUNCTION_HANDLE_SIG "R2VuZSBIYXJ2ZXkgOik="
+#define FUNCTION_HANDLE_SIG_LEN 20
 #define TREE 0
 #define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
@@ -63,7 +69,6 @@ typedef uint64_t OffsetType;
 #define NUM_HEAP_MAPS 2
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
-#define MATFILE_SIG_LENGTH 19
 
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))
@@ -205,7 +210,6 @@ typedef struct
 typedef struct
 {
 	int is_mx_used;
-	uint32_t usage_bitfield; //use bitshifts to indicate where to free data
 	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
 	int8_t* i8_data;
 	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
@@ -289,6 +293,7 @@ typedef struct
 	uint64_t map_end; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
 	uint8_t num_using;
+	bool_t needs_relock;
 } pageObject;
 
 //fileHelper.c

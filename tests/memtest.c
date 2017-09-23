@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 	will_multithread = TRUE;
 	
 	//char* filename = "res/hxdcopies/optData_ESTrade.mat";
-	char* filename = "res/my_struct.mat";
+	char* filename = argv[1];
 	char** variable_name = malloc(sizeof(char*));
 	variable_name[0] = "";
 	//variable_name[0] = malloc(30*sizeof(char));
@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
 		strcpy(err_id, front_object->name);
 		strcpy(err_string, front_object->matlab_class);
 		freeQueue(objects);
+		free(variable_name);
 		readMXError(err_id, err_string);
 		exit(1);
 	}
@@ -49,10 +50,7 @@ int main(int argc, char* argv[])
 			strcpy(varnames[num_objs], super_objects[num_objs]->name);
 		}
 	}
-
-	freeQueue(addr_queue);
-	freeQueue(varname_queue);
-	freeQueue(header_queue);
+	
 	freeQueue(objects);
 	free(super_objects);
 	for (int i = 0; i < num_objs; i++)
@@ -60,8 +58,6 @@ int main(int argc, char* argv[])
 		free(varnames[i]);
 	}
 	free(varnames);
-
-	free(variable_name);
 	
 	printf("\nProgram exited without errors\n\n");
 

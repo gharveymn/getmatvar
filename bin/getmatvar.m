@@ -1,9 +1,14 @@
 function getmatvar(filename, varargin)
+	
+	FUNCTION_HANDLE_SIG = 'R2VuZSBIYXJ2ZXkgOik=';
+	FUNCTION_HANDLE_SIG_LEN = 20;
+	
 	Q291cnRuZXkgQm9ubmVyIDop = getmatvar_(filename, varargin{:});
 	vn = fieldnames(Q291cnRuZXkgQm9ubmVyIDop);
 	for i = 1:numel(vn)
 		if(ischar(Q291cnRuZXkgQm9ubmVyIDop.(vn{i})))
-			if(strncmp(Q291cnRuZXkgQm9ubmVyIDop.(vn{i}), 'R2VuZSBIYXJ2ZXkgOik=', 20))
+			%check for the function handle signature
+			if(strncmp(Q291cnRuZXkgQm9ubmVyIDop.(vn{i}), FUNCTION_HANDLE_SIG, FUNCTION_HANDLE_SIG_LEN))
 				eval(['Q291cnRuZXkgQm9ubmVyIDop.(vn{i}) = ' Q291cnRuZXkgQm9ubmVyIDop.(vn{i})(21:end) ';']);
 			end
 		end
