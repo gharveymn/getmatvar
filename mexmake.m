@@ -5,7 +5,7 @@ cd src
 
 try	
 
-	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64'];
+	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];
 	pthreadsw32_path_include = ['-I' pwd '/extlib/pthreads-win32/include'];
 	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))
@@ -39,6 +39,7 @@ try
 			'mexPointerSetters.c',...
 			'readMessage.c')
     elseif(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'gcc'))
+	    libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/unix'];
 		mex(libdeflate_path_lib, ...
 			'-ldeflate', '-lpthread', ...
 			'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path ,... 

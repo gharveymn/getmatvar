@@ -1,6 +1,9 @@
 #ifndef MAPPING_H
 #define MAPPING_H
 
+//#define DO_MEMDUMP
+#define NO_MEX
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +14,9 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+#ifndef NO_MEX
 #include <mex.h>
+#endif
 #include <stdarg.h>
 #include "ezq.h"
 #include "extlib/thpool/thpool.h"
@@ -50,7 +55,6 @@ typedef uint64_t OffsetType;
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 #define MATFILE_SIG_LENGTH 19
-//#define DO_MEMDUMP
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
@@ -62,6 +66,14 @@ typedef uint64_t OffsetType;
                          "Example:\n\tgetmatvar('my_workspace.mat', 'my_struct')\n"
 
 #define MATLAB_WARN_MESSAGE ""
+
+#ifdef NO_MEX
+#define mxMalloc malloc
+#define mxFree free
+#define mxComplexity int
+#define mxREAL 0
+#define mxCOMPLEX 1
+#endif
 
 //compiler hints
 
@@ -332,6 +344,9 @@ uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_di
 void memdump(const char type[]);
 void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
 
+void readMXError(const char error_id[], const char error_message[], ...);
+void readMXWarn(const char warn_id[], const char warn_message[], ...);
+
 #ifdef DO_MEMDUP
 void memdump(const char type[]);
 #endif
@@ -372,6 +387,20 @@ pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
 #endif
 
+#ifdef NO_MEX
+pthread_mutex_t if_lock;
+#define pthread_spin_lock pthread_mutex_lock
+#define pthread_spin_unlock pthread_mutex_unlock
+#define pthread_spin_init pthread_mutex_init
+#define pthread_spin_destroy pthread_mutex_destroy
+#undef PTHREAD_PROCESS_SHARED
+#define PTHREAD_PROCESS_SHARED NULL
+#else
 pthread_spinlock_t if_lock;
+#endif
+
+#ifndef NO_MEX
+#include "getmatvar_.h"
+#endif
 
 #endif

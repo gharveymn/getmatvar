@@ -12,7 +12,7 @@ SET(SOURCE_FILES
 		extlib/mman-win32/mman.h
 		extlib/thpool/thpool.c
 		extlib/thpool/thpool.h
-		extlib/libdeflate/x64/libdeflate.h
+		extlib/libdeflate/x64/win/libdeflate.h
 		extlib/pthreads-win32/include/pthread.h
 		fileHelper.c
 		getSystemInfo.c
@@ -36,15 +36,15 @@ SET(THPOOL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/thpool)
 IF(WIN32)
 	IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		MESSAGE(STATUS "Compiling on 64 bit Windows")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/libdeflate.lib)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
 		SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x64/pthreadVC2.lib)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw64 PREFIX "")
 
 	ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		MESSAGE(STATUS "Compiling on 32 bit Windows")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/libdeflate.lib)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
 		SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x86/pthreadVC2.lib)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw32 PREFIX "")
 	ENDIF()

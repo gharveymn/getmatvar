@@ -1,4 +1,5 @@
-#include "getmatvar_.h"
+#include "mapping.h"
+
 
 #define mxSTRING_CLASS 19
 
@@ -18,6 +19,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	header_queue = NULL;
 	fd = -1;
 	num_threads_to_use = -1;
+	will_multithread = TRUE;
 	
 	if(nrhs < 1)
 	{
@@ -43,7 +45,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		
 		char** full_variable_names;
 		int num_vars = 0;
-		full_variable_names = malloc(((nrhs - 1) + 1) * sizeof(char*));
+		full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
 		kwarg kwarg_expected = NOT_AN_ARGUMENT;
 		bool_t kwarg_flag = FALSE;
 		for(int i = 0; i < nrhs - 1; i++)
@@ -53,10 +55,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 				switch(kwarg_expected)
 				{
 					case THREAD_KWARG:
-
+						
 						if(mxIsNumeric(prhs[i + 1]) && mxIsScalar(prhs[i + 1]))
 						{
-							num_threads_to_use = (int) mxGetScalar(prhs[i + 1]);
+							num_threads_to_use = (int)mxGetScalar(prhs[i + 1]);
 						}
 						else if(mxIsChar(prhs[i + 1]))
 						{
@@ -68,29 +70,26 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 							{
 								if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 								{
-									for (int j = num_vars - 1; j >= 0; j--)
+									for(int j = num_vars - 1; j >= 0; j--)
 									{
 										free(full_variable_names[j]);
 									}
 									free(full_variable_names);
-									readMXError("getmatvar:invalidNumThreadsError",
-										"Error in the number of threads requested.\n\n");
+									readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 								}
 							}
 							
 							char* endptr;
-							long res = (int) strtol(input, &endptr, 10);
-							num_threads_to_use = (int) res;
-							if(endptr == input
-							   || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
+							long res = (int)strtol(input, &endptr, 10);
+							num_threads_to_use = (int)res;
+							if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
 							{
-								for (int j = num_vars - 1; j >= 0; j--)
+								for(int j = num_vars - 1; j >= 0; j--)
 								{
 									free(full_variable_names[j]);
 								}
 								free(full_variable_names);
-								readMXError("getmatvar:invalidNumThreadsError",
-									"Error in the number of threads requested.\n\n");
+								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 							}
 						}
 						
@@ -101,9 +100,19 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 								free(full_variable_names[j]);
 							}
 							free(full_variable_names);
-							readMXError("getmatvar:tooManyThreadsError",
-									  "Too many threads were requested.\n\n");
+							readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 						}
+						
+						
+						//TEMPORARY, REMOVE WHEN WE HAVE MT_KWARG WORKING
+						if(num_threads_to_use == 0)
+						{
+							num_threads_to_use = -1;
+						}
+						
+						break;
+					case MT_KWARG:
+						//TODO
 						break;
 					case NOT_AN_ARGUMENT:
 					default:
@@ -112,8 +121,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 							free(full_variable_names[j]);
 						}
 						free(full_variable_names);
-						readMXError("getmatvar:notAnArgument",
-								  "The specified keyword argument does not exist.\n\n");
+						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 					
 				}
 				kwarg_expected = NOT_AN_ARGUMENT;
@@ -121,7 +129,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			}
 			else
 			{
-				if(mxIsChar(prhs[i + 1]) || mxGetClassID == mxSTRING_CLASS)
+				if(mxIsChar(prhs[i + 1]) || mxGetClassID(prhs[i + 1]) == mxSTRING_CLASS)
 				{
 					char* vn = mxArrayToString(prhs[i + 1]);
 					if(strncmp(vn, "-", 1) == 0)
@@ -135,8 +143,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 					else
 					{
 						kwarg_expected = NOT_AN_ARGUMENT;
-						full_variable_names[num_vars] = malloc(
-								strlen(vn) * sizeof(char)); /*this gets freed in getDataObjects*/
+						full_variable_names[num_vars] = malloc(strlen(vn)*sizeof(char)); /*this gets freed in getDataObjects*/
 						strcpy(full_variable_names[num_vars], vn);
 						num_vars++;
 					}
@@ -148,8 +155,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 						free(full_variable_names[j]);
 					}
 					free(full_variable_names);
-					readMXError("getmatvar:invalidArgument",
-							  "Variable names and keyword identifiers must be character vectors.\n\n");
+					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
 				}
 			}
 		}
@@ -157,7 +163,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		if(num_vars == 0)
 		{
 			free(full_variable_names);
-			full_variable_names = malloc(2 * sizeof(char*));
+			full_variable_names = malloc(2*sizeof(char*));
 			full_variable_names[0] = "\0";
 			num_vars = 1;
 		}
@@ -179,23 +185,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names,
-					  const char* filename)
+Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
 {
 	
 	mwSize ret_struct_dims[1] = {1};
 	
-	fprintf(stderr, "Fetching the objects... ");
 	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
 	Data* front_object = peekQueue(objects, QUEUE_FRONT);
 	if((ERROR_DATA & front_object->type) == ERROR_DATA)
 	{
 		return objects;
 	}
-	fprintf(stderr, "success.\n");
 	
-	Data** super_objects = malloc((objects->length) * sizeof(Data*));
-	char** varnames = malloc((objects->length) * sizeof(char*));
+	Data** super_objects = malloc((objects->length)*sizeof(Data*));
+	char** varnames = malloc((objects->length)*sizeof(char*));
 	int num_objs = 0;
 	for(; objects->length > 0; num_objs++)
 	{
@@ -206,7 +209,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 		}
 		else
 		{
-			varnames[num_objs] = malloc(NAME_LENGTH * sizeof(char));
+			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
 			strcpy(varnames[num_objs], super_objects[num_objs]->name);
 		}
 	}
@@ -286,14 +289,12 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				readMXWarn("getmatvar:invalidOutputType",
-						 "Could not return a variable. Function-handles are not yet supported (proprietary).");
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case TABLE_DATA:
-				readMXWarn("getmatvar:invalidOutputType",
-						 "Could not return a variable. Tables are not yet supported.");
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
@@ -312,33 +313,4 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	
 	return returnStructure;
 	
-}
-
-
-void readMXError(const char error_id[], const char error_message[], ...)
-{
-	
-	char message_buffer[ERROR_BUFFER_SIZE];
-	
-	va_list va;
-	va_start(va, error_message);
-	sprintf(message_buffer, error_message, va);
-	strcat(message_buffer, MATLAB_HELP_MESSAGE);
-	endHooks();
-	va_end(va);
-	mexErrMsgIdAndTxt(error_id, message_buffer);
-	
-}
-
-
-void readMXWarn(const char warn_id[], const char warn_message[], ...)
-{
-	char message_buffer[WARNING_BUFFER_SIZE];
-	
-	va_list va;
-	va_start(va, warn_message);
-	sprintf(message_buffer, warn_message, va);
-	strcat(message_buffer, MATLAB_WARN_MESSAGE);
-	va_end(va);
-	mexWarnMsgIdAndTxt(warn_id, warn_message);
 }

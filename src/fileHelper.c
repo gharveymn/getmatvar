@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 
 Superblock getSuperblock(void)
@@ -151,6 +151,15 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	while(TRUE)
 	{
+
+		//this covers cases:
+		//				already mapped, use this map
+		//				already mapped, in use, wait for lock and threads using to finish to remap
+		//				already mapped, in use, remapped while waiting, use that map
+		//				not mapped, acquire lock to map
+		//				not mapped, mapped while waiting for map lock, use that map
+		//				not mapped,
+
 		
 		//check if we have continuous mapping available (if yes then return pointer)
 		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
@@ -236,6 +245,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
+	
+	//TODO this doesn't work right now. Try Windows!
 	
 	//acquire locks
 	//locking this allows for a better chance of map reuse

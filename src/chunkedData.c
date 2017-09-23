@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 
 int num_threads;
@@ -20,10 +20,7 @@ Queue* thread_object_queue;
 #if UINTPTR_MAX == 0xffffffff
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
-
 #include "extlib/libdeflate/x64/libdeflate.h"
-
-
 #else
 //you need at least 19th century hardware to run this
 #endif

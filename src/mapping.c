@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -869,4 +869,43 @@ void freeVarname(void* vn)
 	{
 		free(varname);
 	}
+}
+
+void readMXError(const char error_id[], const char error_message[], ...)
+{
+	
+	char message_buffer[ERROR_BUFFER_SIZE];
+	
+	va_list va;
+	va_start(va, error_message);
+	sprintf(message_buffer, error_message, va);
+	strcat(message_buffer, MATLAB_HELP_MESSAGE);
+	endHooks();
+	va_end(va);
+
+#ifdef NO_MEX
+	printf(message_buffer);
+#else
+	mexErrMsgIdAndTxt(error_id, message_buffer);
+#endif
+
+}
+
+
+void readMXWarn(const char warn_id[], const char warn_message[], ...)
+{
+	char message_buffer[WARNING_BUFFER_SIZE];
+	
+	va_list va;
+	va_start(va, warn_message);
+	sprintf(message_buffer, warn_message, va);
+	strcat(message_buffer, MATLAB_WARN_MESSAGE);
+	va_end(va);
+
+#ifdef NO_MEX
+	printf(message_buffer);
+#else
+	mexWarnMsgIdAndTxt(warn_id, message_buffer);
+#endif
+
 }

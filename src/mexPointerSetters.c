@@ -1,4 +1,4 @@
-#include "getmatvar_.h"
+#include "mapping.h"
 
 //void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 //{

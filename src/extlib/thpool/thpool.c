@@ -252,7 +252,11 @@ void thpool_destroy(thpool_* thpool_p){
 void thpool_pause(thpool_* thpool_p) {
 	int n;
 	for (n=0; n < thpool_p->num_threads_alive; n++){
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 		pthread_kill(thpool_p->threads[n]->pthread, SIGINT);
+#else
+		pthread_kill(thpool_p->threads[n]->pthread, SIGUSR1);
+#endif
 	}
 }
 
@@ -339,14 +343,15 @@ static void* thread_do(struct thread* thread_p){
 	thpool_* thpool_p = thread_p->thpool_p;
 
 	/* Register signal handler */
-	// struct sigaction act;
-	// sigemptyset(&act.sa_mask);
-	// act.sa_flags = 0;
-	// signal
-	// act.sa_handler = thread_hold;
-	// if (sigaction(SIGUSR1, &act, NULL) == -1) {
-	// 	err("thread_do(): cannot handle SIGUSR1");
-	// }
+#if !((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
+	 struct sigaction act;
+	 sigemptyset(&act.sa_mask);
+	 act.sa_flags = 0;
+	 act.sa_handler = thread_hold;
+	 if (sigaction(SIGUSR1, &act, NULL) == -1) {
+	 	err("thread_do(): cannot handle SIGUSR1");
+	 }
+#endif
 
 	/* Mark thread as alive (initialized) */
 	pthread_mutex_lock(&thpool_p->thcount_lock);

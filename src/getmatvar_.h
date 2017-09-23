@@ -1,10 +1,6 @@
 #ifndef GETMATVAR__H
 #define GETMATVAR__H
 
-#include "mapping.h"
-#include <stdarg.h>
-
-
 //getmatvar.c
 Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename);
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type);
