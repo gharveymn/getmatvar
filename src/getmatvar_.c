@@ -5,7 +5,7 @@
 
 typedef enum
 {
-	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG
+	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG, SUPPRESS_WARN
 } kwarg;
 
 
@@ -20,6 +20,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	fd = -1;
 	num_threads_to_use = -1;
 	will_multithread = TRUE;
+	will_suppress_warnings = FALSE;
 	
 	if(nrhs < 1)
 	{
@@ -114,6 +115,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 					case MT_KWARG:
 						//TODO
 						break;
+					case SUPPRESS_WARN:
+						//this should not occur so fall through for debugging purposes
 					case NOT_AN_ARGUMENT:
 					default:
 						for(int j = num_vars - 1; j >= 0; j--)
@@ -138,6 +141,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 						if(strcmp(vn, "-threads") == 0)
 						{
 							kwarg_expected = THREAD_KWARG;
+						}
+						else if(strcmp(vn, "-suppress-warnings") == 0)
+						{
+							will_suppress_warnings = TRUE;
+							kwarg_flag = FALSE;
 						}
 					}
 					else
@@ -289,9 +297,8 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function-handles are not yet supported (proprietary).");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
-				objects[index]->data_arrays.is_mx_used = FALSE;
+				setFHPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				objects[index]->data_arrays.is_mx_used = FALSE; //the data stored by this object is irrelevant
 				break;
 			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");

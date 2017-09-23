@@ -2,7 +2,7 @@
 #define MAPPING_H
 
 //#define DO_MEMDUMP
-#define NO_MEX
+//#define NO_MEX
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,15 +14,23 @@
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
+
+
 #ifndef NO_MEX
+
 #include <mex.h>
+
+
 #endif
+
 #include <stdarg.h>
 #include "ezq.h"
 #include "extlib/thpool/thpool.h"
 
+
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 #pragma message ("getmatvar is compiling on WINDOWS")
+
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #include <pthread.h>
@@ -42,6 +50,7 @@ typedef uint64_t OffsetType;
 #define FALSE 0
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
+#define FUNCTION_HANDLE_SIGNATURE "R2VuZSBIYXJ2ZXkgOik="
 #define TREE 0
 #define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
@@ -56,8 +65,8 @@ typedef uint64_t OffsetType;
 #define WARNING_BUFFER_SIZE 1000
 #define MATFILE_SIG_LENGTH 19
 
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-#define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
+#define MIN(X, Y) (((X) < (Y))? (X) : (Y))
+#define MAX(X, Y) (((X) > (Y))? (X) : (Y))
 
 #define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
                          "\tgetmatvar(filename,variable1,...,variableN)\n\n" \
@@ -196,6 +205,7 @@ typedef struct
 typedef struct
 {
 	int is_mx_used;
+	uint32_t usage_bitfield; //use bitshifts to indicate where to free data
 	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
 	int8_t* i8_data;
 	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
@@ -376,6 +386,7 @@ threadpool threads;
 int num_avail_threads;
 int num_threads_to_use;
 bool_t will_multithread;
+bool_t will_suppress_warnings;
 
 bool_t threads_are_started; //only start the thread pool once
 pthread_mutex_t thread_acquisition_lock;
@@ -400,7 +411,10 @@ pthread_spinlock_t if_lock;
 #endif
 
 #ifndef NO_MEX
+
 #include "getmatvar_.h"
+
+
 #endif
 
 #endif

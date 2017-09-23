@@ -20,6 +20,7 @@ void setUI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwI
 void setI64Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
+void setFHPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
 DataArrays rearrangeImaginaryData(Data* object);

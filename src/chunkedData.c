@@ -5,8 +5,8 @@ int num_threads;
 static Data* object;
 TreeNode root;
 bool_t is_working;
-pthread_t gc;
-pthread_attr_t attr;
+//pthread_t gc;
+//pthread_attr_t attr;
 
 typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
@@ -21,6 +21,8 @@ Queue* thread_object_queue;
 #include "extlib/libdeflate/x86/libdeflate.h"
 #elif UINTPTR_MAX == 0xffffffffffffffff
 #include "extlib/libdeflate/x64/libdeflate.h"
+
+
 #else
 //you need at least 19th century hardware to run this
 #endif
@@ -154,14 +156,14 @@ void* doInflate_(void* t)
 				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateShortOutput");
 				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
-					   "'actual_out_nbytes_ret' was provided, but the data would have"
-					   " decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+						"'actual_out_nbytes_ret' was provided, but the data would have"
+						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
 				object->type = ERROR_DATA;
 				sprintf(object->name, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
-					   "%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
+						"%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
 				return (void*)&thread_obj->err;
 			default:
 				//do nothing
@@ -222,7 +224,7 @@ void* doInflate_(void* t)
 				{
 					chunk_pos[j] = 0;
 					chunk_pos[j + 1]++;
-					curr_max_dim = curr_max_dim <= j + 1 ? curr_max_dim + (uint8_t)1 : curr_max_dim;
+					curr_max_dim = curr_max_dim <= j + 1? curr_max_dim + (uint8_t)1 : curr_max_dim;
 					use_update++;
 				}
 			}
@@ -429,6 +431,7 @@ void freeTree(TreeNode* node)
 		}
 	}
 }
+
 
 #ifdef DO_MEMDUMP
 void memdump(const char* type)

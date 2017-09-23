@@ -116,10 +116,10 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
 	
 	//map new page at needed location
 	//TODO check if we even need to do this... I don't think so
-	size_t offset_denom = alloc_gran < file_size ? alloc_gran : file_size;
+	size_t offset_denom = alloc_gran < file_size? alloc_gran : file_size;
 	these_maps[map_index].offset = (OffsetType)((address/offset_denom)*offset_denom);
 	these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
-	these_maps[map_index].bytes_mapped = these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset ? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
+	these_maps[map_index].bytes_mapped = these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
 	these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
 	
 	these_maps[map_index].used = TRUE;
@@ -151,7 +151,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	while(TRUE)
 	{
-
+		
 		//this covers cases:
 		//				already mapped, use this map
 		//				already mapped, in use, wait for lock and threads using to finish to remap
@@ -159,7 +159,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		//				not mapped, acquire lock to map
 		//				not mapped, mapped while waiting for map lock, use that map
 		//				not mapped,
-
+		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
 		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
@@ -390,11 +390,11 @@ byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type
 		}
 		
 		//map new page at needed location
-		size_t offset_denom = alloc_gran < file_size ? alloc_gran : file_size;
+		size_t offset_denom = alloc_gran < file_size? alloc_gran : file_size;
 		these_maps[map_index].offset = (OffsetType)((address/offset_denom)*offset_denom);
 		these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
 		these_maps[map_index].bytes_mapped =
-			   these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset ? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
+				these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
 		these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
 		these_maps[map_index].used = TRUE;
 		if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
@@ -480,7 +480,7 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 		objects[i]->name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		objects[i]->parent_obj_header_address = this_trio->parent_obj_header_address;
 		objects[i]->this_obj_header_address =
-			   getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(objects[i]->name, (char*)(heap_data_segment_pointer + objects[i]->name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
 		objects[i]->parent_tree_address = parent_trio->tree_address;
@@ -506,23 +506,23 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 				
 			}
 			
-			if(strncmp(objects[i]->name, "#", 1) != 0 && strncmp(objects[i]->name, "function_handle", 15) != 0)
+			if(strncmp(objects[i]->name, "#", 1) != 0)// && strncmp(objects[i]->name, "function_handle", 15) != 0)
 			{
 				enqueue(header_queue, objects[i]);
 			}
 			
 			//if the variable has been found we should keep going down the tree for that variable
 			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 && strncmp(objects[i]->name, "function_handle", 15) != 0 && get_top_level == FALSE)
+			if(cache_type == 1 && strncmp(objects[i]->name, "#", 1) != 0 && get_top_level == FALSE)//&& strncmp(objects[i]->name, "function_handle", 15) != 0)
 			{
 				
 				//if another tree exists for this object, put it on the queue
 				trio = malloc(sizeof(AddrTrio));
 				trio->parent_obj_header_address = objects[i]->this_obj_header_address;
 				trio->tree_address =
-					   getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+						getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				trio->heap_address =
-					   getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+						getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				objects[i]->sub_tree_address = trio->tree_address;
 				priorityEnqueue(addr_queue, trio);
 				parseHeaderTree(FALSE);

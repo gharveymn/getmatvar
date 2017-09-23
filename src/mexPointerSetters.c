@@ -352,6 +352,23 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 }
 
 
+void setFHPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
+{
+	mxArray* mxFHPtr = mxCreateString(object->matlab_class);
+	
+	if(super_structure_type == STRUCT_DATA)
+	{
+		mxSetField(returnStructure, 0, varname, mxFHPtr);
+	}
+	else if(super_structure_type == REF_DATA)
+	{
+		//is a cell array
+		mxSetCell(returnStructure, index, mxFHPtr);
+	}
+	
+}
+
+
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
