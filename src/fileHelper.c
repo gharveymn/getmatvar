@@ -164,13 +164,15 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 		//check if we have continuous mapping available (if yes then return pointer)
 		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 		{
-
+		
 #ifdef DO_MEMDUMP
 			memdump("R");
 #endif
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			page_objects[start_page].num_using++;
+			page_objects[start_page].last_use_time_stamp = usage_iterator;
+			usage_iterator++;
 			pthread_mutex_unlock(&page_objects[start_page].lock);
 			
 			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
@@ -241,6 +243,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	memdump("M");
 #endif
 	
+	page_objects[start_page].last_use_time_stamp = usage_iterator;
+	usage_iterator++;
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 	
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
@@ -338,7 +342,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	page_objects[start_page].is_mapped = TRUE;
 	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
 	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
-
+	
 #ifdef DO_MEMDUMP
 	memdump("M");
 #endif

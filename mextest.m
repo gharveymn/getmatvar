@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/anon_func.mat';
+file = 'res/alltypes.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};

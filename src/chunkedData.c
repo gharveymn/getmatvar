@@ -68,8 +68,6 @@ errno_t getChunkedData(Data* obj)
 	
 	//TODO after multithreaded mapping is stable work on GC system using global iterator
 	//TODO capture sections using the acquisition lock?
-//	pthread_t gc;
-//
 //	is_working = TRUE;
 //	pthread_attr_init(&attr);
 //	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -469,16 +467,27 @@ void memdump(const char* type)
 
 void* garbageCollection_(void* nothing)
 {
+	
+	uint32_t num_gc = 1;
+	
 	while(is_working == TRUE)
 	{
 		for(int i = 0; i < num_pages; i++)
 		{
 			if(pthread_mutex_trylock(&page_objects[i].lock) != EBUSY && page_objects[i].is_mapped == TRUE)
 			{
-				if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
+				//see if this page is probably going to be used again
+				uint32_t usage_offset = usage_iterator - page_objects[i].last_use_time_stamp;
+				if(page_objects[i].num_using == 0 && usage_offset > sum_usage_offset/num_gc)
 				{
-					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
+					if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
+					{
+						readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
+					}
+					sum_usage_offset += usage_offset;
 				}
+				page_objects[i].is_mapped = FALSE;
+				pthread_mutex_unlock(&page_objects[i].lock);
 			}
 		}
 	}

@@ -361,8 +361,9 @@ void initializePageObjects(void)
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
 		page_objects[i].num_using = 0;
-		page_objects[i].needs_relock = FALSE;
+		page_objects[i].last_use_time_stamp = 0;
 	}
+	usage_iterator = 0;
 	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }
 

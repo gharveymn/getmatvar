@@ -293,7 +293,7 @@ typedef struct
 	uint64_t map_end; //if already mapped by windows, what offset this map extends to
 	byte* pg_start_p;
 	uint8_t num_using;
-	bool_t needs_relock;
+	uint32_t last_use_time_stamp;
 } pageObject;
 
 //fileHelper.c
@@ -396,6 +396,9 @@ bool_t will_suppress_warnings;
 bool_t threads_are_started; //only start the thread pool once
 pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
+
+uint32_t usage_iterator;
+double sum_usage_offset;
 
 #ifdef DO_MEMDUMP
 FILE* dump;
