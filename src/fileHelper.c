@@ -143,7 +143,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
-#if !((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
+#if ((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
 	
 	//in Windows the .is_mapped becomes a flag for if the mapping originally came from this object
 	//if there is a map available the map_start and map_end addresses indicate where the start and end are
@@ -209,7 +209,8 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	//if this page has already been mapped unmap since we can't fit
 	if(page_objects[start_page].is_mapped == TRUE)
 	{
-		if(munmap(page_objects[start_page].pg_start_p, 0) != 0)
+		//second parameter doesnt do anything on windows
+		if(munmap(page_objects[start_page].pg_start_p, page_objects[start_page].map_end - page_objects[start_page].map_base) != 0)
 		{
 			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
 		}
@@ -246,203 +247,86 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
 	
-	//TODO this doesn't work right now. Try Windows!
 	
-//	while(TRUE)
-//	{
+	//This is the same as on Windows, which I now think my just be a better idea than unmapping subsections.
+	//The overhead associated with checks needed to make sure no other maps are using each subsection is
+	//probably too high, and it is very difficult to program/error prone.
+	
+	while(TRUE)
+	{
 		
-		//this can change while waiting
+		//this covers cases:
+		//				already mapped, use this map
+		//				already mapped, in use, wait for lock and threads using to finish to remap
+		//				already mapped, in use, remapped while waiting, use that map
+		//				not mapped, acquire lock to map
+		//				not mapped, mapped while waiting for map lock, use that map
+		//				not mapped
+		
+		
+		//check if we have continuous mapping available (if yes then return pointer)
 		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 		{
-			
-			//If this is true I'm going to try to acquire all of the locks for the pages I need
-			//and signal my intent to use them. If I can't get one of the locks then
-			//I'll signal that I'm done and release all of them
-			
-			bool_t is_continuous = TRUE;
-			for(size_t i = start_page; i <= end_page; i++)
-			{
-				
-				//passive lock mechanism
-				if(pthread_mutex_trylock(&page_objects[i].lock) == EBUSY)
-				{
-					for(size_t j = i - 1; j >= start_page; j--)
-					{
-						pthread_mutex_unlock(&page_objects[j].lock);
-					}
-					is_continuous = FALSE;
-					break;
-				}
-				
-				
-				if(page_objects[i].map_base != page_objects[start_page].map_base || page_objects[i].is_mapped == FALSE)
-				{
-					//we acquired this lock as well, so make sure j = i is the start
-					for(size_t j = i; j >= start_page; j--)
-					{
-						pthread_mutex_unlock(&page_objects[j].lock);
-					}
-					is_continuous = FALSE;
-					break;
-				}
-			}
-			
-			//if is_continuous true I should still have all the locks in this address space
-			
-			if(is_continuous == TRUE)
-			{
 
 #ifdef DO_MEMDUMP
-				memdump("R");
+			memdump("R");
 #endif
-				
-				//I confirmed that I added my intent to each of the pages, now I can release
-				//all of my locks knowing that the pages cant be remapped while im using them
-				
-				for(size_t i = start_page; i <= end_page; i++)
-				{
-					page_objects[i].num_using++;
-					pthread_mutex_unlock(&page_objects[i].lock);
-				}
-				
-				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
-			}
+			
+			pthread_mutex_lock(&page_objects[start_page].lock);
+			page_objects[start_page].num_using++;
+			pthread_mutex_unlock(&page_objects[start_page].lock);
+			
+			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			
 		}
 		else
 		{
 			
-			//same method, try to acquire all of the locks, but give priority to the reusers, so don't lock on check
+			//acquire lock if we need to remap
+			//lock the if so there isn't deadlock
 			pthread_spin_lock(&if_lock);
-			
-			//this section is locked, so safe to check all nums
-			
-			//quick entry check
-//			if(page_objects[start_page].num_using == 0)
-//			{
-//				bool_t is_clear = TRUE;
-//				for(size_t i = start_page; i <= end_page; i++)
-//				{
-//					if(page_objects[i].num_using != 0)
-//					{
-//						is_clear = FALSE;
-//						break;
-//					}
-//				}
-//
-//				if(is_clear == TRUE)
-//				{
-//
-//					//ensure locking of the rest of the pages
-//
-//					for(size_t i = start_page; i <= end_page; i++)
-//					{
-//						pthread_mutex_lock(&page_objects[i].lock);
-//					}
-//
-//					//recheck because some object may have started using it while waiting for locks
-//					while(TRUE)
-//					{
-//						bool_t recheck_is_clear = TRUE;
-//						for(size_t i = start_page; i <= end_page; i++)
-//						{
-//							if(page_objects[i].num_using != 0)
-//							{
-//								//these pages can't get remapped by another thread because of if_lock, so unlock them so they can
-//								//signal they are done being used
-//								recheck_is_clear = FALSE;
-//								page_objects[i].needs_relock = TRUE;
-//								pthread_mutex_unlock(&page_objects[i].lock);
-//							}
-//							else
-//							{
-//								page_objects[i].num_using++;
-//							}
-//						}
-//
-//						if(recheck_is_clear == TRUE)
-//						{
-//							break;
-//						}
-//
-//
-//						//after unlocking for processes to finish relock those pages
-//						for(size_t i = start_page; i <= end_page; i++)
-//						{
-//							if(page_objects[i].needs_relock == TRUE)
-//							{
-//								while(TRUE)
-//								{
-//									//loop until we absolutely have a clean lock
-//									pthread_mutex_lock(&page_objects[i].lock);
-//									if(page_objects[i].num_using != 0)
-//									{
-//										break;
-//									}
-//									else
-//									{
-//										pthread_mutex_unlock(&page_objects[i].lock);
-//									}
-//
-//								}
-//							}
-//							page_objects[i].needs_relock = FALSE;
-//
-//						}
-//
-//					}
-//
-//					pthread_spin_unlock(&if_lock);
-//					break;
-//
-//
-//				}
-//
-//			}
-
-			for(size_t i = start_page; i <= end_page; i++)
+			if(page_objects[start_page].num_using == 0)
 			{
-				//note that no other threads can remap while doing this
-				while(TRUE)
+				pthread_mutex_lock(&page_objects[start_page].lock);
+				
+				//the state may have changed while acquiring the lock, so check again
+				if(page_objects[start_page].num_using == 0)
 				{
-					pthread_mutex_lock(&page_objects[i].lock);
-					if(page_objects[i].num_using != 0)
-					{
-						pthread_mutex_unlock(&page_objects[i].lock);
-					}
-					else
-					{
-						page_objects[i].num_using++;
-						break;
-					}
+					page_objects[start_page].num_using++;
+					pthread_spin_unlock(&if_lock);
+					break;
+				}
+				else
+				{
+					pthread_mutex_unlock(&page_objects[start_page].lock);
 				}
 			}
-			
 			pthread_spin_unlock(&if_lock);
-		
+			
 		}
 		
-	//}
-	
-	//implicit else
-	
-	for(size_t i = start_page; i <= end_page; i++)
-	{
-		if(page_objects[i].is_mapped == TRUE && page_objects[i].pg_start_p != NULL)
-		{
-			if(munmap(page_objects[i].pg_start_p, page_objects[i].pg_end_a - page_objects[i].pg_start_a) != 0)
-			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
-			}
-			page_objects[i].is_mapped = FALSE;
-			page_objects[i].pg_start_p = NULL;
-			page_objects[i].map_base = UNDEF_ADDR;
-			page_objects[i].map_end = UNDEF_ADDR;
-		}
 	}
 	
+	
+	
+	//if this page has already been mapped unmap since we can't fit
+	if(page_objects[start_page].is_mapped == TRUE)
+	{
+		if(munmap(page_objects[start_page].pg_start_p, page_objects[start_page].map_end - page_objects[start_page].map_base) != 0)
+		{
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+		}
+		
+		page_objects[start_page].is_mapped = FALSE;
+		page_objects[start_page].pg_start_p = NULL;
+		page_objects[start_page].map_base = UNDEF_ADDR;
+		page_objects[start_page].map_end = UNDEF_ADDR;
+
 #ifdef DO_MEMDUMP
 		memdump("U");
 #endif
+	
+	}
 	
 	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
 	
@@ -454,17 +338,9 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 	page_objects[start_page].is_mapped = TRUE;
 	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
 	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
-	
-	for(size_t i = start_page + 1; i <= end_page; i++)
-	{
-		page_objects[i].is_mapped = TRUE;
-		page_objects[i].pg_start_p = page_objects[i - 1].pg_start_p + alloc_gran;
-		page_objects[i].map_base = page_objects[start_page].pg_start_a;
-		page_objects[i].map_end = page_objects[end_page].pg_end_a;
-    }
-	
+
 #ifdef DO_MEMDUMP
-		memdump("M");
+	memdump("M");
 #endif
 	
 	pthread_mutex_unlock(&page_objects[start_page].lock);
@@ -481,7 +357,7 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 	
 	//call this after done with using the pointer
 	size_t start_page = address/alloc_gran;
-	size_t end_page = (address + bytes_needed)/alloc_gran; //INCLUSIVE
+	//size_t end_page = (address + bytes_needed)/alloc_gran; //INCLUSIVE
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
@@ -493,13 +369,9 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 #else /*-----------------------------------------UNIX-----------------------------------------*/
 	
 	//release locks
-	for(size_t i = start_page; i <= end_page; i++)
-	{
-		pthread_mutex_lock(&page_objects[i].lock);
-		page_objects[i].num_using--;
-		pthread_mutex_unlock(&page_objects[i].lock);
-	}
-
+	pthread_mutex_lock(&page_objects[start_page].lock);
+	page_objects[start_page].num_using--;
+	pthread_mutex_unlock(&page_objects[start_page].lock);
 #endif
 
 }
