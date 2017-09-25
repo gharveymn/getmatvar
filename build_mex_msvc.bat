@@ -1,4 +1,4 @@
 @echo off
-cd build
+cd mexbuildmsvc
 rebuild.bat
 cd ..

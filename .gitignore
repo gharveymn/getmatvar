@@ -1,6 +1,6 @@
 cmake-build*/
-buildmingw/*
-build/*
+debugbuild*/*
+mexbuild*/*
 !*build.bat
 !*rebuild.bat
 .vs

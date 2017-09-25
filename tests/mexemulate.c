@@ -190,21 +190,6 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 }
 
 
-/*this intializer should be called in the entry function before anything else */
-void initialize(void)
-{
-	//init maps, needed so we don't confuse ending hooks in the case of error
-	initializeMaps();
-	addr_queue = NULL;
-	varname_queue = NULL;
-	header_queue = NULL;
-	fd = -1;
-	num_threads_to_use = -1;
-	will_multithread = TRUE;
-	will_suppress_warnings = FALSE;
-}
-
-
 Queue* makeReturnStructure(const int num_elems, char** full_variable_names, const char* filename)
 {
 	

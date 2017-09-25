@@ -1,4 +1,4 @@
 @echo off
-cd buildmingw
+cd mexbuildmingw
 rebuild.bat
 cd ..
