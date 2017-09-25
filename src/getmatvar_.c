@@ -1,26 +1,10 @@
 #include "mapping.h"
 
 
-#define mxSTRING_CLASS 19
-
-typedef enum
-{
-	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG, SUPPRESS_WARN
-} kwarg;
-
-
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
-	//init maps, needed so we don't confuse ending hooks in the case of error
-	initializeMaps();
-	addr_queue = NULL;
-	varname_queue = NULL;
-	header_queue = NULL;
-	fd = -1;
-	num_threads_to_use = -1;
-	will_multithread = TRUE;
-	will_suppress_warnings = FALSE;
+	initialize();
 	
 	if(nrhs < 1)
 	{
@@ -28,156 +12,15 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	}
 	else if(nlhs > 1)
 	{
-		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than one output.\n\n");
+		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than two outputs.\n\n");
 	}
 	else
 	{
-		if(mxGetClassID(prhs[0]) != mxCHAR_CLASS)
-		{
-			readMXError("getmatvar:invalidFileNameType", "The file name must be a character vector\n\n");
-		}
-		const char* filename = mxArrayToString(prhs[0]);
-
-//		later checks are available now, no need to restrict file extensions
-//		if(strstr(filename, ".mat") == NULL)
-//		{
-//			readMXError("getmatvar:invalidFilename", "The filename must end with .mat\n\n");
-//		}
 		
-		char** full_variable_names;
-		int num_vars = 0;
-		full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
-		kwarg kwarg_expected = NOT_AN_ARGUMENT;
-		bool_t kwarg_flag = FALSE;
-		for(int i = 0; i < nrhs - 1; i++)
-		{
-			if(kwarg_flag == TRUE)
-			{
-				switch(kwarg_expected)
-				{
-					case THREAD_KWARG:
-						
-						if(mxIsNumeric(prhs[i + 1]) && mxIsScalar(prhs[i + 1]))
-						{
-							num_threads_to_use = (int)mxGetScalar(prhs[i + 1]);
-						}
-						else if(mxIsChar(prhs[i + 1]))
-						{
-							
-							char* input = mxArrayToString(prhs[i + 1]);
-							
-							//verify all chars are numeric
-							for(int k = 0; k < mxGetNumberOfElements(prhs[i + 1]); k++)
-							{
-								if((input[k] - '0') > 9 || (input[k] - '0') < 0)
-								{
-									for(int j = num_vars - 1; j >= 0; j--)
-									{
-										free(full_variable_names[j]);
-									}
-									free(full_variable_names);
-									readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
-								}
-							}
-							
-							char* endptr;
-							long res = (int)strtol(input, &endptr, 10);
-							num_threads_to_use = (int)res;
-							if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
-							{
-								for(int j = num_vars - 1; j >= 0; j--)
-								{
-									free(full_variable_names[j]);
-								}
-								free(full_variable_names);
-								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
-							}
-						}
-						
-						if(num_threads_to_use < 0)
-						{
-							for(int j = num_vars - 1; j >= 0; j--)
-							{
-								free(full_variable_names[j]);
-							}
-							free(full_variable_names);
-							readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
-						}
-						
-						
-						//TEMPORARY, REMOVE WHEN WE HAVE MT_KWARG WORKING
-						if(num_threads_to_use == 0)
-						{
-							num_threads_to_use = -1;
-						}
-						
-						break;
-					case MT_KWARG:
-						//TODO
-						break;
-					case SUPPRESS_WARN:
-						//this should not occur so fall through for debugging purposes
-					case NOT_AN_ARGUMENT:
-					default:
-						for(int j = num_vars - 1; j >= 0; j--)
-						{
-							free(full_variable_names[j]);
-						}
-						free(full_variable_names);
-						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
-					
-				}
-				kwarg_expected = NOT_AN_ARGUMENT;
-				kwarg_flag = FALSE;
-			}
-			else
-			{
-				if(mxIsChar(prhs[i + 1]) || mxGetClassID(prhs[i + 1]) == mxSTRING_CLASS)
-				{
-					char* vn = mxArrayToString(prhs[i + 1]);
-					if(strncmp(vn, "-", 1) == 0)
-					{
-						kwarg_flag = TRUE;
-						if(strcmp(vn, "-threads") == 0)
-						{
-							kwarg_expected = THREAD_KWARG;
-						}
-						else if(strcmp(vn, "-suppress-warnings") == 0)
-						{
-							will_suppress_warnings = TRUE;
-							kwarg_flag = FALSE;
-						}
-					}
-					else
-					{
-						kwarg_expected = NOT_AN_ARGUMENT;
-						full_variable_names[num_vars] = malloc(strlen(vn)*sizeof(char)); /*this gets freed in getDataObjects*/
-						strcpy(full_variable_names[num_vars], vn);
-						num_vars++;
-					}
-				}
-				else
-				{
-					for(int j = num_vars - 1; j >= 0; j--)
-					{
-						free(full_variable_names[j]);
-					}
-					free(full_variable_names);
-					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
-				}
-			}
-		}
+		paramStruct parameters;
+		readInput(nrhs, prhs, &parameters);
 		
-		if(num_vars == 0)
-		{
-			free(full_variable_names);
-			full_variable_names = malloc(2*sizeof(char*));
-			full_variable_names[0] = "\0";
-			num_vars = 1;
-		}
-		full_variable_names[num_vars] = NULL;
-		
-		Queue* error_objects = makeReturnStructure(plhs, num_vars, full_variable_names, filename);
+		Queue* error_objects = makeReturnStructure(plhs, parameters.num_vars, parameters.full_variable_names, parameters.filename);
 		if(error_objects != NULL)
 		{
 			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
@@ -222,10 +65,10 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 		}
 	}
 	
-	//#pragma GCC diagnostic push
-	//#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
-	//#pragma GCC diagnostic pop
+	#pragma GCC diagnostic pop
 	
 	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT_DATA);
 	
@@ -294,7 +137,14 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				//setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				
+				/*remove this section when system is ready*/
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported.");
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
+				objects[index]->data_arrays.is_mx_used = FALSE;
+				/*remove this section when system is ready*/
+				
 				break;
 			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
@@ -316,4 +166,196 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	
 	return returnStructure;
 	
+}
+
+
+void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
+{
+	if(mxGetClassID(prhs[0]) != mxCHAR_CLASS)
+	{
+		readMXError("getmatvar:invalidFileNameType", "The file name must be a character vector\n\n");
+	}
+	
+	char* input;
+	parameters->filename = mxArrayToString(prhs[0]);
+	parameters->num_vars = 0;
+	parameters->full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
+	kwarg kwarg_expected = NOT_AN_ARGUMENT;
+	bool_t kwarg_flag = FALSE;
+	for(int i = 1; i < nrhs; i++)
+	{
+		
+		if(mxGetClassID(prhs[i]) == mxSTRING_CLASS)
+		{
+			for(int j = parameters->num_vars - 1; j >= 0; j--)
+			{
+				free(parameters->full_variable_names[j]);
+			}
+			free(parameters->full_variable_names);
+			readMXError("getmatvar:invalidInputType", "This function does not support strings.\n\n");
+		}
+		
+		if(kwarg_flag == TRUE)
+		{
+			switch(kwarg_expected)
+			{
+				case THREAD_KWARG:
+					
+					if(mxIsNumeric(prhs[i]) && mxIsScalar(prhs[i]))
+					{
+						num_threads_to_use = (int)mxGetScalar(prhs[i]);
+					}
+					else if(mxIsChar(prhs[i]))
+					{
+						
+						input = mxArrayToString(prhs[i]);
+						
+						//verify all chars are numeric
+						for(int k = 0; k < mxGetNumberOfElements(prhs[i]); k++)
+						{
+							if((input[k] - '0') > 9 || (input[k] - '0') < 0)
+							{
+								for(int j = parameters->num_vars - 1; j >= 0; j--)
+								{
+									free(parameters->full_variable_names[j]);
+								}
+								free(parameters->full_variable_names);
+								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
+							}
+						}
+						
+						char* endptr;
+						long res = (int)strtol(input, &endptr, 10);
+						num_threads_to_use = (int)res;
+						if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
+						{
+							for(int j = parameters->num_vars - 1; j >= 0; j--)
+							{
+								free(parameters->full_variable_names[j]);
+							}
+							free(parameters->full_variable_names);
+							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
+						}
+					}
+					
+					if(num_threads_to_use < 0)
+					{
+						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						{
+							free(parameters->full_variable_names[j]);
+						}
+						free(parameters->full_variable_names);
+						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
+					}
+					
+					
+					//TEMPORARY, REMOVE WHEN WE HAVE MT_KWARG WORKING
+					if(num_threads_to_use == 0)
+					{
+						num_threads_to_use = -1;
+					}
+					
+					break;
+				case MT_KWARG:
+					if(mxIsLogical(prhs[i]) == TRUE)
+					{
+						will_multithread = *mxGetLogicals(prhs[i]);
+					}
+					else if(mxIsNumeric(prhs[i]) == TRUE)
+					{
+						will_multithread = *(bool_t*)mxGetData(prhs[i]);
+					}
+					else if(mxIsChar(prhs[i]) == TRUE)
+					{
+						input = mxArrayToString(prhs[i]);
+						if(strncmp(input, "f",1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x48") == 0)
+						{
+							will_multithread = FALSE;
+						}
+						else
+						{
+							goto mt_error;
+						}
+					}
+					else
+					{
+					mt_error:
+						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						{
+							free(parameters->full_variable_names[j]);
+						}
+						free(parameters->full_variable_names);
+						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
+					}
+					
+					if(will_multithread != FALSE && will_multithread != TRUE)
+					{
+						goto mt_error;
+					}
+					break;
+				case SUPPRESS_WARN:
+					//this should not occur so fall through for debugging purposes
+				case NOT_AN_ARGUMENT:
+				default:
+					for(int j = parameters->num_vars - 1; j >= 0; j--)
+					{
+						free(parameters->full_variable_names[j]);
+					}
+					free(parameters->full_variable_names);
+					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
+				
+			}
+			kwarg_expected = NOT_AN_ARGUMENT;
+			kwarg_flag = FALSE;
+		}
+		else
+		{
+			if(mxIsChar(prhs[i]))
+			{
+				input = mxArrayToString(prhs[i]);
+				if(strncmp(input, "-", 1) == 0)
+				{
+					kwarg_flag = TRUE;
+					if(strcmp(input, "-t") == 0)
+					{
+						kwarg_expected = THREAD_KWARG;
+					}
+					else if(strcmp(input, "-m") == 0)
+					{
+						kwarg_expected = MT_KWARG;
+					}
+					else if(strcmp(input, "-suppress-warnings") == 0 || strcmp(input, "-sw") == 0)
+					{
+						will_suppress_warnings = TRUE;
+						kwarg_flag = FALSE;
+					}
+				}
+				else
+				{
+					kwarg_expected = NOT_AN_ARGUMENT;
+					parameters->full_variable_names[parameters->num_vars] = malloc(strlen(input)*sizeof(char)); /*this gets freed in getDataObjects*/
+					strcpy(parameters->full_variable_names[parameters->num_vars], input);
+					parameters->num_vars++;
+				}
+			}
+			else
+			{
+				for(int j = parameters->num_vars - 1; j >= 0; j--)
+				{
+					free(parameters->full_variable_names[j]);
+				}
+				free(parameters->full_variable_names);
+				readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
+			}
+		}
+	}
+	
+	if(parameters->num_vars == 0)
+	{
+		free(parameters->full_variable_names);
+		parameters->full_variable_names = malloc(2*sizeof(char*));
+		parameters->full_variable_names[0] = "\0";
+		parameters->num_vars = 1;
+	}
+	parameters->full_variable_names[parameters->num_vars] = NULL;
 }

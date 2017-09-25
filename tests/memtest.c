@@ -22,7 +22,6 @@ int main(int argc, char* argv[])
 	Data* front_object = peekQueue(objects, QUEUE_FRONT);
 	if((ERROR_DATA & front_object->type) == ERROR_DATA)
 	{
-		Data* front_object = peekQueue(objects, QUEUE_FRONT);
 		char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
 		strcpy(err_id, front_object->name);
 		strcpy(err_string, front_object->matlab_class);

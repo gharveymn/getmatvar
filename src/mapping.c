@@ -1,4 +1,5 @@
 #include "mapping.h"
+//#pragma message ("getmatvar is compiling on WINDOWS")
 
 
 Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
@@ -422,6 +423,7 @@ void initializeObject(Data* object)
 		object->chunked_info.filters[i].client_data = NULL;
 	}
 	
+	object->super_object = NULL;
 	object->sub_objects = NULL;
 	
 	//zero by default for REF_DATA data
@@ -909,7 +911,7 @@ Data* organizeObjects(Queue* objects)
 	
 	if(super_object->type == STRUCT_DATA || super_object->type == REF_DATA)
 	{
-		placeInSuperObject(super_object, objects, objects->length);
+		placeInSuperObject(super_object, objects, objects->length, 0 );
 	}
 	
 	return super_object;
@@ -917,9 +919,11 @@ Data* organizeObjects(Queue* objects)
 }
 
 
-void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
+void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth)
 {
 	//note: index should be at the starting index of the subobjects
+	
+	max_depth = max_depth < curr_depth? curr_depth : max_depth;
 	
 	super_object->num_sub_objs = 0;
 	super_object->sub_objects = malloc(num_objs_left*sizeof(Data*));
@@ -927,11 +931,12 @@ void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left)
 	
 	while(super_object->this_obj_address == curr->parent_obj_address)
 	{
+		curr->super_object = super_object;
 		super_object->sub_objects[super_object->num_sub_objs] = curr;
 		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA || super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
 		{
 			//since this is a depth-first traversal
-			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length);
+			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length, curr_depth + 1);
 		}
 		curr = dequeue(objects);
 		super_object->num_sub_objs++;
@@ -950,6 +955,22 @@ void freeVarname(void* vn)
 }
 
 
+/*this intializer should be called in the entry function before anything else */
+void initialize(void)
+{
+	//init maps, needed so we don't confuse ending hooks in the case of error
+	initializeMaps();
+	addr_queue = NULL;
+	varname_queue = NULL;
+	header_queue = NULL;
+	fd = -1;
+	num_threads_to_use = -1;
+	will_multithread = TRUE;
+	will_suppress_warnings = FALSE;
+	max_depth = 0;
+}
+
+
 void readMXError(const char error_id[], const char error_message[], ...)
 {
 	
@@ -963,7 +984,7 @@ void readMXError(const char error_id[], const char error_message[], ...)
 	va_end(va);
 
 #ifdef NO_MEX
-	printf(message_buffer);
+	fprintf(stdout, message_buffer);
 #else
 	mexErrMsgIdAndTxt(error_id, message_buffer);
 #endif
@@ -985,7 +1006,8 @@ void readMXWarn(const char warn_id[], const char warn_message[], ...)
 		va_end(va);
 
 #ifdef NO_MEX
-		printf(message_buffer);
+		fprintf(stdout, message_buffer);
+		exit(1);
 #else
 		mexWarnMsgIdAndTxt(warn_id, message_buffer);
 #endif

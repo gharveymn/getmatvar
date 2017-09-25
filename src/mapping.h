@@ -33,14 +33,15 @@
 
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
-#pragma message ("getmatvar is compiling on WINDOWS")
+//#pragma message ("getmatvar is compiling on WINDOWS")
+
 
 #include "extlib/mman-win32/mman.h"
 #include "extlib/param.h"
 #include <pthread.h>
 //#include "extlib/pthreads-win32/include/pthread.h"
 #else
-#pragma message ("getmatvar is compiling on UNIX")
+//#pragma message ("getmatvar is compiling on UNIX")
 #include <pthread.h>
 #include <endian.h>
 #include <sys/mman.h>
@@ -247,6 +248,7 @@ struct data_
 	uint64_t parent_obj_address;
 	uint64_t this_obj_address;
 	
+	Data* super_object;
 	Data** sub_objects;
 	uint32_t num_sub_objs;
 };
@@ -296,6 +298,23 @@ typedef struct
 	uint32_t last_use_time_stamp;
 } pageObject;
 
+//mapping.c
+Queue* getDataObjects(const char* filename, char** variable_names, int num_names);
+void findHeaderAddress(char* variable_name, bool_t get_top_level);
+void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
+Data* organizeObjects(Queue* objects);
+void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth);
+errno_t allocateSpace(Data* object);
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
+void initializeMaps(void);
+void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
+void initializeObject(Data* object);
+uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
+void parseHeaderTree(bool_t get_top_level);
+void initializePageObjects(void);
+void freeVarname(void* vn);
+void initialize(void);
+
 //fileHelper.c
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
@@ -325,29 +344,11 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
 
-//mapping.c
-Queue* getDataObjects(const char* filename, char** variable_names, int num_names);
-void findHeaderAddress(char* variable_name, bool_t get_top_level);
-void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
-Data* organizeObjects(Queue* objects);
-void placeInSuperObject(Data* super_object, Queue* objects, int num_total_objs);
-errno_t allocateSpace(Data* object);
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
-void initializeMaps(void);
-void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
-void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
-void parseHeaderTree(bool_t get_top_level);
-void initializePageObjects(void);
-void freeVarname(void* vn);
-
-
 //getPageSize.c
 size_t getPageSize(void);
 size_t getAllocGran(void);
 int getNumProcessors(void);
 ByteOrder getByteOrder(void);
-
 
 //chunkedData.c
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
@@ -399,6 +400,8 @@ pageObject* page_objects;
 
 uint32_t usage_iterator;
 double sum_usage_offset;
+
+int max_depth;
 
 #ifdef DO_MEMDUMP
 FILE* dump;

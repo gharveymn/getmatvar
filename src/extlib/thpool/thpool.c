@@ -101,7 +101,9 @@ typedef struct thpool_{
 
 static int  thread_init(thpool_* thpool_p, struct thread** thread_p, int id);
 static void* thread_do(struct thread* thread_p);
+#if !((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
 static void  thread_hold(int sig_id);
+#endif
 static void  thread_destroy(struct thread* thread_p);
 
 static int   jobqueue_init(jobqueue* jobqueue_p);
@@ -305,7 +307,7 @@ static int thread_init (thpool_* thpool_p, struct thread** thread_p, int id){
 	return 0;
 }
 
-
+#if !((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
 /* Sets the calling thread on hold */
 static void thread_hold(int sig_id) {
     (void)sig_id;
@@ -314,6 +316,7 @@ static void thread_hold(int sig_id) {
 		sleep(1);
 	}
 }
+#endif
 
 
 /* What each thread is doing
@@ -336,7 +339,7 @@ static void* thread_do(struct thread* thread_p){
 #elif defined(__APPLE__) && defined(__MACH__)
 	pthread_setname_np(thread_name);
 #else
-	err("thread_do(): pthread_setname_np is not supported on this system");
+	//err("thread_do(): pthread_setname_np is not supported on this system");
 #endif
 
 	/* Assure all threads have been created before starting serving */

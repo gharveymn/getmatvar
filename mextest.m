@@ -8,7 +8,7 @@ vars = {''};
 userview = memory;
 disp(userview.MemUsedMATLAB)
 tic
-getmatvar(file);%, vars{:});
+getmatvar(file, '-sw');%, vars{:});
 %getmatvar(file, '-threads', 0);
 toc
 userview = memory;
@@ -17,7 +17,7 @@ disp(userview.MemUsedMATLAB)
 
 % using load function
 tic
-load(file);
+%load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))

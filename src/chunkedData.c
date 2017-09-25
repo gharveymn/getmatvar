@@ -46,40 +46,50 @@ errno_t getChunkedData(Data* obj)
 		return ret;
 	}
 	
-	thread_object_queue = initQueue(NULL);
-	
-	if(num_threads_to_use != -1)
+	if(will_multithread == TRUE)
 	{
-		num_threads = num_threads_to_use;
-	}
-	else
-	{
-		num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
-		num_threads = MIN(num_threads, num_avail_threads);
-		num_threads = MAX(num_threads, 1);
-	}
-	
-	if(threads_are_started == FALSE)
-	{
-		pthread_mutex_init(&thread_acquisition_lock, NULL);
-		threads = thpool_init(num_threads);
-		threads_are_started = TRUE;
-	}
-	
-	//TODO after multithreaded mapping is stable work on GC system using global iterator
-	//TODO capture sections using the acquisition lock?
+		
+		thread_object_queue = initQueue(NULL);
+		
+		if(num_threads_to_use != -1)
+		{
+			num_threads = num_threads_to_use;
+		}
+		else
+		{
+			num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
+			num_threads = MIN(num_threads, num_avail_threads);
+			num_threads = MAX(num_threads, 1);
+		}
+		
+		if(threads_are_started == FALSE)
+		{
+			pthread_mutex_init(&thread_acquisition_lock, NULL);
+			threads = thpool_init(num_threads);
+			threads_are_started = TRUE;
+		}
+		
+		//TODO after multithreaded mapping is stable work on GC system using global iterator
+		//TODO capture sections using the acquisition lock?
 //	is_working = TRUE;
 //	pthread_attr_init(&attr);
 //	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 //	pthread_create(&gc, &attr, garbageCollection_, NULL);
-	
-	ret = decompressChunk(&root);
-	thpool_wait(threads);
+		
+		ret = decompressChunk(&root);
+		thpool_wait(threads);
 
 //	is_working = FALSE;
 //	pthread_join(gc, NULL);
+		
+		freeQueue(thread_object_queue);
+		
+	}
+	else
+	{
+		ret = decompressChunk(&root);
+	}
 	
-	freeQueue(thread_object_queue);
 	freeTree(&root);
 	return ret;
 }
@@ -113,8 +123,16 @@ errno_t decompressChunk(TreeNode* node)
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
 	thread_object->node = node;
 	thread_object->err = 0;
-	enqueue(thread_object_queue, thread_object);
-	thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
+	
+	if(will_multithread == TRUE)
+	{
+		thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
+	}
+	else
+	{
+		doInflate_((void*)thread_object);
+		free(thread_object);
+	}
 	
 	return 0;
 	
