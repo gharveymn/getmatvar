@@ -201,6 +201,8 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 			{
 				case THREAD_KWARG:
 					
+					//this overrides the max setting
+					
 					if(mxIsNumeric(prhs[i]) && mxIsScalar(prhs[i]))
 					{
 						num_threads_to_use = (int)mxGetScalar(prhs[i]);
@@ -271,6 +273,18 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 						if(strncmp(input, "f",1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x48") == 0)
 						{
 							will_multithread = FALSE;
+						}
+						else if(strncmp(input, "t", 1) == 0 || strcmp(input, "on") == 0 || strcmp(input, "\x31") == 0)
+						{
+							will_multithread = TRUE;
+						}
+						else if(strncmp(input, "max", 3) == 0)
+						{
+							//overridden by the threads setting, so if still -1 don't execute
+							if(num_threads_to_use == -1)
+							{
+								num_threads_to_use = getNumProcessors();
+							}
 						}
 						else
 						{
