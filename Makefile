@@ -23,7 +23,7 @@ LIBS=-lm -lpthread
 _DEPS = mapping.h libdeflate.h thpool.h queue.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = ../tests/memtest.o mapping.o fileHelper.o \
+_OBJ = ../tests/mexemulate.o mapping.o fileHelper.o \
 numberHelper.o ezq.o getSystemInfo.o \
 readMessage.o chunkedData.o \
 extlib/thpool/thpool.o

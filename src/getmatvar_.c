@@ -25,7 +25,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		{
 			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
 			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id, front_object->name);
+			strcpy(err_id, front_object->names.short_name);
 			strcpy(err_string, front_object->matlab_class);
 			freeQueue(error_objects);
 			readMXError(err_id, err_string);
@@ -61,7 +61,7 @@ Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** 
 		else
 		{
 			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(varnames[num_objs], super_objects[num_objs]->name);
+			strcpy(varnames[num_objs], super_objects[num_objs]->names.short_name);
 		}
 	}
 	
@@ -98,57 +98,57 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 		switch(objects[index]->type)
 		{
 			case UINT8_DATA:
-				setUI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setUI8Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case INT8_DATA:
-				setI8Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setI8Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case UINT16_DATA:
-				setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setUI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case INT16_DATA:
-				setI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case UINT32_DATA:
-				setUI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setUI32Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case INT32_DATA:
-				setI32Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setI32Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case UINT64_DATA:
-				setUI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setUI64Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case INT64_DATA:
-				setI64Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setI64Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case SINGLE_DATA:
-				setSglPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setSglPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case DOUBLE_DATA:
-				setDblPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setDblPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
 			case REF_DATA:
-				setCellPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				//Indicate we should free any memory used by this
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case STRUCT_DATA:
-				setStructPtr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				setStructPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				//setUI16Ptr(objects[index], returnStructure, objects[index]->name, index, super_structure_type);
+				//setUI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				
 				/*remove this section when system is ready*/
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported.");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				/*remove this section when system is ready*/
 				
 				break;
 			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case NULLTYPE_DATA:
@@ -157,7 +157,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case UNDEF_DATA:
 				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->name));
+				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 		}

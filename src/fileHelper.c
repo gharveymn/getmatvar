@@ -496,8 +496,7 @@ void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, Add
 		SNODEntry* snod_entry = malloc(sizeof(SNODEntry));
 		snod_entry->name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		snod_entry->parent_obj_header_address = this_trio->parent_obj_header_address;
-		snod_entry->this_obj_header_address =
-				getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		snod_entry->this_obj_header_address = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		strcpy(snod_entry->name, (char*)(heap_data_segment_pointer + snod_entry->name_offset));
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
 		snod_entry->parent_tree_address = parent_trio->tree_address;

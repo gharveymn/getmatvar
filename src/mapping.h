@@ -224,6 +224,14 @@ typedef struct
 	uint64_t* sub_object_header_offsets;
 } DataArrays;
 
+typedef struct
+{
+	uint16_t long_name_length;
+	char* long_name;
+	uint16_t short_name_length;
+	char short_name[NAME_LENGTH];
+} NameStruct;
+
 typedef struct data_ Data;
 struct data_
 {
@@ -231,7 +239,9 @@ struct data_
 	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
-	char name[NAME_LENGTH];
+	
+	NameStruct names;
+	
 	char matlab_class[CLASS_LENGTH];
 	ChunkedInfo chunked_info;
 	
@@ -371,6 +381,9 @@ ByteOrder __byte_order__;
 size_t alloc_gran;
 size_t file_size;
 size_t num_pages;
+char error_message[ERROR_BUFFER_SIZE];
+char warn_message[WARNING_BUFFER_SIZE];
+
 
 MemMap tree_maps[NUM_TREE_MAPS];
 MemMap heap_maps[NUM_HEAP_MAPS];

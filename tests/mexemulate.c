@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 		{
 			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
 			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id, front_object->name);
+			strcpy(err_id, front_object->names.short_name);
 			strcpy(err_string, front_object->matlab_class);
 			freeQueue(error_objects);
 			readMXError(err_id, err_string);
@@ -85,7 +85,7 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 					char* endptr;
 					long res = (int)strtol(input, &endptr, 10);
 					num_threads_to_use = (int)res;
-					if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
+					if(endptr == input && errno == ERANGE)
 					{
 						for(int j = parameters->num_vars - 1; j >= 0; j--)
 						{
@@ -213,7 +213,7 @@ Queue* makeReturnStructure(const int num_elems, char** full_variable_names, cons
 		else
 		{
 			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(varnames[num_objs], super_objects[num_objs]->name);
+			strcpy(varnames[num_objs], super_objects[num_objs]->names.short_name);
 		}
 	}
 	

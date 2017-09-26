@@ -1,4 +1,5 @@
 #include "mapping.h"
+#include "ezq.h"
 
 
 Queue* initQueue(void (* free_function)(void*))
@@ -9,14 +10,7 @@ Queue* initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
-	if(free_function == NULL)
-	{
-		new_queue->free_function = free;
-	}
-	else
-	{
-		new_queue->free_function = free_function;
-	}
+	new_queue->free_function = free_function;
 	return new_queue;
 }
 
@@ -161,7 +155,7 @@ void flushQueue(Queue* queue)
 		while(queue->abs_front != NULL)
 		{
 			QueueNode* next = queue->abs_front->next;
-			if(queue->abs_front->data != NULL)
+			if(queue->abs_front->data != NULL && queue->free_function != NULL)
 			{
 				queue->free_function(queue->abs_front->data);
 			}

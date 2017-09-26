@@ -21,9 +21,9 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	num_avail_threads = getNumProcessors() - 1;
 	
 	//init queues
-	addr_queue = initQueue(NULL);
+	addr_queue = initQueue(free);
 	varname_queue = initQueue(freeVarname);
-	header_queue = initQueue(NULL);
+	header_queue = initQueue(free);
 	
 	//open the file descriptor
 	fd = open(filename, O_RDONLY);
@@ -32,7 +32,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		Data* data_object = malloc(sizeof(Data));
 		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->name, "getmatvar:fileNotFoundError");
+		sprintf(data_object->names.short_name, "getmatvar:fileNotFoundError");
 		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
 		enqueue(objects, data_object);
 		return objects;
@@ -45,7 +45,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		Data* data_object = malloc(sizeof(Data));
 		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->name, "getmatvar:lseekFailureError");
+		sprintf(data_object->names.short_name, "getmatvar:lseekFailureError");
 		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
 		enqueue(objects, data_object);
 		return objects;
@@ -59,7 +59,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 		Data* data_object = malloc(sizeof(Data));
 		initializeObject(data_object);
 		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->name, "getmatvar:wrongFormatError");
+		sprintf(data_object->names.short_name, "getmatvar:wrongFormatError");
 		if(memcmp(filetype, "MATLAB", 6) == 0)
 		{
 			sprintf(data_object->matlab_class, "The input file must be a Version 7.3+ MAT-file. This is a %s.\n\n", filetype);
@@ -124,7 +124,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			Data* data_object = malloc(sizeof(Data));
 			initializeObject(data_object);
 			data_object->type = UNDEF_DATA;
-			strcpy(data_object->name, peekQueue(varname_queue, QUEUE_BACK));
+			strcpy(data_object->names.short_name, peekQueue(varname_queue, QUEUE_BACK));
 			enqueue(objects, data_object);
 			sprintf(warn_msg, "Variable \'%s\' was not found.", variable_names[name_index]);
 			readMXWarn("getmatvar:variableNotFound", warn_msg);
@@ -146,7 +146,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
 			uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 			
-			strcpy(data_object->name, snod_entry->name);
+			strcpy(data_object->names.short_name, snod_entry->name);
 			data_object->parent_obj_address = snod_entry->parent_obj_header_address;
 			data_object->this_obj_address = snod_entry->this_obj_header_address;
 			collectMetaData(data_object, header_address, num_msgs, header_length);
@@ -157,7 +157,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 			{
 				Data* front_object = peekQueue(objects, QUEUE_FRONT);
 				front_object->type = ERROR_DATA;
-				strcpy(front_object->name, data_object->name);
+				strcpy(front_object->names.short_name, data_object->names.short_name);
 				strcpy(front_object->matlab_class, data_object->matlab_class);
 				
 				//note that num_objs is now the end sentinel
@@ -183,7 +183,6 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 					
 					//need to check for the underscore since there is also an object called "function_handle"
 				} while(strncmp(snod_entry->name, "function", 8) != 0 || snod_entry->name[8] == '_');
-				
 				//get the function handle data
 				
 				header_address = snod_entry->this_obj_header_address;
@@ -192,7 +191,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 				header_pointer = navigateTo(header_address, 16, TREE);
 				header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
 				num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
-				strcpy(fh->name, snod_entry->name);
+				strcpy(fh->names.short_name, snod_entry->name);
 				fh->parent_obj_address = snod_entry->parent_obj_header_address;
 				fh->this_obj_address = snod_entry->this_obj_header_address;
 				collectMetaData(fh, header_address, num_msgs, header_length);
@@ -260,8 +259,8 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 				{
 					Data* front_object = peekQueue(objects, QUEUE_FRONT);
 					front_object->type = ERROR_DATA;
-					strcpy(front_object->name, "getmatvar:unexpectedFunctionHandleObjectOrder");
-					sprintf(front_object->matlab_class, "The order of objects within the \"%s\" function handle subtree was unexpected", data_object->name);
+					strcpy(front_object->names.short_name, "getmatvar:unexpectedFunctionHandleObjectOrder");
+					sprintf(front_object->matlab_class, "The order of objects within the \"%s\" function handle subtree was unexpected", data_object->names.short_name);
 					
 					//note that num_objs is now the end sentinel
 					
@@ -463,7 +462,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	if(object->type == UNDEF_DATA)
 	{
 		object->type = ERROR_DATA;
-		sprintf(object->name, "getmatvar:unknownDataTypeError");
+		sprintf(object->names.short_name, "getmatvar:unknownDataTypeError");
 		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
 		return;
 	}
@@ -493,7 +492,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			break;
 		default:
 			object->type = ERROR_DATA;
-			sprintf(object->name, "getmatvar:unknownLayoutClassError");
+			sprintf(object->names.short_name, "getmatvar:unknownLayoutClassError");
 			sprintf(object->matlab_class, "Unknown layout class encountered.\n\n");
 			return;
 	}
@@ -507,7 +506,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			SNODEntry* snod_entry = malloc(sizeof(SNODEntry));
 			snod_entry->this_obj_header_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			snod_entry->parent_obj_header_address = object->this_obj_address;
-			strcpy(snod_entry->name, object->name);
+			strcpy(snod_entry->name, object->names.short_name);
 			priorityEnqueue(header_queue, snod_entry);
 		}
 	}
@@ -654,7 +653,7 @@ errno_t allocateSpace(Data* object)
 		default:
 			//this shouldn't happen
 			object->type = ERROR_DATA;
-			sprintf(object->name, "getmatvar:thisShouldntHappen");
+			sprintf(object->names.short_name, "getmatvar:thisShouldntHappen");
 			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
 		

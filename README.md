@@ -17,8 +17,8 @@ Usage:
 		
 	filename	a character vector of the name of the file with a .mat extension
 	variable	a character vector of the variable to extract from the 
-	option	an option flag
-	oparg	an option argument
+	option		an option flag
+	oparg		an option argument
 
 
 	options:
