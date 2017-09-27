@@ -15,7 +15,9 @@ typedef struct
 
 void readInput(int nrhs, char* prhs[], paramStruct* parameters);
 void makeReturnStructure(int num_elems, char** full_variable_names, const char* filename);
+void makeEvalArray(char* eval_vector);
 
+static Queue* eval_objects;
 
 int main(int argc, char* argv[])
 {
@@ -46,6 +48,8 @@ int main(int argc, char* argv[])
 void makeReturnStructure(const int num_elems, char** full_variable_names, const char* filename)
 {
 	
+	eval_objects = initQueue(NULL);
+	
 	Data* super_object = getDataObjects(filename, full_variable_names, num_elems);
 	if(error_flag == TRUE)
 	{
@@ -65,6 +69,7 @@ void makeReturnStructure(const int num_elems, char** full_variable_names, const 
 	}
 	free(varnames);
 	
+	freeQueue(eval_objects);
 	freeDataObjectTree(super_object);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
@@ -212,4 +217,37 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 		parameters->num_vars = 1;
 	}
 	parameters->full_variable_names[parameters->num_vars] = NULL;
+}
+
+void makeEvalArray(char* eval_vector)
+{
+	uint32_t total_length = 0;
+	Data* eval_obj;
+	while(eval_objects->length > 0)
+	{
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		total_length += eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
+	}
+	
+	eval_vector = malloc(total_length * sizeof(uint16_t));
+	
+	uint32_t offset = 0;
+	restartQueue(eval_objects);
+	while(eval_objects->length > 0)
+	{
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
+		{
+			memcpy(&eval_vector[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
+		}
+		eval_vector[offset] = '=';
+		offset++;
+		memcpy(&eval_vector[offset], eval_obj->data_arrays.ui16_data, eval_obj->num_elems * sizeof(uint16_t));
+		offset += eval_obj->num_elems;
+		eval_vector[offset] = ';';
+		offset++;
+	}
+	
 }

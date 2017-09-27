@@ -5,6 +5,20 @@
 Data* getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
+	/* TODO need new system for data collection
+	 *
+	 * problem: REFs point directly to objects and not trees
+	 * 			so sub objects will not be collected if
+	 * 			a cell array points to a struct
+	 *
+	 * proposal: create a skeleton structure of Data objects
+	 * 			this should be pretty cheap
+	 *
+	 * 			fill as necessary and use skeleton to parse
+	 * 			any referenced trees
+	 *
+	*/
+	
 	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
@@ -190,9 +204,17 @@ void destroyPageObjects(void)
 
 Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* name)
 {
-	Data* data_object = fillObject(sub_obj_address, super_object->this_obj_address, name);
+	
+	Data* data_object = malloc(sizeof(Data));
+	initializeObject(data_object);
+	data_object->names.short_name_length = (uint16_t)strlen(name);
+	data_object->names.short_name = malloc((data_object->names.short_name_length + 1) * sizeof(char));
+	strcpy(data_object->names.short_name, name);
+	
+	fillObject(data_object, sub_obj_address, super_object->this_obj_address);
 	super_object->sub_objects[super_object->num_sub_objs] = data_object;
 	super_object->num_sub_objs++;
+	
 
 	//append the short name to the data object long name
 	if(super_object->names.long_name_length != 0)
@@ -210,20 +232,16 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* name)
 		data_object->names.long_name = malloc((data_object->names.long_name_length + 1) * sizeof(char));
 		strcpy(data_object->names.long_name, data_object->names.short_name);
 	}
+	
+	
 
 	return data_object;
 
 }
 
 
-Data* fillObject(uint64_t this_obj_address, uint64_t parent_obj_address, char* name)
+Data* fillObject(Data* data_object, uint64_t this_obj_address, uint64_t parent_obj_address)
 {
-	Data* data_object = malloc(sizeof(Data));
-	initializeObject(data_object);
-	
-	data_object->names.short_name_length = (uint16_t)strlen(name);
-	data_object->names.short_name = malloc((data_object->names.short_name_length + 1) * sizeof(char));
-	strcpy(data_object->names.short_name, name);
 	
 	//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
 	byte* header_pointer = navigateTo(this_obj_address, 16, TREE);
@@ -495,6 +513,7 @@ errno_t allocateSpace(Data* object)
 			break;
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
+			//Don't allocate anything yet. This will be handled later
 			object->num_elems = 1;
 			object->num_dims = 2;
 			object->dims[0] = 1;
@@ -718,14 +737,12 @@ void findHeaderAddress(Data* super_object, char* variable_name)
 void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_address)
 {
 	
-	
 	uint16_t entries_used = 0;
 	byte* tree_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
 	
 	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	//group node B-Tree traversal (version 0)
-	int key_size = s_block.size_of_lengths;
 	byte* key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
 	
 	
@@ -734,9 +751,9 @@ void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_addre
 	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
 	for(int i = 0; i < entries_used; i++)
 	{
-		sub_node_address_list[i] = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		sub_node_address_list[i] = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		est_num_sub_objs += getNumSymbols(sub_node_address_list[i]);
-		key_pointer += key_size + s_block.size_of_offsets;
+		key_pointer += s_block.size_of_lengths + s_block.size_of_offsets;
 	}
 	
 	if(super_object->sub_objects == NULL)
@@ -768,15 +785,12 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
 	
-	//get to entries
-	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
-	
 	for(int i = num_symbols - 1, is_done = FALSE; i >= 0 && is_done != TRUE; i--)
 	{
-		uint64_t name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
-		uint64_t sub_obj_address = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		uint64_t name_offset = getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		uint64_t sub_obj_address = getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		char* name = (char*)(heap_data_segment_pointer + name_offset);
-		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + s_block.sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
 		
 		//check if we have found the object we're looking for or if we are just adding subobjects
 		if((variable_found == TRUE || (var_name != NULL && strcmp(var_name, name) == 0)) && strncmp(name, "#", 1) != 0)
@@ -816,13 +830,20 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 				//all items in the queue should only be subobjects so this is safe
 				if(cache_type == 1)
 				{
-					
-					//if another tree exists for this object, put it on the queue
 					uint64_t sub_tree_address =
-							getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+							getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + s_block.sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 					uint64_t sub_heap_address =
-							getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-					readTreeNode(data_object, sub_tree_address, sub_heap_address);
+							getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + s_block.sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+					
+					//there is a specific subtree that we need to parse for function handles
+					if(data_object->type == FUNCTION_HANDLE_DATA)
+					{
+						placeFunctionHandleData(data_object, sub_tree_address, sub_heap_address);
+					}
+					else
+					{
+						readTreeNode(data_object, sub_tree_address, sub_heap_address);
+					}
 					snod_pointer = navigateTo(node_address, default_bytes, TREE);
 					heap_pointer = navigateTo(heap_address, default_bytes, HEAP);
 					heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
@@ -831,7 +852,7 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 				else if(cache_type == 2)
 				{
 					//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-					name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+					name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + s_block.sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
 					name = (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + name_offset);
 				}
 			}
@@ -848,6 +869,132 @@ uint32_t getNumSymbols(uint64_t address)
 	byte* p = navigateTo(address, 8, TREE);
 	return (uint16_t)getBytesAsNumber(p + 6, 2, META_DATA_BYTE_ORDER);
 }
+
+
+void placeFunctionHandleData(Data* fh, address_t sub_tree_address, address_t sub_heap_address)
+{
+	/*
+	 * need to traverse structure:
+	 *
+	 * fh_data-
+	 *    |-function_handle-
+	 *    |                 |-file
+	 *    |                 |-function		<-- NEED
+	 *    |                 |-(within_file)
+	 *    |                 |-type
+	 *    |                 |-(workspace)
+	 *    |-matlabroot
+	 *    |-sentinel
+	 *    |-separator
+	 *
+	 */
+	
+	
+	//first get the snod entry
+	//start virtual readTreeNode for fh_data
+	
+	byte* tree_pointer = navigateTo(sub_tree_address, default_bytes, META_DATA_BYTE_ORDER);
+	byte* heap_pointer = navigateTo(sub_heap_address, default_bytes, META_DATA_BYTE_ORDER);
+	byte* key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+	address_t fh_snod_address = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	
+	//end virtual readTreeNode for fh_data
+	
+	//start virtual readSnod for fh_data
+	
+	byte* snod_pointer = navigateTo(fh_snod_address, default_bytes, META_DATA_BYTE_ORDER);
+	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	//we need to get to 'function_handle'
+	
+	uint32_t cache_type = 0;
+	for(int i = 0; i < num_symbols && cache_type != 1; i++)
+	{
+		cache_type = (uint32_t) getBytesAsNumber(
+				snod_pointer + 8 + 2 * s_block.size_of_offsets + i* s_block.sym_table_entry_size, 4,
+				META_DATA_BYTE_ORDER);
+		sub_tree_address = getBytesAsNumber(
+				snod_pointer + 8 + 2 * s_block.size_of_offsets + 8 + i* s_block.sym_table_entry_size,
+				s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		sub_heap_address =
+				getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + s_block.sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		
+	}
+	
+	//end virtual readSnod for fh_data
+	
+	//start virtual readTreeNode for function_handle
+	
+	tree_pointer = navigateTo(sub_tree_address, default_bytes, META_DATA_BYTE_ORDER);
+	key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+	address_t function_handle_snod_address = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	address_t function_handle_heap_address = sub_heap_address;
+	
+	//end virtual readTreeNode for function_handle
+	
+	//start virtual readSnod for function_handle
+	
+	snod_pointer = navigateTo(function_handle_snod_address, default_bytes, META_DATA_BYTE_ORDER);
+	heap_pointer = navigateTo(function_handle_heap_address, default_bytes, META_DATA_BYTE_ORDER);
+	num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	//we need to get to 'function_handle'
+	
+	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+	
+	char* name = "\0"; //placeholder for entry
+	address_t sub_obj_address = UNDEF_ADDR;
+	for(int i = 0; i < num_symbols && strcmp(name, "function") != 0; i++)
+	{
+		
+		uint64_t name_offset = getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		name = (char*)(heap_data_segment_pointer + name_offset);
+		sub_obj_address = getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		
+	}
+	//end virtual readSnod for function_handle
+	
+	Data* fh_data = malloc(sizeof(Data));
+	initializeObject(fh_data);
+	fillObject(fh_data, sub_obj_address, fh->this_obj_address);
+	
+	//dont use strchr because we need to know the length of the copied string
+	uint32_t fh_len = fh_data->num_elems;
+	char* func_name = NULL;
+	for(; fh_len > 0; fh_len--)
+	{
+		func_name = (char*)&fh_data->data_arrays.ui16_data[fh_data->num_elems - fh_len];
+		if(*func_name == '@')
+		{
+			break;
+		}
+	}
+	
+	if(fh_len == 0)
+	{
+		//need to add the '@' character
+		fh->data_arrays.ui16_data = mxMalloc((1 + fh_data->num_elems) * fh_data->elem_size);
+		fh->data_arrays.ui16_data[0] = 64; //this is the '@' character
+		memcpy(&fh->data_arrays.ui16_data[1], fh_data->data_arrays.ui16_data, fh_data->num_elems*fh_data->elem_size);
+		fh->num_elems = 1 + fh_data->num_elems; //+ 1 for the seperator
+	}
+	else
+	{
+		fh->data_arrays.ui16_data = mxMalloc((fh_len) * fh_data->elem_size);
+		memcpy(fh->data_arrays.ui16_data, func_name, fh_len * fh_data->elem_size);
+		fh->num_elems = fh_len;
+	}
+	
+	fh->num_dims = 2;
+	fh->dims[0] = 1;
+	fh->dims[1] = fh->num_elems;
+	fh->dims[2] = 0;
+	
+	//free the temporary "function" object
+	freeDataObject(fh_data);
+	
+}
+
 
 void freeVarname(void* vn)
 {

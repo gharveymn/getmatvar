@@ -1,5 +1,8 @@
 #include "mapping.h"
+#include "ezq.h"
 
+
+static Queue* eval_objects;
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -10,7 +13,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	{
 		readMXError("getmatvar:invalidNumInputs", "At least one input argument is required.\n\n");
 	}
-	else if(nlhs > 1)
+	else if(nlhs > 2)
 	{
 		readMXError("getmatvar:invalidNumOutputs", "Assignment cannot be made to more than two outputs.\n\n");
 	}
@@ -18,7 +21,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	{
 		paramStruct parameters;
 		readInput(nrhs, prhs, &parameters);
-		makeReturnStructure(plhs, parameters.num_vars, parameters.full_variable_names, parameters.filename);
+		makeReturnStructure(plhs, parameters, nlhs);
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
 			free(parameters.full_variable_names[i]);
@@ -29,12 +32,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
+void makeReturnStructure(mxArray** super_structure, paramStruct parameters, int nlhs)
 {
+	
+	eval_objects = initQueue(NULL);
 	
 	mwSize ret_struct_dims[1] = {1};
 	
-	Data* super_object = getDataObjects(filename, full_variable_names, num_elems);
+	Data* super_object = getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
 	if(error_flag == TRUE)
 	{
 		freeDataObjectTree(super_object);
@@ -49,10 +54,15 @@ void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** fu
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
+	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
 #pragma GCC diagnostic pop
 	
-	makeSubstructure(uberStructure[0], super_object->num_sub_objs, super_object->sub_objects, STRUCT_DATA);
+	makeSubstructure(super_structure[0], super_object->num_sub_objs, super_object->sub_objects, STRUCT_DATA);
+	
+	if(nlhs == 2)
+	{
+		makeEvalArray(super_structure);
+	}
 	
 	for(int i = 0; i < super_object->num_sub_objs; i++)
 	{
@@ -60,6 +70,7 @@ void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** fu
 	}
 	free(varnames);
 	
+	freeQueue(eval_objects);
 	freeDataObjectTree(super_object);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
@@ -118,10 +129,10 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				break;
 			case FUNCTION_HANDLE_DATA:
 				//setUI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				
+				enqueue(eval_objects, objects[index]);
 				/*remove this section when system is ready*/
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported.");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
+				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported.");
+				//mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				/*remove this section when system is ready*/
 				
@@ -353,4 +364,53 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 		parameters->num_vars = 1;
 	}
 	parameters->full_variable_names[parameters->num_vars] = NULL;
+}
+
+void makeEvalArray(mxArray** super_structure)
+{
+	uint32_t total_length = 0;
+	Data* eval_obj;
+	while(eval_objects->length > 0)
+	{
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		total_length += RETURN_STRUCT_NAME_LEN + 1 + eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
+	}
+	
+	const mwSize eval_vector_dims[3] = {1,total_length,0};
+	
+	super_structure[1] = mxCreateCharArray(2, eval_vector_dims);
+	uint16_t* mx_eval_vector_ptr = mxGetChars(super_structure[1]);
+	
+	uint32_t offset = 0;
+	restartQueue(eval_objects);
+	while(eval_objects->length > 0)
+	{
+		
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		for(int i = 0; i < RETURN_STRUCT_NAME_LEN; i++, offset++)
+		{
+			memcpy(&mx_eval_vector_ptr[offset], &RETURN_STRUCT_NAME[i], sizeof(uint8_t));
+		}
+		
+		mx_eval_vector_ptr[offset] = '.';
+		offset++;
+		
+		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
+		{
+			memcpy(&mx_eval_vector_ptr[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
+		}
+		
+		mx_eval_vector_ptr[offset] = '=';
+		offset++;
+		
+		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.ui16_data, eval_obj->num_elems * sizeof(uint16_t));
+		offset += eval_obj->num_elems;
+		
+		mx_eval_vector_ptr[offset] = ';';
+		offset++;
+		
+	}
+	
 }

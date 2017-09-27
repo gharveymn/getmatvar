@@ -18,9 +18,9 @@ typedef struct
 
 //getmatvar.c
 void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters);
-void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names,
-					 const char* filename);
+void makeReturnStructure(mxArray** super_structure, paramStruct parameters, int nlhs);
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type);
+void makeEvalArray(mxArray** super_structure);
 
 //mexPointerSetters.c
 void setUI8Ptr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type);
@@ -39,5 +39,6 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
 const char** getFieldNames(Data* object);
 DataArrays rearrangeImaginaryData(Data* object);
+
 
 #endif

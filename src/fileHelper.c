@@ -45,6 +45,8 @@ Superblock fillSuperblock(byte* superblock_pointer)
 	s_block.root_tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	s_block.root_heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	
+	s_block.sym_table_entry_size = (uint16_t)(2*s_block.size_of_offsets + 4 + 4 + 16);
+	
 	return s_block;
 }
 
@@ -491,6 +493,18 @@ void freeDataObject(void* object)
 			mxFree(data_object->data_arrays.double_data);
 			data_object->data_arrays.double_data = NULL;
 		}
+	}
+	
+	if(data_object->names.short_name != NULL)
+	{
+		free(data_object->names.short_name);
+		data_object->names.short_name = NULL;
+	}
+	
+	if(data_object->names.long_name != NULL)
+	{
+		free(data_object->names.long_name);
+		data_object->names.long_name = NULL;
 	}
 	
 	if(data_object->data_arrays.sub_object_header_offsets != NULL)

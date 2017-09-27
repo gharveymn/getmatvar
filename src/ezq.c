@@ -103,6 +103,12 @@ void resetQueue(Queue* queue)
 	queue->length = 0;
 }
 
+void restartQueue(Queue* queue)
+{
+	queue->front = queue->abs_front;
+	queue->length = queue->total_length;
+}
+
 
 void* dequeue(Queue* queue)
 {

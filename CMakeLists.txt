@@ -17,7 +17,7 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -DNO_MEX")
 	ENDIF(MSVC)
 
-	#SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
+	SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
 	SET(THPOOL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/thpool)
 
 	# 32-bit or 64-bit mex

@@ -57,6 +57,8 @@ typedef uint64_t OffsetType;
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
 #define MATFILE_SIG_LEN 19
 #define FUNCTION_HANDLE_SIG "R2VuZSBIYXJ2ZXkgOik="
+#define RETURN_STRUCT_NAME "Q291cnRuZXkgQm9ubmVyIDop"
+#define RETURN_STRUCT_NAME_LEN 24
 #define FUNCTION_HANDLE_SIG_LEN 20
 #define TREE 0
 #define HEAP 1
@@ -137,6 +139,7 @@ typedef struct
 	uint8_t size_of_lengths;
 	uint16_t leaf_node_k;
 	uint16_t internal_node_k;
+	uint16_t sym_table_entry_size;
 	address_t base_address;
 	address_t root_tree_address;
 	address_t root_heap_address;
@@ -314,8 +317,6 @@ typedef struct
 Data* getDataObjects(const char* filename, char** variable_names, int num_names);
 void findHeaderAddress(Data* super_object, char* variable_name);
 void collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length);
-Data* organizeObjects(Queue* objects);
-void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth);
 errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
 void initializeMaps(void);
@@ -327,9 +328,10 @@ void initializePageObjects(void);
 void freeVarname(void* vn);
 void initialize(void);
 uint32_t getNumSymbols(address_t address);
-Data* fillObject(address_t this_obj_address, address_t parent_obj_address, char* name);
+Data* fillObject(Data* data_object, uint64_t this_obj_address, uint64_t parent_obj_address);
 void readTreeNode(Data* super_object, address_t node_address, address_t heap_address);
 void readSnod(Data* super_object, address_t node_address, address_t heap_address);
+void placeFunctionHandleData(Data* fh, address_t sub_tree_address, address_t sub_heap_address);
 
 //fileHelper.c
 Superblock getSuperblock(void);

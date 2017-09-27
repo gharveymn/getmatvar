@@ -31,6 +31,7 @@ void* peekQueue(Queue* queue, int queue_location);
 void flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);
+void restartQueue(Queue* queue);
 void cleanQueue(Queue* queue);
 
 #endif
