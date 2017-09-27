@@ -24,8 +24,8 @@ for j = 1:numtests
 		numelems = randi(hi-lo) + lo;
 		avg = floor(nthroot(numelems,numdims(j)));
 		dims = zeros(1,numdims(j));
-		for j = 1:numdims(j)
-			dims(j) = max(avg + randi(6)-3,1);
+		for k = 1:numdims(k)
+			dims(k) = max(avg + randi(6)-3,1);
 		end
 		rne = prod(dims);
 	end
@@ -33,12 +33,12 @@ for j = 1:numtests
 	t = rand(dims);
 	save('res/t.mat','t');
 	
-	for j = 1:maxthreads
-		avgtimes(j) = 0;
+	for i = 1:maxthreads
+		avgtimes(i) = 0;
 		for k = 1:numsubtests
 			tic
-			getmatvar('res/r.mat','-threads',j);
-			avgtimes(j) = avgtimes(j) + toc/numsubtests;
+			getmatvar('res/r.mat','-threads',i);
+			avgtimes(i) = avgtimes(i) + toc/numsubtests;
 		end
 	end
 	[~,besttimes(j)] = min(avgtimes);

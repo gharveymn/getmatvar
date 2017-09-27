@@ -656,11 +656,6 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 void findHeaderAddress(Data* super_object, char* variable_name)
 {
 	char* delim = ".", * token;
-	AddrTrio* root_trio_copy = malloc(sizeof(AddrTrio));
-	root_trio_copy->tree_address = root_trio.tree_address;
-	root_trio_copy->heap_address = root_trio.heap_address;
-	root_trio_copy->parent_obj_header_address = root_trio.parent_obj_header_address;
-	enqueue(addr_queue, root_trio_copy);
 	default_bytes = (uint64_t)getAllocGran();
 	default_bytes = default_bytes < file_size? default_bytes : file_size;
 	
@@ -684,42 +679,15 @@ void findHeaderAddress(Data* super_object, char* variable_name)
 		}
 	}
 	
-	parseHeaderTree(super_object);
+	readTreeNode(super_object, root_trio.tree_address, root_trio.heap_address);
 	
 }
 
-
-void parseHeaderTree(Data* super_object)
-{
-	byte* tree_pointer, * heap_pointer;
-	
-	//aka the parent address for a snod
-	AddrTrio* parent_trio, * this_trio;
-	
-	//search for the object header for the variable
-	while(addr_queue->length > 0)
-	{
-		this_trio = peekQueue(addr_queue, QUEUE_FRONT);
-		tree_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
-		heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
-		
-		if(strncmp("TREE", (char*)tree_pointer, 4) == 0)
-		{
-			parent_trio = dequeue(addr_queue);
-			readTreeNode(tree_pointer, parent_trio);
-		}
-		else if(strncmp("SNOD", (char*)tree_pointer, 4) == 0)
-		{
-			this_trio = dequeue(addr_queue);
-			readSnod(tree_pointer, heap_pointer, parent_trio, this_trio, get_top_level);
-		}
-		
-	}
-	
-}
 
 void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_address)
 {
+	
+	
 	uint16_t entries_used = 0;
 	uint64_t left_sibling_address, right_sibling_address;
 	byte* tree_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
@@ -729,16 +697,26 @@ void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_addre
 	//group node B-Tree traversal (version 0)
 	int key_size = s_block.size_of_lengths;
 	byte* key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+	
+	
+	//quickly get the total number of possible subobjects first so we can allocate the subobject array
+	uint16_t est_num_sub_objs = 0; //may be fewer than this number by throwing away the refs and such things
+	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
 	for(int i = 0; i < entries_used; i++)
 	{
-		
-		uint64_t sub_node_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;;
-		uint64_t sub_node_heap_address = heap_address;
-		
-		readSnod(super_object, sub_node_address, heap_address);
-		
+		sub_node_address_list[i] = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		est_num_sub_objs += getNumSymbols(sub_node_address_list[i]);
 		key_pointer += key_size + s_block.size_of_offsets;
-		
+	}
+	
+	if(super_object->sub_objects == NULL)
+	{
+		super_object->sub_objects = malloc(est_num_sub_objs*sizeof(Data*));
+	}
+	
+	for(int i = 0; i < entries_used; i++)
+	{
+		readSnod(super_object, sub_node_address_list[i], heap_address);
 	}
 	
 }
@@ -746,9 +724,9 @@ void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_addre
 
 void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 {
+	
 	byte* snod_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
 	byte* heap_pointer = navigateTo(heap_address, default_bytes, META_DATA_BYTE_ORDER);
-	
 	
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	uint32_t cache_type;
@@ -761,7 +739,6 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 	//get to entries
 	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
 	
-	int num_
 	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
 		uint64_t name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
@@ -785,42 +762,50 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 					variable_found = TRUE;
 					is_done = TRUE;
 				}
-				
 			}
 			
-			super_object->sub_objects[i] = fillObject(sub_obj_address, super_object->this_obj_address,name);
 			
-			//if the variable has been found we should keep going down the tree for that variable
-			//all items in the queue should only be subobjects so this is safe
-			if(cache_type == 1)
+			//check if this object has already been filled, skip if it has
+			bool_t skip = FALSE;
+			for(int j = 0; j < super_object->num_sub_objs; j++)
 			{
-				
-				//if another tree exists for this object, put it on the queue
-				trio = malloc(sizeof(AddrTrio));
-				trio->parent_obj_header_address = snod_entry->this_obj_header_address;
-				trio->tree_address =
-						getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				trio->heap_address =
-						getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-				snod_entry->sub_tree_address = trio->tree_address;
-				priorityEnqueue(addr_queue, trio);
-				parseHeaderTree(FALSE);
-				snod_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
-				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
-				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
-				
-			}
-			else if(cache_type == 2  && get_top_level == FALSE)
-			{
-				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
-				snod_entry->name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
-				strcpy(snod_entry->name, (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + snod_entry->name_offset));
+				if(strcmp(super_object->sub_objects[j]->names.short_name, name) == 0)
+				{
+					skip = TRUE;
+				}
 			}
 			
-		}
-		else
-		{
-			free(snod_entry);
+			if(skip != TRUE)
+			{
+				Data* data_object = fillObject(sub_obj_address, super_object->this_obj_address, name);
+				super_object->sub_objects[super_object->num_sub_objs] = data_object;
+				super_object->num_sub_objs++;
+				
+				
+				//if the variable has been found we should keep going down the tree for that variable
+				//all items in the queue should only be subobjects so this is safe
+				if(cache_type == 1)
+				{
+					
+					//if another tree exists for this object, put it on the queue
+					uint64_t sub_tree_address =
+							getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+					uint64_t sub_heap_address =
+							getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+					readTreeNode(data_object, sub_tree_address, sub_heap_address);
+					snod_pointer = navigateTo(node_address, default_bytes, TREE);
+					heap_pointer = navigateTo(heap_address, default_bytes, HEAP);
+					heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+					
+				}
+				else if(cache_type == 2)
+				{
+					//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
+					name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+					name, (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + name_offset);
+				}
+			}
+			
 		}
 		
 	}
@@ -828,6 +813,12 @@ void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 	
 }
 
+
+uint32_t getNumSymbols(uint64_t address)
+{
+	byte* p = navigateTo(address, 8, TREE);
+	return (uint16_t)getBytesAsNumber(p + 6, 2, META_DATA_BYTE_ORDER);
+}
 
 void freeVarname(void* vn)
 {
