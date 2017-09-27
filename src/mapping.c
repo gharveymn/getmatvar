@@ -85,10 +85,11 @@ Data* getDataObjects(const char* filename, char** variable_names, const int num_
 	//find superblock
 	s_block = getSuperblock();
 	
+	//make the skeleton structure
+	
 	for(int name_index = 0; name_index < num_names; name_index++)
 	{
-		
-		findHeaderAddress(super_object, variable_names[name_index]);
+		findNodeByName(super_object, variable_names[name_index]);
 		
 		//remove
 		if(super_object->num_sub_objs == 0 && variable_names[name_index] != NULL)
@@ -266,6 +267,8 @@ Data* fillObject(Data* data_object, uint64_t this_obj_address, uint64_t parent_o
 
 void initializeObject(Data* object)
 {
+	
+	object->is_filled = FALSE;
 	
 	object->data_arrays.is_mx_used = FALSE;
 	object->data_arrays.ui8_data = NULL;
@@ -703,7 +706,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 }
 
 
-void findHeaderAddress(Data* super_object, char* variable_name)
+void findNodeByName(Data* super_object, char* variable_name)
 {
 	char* delim = ".", * token;
 	default_bytes = (uint64_t)getAllocGran();
@@ -731,6 +734,19 @@ void findHeaderAddress(Data* super_object, char* variable_name)
 	
 	readTreeNode(super_object, s_block.root_tree_address, s_block.root_heap_address);
 	
+}
+
+
+void findVariable(Data* super_object)
+{
+	Data* current;
+	
+}
+
+
+void fillDataTree(Data* super_object)
+{
+
 }
 
 

@@ -241,6 +241,7 @@ typedef struct data_ Data;
 struct data_
 {
 	DataType type;
+	bool_t is_filled;
 	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
@@ -315,7 +316,7 @@ typedef struct
 
 //mapping.c
 Data* getDataObjects(const char* filename, char** variable_names, int num_names);
-void findHeaderAddress(Data* super_object, char* variable_name);
+void findNodeByName(Data* super_object, char* variable_name);
 void collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length);
 errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
