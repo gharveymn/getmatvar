@@ -14,7 +14,7 @@ typedef struct
 } paramStruct;
 
 void readInput(int nrhs, char* prhs[], paramStruct* parameters);
-Queue* makeReturnStructure(int num_elems, char** full_variable_names, const char* filename);
+void makeReturnStructure(int num_elems, char** full_variable_names, const char* filename);
 
 
 int main(int argc, char* argv[])
@@ -31,19 +31,43 @@ int main(int argc, char* argv[])
 		
 		paramStruct parameters;
 		readInput(argc - 1, argv + 1, &parameters);
-		
-		Queue* error_objects = makeReturnStructure(parameters.num_vars, parameters.full_variable_names, parameters.filename);
-		if(error_objects != NULL)
+		makeReturnStructure(parameters.num_vars, parameters.full_variable_names, parameters.filename);
+		for(int i = 0; i < parameters.num_vars; i++)
 		{
-			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
-			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id, front_object->names.short_name);
-			strcpy(err_string, front_object->matlab_class);
-			freeQueue(error_objects);
-			readMXError(err_id, err_string);
+			free(parameters.full_variable_names[i]);
 		}
+		free(parameters.full_variable_names);
 		
 	}
+	
+}
+
+
+void makeReturnStructure(const int num_elems, char** full_variable_names, const char* filename)
+{
+	
+	Data* super_object = getDataObjects(filename, full_variable_names, num_elems);
+	if(error_flag == TRUE)
+	{
+		freeDataObjectTree(super_object);
+		readMXError(error_id, error_message);
+	}
+	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
+	for(int i = 0; i < super_object->num_sub_objs; i++)
+	{
+		varnames[i] = malloc((super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
+	}
+	
+	for(int i = 0; i < super_object->num_sub_objs; i++)
+	{
+		free(varnames[i]);
+	}
+	free(varnames);
+	
+	freeDataObjectTree(super_object);
+	
+	fprintf(stderr, "\nProgram exited successfully.\n");
 	
 }
 
@@ -183,51 +207,9 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 	{
 		free(parameters->full_variable_names);
 		parameters->full_variable_names = malloc(2*sizeof(char*));
-		parameters->full_variable_names[0] = "\0";
+		parameters->full_variable_names[0] = malloc(sizeof(char));
+		parameters->full_variable_names[0][0] = '\0';
 		parameters->num_vars = 1;
 	}
 	parameters->full_variable_names[parameters->num_vars] = NULL;
-}
-
-
-Queue* makeReturnStructure(const int num_elems, char** full_variable_names, const char* filename)
-{
-	
-	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
-	Data* front_object = peekQueue(objects, QUEUE_FRONT);
-	if((ERROR_DATA & front_object->type) == ERROR_DATA)
-	{
-		return objects;
-	}
-	
-	Data** super_objects = malloc((objects->length)*sizeof(Data*));
-	char** varnames = malloc((objects->length)*sizeof(char*));
-	int num_objs = 0;
-	for(; objects->length > 0; num_objs++)
-	{
-		super_objects[num_objs] = organizeObjects(objects);
-		if(super_objects[num_objs] == NULL)
-		{
-			break;
-		}
-		else
-		{
-			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(varnames[num_objs], super_objects[num_objs]->names.short_name);
-		}
-	}
-	
-	
-	freeQueue(objects);
-	free(super_objects);
-	for(int i = 0; i < num_objs; i++)
-	{
-		free(varnames[i]);
-	}
-	free(varnames);
-	
-	fprintf(stderr, "\nProgram exited successfully.\n");
-	
-	return NULL;
-	
 }

@@ -106,6 +106,7 @@ typedef uint64_t OffsetType;
 
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
+typedef uint64_t address_t;
 
 //typedef struct
 //{
@@ -136,8 +137,9 @@ typedef struct
 	uint8_t size_of_lengths;
 	uint16_t leaf_node_k;
 	uint16_t internal_node_k;
-	uint64_t base_address;
-	uint64_t root_tree_address;
+	address_t base_address;
+	address_t root_tree_address;
+	address_t root_heap_address;
 } Superblock;
 
 typedef struct
@@ -229,7 +231,7 @@ typedef struct
 	uint16_t long_name_length;
 	char* long_name;
 	uint16_t short_name_length;
-	char short_name[NAME_LENGTH];
+	char* short_name;
 } NameStruct;
 
 typedef struct data_ Data;
@@ -251,12 +253,12 @@ struct data_
 	size_t elem_size;
 	
 	uint8_t layout_class;
-	uint64_t data_address;
+	address_t data_address;
 	byte* data_pointer;
 	DataArrays data_arrays;
 	
-	uint64_t parent_obj_address;
-	uint64_t this_obj_address;
+	address_t parent_obj_address;
+	address_t this_obj_address;
 	
 	Data* super_object;
 	Data** sub_objects;
@@ -284,7 +286,7 @@ typedef struct
 typedef struct tree_node_ TreeNode;
 struct tree_node_
 {
-	uint64_t address;
+	address_t address;
 	NodeType node_type;
 	LeafType leaf_type;
 	int16_t node_level;
@@ -311,7 +313,7 @@ typedef struct
 //mapping.c
 Data* getDataObjects(const char* filename, char** variable_names, int num_names);
 void findHeaderAddress(Data* super_object, char* variable_name);
-void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
+void collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Queue* objects);
 void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth);
 errno_t allocateSpace(Data* object);
@@ -319,25 +321,26 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 void initializeMaps(void);
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
-void parseHeaderTree(Data* super_object);
+uint16_t interpretMessages(Data* object, address_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
+Data* connectSubObject(Data* super_object, address_t sub_obj_address, char* name);
 void initializePageObjects(void);
 void freeVarname(void* vn);
 void initialize(void);
-Data* fillObject(uint64_t this_obj_address, uint64_t parent_obj_address, char* name);
+uint32_t getNumSymbols(address_t address);
+Data* fillObject(address_t this_obj_address, address_t parent_obj_address, char* name);
+void readTreeNode(Data* super_object, address_t node_address, address_t heap_address);
+void readSnod(Data* super_object, address_t node_address, address_t heap_address);
 
 //fileHelper.c
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
-byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type);
-byte* navigatePolitely(uint64_t address, uint64_t bytes_needed);
-void releasePages(uint64_t address, uint64_t bytes_needed);
-byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int map_index);
-void readTreeNode(byte* tree_pointer, AddrTrio* this_trio);
-void readSnod(byte* snod_pointer, byte* heap_pointer, AddrTrio* parent_trio, AddrTrio* this_address, bool_t get_top_level);
+byte* navigateTo(address_t address, uint64_t bytes_needed, int map_type);
+byte* navigatePolitely(address_t address, uint64_t bytes_needed);
+void releasePages(address_t address, uint64_t bytes_needed);
+byte* navigateWithMapIndex(address_t address, uint64_t bytes_needed, int map_type, int map_index);
 void freeDataObject(void* object);
-void freeDataObjectTree(Data* super_object);
+void freeDataObjectTree(Data* data_object);
 void endHooks(void);
 void freeAllMaps(void);
 void freeMap(MemMap map);
@@ -349,11 +352,11 @@ uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endiann
 void reverseBytes(byte* data_pointer, size_t num_elems);
 
 //readMessage.c
-void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
-void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size);
+void readDataSpaceMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
+void readDataTypeMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
+void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
+void readAttributeMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
 
 //getPageSize.c
 size_t getPageSize(void);
@@ -402,8 +405,6 @@ int fd;
 Superblock s_block;
 uint64_t default_bytes;
 int variable_found;
-AddrTrio root_trio;
-
 
 threadpool threads;
 int num_avail_threads;

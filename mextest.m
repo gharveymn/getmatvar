@@ -17,7 +17,7 @@ disp(userview.MemUsedMATLAB)
 
 % using load function
 tic
-%load(file);
+load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))

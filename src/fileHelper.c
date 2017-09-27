@@ -42,10 +42,8 @@ Superblock fillSuperblock(byte* superblock_pointer)
 	
 	//read scratchpad space
 	byte* sps_start = superblock_pointer + 80;
-	root_trio.parent_obj_header_address = UNDEF_ADDR;
-	root_trio.tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	root_trio.heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	s_block.root_tree_address = root_trio.tree_address;
+	s_block.root_tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	s_block.root_heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	
 	return s_block;
 }
@@ -519,94 +517,109 @@ void freeDataObject(void* object)
 }
 
 
-void freeDataObjectTree(Data* super_object)
+void freeDataObjectTree(Data* data_object)
 {
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui8_data != NULL)
+	if(data_object->data_arrays.is_mx_used != TRUE)
 	{
-		mxFree(super_object->data_arrays.ui8_data);
-		super_object->data_arrays.ui8_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i8_data != NULL)
-	{
-		mxFree(super_object->data_arrays.i8_data);
-		super_object->data_arrays.i8_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui16_data != NULL)
-	{
-		mxFree(super_object->data_arrays.ui16_data);
-		super_object->data_arrays.ui16_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i16_data != NULL)
-	{
-		mxFree(super_object->data_arrays.i16_data);
-		super_object->data_arrays.i16_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui32_data != NULL)
-	{
-		mxFree(super_object->data_arrays.ui32_data);
-		super_object->data_arrays.ui32_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i32_data != NULL)
-	{
-		mxFree(super_object->data_arrays.i32_data);
-		super_object->data_arrays.i32_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui64_data != NULL)
-	{
-		mxFree(super_object->data_arrays.ui64_data);
-		super_object->data_arrays.ui64_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i64_data != NULL)
-	{
-		mxFree(super_object->data_arrays.i64_data);
-		super_object->data_arrays.i64_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.single_data != NULL)
-	{
-		mxFree(super_object->data_arrays.single_data);
-		super_object->data_arrays.single_data = NULL;
-	}
-	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.double_data != NULL)
-	{
-		mxFree(super_object->data_arrays.double_data);
-		super_object->data_arrays.double_data = NULL;
-	}
-	
-	if(super_object->data_arrays.sub_object_header_offsets != NULL)
-	{
-		free(super_object->data_arrays.sub_object_header_offsets);
-		super_object->data_arrays.sub_object_header_offsets = NULL;
-	}
-	
-	for(int j = 0; j < super_object->chunked_info.num_filters; j++)
-	{
-		free(super_object->chunked_info.filters[j].client_data);
-		super_object->chunked_info.filters[j].client_data = NULL;
-	}
-	
-	if(super_object->sub_objects != NULL)
-	{
-		for(int j = 0; j < super_object->num_sub_objs; j++)
+		if(data_object->data_arrays.ui8_data != NULL)
 		{
-			freeDataObjectTree(super_object->sub_objects[j]);
+			mxFree(data_object->data_arrays.ui8_data);
+			data_object->data_arrays.ui8_data = NULL;
 		}
-		free(super_object->sub_objects);
-		super_object->sub_objects = NULL;
+		
+		if(data_object->data_arrays.i8_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i8_data);
+			data_object->data_arrays.i8_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui16_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui16_data);
+			data_object->data_arrays.ui16_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i16_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i16_data);
+			data_object->data_arrays.i16_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui32_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui32_data);
+			data_object->data_arrays.ui32_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i32_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i32_data);
+			data_object->data_arrays.i32_data = NULL;
+		}
+		
+		if(data_object->data_arrays.ui64_data != NULL)
+		{
+			mxFree(data_object->data_arrays.ui64_data);
+			data_object->data_arrays.ui64_data = NULL;
+		}
+		
+		if(data_object->data_arrays.i64_data != NULL)
+		{
+			mxFree(data_object->data_arrays.i64_data);
+			data_object->data_arrays.i64_data = NULL;
+		}
+		
+		if(data_object->data_arrays.single_data != NULL)
+		{
+			mxFree(data_object->data_arrays.single_data);
+			data_object->data_arrays.single_data = NULL;
+		}
+		
+		if(data_object->data_arrays.double_data != NULL)
+		{
+			mxFree(data_object->data_arrays.double_data);
+			data_object->data_arrays.double_data = NULL;
+		}
+	}
+	
+	if(data_object->names.short_name != NULL)
+	{
+		free(data_object->names.short_name);
+		data_object->names.short_name = NULL;
+	}
+	
+	if(data_object->names.long_name != NULL)
+	{
+		free(data_object->names.long_name);
+		data_object->names.long_name = NULL;
+	}
+	
+	if(data_object->data_arrays.sub_object_header_offsets != NULL)
+	{
+		free(data_object->data_arrays.sub_object_header_offsets);
+		data_object->data_arrays.sub_object_header_offsets = NULL;
+	}
+	
+	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+	{
+		free(data_object->chunked_info.filters[j].client_data);
+		data_object->chunked_info.filters[j].client_data = NULL;
+	}
+	
+	if(data_object->sub_objects != NULL)
+	{
+		for(int j = 0; j < data_object->num_sub_objs; j++)
+		{
+			freeDataObjectTree(data_object->sub_objects[j]);
+		}
+		free(data_object->sub_objects);
+		data_object->sub_objects = NULL;
 	}
 	
 	
-	free(super_object);
-	super_object = NULL;
+	free(data_object);
+	data_object = NULL;
 	
 }
 

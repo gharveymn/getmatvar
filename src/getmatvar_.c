@@ -1,5 +1,4 @@
 #include "mapping.h"
-#include "getmatvar_.h"
 
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -30,8 +29,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names,
-					 const char* filename)
+void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
 {
 	
 	mwSize ret_struct_dims[1] = {1};
@@ -45,19 +43,24 @@ void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** fu
 	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
 	for(int i = 0; i < super_object->num_sub_objs; i++)
 	{
-			varnames[i] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
+		varnames[i] = malloc((super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
 	}
-	
-	#pragma GCC diagnostic push
-	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
-	#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 	
 	makeSubstructure(uberStructure[0], super_object->num_sub_objs, super_object->sub_objects, STRUCT_DATA);
 	
-	freeDataObjectTree(super_object);
+	for(int i = 0; i < super_object->num_sub_objs; i++)
+	{
+		free(varnames[i]);
+	}
 	free(varnames);
+	
+	freeDataObjectTree(super_object);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
 	
@@ -247,7 +250,7 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 					else if(mxIsChar(prhs[i]) == TRUE)
 					{
 						input = mxArrayToString(prhs[i]);
-						if(strncmp(input, "f",1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x48") == 0)
+						if(strncmp(input, "f", 1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x48") == 0)
 						{
 							will_multithread = FALSE;
 						}
@@ -345,7 +348,8 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 	{
 		free(parameters->full_variable_names);
 		parameters->full_variable_names = malloc(2*sizeof(char*));
-		parameters->full_variable_names[0] = "\0";
+		parameters->full_variable_names[0] = malloc(sizeof(char));
+		parameters->full_variable_names[0][0] = '\0';
 		parameters->num_vars = 1;
 	}
 	parameters->full_variable_names[parameters->num_vars] = NULL;

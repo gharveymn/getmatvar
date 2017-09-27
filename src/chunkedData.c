@@ -126,6 +126,7 @@ errno_t decompressChunk(TreeNode* node)
 	
 	if(will_multithread == TRUE)
 	{
+		enqueue(thread_object_queue, thread_object);
 		thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
 	}
 	else
