@@ -2,12 +2,15 @@
 //#pragma message ("getmatvar is compiling on WINDOWS")
 
 
-Queue* getDataObjects(const char* filename, char** variable_names, int num_names)
+Data* getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
 	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
+	
+	Data* super_object = malloc(sizeof(super_object));
+	initializeObject(super_object);
 
 #ifdef DO_MEMDUMP
 	pthread_cond_init(&dump_ready, NULL);
@@ -15,7 +18,6 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	dump = fopen("memdump.log", "w+");
 #endif
 	
-	Queue* objects = initQueue(freeDataObject);
 	SNODEntry* snod_entry;
 	char warn_msg[WARNING_BUFFER_SIZE];
 	num_avail_threads = getNumProcessors() - 1;
@@ -29,26 +31,20 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	fd = open(filename, O_RDONLY);
 	if(fd < 0)
 	{
-		Data* data_object = malloc(sizeof(Data));
-		initializeObject(data_object);
-		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->names.short_name, "getmatvar:fileNotFoundError");
-		sprintf(data_object->matlab_class, "No file found with name \'%s\'.\n\n", filename);
-		enqueue(objects, data_object);
-		return objects;
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:fileNotFoundError");
+		sprintf(error_message, "No file found with name \'%s\'.\n\n", filename);
+		return NULL;
 	}
 	
 	//get file size
 	file_size = (size_t)lseek(fd, 0, SEEK_END);
 	if(file_size == (size_t)-1)
 	{
-		Data* data_object = malloc(sizeof(Data));
-		initializeObject(data_object);
-		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->names.short_name, "getmatvar:lseekFailureError");
-		sprintf(data_object->matlab_class, "lseek failed, check errno %s\n\n", strerror(errno));
-		enqueue(objects, data_object);
-		return objects;
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:lseekFailureError");
+		sprintf(error_message, "lseek failed, check errno %s\n\n", strerror(errno));
+		return NULL;
 	}
 	
 	byte* head = navigateTo(0, MATFILE_SIG_LEN, TREE);
@@ -56,20 +52,17 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	{
 		char filetype[MATFILE_SIG_LEN];
 		memcpy(filetype, head, MATFILE_SIG_LEN);
-		Data* data_object = malloc(sizeof(Data));
-		initializeObject(data_object);
-		data_object->type = ERROR_DATA | END_SENTINEL;
-		sprintf(data_object->names.short_name, "getmatvar:wrongFormatError");
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:wrongFormatError");
 		if(memcmp(filetype, "MATLAB", 6) == 0)
 		{
-			sprintf(data_object->matlab_class, "The input file must be a Version 7.3+ MAT-file. This is a %s.\n\n", filetype);
+			sprintf(error_message, "The input file must be a Version 7.3+ MAT-file. This is a %s.\n\n", filetype);
 		}
 		else
 		{
-			sprintf(data_object->matlab_class, "The input file must be a Version 7.3+ MAT-file. This is an unknown file format.\n\n");
+			sprintf(error_message, "The input file must be a Version 7.3+ MAT-file. This is an unknown file format.\n\n");
 		}
-		enqueue(objects, data_object);
-		return objects;
+		return NULL;
 	}
 	
 	num_pages = file_size/alloc_gran + 1;
@@ -79,222 +72,24 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	//find superblock
 	s_block = getSuperblock();
 	
-	bool_t load_all = FALSE;
-	for(int i = 0; i < num_names; i++)
-	{
-		if(strcmp(variable_names[i], "\0") == 0)
-		{
-			findHeaderAddress(variable_names[i], TRUE);
-			load_all = TRUE;
-			break;
-		}
-	}
-	
-	if(load_all)
-	{
-		for(int i = 0; i < num_names; i++)
-		{
-			if(variable_names[i] != NULL && strcmp(variable_names[i], "\0") != 0)
-			{
-				free(variable_names[i]);
-			}
-		}
-		free(variable_names);
-		
-		num_names = header_queue->length;
-		
-		variable_names = malloc(num_names*sizeof(char*));
-		for(int j = 0; j < num_names; j++)
-		{
-			snod_entry = dequeue(header_queue);
-			variable_names[j] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(variable_names[j], snod_entry->name);
-		}
-	}
-	
 	for(int name_index = 0; name_index < num_names; name_index++)
 	{
-		flushQueue(addr_queue);
-		flushQueue(header_queue);
 		
-		findHeaderAddress(variable_names[name_index], FALSE);
+		findHeaderAddress(super_object, variable_names[name_index]);
 		
+		//remove
 		if(header_queue->length == 0)
 		{
 			Data* data_object = malloc(sizeof(Data));
 			initializeObject(data_object);
 			data_object->type = UNDEF_DATA;
 			strcpy(data_object->names.short_name, peekQueue(varname_queue, QUEUE_BACK));
-			enqueue(objects, data_object);
 			sprintf(warn_msg, "Variable \'%s\' was not found.", variable_names[name_index]);
 			readMXWarn("getmatvar:variableNotFound", warn_msg);
 		}
 		
-		//interpret the header messages
-		while(header_queue->length > 0)
-		{
-			
-			snod_entry = dequeue(header_queue);
-			uint64_t header_address = snod_entry->this_obj_header_address;
-			
-			//initialize elements since we have nested deallocation
-			Data* data_object = malloc(sizeof(Data));
-			initializeObject(data_object);
-			
-			//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
-			byte* header_pointer = navigateTo(header_address, 16, TREE);
-			uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
-			uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
-			
-			strcpy(data_object->names.short_name, snod_entry->name);
-			data_object->parent_obj_address = snod_entry->parent_obj_header_address;
-			data_object->this_obj_address = snod_entry->this_obj_header_address;
-			collectMetaData(data_object, header_address, num_msgs, header_length);
-			enqueue(objects, data_object);
-			
-			//this block handles errors and sets up signals for controlled shutdown
-			if(data_object->type == ERROR_DATA)
-			{
-				Data* front_object = peekQueue(objects, QUEUE_FRONT);
-				front_object->type = ERROR_DATA;
-				strcpy(front_object->names.short_name, data_object->names.short_name);
-				strcpy(front_object->matlab_class, data_object->matlab_class);
-				
-				//note that num_objs is now the end sentinel
-				
-				Data* end_object = malloc(sizeof(Data));
-				initializeObject(end_object);
-				end_object->type = DELIMITER | END_SENTINEL;
-				end_object->parent_obj_address = UNDEF_ADDR;
-				enqueue(objects, end_object);
-				
-				return objects;
-			}
-			
-			if(data_object->type == FUNCTION_HANDLE_DATA)
-			{
-				
-				//skip objects to the "function" object
-				
-				do
-				{
-					//should skip "function_handle" and "file" objects
-					snod_entry = dequeue(header_queue);
-					
-					//need to check for the underscore since there is also an object called "function_handle"
-				} while(strncmp(snod_entry->name, "function", 8) != 0 || snod_entry->name[8] == '_');
-				//get the function handle data
-				
-				header_address = snod_entry->this_obj_header_address;
-				Data* fh = malloc(sizeof(Data));
-				initializeObject(fh);
-				header_pointer = navigateTo(header_address, 16, TREE);
-				header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
-				num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
-				strcpy(fh->names.short_name, snod_entry->name);
-				fh->parent_obj_address = snod_entry->parent_obj_header_address;
-				fh->this_obj_address = snod_entry->this_obj_header_address;
-				collectMetaData(fh, header_address, num_msgs, header_length);
-				
-				//dont use strchr because we need to know the length of the copied string
-				uint32_t fh_len = fh->num_elems;
-				char* func_name = NULL;
-				for(; fh_len > 0; fh_len--)
-				{
-					func_name = (char*)&fh->data_arrays.ui16_data[fh->num_elems - fh_len];
-					if(*func_name == '@')
-					{
-						break;
-					}
-				}
-				
-				if(fh_len == 0)
-				{
-					data_object->data_arrays.ui16_data = mxMalloc((fh->num_elems + FUNCTION_HANDLE_SIG_LEN + 1) * fh->elem_size);
-					for (int i = 0; i < FUNCTION_HANDLE_SIG_LEN; i++)
-					{
-						data_object->data_arrays.ui16_data[i] = (uint16_t)FUNCTION_HANDLE_SIG[i];
-					}
-					data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN] = 64; //this is the '@' character
-					memcpy(&data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN + 1], fh->data_arrays.ui16_data, fh->num_elems*fh->elem_size);
-					data_object->num_elems = FUNCTION_HANDLE_SIG_LEN + 1 + fh->num_elems; //+ 1 for the seperator
-				}
-				else
-				{
-					data_object->data_arrays.ui16_data = mxMalloc((fh_len + FUNCTION_HANDLE_SIG_LEN) * fh->elem_size);
-					for (int i = 0; i < FUNCTION_HANDLE_SIG_LEN; i++)
-					{
-						data_object->data_arrays.ui16_data[i] = (uint16_t)FUNCTION_HANDLE_SIG[i];
-					}
-					memcpy(&data_object->data_arrays.ui16_data[FUNCTION_HANDLE_SIG_LEN], func_name, fh_len * fh->elem_size);
-					data_object->num_elems = FUNCTION_HANDLE_SIG_LEN + fh_len;
-				}
-				
-				data_object->num_dims = 2;
-				data_object->dims[0] = 1;
-				data_object->dims[1] = data_object->num_elems;
-				data_object->dims[2] = 0;
-				
-				//free the temporary "function" object
-				freeDataObject(fh);
-				
-				//skip "type" object
-				dequeue(header_queue);
-				
-				//if this is "within_file_path" then this is an anonymous function, if it is "matlabroot" then it is just a name
-				snod_entry = dequeue(header_queue);
-				if(strncmp(snod_entry->name, "matlabroot", 10) == 0)
-				{
-					dequeue(header_queue); //"sentinel"
-					dequeue(header_queue); //"separator"
-				}
-				else if(strncmp(snod_entry->name, "within_file_path", 16) == 0)
-				{
-					dequeue(header_queue); //"workspace"
-					dequeue(header_queue); //"matlabroot"
-					dequeue(header_queue); //"sentinel"
-					dequeue(header_queue); //"separator"
-				}
-				else
-				{
-					Data* front_object = peekQueue(objects, QUEUE_FRONT);
-					front_object->type = ERROR_DATA;
-					strcpy(front_object->names.short_name, "getmatvar:unexpectedFunctionHandleObjectOrder");
-					sprintf(front_object->matlab_class, "The order of objects within the \"%s\" function handle subtree was unexpected", data_object->names.short_name);
-					
-					//note that num_objs is now the end sentinel
-					
-					Data* end_object = malloc(sizeof(Data));
-					initializeObject(end_object);
-					end_object->type = DELIMITER | END_SENTINEL;
-					end_object->parent_obj_address = UNDEF_ADDR;
-					enqueue(objects, end_object);
-					
-					return objects;
-				}
-				
-				
-			}
-			
-		}
-		
-		//set object at the end to trigger sentinel
-		Data* delimit_object = malloc(sizeof(Data));
-		initializeObject(delimit_object);
-		delimit_object->type = DELIMITER;
-		delimit_object->parent_obj_address = UNDEF_ADDR;
-		enqueue(objects, delimit_object);
-		
 		
 	}
-	Data* end_object = peekQueue(objects, QUEUE_BACK);
-	end_object->type |= END_SENTINEL;
-	
-	for(int i = 0; i < num_names; i++)
-	{
-		free(variable_names[i]);
-	}
-	free(variable_names);
 	
 	close(fd);
 	if(threads_are_started == TRUE)
@@ -314,7 +109,7 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	pthread_mutex_destroy(&dump_lock);
 #endif
 	
-	return objects;
+	return super_object;
 	
 }
 
@@ -398,6 +193,32 @@ void destroyPageObjects(void)
 }
 
 
+Data* fillObject(uint64_t this_obj_address, uint64_t parent_obj_address, char* name)
+{
+	Data* data_object = malloc(sizeof(Data));
+	initializeObject(data_object);
+	
+	//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
+	byte* header_pointer = navigateTo(this_obj_address, 16, TREE);
+	uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
+	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
+	
+	strcpy(data_object->names.short_name, name);
+	data_object->parent_obj_address = parent_obj_address;
+	data_object->this_obj_address = this_obj_address;
+	collectMetaData(data_object, this_obj_address, num_msgs, header_length);
+	
+	//this block handles errors and sets up signals for controlled shutdown
+	if(error_flag == TRUE)
+	{
+		return NULL;
+	}
+	
+	return data_object;
+	
+}
+
+
 void initializeObject(Data* object)
 {
 	
@@ -461,15 +282,18 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	
 	if(object->type == UNDEF_DATA)
 	{
-		object->type = ERROR_DATA;
-		sprintf(object->names.short_name, "getmatvar:unknownDataTypeError");
-		sprintf(object->matlab_class, "Unknown data type encountered.\n\n");
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:unknownDataTypeError");
+		sprintf(error_message, "Unknown data type encountered.\n\n");
 		return;
 	}
 	
 	//allocate space for data
 	if(allocateSpace(object) != 0)
 	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:allocationError");
+		sprintf(error_message, "Unknown error happened during allocation.\n\n");
 		return;
 	}
 	
@@ -491,9 +315,9 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			}
 			break;
 		default:
-			object->type = ERROR_DATA;
-			sprintf(object->names.short_name, "getmatvar:unknownLayoutClassError");
-			sprintf(object->matlab_class, "Unknown layout class encountered.\n\n");
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:unknownLayoutClassError");
+			sprintf(error_message, "Unknown layout class encountered.\n\n");
 			return;
 	}
 	
@@ -829,7 +653,7 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 }
 
 
-void findHeaderAddress(char* variable_name, bool_t get_top_level)
+void findHeaderAddress(Data* super_object, char* variable_name)
 {
 	char* delim = ".", * token;
 	AddrTrio* root_trio_copy = malloc(sizeof(AddrTrio));
@@ -860,12 +684,12 @@ void findHeaderAddress(char* variable_name, bool_t get_top_level)
 		}
 	}
 	
-	parseHeaderTree(get_top_level);
+	parseHeaderTree(super_object);
 	
 }
 
 
-void parseHeaderTree(bool_t get_top_level)
+void parseHeaderTree(Data* super_object)
 {
 	byte* tree_pointer, * heap_pointer;
 	
@@ -894,52 +718,113 @@ void parseHeaderTree(bool_t get_top_level)
 	
 }
 
-
-Data* organizeObjects(Queue* objects)
+void readTreeNode(Data* super_object, uint64_t node_address, uint64_t heap_address)
 {
-	Data* super_object = dequeue(objects);
+	uint16_t entries_used = 0;
+	uint64_t left_sibling_address, right_sibling_address;
+	byte* tree_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
 	
-	while((DELIMITER & super_object->type) == DELIMITER)
+	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	
+	//group node B-Tree traversal (version 0)
+	int key_size = s_block.size_of_lengths;
+	byte* key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+	for(int i = 0; i < entries_used; i++)
 	{
-		if(objects->length == 0)
-		{
-			return NULL;
-		}
-		super_object = dequeue(objects);
+		
+		uint64_t sub_node_address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;;
+		uint64_t sub_node_heap_address = heap_address;
+		
+		readSnod(super_object, sub_node_address, heap_address);
+		
+		key_pointer += key_size + s_block.size_of_offsets;
+		
 	}
-	
-	if(super_object->type == STRUCT_DATA || super_object->type == REF_DATA)
-	{
-		placeInSuperObject(super_object, objects, objects->length, 0 );
-	}
-	
-	return super_object;
 	
 }
 
 
-void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth)
+void readSnod(Data* super_object, uint64_t node_address, uint64_t heap_address)
 {
-	//note: index should be at the starting index of the subobjects
+	byte* snod_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
+	byte* heap_pointer = navigateTo(heap_address, default_bytes, META_DATA_BYTE_ORDER);
 	
-	max_depth = max_depth < curr_depth? curr_depth : max_depth;
 	
-	super_object->num_sub_objs = 0;
-	super_object->sub_objects = malloc(num_objs_left*sizeof(Data*));
-	Data* curr = dequeue(objects);
+	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	uint32_t cache_type;
+	char* var_name = peekQueue(varname_queue, QUEUE_FRONT);
 	
-	while(super_object->this_obj_address == curr->parent_obj_address)
+	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+	
+	//get to entries
+	int sym_table_entry_size = 2*s_block.size_of_offsets + 4 + 4 + 16;
+	
+	int num_
+	for(int i = 0, is_done = FALSE; i < num_symbols && is_done != TRUE; i++)
 	{
-		curr->super_object = super_object;
-		super_object->sub_objects[super_object->num_sub_objs] = curr;
-		if(super_object->sub_objects[super_object->num_sub_objs]->type == STRUCT_DATA || super_object->sub_objects[super_object->num_sub_objs]->type == REF_DATA)
+		uint64_t name_offset = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+		uint64_t sub_obj_address = getBytesAsNumber(snod_pointer + 8 + i*sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		char* name = (char*)(heap_data_segment_pointer + name_offset);
+		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+		
+		//check if we have found the object we're looking for or if we are just adding subobjects
+		if((variable_found == TRUE || (var_name != NULL && strcmp(var_name, name) == 0)) && strncmp(name, "#", 1) != 0)
 		{
-			//since this is a depth-first traversal
-			placeInSuperObject(super_object->sub_objects[super_object->num_sub_objs], objects, objects->length, curr_depth + 1);
+			if(variable_found == FALSE)
+			{
+				
+				resetQueue(header_queue);
+				resetQueue(addr_queue);
+				dequeue(varname_queue);
+				
+				//means this was the last token, so we've found the variable we want
+				if(varname_queue->length == 0)
+				{
+					variable_found = TRUE;
+					is_done = TRUE;
+				}
+				
+			}
+			
+			super_object->sub_objects[i] = fillObject(sub_obj_address, super_object->this_obj_address,name);
+			
+			//if the variable has been found we should keep going down the tree for that variable
+			//all items in the queue should only be subobjects so this is safe
+			if(cache_type == 1)
+			{
+				
+				//if another tree exists for this object, put it on the queue
+				trio = malloc(sizeof(AddrTrio));
+				trio->parent_obj_header_address = snod_entry->this_obj_header_address;
+				trio->tree_address =
+						getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				trio->heap_address =
+						getBytesAsNumber(snod_pointer + 8 + 3*s_block.size_of_offsets + 8 + sym_table_entry_size*i, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				snod_entry->sub_tree_address = trio->tree_address;
+				priorityEnqueue(addr_queue, trio);
+				parseHeaderTree(FALSE);
+				snod_pointer = navigateTo(this_trio->tree_address, default_bytes, TREE);
+				heap_pointer = navigateTo(this_trio->heap_address, default_bytes, HEAP);
+				heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+				
+			}
+			else if(cache_type == 2  && get_top_level == FALSE)
+			{
+				//this object is a symbolic link, the name is stored in the heap at the address indicated in the scratch pad
+				snod_entry->name_offset = getBytesAsNumber(snod_pointer + 8 + 2*s_block.size_of_offsets + 8 + sym_table_entry_size*i, 4, META_DATA_BYTE_ORDER);
+				strcpy(snod_entry->name, (char*)(heap_pointer + 8 + 2*s_block.size_of_lengths + s_block.size_of_offsets + snod_entry->name_offset));
+			}
+			
 		}
-		curr = dequeue(objects);
-		super_object->num_sub_objs++;
+		else
+		{
+			free(snod_entry);
+		}
+		
 	}
+	
 	
 }
 

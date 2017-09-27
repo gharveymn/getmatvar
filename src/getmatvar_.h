@@ -18,7 +18,8 @@ typedef struct
 
 //getmatvar.c
 void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters);
-Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename);
+void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names,
+					 const char* filename);
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type);
 
 //mexPointerSetters.c

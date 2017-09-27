@@ -1,4 +1,5 @@
 #include "mapping.h"
+#include "getmatvar_.h"
 
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -16,73 +17,49 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	}
 	else
 	{
-		
 		paramStruct parameters;
 		readInput(nrhs, prhs, &parameters);
-		
-		Queue* error_objects = makeReturnStructure(plhs, parameters.num_vars, parameters.full_variable_names, parameters.filename);
-		if(error_objects != NULL)
+		makeReturnStructure(plhs, parameters.num_vars, parameters.full_variable_names, parameters.filename);
+		for(int i = 0; i < parameters.num_vars; i++)
 		{
-			Data* front_object = peekQueue(error_objects, QUEUE_FRONT);
-			char err_id[NAME_LENGTH], err_string[NAME_LENGTH];
-			strcpy(err_id, front_object->names.short_name);
-			strcpy(err_string, front_object->matlab_class);
-			freeQueue(error_objects);
-			readMXError(err_id, err_string);
+			free(parameters.full_variable_names[i]);
 		}
-		
+		free(parameters.full_variable_names);
 	}
 	
 }
 
 
-Queue* makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names, const char* filename)
+void makeReturnStructure(mxArray** uberStructure, const int num_elems, char** full_variable_names,
+					 const char* filename)
 {
 	
 	mwSize ret_struct_dims[1] = {1};
 	
-	Queue* objects = getDataObjects(filename, full_variable_names, num_elems);
-	Data* front_object = peekQueue(objects, QUEUE_FRONT);
-	if((ERROR_DATA & front_object->type) == ERROR_DATA)
+	Data* super_object = getDataObjects(filename, full_variable_names, num_elems);
+	if(error_flag == TRUE)
 	{
-		return objects;
+		freeDataObjectTree(super_object);
+		readMXError(error_id, error_message);
 	}
-	
-	Data** super_objects = malloc((objects->length)*sizeof(Data*));
-	char** varnames = malloc((objects->length)*sizeof(char*));
-	int num_objs = 0;
-	for(; objects->length > 0; num_objs++)
+	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
+	for(int i = 0; i < super_object->num_sub_objs; i++)
 	{
-		super_objects[num_objs] = organizeObjects(objects);
-		if(super_objects[num_objs] == NULL)
-		{
-			break;
-		}
-		else
-		{
-			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
-			strcpy(varnames[num_objs], super_objects[num_objs]->names.short_name);
-		}
+			varnames[i] = malloc(NAME_LENGTH*sizeof(char));
+			strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
 	}
 	
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, num_objs, varnames);
+	uberStructure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
 	#pragma GCC diagnostic pop
 	
-	makeSubstructure(uberStructure[0], num_objs, super_objects, STRUCT_DATA);
+	makeSubstructure(uberStructure[0], super_object->num_sub_objs, super_object->sub_objects, STRUCT_DATA);
 	
-	freeQueue(objects);
-	free(super_objects);
-	for(int i = 0; i < num_objs; i++)
-	{
-		free(varnames[i]);
-	}
+	freeDataObjectTree(super_object);
 	free(varnames);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
-	
-	return NULL;
 	
 }
 

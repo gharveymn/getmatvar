@@ -107,28 +107,28 @@ typedef uint64_t OffsetType;
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
 typedef uint8_t bool_t;
 
-typedef struct
-{
-	uint64_t parent_obj_header_address;
-	uint64_t tree_address;
-	uint64_t heap_address;
-} AddrTrio;
+//typedef struct
+//{
+//	uint64_t parent_obj_header_address;
+//	uint64_t tree_address;
+//	uint64_t heap_address;
+//} AddrTrio;
 
-typedef struct
-{
-	//this is an ENTRY for a SNOD
-	
-	uint64_t name_offset;
-	char name[NAME_LENGTH];
-	
-	uint64_t parent_obj_header_address;
-	uint64_t this_obj_header_address;
-	
-	uint64_t parent_tree_address;
-	uint64_t this_tree_address;
-	uint64_t sub_tree_address; //invoked if cache type 1
-	
-} SNODEntry;
+//typedef struct
+//{
+//	//this is an ENTRY for a SNOD
+//
+//	uint64_t name_offset;
+//	char* name; //this is actually a pointer in a mmap
+//
+//	uint64_t parent_obj_header_address;
+//	uint64_t this_obj_header_address;
+//
+//	uint64_t parent_tree_address;
+//	uint64_t this_tree_address;
+//	uint64_t sub_tree_address; //invoked if cache type 1
+//
+//} SNODEntry;
 
 typedef struct
 {
@@ -309,8 +309,8 @@ typedef struct
 } pageObject;
 
 //mapping.c
-Queue* getDataObjects(const char* filename, char** variable_names, int num_names);
-void findHeaderAddress(char* variable_name, bool_t get_top_level);
+Data* getDataObjects(const char* filename, char** variable_names, int num_names);
+void findHeaderAddress(Data* super_object, char* variable_name);
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length);
 Data* organizeObjects(Queue* objects);
 void placeInSuperObject(Data* super_object, Queue* objects, int num_objs_left, int curr_depth);
@@ -320,10 +320,11 @@ void initializeMaps(void);
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
-void parseHeaderTree(bool_t get_top_level);
+void parseHeaderTree(Data* super_object);
 void initializePageObjects(void);
 void freeVarname(void* vn);
 void initialize(void);
+Data* fillObject(uint64_t this_obj_address, uint64_t parent_obj_address, char* name);
 
 //fileHelper.c
 Superblock getSuperblock(void);
@@ -381,7 +382,10 @@ ByteOrder __byte_order__;
 size_t alloc_gran;
 size_t file_size;
 size_t num_pages;
+bool_t error_flag;
+char error_id[ERROR_BUFFER_SIZE];
 char error_message[ERROR_BUFFER_SIZE];
+char warn_id[WARNING_BUFFER_SIZE];
 char warn_message[WARNING_BUFFER_SIZE];
 
 
