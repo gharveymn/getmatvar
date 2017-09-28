@@ -523,6 +523,7 @@ errno_t allocateSpace(Data* object)
 			object->dims[2] = 0;
 			break;
 		case TABLE_DATA:
+		case SPARSE_DATA:
 			//do nothing
 			break;
 		case NULLTYPE_DATA:
@@ -590,6 +591,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		case STRUCT_DATA:
 		case FUNCTION_HANDLE_DATA:
 		case TABLE_DATA:
+		case SPARSE_DATA:
 		default:
 			//nothing to be done
 			break;

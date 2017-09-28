@@ -1,9 +1,9 @@
 addpath('res')
 addpath('bin')
-%file = 'res/cell_with_funcs.mat';
-%vars = {''};
-file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
-vars = {'extPar'};
+file = 'res/my_sparse.mat';
+vars = {''};
+%file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
+%vars = {'extPar'};
 
 userview = memory;
 disp(userview.MemUsedMATLAB)
@@ -18,7 +18,7 @@ disp(userview.MemUsedMATLAB)
 
 % using load function
 tic
-load(file);
+%load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))
