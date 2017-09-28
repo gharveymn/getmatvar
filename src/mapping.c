@@ -301,7 +301,8 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	
 	interpretMessages(object, header_address, header_length, 0, num_msgs, 0);
 	
-	//you can't be one dimensional and have two elements, so matlab stores nulls like this
+	//TODO make this more robust at some point
+	//matlab stores nulls like this
 	if(object->num_elems == 2 && object->num_dims == 1)
 	{
 		object->num_elems = 0;
@@ -312,7 +313,6 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		object->num_dims = 0;
 		return;
 	}
-	
 	
 	if(object->type == UNDEF_DATA)
 	{
@@ -355,7 +355,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			return;
 	}
 	
-	//if we have encountered a cell array, queue up headers for its elements
+	// we have encountered a cell array
 	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF_DATA)
 	{
 		object->sub_objects = malloc(object->num_elems * sizeof(Data*));
@@ -528,9 +528,9 @@ errno_t allocateSpace(Data* object)
 		case NULLTYPE_DATA:
 		default:
 			//this shouldn't happen
-			object->type = ERROR_DATA;
-			sprintf(object->names.short_name, "getmatvar:thisShouldntHappen");
-			sprintf(object->matlab_class, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:thisShouldntHappen");
+			sprintf(error_message, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
 			return 1;
 		
 	}

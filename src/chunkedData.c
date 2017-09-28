@@ -39,9 +39,9 @@ errno_t getChunkedData(Data* obj)
 	errno_t ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
 	{
-		object->type = ERROR_DATA;
-		sprintf(object->names.short_name, "getmatvar:internalInvalidNodeType");
-		sprintf(object->matlab_class, "Invalid node type in fillNode()\n\n");
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:internalInvalidNodeType");
+		sprintf(error_message, "Invalid node type in fillNode()\n\n");
 		freeTree(&root);
 		return ret;
 	}
@@ -165,21 +165,21 @@ void* doInflate_(void* t)
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
-				object->type = ERROR_DATA;
-				sprintf(object->names.short_name, "getmatvar:libdeflateBadData");
-				sprintf(object->matlab_class, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:libdeflateBadData");
+				sprintf(error_message, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_SHORT_OUTPUT:
-				object->type = ERROR_DATA;
-				sprintf(object->names.short_name, "getmatvar:libdeflateShortOutput");
-				sprintf(object->matlab_class, "libdeflate failed failed to decompress because a NULL "
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:libdeflateShortOutput");
+				sprintf(error_message, "libdeflate failed failed to decompress because a NULL "
 						"'actual_out_nbytes_ret' was provided, but the data would have"
 						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 				return (void*)&thread_obj->err;
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				object->type = ERROR_DATA;
-				sprintf(object->names.short_name, "getmatvar:libdeflateInsufficientSpace");
-				sprintf(object->matlab_class, "libdeflate failed because the output buffer was not large enough (tried to put "
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
+				sprintf(error_message, "libdeflate failed because the output buffer was not large enough (tried to put "
 						"%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
 				return (void*)&thread_obj->err;
 			default:

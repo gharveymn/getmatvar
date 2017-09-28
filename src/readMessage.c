@@ -246,7 +246,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	uint16_t datatype_size = (uint16_t)getBytesAsNumber(msg_pointer + 4, 2, META_DATA_BYTE_ORDER);
 	uint16_t dataspace_size = (uint16_t)getBytesAsNumber(msg_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	strncpy(name, (char*)(msg_pointer + 8), name_size);
-	if(strcmp(name, "MATLAB_class") == 0)
+	if(strcmp(name, "MATLAB_class") == 0 && object->type != SPARSE_DATA)
 	{
 		uint32_t attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4, META_DATA_BYTE_ORDER);
 		strncpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), attribute_data_size);
@@ -267,6 +267,11 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		{
 			object->type = TABLE_DATA;
 		}
+	}
+	else if(strcmp(name, "MATLAB_sparse") == 0)
+	{
+		object->type = SPARSE_DATA;
+		memcpy(&object->dims[0], (uint64_t*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), sizeof(uint64_t));
 	}
 }
 

@@ -1,9 +1,9 @@
 addpath('res')
 addpath('bin')
-file = 'res/cell_with_funcs.mat';
-vars = {''};
-%file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
-%vars = {'extPar'};
+%file = 'res/cell_with_funcs.mat';
+%vars = {''};
+file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
+vars = {'extPar'};
 
 userview = memory;
 disp(userview.MemUsedMATLAB)
@@ -14,6 +14,7 @@ toc
 userview = memory;
 disp(userview.MemUsedMATLAB)
 %a = t;
+%ex = extPar;
 
 % using load function
 tic
@@ -27,6 +28,8 @@ toc
 % else
 % 	disp('my_struct1.mat is correct')
 % end
+
+%[a,b,c] = compstruct(ex, extPar);
 
 % using matlab's partial loader
 % tic

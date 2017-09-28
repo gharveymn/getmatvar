@@ -305,6 +305,7 @@ void setSglPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
 {
+	
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	mxArray* mxDblPtr = mxCreateNumericArray(0, NULL, mxDOUBLE_CLASS, object->complexity_flag);
 	if(object->complexity_flag == mxCOMPLEX)
@@ -330,6 +331,55 @@ void setDblPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	}
 	
 	free(obj_dims);
+	
+}
+
+
+void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, DataType super_structure_type)
+{
+	
+	Data* data = findSubObjectByShortName(object, "data");
+	Data* ir = findSubObjectByShortName(object, "ir");
+	Data* jc = findSubObjectByShortName(object, "jc");
+	mxArray* mxSpsPtr = mxCreateSparse(object->dims[0],jc->num_elems - 1, ir->num_elems,object->complexity_flag);
+	if(object->complexity_flag == mxCOMPLEX)
+	{
+		DataArrays imag_data = rearrangeImaginaryData(data);
+		mxSetPr(mxSpsPtr, data->data_arrays.double_data);
+		mxSetPi(mxSpsPtr, imag_data.double_data);
+	}
+	else
+	{
+		mxSetPr(mxSpsPtr, data->data_arrays.double_data);
+	}
+	
+	data->data_arrays.is_mx_used = TRUE;
+	
+	mwIndex* irPtr = mxGetIr(mxSpsPtr);
+	for(int i = 0; i < ir->num_elems; i++)
+	{
+		irPtr[i] = (mwIndex)ir->data_arrays.ui64_data[i];
+	}
+	
+	ir->data_arrays.is_mx_used = FALSE;
+	
+	mwIndex* jcPtr = mxGetJc(mxSpsPtr);
+	for(int i = 0; i < jc->num_elems; i++)
+	{
+		jcPtr[i] = (mwIndex)jc->data_arrays.ui64_data[i];
+	}
+	
+	jc->data_arrays.is_mx_used = FALSE;
+	
+	if(super_structure_type == STRUCT_DATA)
+	{
+		mxSetField(returnStructure, 0, varname, mxSpsPtr);
+	}
+	else if(super_structure_type == REF_DATA)
+	{
+		//is a cell array
+		mxSetCell(returnStructure, index, mxSpsPtr);
+	}
 	
 }
 

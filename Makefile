@@ -3,6 +3,7 @@ CC=gcc
 #===DIRECTORIES===#
 OBJ_DIR=src
 SRC_DIR=src
+TST_DIR=tests
 
 
 LIBDEFLATE_INC=./src/extlib/libdeflate/x64/unix
@@ -23,7 +24,7 @@ LIBS=-lm -lpthread
 _DEPS = mapping.h libdeflate.h thpool.h queue.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = ../tests/mexemulate.o mapping.o fileHelper.o \
+_OBJ = ../$(TST_DIR)/mexemulate.o mapping.o fileHelper.o \
 numberHelper.o ezq.o getSystemInfo.o \
 readMessage.o chunkedData.o \
 extlib/thpool/thpool.o
@@ -47,4 +48,4 @@ src/extlib/libdeflate/x64/unix/libdeflate.a:
 .PHONY: clean
 
 clean:
-	rm -f $(OBJ_DIR)/*.o *~ core $(INCDIR)/*~
+	rm -f $(OBJ_DIR)/*.o $(TST_DIR)/*.o *~ core $(INCDIR)/*~

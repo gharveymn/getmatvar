@@ -113,6 +113,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case DOUBLE_DATA:
 				setDblPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
+			case SPARSE_DATA:
+				setSpsPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				break;
 			case REF_DATA:
 				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				//Indicate we should free any memory used by this
@@ -123,14 +126,8 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case FUNCTION_HANDLE_DATA:
-				//setUI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				enqueue(eval_objects, objects[index]);
-				/*remove this section when system is ready*/
-				//readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Function handles are not yet supported.");
-				//mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
-				/*remove this section when system is ready*/
-				
 				break;
 			case TABLE_DATA:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");

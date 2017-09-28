@@ -170,9 +170,7 @@ typedef enum
 	STRUCT_DATA = 1 << 12,
 	FUNCTION_HANDLE_DATA = 1 << 13,
 	TABLE_DATA = 1 << 14,
-	DELIMITER = 1 << 15,
-	END_SENTINEL = 1 << 16,
-	ERROR_DATA = 1 << 17,
+	SPARSE_DATA = 1 << 15,
 	UNDEF_DATA = 1 << 18
 } DataType;
 
