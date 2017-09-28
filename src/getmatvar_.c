@@ -1,9 +1,6 @@
 #include "mapping.h"
 #include "ezq.h"
 
-
-static Queue* eval_objects;
-
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
@@ -19,9 +16,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	}
 	else
 	{
-		paramStruct parameters;
-		readInput(nrhs, prhs, &parameters);
-		makeReturnStructure(plhs, parameters, nlhs);
+		readInput(nrhs, prhs);
+		makeReturnStructure(plhs, nlhs);
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
 			free(parameters.full_variable_names[i]);
@@ -32,17 +28,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-void makeReturnStructure(mxArray** super_structure, paramStruct parameters, int nlhs)
+void makeReturnStructure(mxArray** super_structure, int nlhs)
 {
-	
+	object_queue = initQueue(freeDataObject);
 	eval_objects = initQueue(NULL);
 	
 	mwSize ret_struct_dims[1] = {1};
 	
-	Data* super_object = getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
+	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
 	if(error_flag == TRUE)
 	{
-		freeDataObjectTree(super_object);
 		readMXError(error_id, error_message);
 	}
 	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
@@ -71,7 +66,7 @@ void makeReturnStructure(mxArray** super_structure, paramStruct parameters, int 
 	free(varnames);
 	
 	freeQueue(eval_objects);
-	freeDataObjectTree(super_object);
+	freeQueue(object_queue);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
 	
@@ -160,7 +155,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 }
 
 
-void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
+void readInput(int nrhs, const mxArray* prhs[])
 {
 	if(mxGetClassID(prhs[0]) != mxCHAR_CLASS)
 	{
@@ -168,9 +163,9 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 	}
 	
 	char* input;
-	parameters->filename = mxArrayToString(prhs[0]);
-	parameters->num_vars = 0;
-	parameters->full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
+	parameters.filename = mxArrayToString(prhs[0]);
+	parameters.num_vars = 0;
+	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
 	for(int i = 1; i < nrhs; i++)
@@ -178,11 +173,11 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 		
 		if(mxGetClassID(prhs[i]) == mxSTRING_CLASS)
 		{
-			for(int j = parameters->num_vars - 1; j >= 0; j--)
+			for(int j = parameters.num_vars - 1; j >= 0; j--)
 			{
-				free(parameters->full_variable_names[j]);
+				free(parameters.full_variable_names[j]);
 			}
-			free(parameters->full_variable_names);
+			free(parameters.full_variable_names);
 			readMXError("getmatvar:invalidInputType", "This function does not support strings.\n\n");
 		}
 		
@@ -208,11 +203,11 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 						{
 							if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 							{
-								for(int j = parameters->num_vars - 1; j >= 0; j--)
+								for(int j = parameters.num_vars - 1; j >= 0; j--)
 								{
-									free(parameters->full_variable_names[j]);
+									free(parameters.full_variable_names[j]);
 								}
-								free(parameters->full_variable_names);
+								free(parameters.full_variable_names);
 								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 							}
 						}
@@ -222,22 +217,22 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 						num_threads_to_use = (int)res;
 						if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
 						{
-							for(int j = parameters->num_vars - 1; j >= 0; j--)
+							for(int j = parameters.num_vars - 1; j >= 0; j--)
 							{
-								free(parameters->full_variable_names[j]);
+								free(parameters.full_variable_names[j]);
 							}
-							free(parameters->full_variable_names);
+							free(parameters.full_variable_names);
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}
 					}
 					
 					if(num_threads_to_use < 0)
 					{
-						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
-							free(parameters->full_variable_names[j]);
+							free(parameters.full_variable_names[j]);
 						}
-						free(parameters->full_variable_names);
+						free(parameters.full_variable_names);
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
@@ -285,11 +280,11 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 					else
 					{
 					mt_error:
-						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
-							free(parameters->full_variable_names[j]);
+							free(parameters.full_variable_names[j]);
 						}
-						free(parameters->full_variable_names);
+						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
 					}
 					
@@ -302,11 +297,11 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
-					for(int j = parameters->num_vars - 1; j >= 0; j--)
+					for(int j = parameters.num_vars - 1; j >= 0; j--)
 					{
-						free(parameters->full_variable_names[j]);
+						free(parameters.full_variable_names[j]);
 					}
-					free(parameters->full_variable_names);
+					free(parameters.full_variable_names);
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 				
 			}
@@ -338,32 +333,32 @@ void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters)
 				else
 				{
 					kwarg_expected = NOT_AN_ARGUMENT;
-					parameters->full_variable_names[parameters->num_vars] = malloc(strlen(input)*sizeof(char)); /*this gets freed in getDataObjects*/
-					strcpy(parameters->full_variable_names[parameters->num_vars], input);
-					parameters->num_vars++;
+					parameters.full_variable_names[parameters.num_vars] = malloc(strlen(input)*sizeof(char)); /*this gets freed in getDataObjects*/
+					strcpy(parameters.full_variable_names[parameters.num_vars], input);
+					parameters.num_vars++;
 				}
 			}
 			else
 			{
-				for(int j = parameters->num_vars - 1; j >= 0; j--)
+				for(int j = parameters.num_vars - 1; j >= 0; j--)
 				{
-					free(parameters->full_variable_names[j]);
+					free(parameters.full_variable_names[j]);
 				}
-				free(parameters->full_variable_names);
+				free(parameters.full_variable_names);
 				readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
 			}
 		}
 	}
 	
-	if(parameters->num_vars == 0)
+	if(parameters.num_vars == 0)
 	{
-		free(parameters->full_variable_names);
-		parameters->full_variable_names = malloc(2*sizeof(char*));
-		parameters->full_variable_names[0] = malloc(sizeof(char));
-		parameters->full_variable_names[0][0] = '\0';
-		parameters->num_vars = 1;
+		free(parameters.full_variable_names);
+		parameters.full_variable_names = malloc(2*sizeof(char*));
+		parameters.full_variable_names[0] = malloc(sizeof(char));
+		parameters.full_variable_names[0][0] = '\0';
+		parameters.num_vars = 1;
 	}
-	parameters->full_variable_names[parameters->num_vars] = NULL;
+	parameters.full_variable_names[parameters.num_vars] = NULL;
 }
 
 void makeEvalArray(mxArray** super_structure)

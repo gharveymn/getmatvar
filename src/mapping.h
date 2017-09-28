@@ -242,6 +242,7 @@ struct data_
 {
 	DataType type;
 	bool_t is_filled;
+	bool_t is_finalized;
 	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
@@ -314,9 +315,17 @@ typedef struct
 	uint32_t last_use_time_stamp;
 } pageObject;
 
+typedef struct
+{
+	int num_vars;
+	char** full_variable_names;
+	const char* filename;
+} paramStruct;
+
+
 //mapping.c
-Data* getDataObjects(const char* filename, char** variable_names, int num_names);
-void findNodeByName(Data* super_object, char* variable_name);
+void getDataObjects(const char* filename, char** variable_names, int num_names);
+void findAndFillVariable(char* variable_name);
 void collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length);
 errno_t allocateSpace(Data* object);
 void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
@@ -324,15 +333,19 @@ void initializeMaps(void);
 void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
 uint16_t interpretMessages(Data* object, address_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
-Data* connectSubObject(Data* super_object, address_t sub_obj_address, char* name);
+Data* connectSubObject(Data* object, address_t sub_obj_address, char* name);
 void initializePageObjects(void);
 void freeVarname(void* vn);
 void initialize(void);
 uint32_t getNumSymbols(address_t address);
-Data* fillObject(Data* data_object, uint64_t this_obj_address, uint64_t parent_obj_address);
-void readTreeNode(Data* super_object, address_t node_address, address_t heap_address);
-void readSnod(Data* super_object, address_t node_address, address_t heap_address);
-void placeFunctionHandleData(Data* fh, address_t sub_tree_address, address_t sub_heap_address);
+void fillObject(Data* data_object, uint64_t this_obj_address);
+void readTreeNode(Data* object, address_t node_address, address_t heap_address);
+void readSnod(Data* object, address_t node_address, address_t heap_address);
+void fillFunctionHandleData(Data* fh);
+Data* findSubObjectByShortName(Data* object, char* name);
+Data* findObjectByHeaderAddress(address_t address);
+void fillDataTree(Data* object);
+void makeObjectTreeSkeleton(void);
 
 //fileHelper.c
 Superblock getSuperblock(void);
@@ -400,14 +413,14 @@ MemMap heap_maps[NUM_HEAP_MAPS];
 int map_nums[2];
 int map_queue_fronts[2]; //cycle thru a queue so that we dont overwrite too soon
 
-Queue* addr_queue;
+paramStruct parameters;
 Queue* varname_queue;
-Queue* header_queue;
+Queue* object_queue;
+Queue* eval_objects;
 
 int fd;
 Superblock s_block;
 uint64_t default_bytes;
-int variable_found;
 
 threadpool threads;
 int num_avail_threads;
@@ -421,6 +434,8 @@ pageObject* page_objects;
 
 uint32_t usage_iterator;
 double sum_usage_offset;
+
+Data* super_object;
 
 int max_depth;
 

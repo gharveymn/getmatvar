@@ -642,9 +642,18 @@ void endHooks(void)
 {
 	freeAllMaps();
 	
-	freeQueue(addr_queue);
 	freeQueue(varname_queue);
-	freeQueue(header_queue);
+	freeQueue(object_queue);
+	freeQueue(eval_objects);
+	
+	if(parameters.full_variable_names != NULL)
+	{
+		for(int i = 0; i < parameters.num_vars; i++)
+		{
+			free(parameters.full_variable_names[i]);
+		}
+		free(parameters.full_variable_names);
+	}
 	
 	if(fd >= 0)
 	{

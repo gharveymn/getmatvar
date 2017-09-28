@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/func_hand.mat';
+file = 'res/cell_with_funcs.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};

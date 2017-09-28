@@ -8,17 +8,10 @@ typedef enum
 	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG, SUPPRESS_WARN
 } kwarg;
 
-typedef struct
-{
-	int num_vars;
-	char** full_variable_names;
-	const char* filename;
-} paramStruct;
-
 
 //getmatvar.c
-void readInput(int nrhs, const mxArray* prhs[], paramStruct* parameters);
-void makeReturnStructure(mxArray** super_structure, paramStruct parameters, int nlhs);
+void readInput(int nrhs, const mxArray* prhs[]);
+void makeReturnStructure(mxArray** super_structure, int nlhs);
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type);
 void makeEvalArray(mxArray** super_structure);
 

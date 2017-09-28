@@ -6,18 +6,10 @@ typedef enum
 	NOT_AN_ARGUMENT, THREAD_KWARG, MT_KWARG, SUPPRESS_WARN
 } kwarg;
 
-typedef struct
-{
-	int num_vars;
-	char** full_variable_names;
-	const char* filename;
-} paramStruct;
-
-void readInput(int nrhs, char* prhs[], paramStruct* parameters);
-void makeReturnStructure(int num_elems, char** full_variable_names, const char* filename);
+void readInput(int nrhs, char* prhs[]);
+void makeReturnStructure(int num_elems);
 void makeEvalArray(char* eval_vector);
 
-static Queue* eval_objects;
 
 int main(int argc, char* argv[])
 {
@@ -31,9 +23,8 @@ int main(int argc, char* argv[])
 	else
 	{
 		
-		paramStruct parameters;
-		readInput(argc - 1, argv + 1, &parameters);
-		makeReturnStructure(parameters.num_vars, parameters.full_variable_names, parameters.filename);
+		readInput(argc - 1, argv + 1);
+		makeReturnStructure(parameters.num_vars);
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
 			free(parameters.full_variable_names[i]);
@@ -45,15 +36,14 @@ int main(int argc, char* argv[])
 }
 
 
-void makeReturnStructure(const int num_elems, char** full_variable_names, const char* filename)
+void makeReturnStructure(const int num_elems)
 {
-	
+	object_queue = initQueue(freeDataObject);
 	eval_objects = initQueue(NULL);
 	
-	Data* super_object = getDataObjects(filename, full_variable_names, num_elems);
+	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
 	if(error_flag == TRUE)
 	{
-		freeDataObjectTree(super_object);
 		readMXError(error_id, error_message);
 	}
 	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
@@ -70,20 +60,20 @@ void makeReturnStructure(const int num_elems, char** full_variable_names, const 
 	free(varnames);
 	
 	freeQueue(eval_objects);
-	freeDataObjectTree(super_object);
+	freeQueue(object_queue);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n");
 	
 }
 
 
-void readInput(int nrhs, char* prhs[], paramStruct* parameters)
+void readInput(int nrhs, char* prhs[])
 {
 	
 	char* input;
-	parameters->filename = prhs[0];
-	parameters->num_vars = 0;
-	parameters->full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
+	parameters.filename = prhs[0];
+	parameters.num_vars = 0;
+	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
 	for(int i = 1; i < nrhs; i++)
@@ -102,11 +92,11 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 					{
 						if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 						{
-							for(int j = parameters->num_vars - 1; j >= 0; j--)
+							for(int j = parameters.num_vars - 1; j >= 0; j--)
 							{
-								free(parameters->full_variable_names[j]);
+								free(parameters.full_variable_names[j]);
 							}
-							free(parameters->full_variable_names);
+							free(parameters.full_variable_names);
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}
 					}
@@ -116,21 +106,21 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 					num_threads_to_use = (int)res;
 					if(endptr == input && errno == ERANGE)
 					{
-						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
-							free(parameters->full_variable_names[j]);
+							free(parameters.full_variable_names[j]);
 						}
-						free(parameters->full_variable_names);
+						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 					}
 					
 					if(num_threads_to_use < 0)
 					{
-						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
-							free(parameters->full_variable_names[j]);
+							free(parameters.full_variable_names[j]);
 						}
-						free(parameters->full_variable_names);
+						free(parameters.full_variable_names);
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
@@ -155,11 +145,11 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 					}
 					else
 					{
-						for(int j = parameters->num_vars - 1; j >= 0; j--)
+						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
-							free(parameters->full_variable_names[j]);
+							free(parameters.full_variable_names[j]);
 						}
-						free(parameters->full_variable_names);
+						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
 					}
 					break;
@@ -167,11 +157,11 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
-					for(int j = parameters->num_vars - 1; j >= 0; j--)
+					for(int j = parameters.num_vars - 1; j >= 0; j--)
 					{
-						free(parameters->full_variable_names[j]);
+						free(parameters.full_variable_names[j]);
 					}
-					free(parameters->full_variable_names);
+					free(parameters.full_variable_names);
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 			}
 			kwarg_expected = NOT_AN_ARGUMENT;
@@ -200,23 +190,23 @@ void readInput(int nrhs, char* prhs[], paramStruct* parameters)
 			else
 			{
 				kwarg_expected = NOT_AN_ARGUMENT;
-				parameters->full_variable_names[parameters->num_vars] = malloc(strlen(input)*sizeof(char)); /*this gets freed in getDataObjects*/
-				strcpy(parameters->full_variable_names[parameters->num_vars], input);
-				parameters->num_vars++;
+				parameters.full_variable_names[parameters.num_vars] = malloc(strlen(input)*sizeof(char));
+				strcpy(parameters.full_variable_names[parameters.num_vars], input);
+				parameters.num_vars++;
 			}
 			
 		}
 	}
 	
-	if(parameters->num_vars == 0)
+	if(parameters.num_vars == 0)
 	{
-		free(parameters->full_variable_names);
-		parameters->full_variable_names = malloc(2*sizeof(char*));
-		parameters->full_variable_names[0] = malloc(sizeof(char));
-		parameters->full_variable_names[0][0] = '\0';
-		parameters->num_vars = 1;
+		free(parameters.full_variable_names);
+		parameters.full_variable_names = malloc(2*sizeof(char*));
+		parameters.full_variable_names[0] = malloc(sizeof(char));
+		parameters.full_variable_names[0][0] = '\0';
+		parameters.num_vars = 1;
 	}
-	parameters->full_variable_names[parameters->num_vars] = NULL;
+	parameters.full_variable_names[parameters.num_vars] = NULL;
 }
 
 void makeEvalArray(char* eval_vector)
