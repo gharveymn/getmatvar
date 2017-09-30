@@ -52,7 +52,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
 #pragma GCC diagnostic pop
 	
-	makeSubstructure(super_structure[0], super_object->num_sub_objs, super_object->sub_objects, STRUCT_DATA);
+	makeSubstructure(super_structure[0], super_object->num_sub_objs, super_object->sub_objects, mxSTRUCT_CLASS);
 	
 	if(nlhs == 2)
 	{
@@ -73,7 +73,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 }
 
 
-mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, DataType super_structure_type)
+mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, mxClassID super_structure_type)
 {
 	
 	for(mwIndex index = 0; index < num_elems; index++)
@@ -81,65 +81,50 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 		
 		objects[index]->data_arrays.is_mx_used = TRUE;
 		
-		switch(objects[index]->type)
+		switch(objects[index]->matlab_internal_type)
 		{
-			case UINT8_DATA:
-				setUI8Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+			case mxINT8_CLASS:
+			case mxUINT8_CLASS:
+			case mxINT16_CLASS:
+			case mxUINT16_CLASS:
+			case mxINT32_CLASS:
+			case mxUINT32_CLASS:
+			case mxINT64_CLASS:
+			case mxUINT64_CLASS:
+			case mxSINGLE_CLASS:
+			case mxDOUBLE_CLASS:
+				setNumericPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
-			case INT8_DATA:
-				setI8Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case UINT16_DATA:
-				setUI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case INT16_DATA:
-				setI16Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case UINT32_DATA:
-				setUI32Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case INT32_DATA:
-				setI32Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case UINT64_DATA:
-				setUI64Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case INT64_DATA:
-				setI64Ptr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case SINGLE_DATA:
-				setSglPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case DOUBLE_DATA:
-				setDblPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
-				break;
-			case SPARSE_DATA:
+			case mxSPARSE_CLASS:
 				setSpsPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				break;
-			case REF_DATA:
+			case mxLOGICAL_CLASS:
+				setLogicPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				break;
+			case mxCHAR_CLASS:
+				setCharPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				break;
+			case mxCELL_CLASS:
 				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				//Indicate we should free any memory used by this
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case STRUCT_DATA:
+			case mxSTRUCT_CLASS:
 				setStructPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case FUNCTION_HANDLE_DATA:
+			case mxFUNCTION_CLASS:
 				enqueue(eval_objects, objects[index]);
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case TABLE_DATA:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Tables are not yet supported.");
+			case mxOBJECT_CLASS:
+				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
-			case NULLTYPE_DATA:
-				//do nothing, this is an empty array
-				break;
-			case UNDEF_DATA:
 				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
+				readMXWarn("getmatvar:unknownOutputType", "Could not return a variable. Unknown variable type.");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
@@ -397,7 +382,7 @@ void makeEvalArray(mxArray** super_structure)
 		mx_eval_vector_ptr[offset] = '=';
 		offset++;
 		
-		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.ui16_data, eval_obj->num_elems * sizeof(uint16_t));
+		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
 		offset += eval_obj->num_elems;
 		
 		mx_eval_vector_ptr[offset] = ';';

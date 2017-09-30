@@ -320,7 +320,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		return 0;
 	}
 	
-	byte* tree_pointer = navigateTo(node->address, 8, TREE);
+	byte* tree_pointer = navigateTo(node->address, 8);
 	
 	if(strncmp((char*)tree_pointer, "TREE", 4) != 0)
 	{
@@ -341,7 +341,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	}
 	
 	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
-	node->node_level = (int16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
+	node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	node->keys = malloc((node->entries_used + 1)*sizeof(Key));
@@ -361,7 +361,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			bytes_needed = 8 + 2*s_block.size_of_offsets + 2*(node->entries_used + 1)*key_size + 2*(node->entries_used)*s_block.size_of_offsets;
 			
-			tree_pointer = navigateTo(node->address, bytes_needed, TREE);
+			tree_pointer = navigateTo(node->address, bytes_needed);
 			key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
 			key_address = node->address + 8 + 2*s_block.size_of_offsets;
 			for(int i = 0; i < node->entries_used; i++)
@@ -382,7 +382,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			
 			bytes_needed = 8 + 2*s_block.size_of_offsets + 2*(node->entries_used + 1)*key_size + 2*(node->entries_used)*s_block.size_of_offsets;
 			
-			tree_pointer = navigateTo(node->address, bytes_needed, TREE);
+			tree_pointer = navigateTo(node->address, bytes_needed);
 			key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
 			key_address = node->address + 8 + 2*s_block.size_of_offsets;
 			node->keys[0].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
@@ -404,7 +404,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 					node->children[i].left_sibling = &node->children[i - 1];
 				}
 				
-				tree_pointer = navigateTo(node->address, bytes_needed, TREE);
+				tree_pointer = navigateTo(node->address, bytes_needed);
 				key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets + (i + 1)*(key_size + s_block.size_of_offsets);
 				key_address += key_size + s_block.size_of_offsets;
 				

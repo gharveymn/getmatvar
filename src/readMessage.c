@@ -27,105 +27,31 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 
 void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
-	object->type = NULLTYPE_DATA;
 	//assume version 1
-	uint8_t class = (uint8_t)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
+	object->hdf5_internal_type = (HDF5Datatype)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
 	object->elem_size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	object->datatype_bit_field = (uint32_t)getBytesAsNumber(msg_pointer + 1, 3, META_DATA_BYTE_ORDER);
-	uint8_t sign;
 	
-	switch(class)
+	switch(object->hdf5_internal_type)
 	{
-		case 0:
+		case HDF5_FIXED_POINT:
 			//fixed point (string)
-			
 			//assume that the bytes wont be VAX-endian because I don't know what that is
 			object->byte_order = (ByteOrder)(object->datatype_bit_field & 1);
-			sign = (uint8_t)(object->datatype_bit_field >> 3);
-			
-			//size in bits
-			switch(object->elem_size)
-			{
-				case 1:
-					if(sign)
-					{
-						object->type = INT8_DATA;
-					}
-					else
-					{
-						object->type = UINT8_DATA;
-					}
-					break;
-				case 2:
-					if(sign)
-					{
-						object->type = INT16_DATA;
-					}
-					else
-					{
-						object->type = UINT16_DATA;
-					}
-					break;
-				case 4:
-					if(sign)
-					{
-						object->type = INT32_DATA;
-					}
-					else
-					{
-						object->type = UINT32_DATA;
-					}
-					break;
-				case 8:
-					if(sign)
-					{
-						object->type = INT64_DATA;
-					}
-					else
-					{
-						object->type = UINT64_DATA;
-					}
-					break;
-				default:
-					//this shouldn't happen
-					object->type = NULLTYPE_DATA;
-					break;
-			}
 			break;
-		case 1:
+		case HDF5_FLOATING_POINT:
 			//floating point
-			object->byte_order = (ByteOrder)(object->datatype_bit_field & 1);
-			
 			//no mantissa normalization, 0 based padding
-			switch(object->elem_size)
-			{
-				case 4:
-					object->type = SINGLE_DATA;
-					break;
-				case 8:
-					object->type = DOUBLE_DATA;
-					break;
-				default:
-					//this shouldn't happen
-					object->type = NULLTYPE_DATA;
-					break;
-			}
+			object->byte_order = (ByteOrder)(object->datatype_bit_field & 1);
 			break;
-		case 6:
+		case HDF5_COMPOUND:
 			object->complexity_flag = mxCOMPLEX;
-			msg_pointer = navigateTo(msg_address + 48, 20, TREE);
+			msg_pointer = navigateTo(msg_address + 48, 20);
 			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
 			object->num_elems *= 2;
-			navigateTo(msg_address, msg_size, TREE);
-			break;
-		case 7:
-			//reference (cell), data consists of addresses aka references
-			object->type = REF_DATA;
-			object->byte_order = LITTLE_ENDIAN;
+			navigateTo(msg_address, msg_size);
 			break;
 		default:
-			//ignore
-			object->type = NULLTYPE_DATA;
 			object->byte_order = LITTLE_ENDIAN;
 			break;
 	}
@@ -246,33 +172,105 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	uint16_t datatype_size = (uint16_t)getBytesAsNumber(msg_pointer + 4, 2, META_DATA_BYTE_ORDER);
 	uint16_t dataspace_size = (uint16_t)getBytesAsNumber(msg_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	strncpy(name, (char*)(msg_pointer + 8), name_size);
-	if(strcmp(name, "MATLAB_class") == 0 && object->type != SPARSE_DATA)
+	if(strcmp(name, "MATLAB_class") == 0)
 	{
 		uint32_t attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4, META_DATA_BYTE_ORDER);
 		strncpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), attribute_data_size);
 		object->matlab_class[attribute_data_size] = 0x0;
-		if(strcmp("struct", object->matlab_class) == 0)
-		{
-			object->type = STRUCT_DATA;
-		}
-		else if(strcmp("cell", object->matlab_class) == 0)
-		{
-			object->type = REF_DATA;
-		}
-		else if(strcmp("function_handle", object->matlab_class) == 0)
-		{
-			object->type = FUNCTION_HANDLE_DATA;
-		}
-		else if(strcmp("table", object->matlab_class) == 0)
-		{
-			object->type = TABLE_DATA;
-		}
+		selectMatlabClass(object);
 	}
 	else if(strcmp(name, "MATLAB_sparse") == 0)
 	{
-		object->type = SPARSE_DATA;
+		object->matlab_internal_attributes.MATLAB_sparse = TRUE;
 		memcpy(&object->dims[0], (uint64_t*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), sizeof(uint64_t));
 	}
+	else if(strcmp(name, "MATLAB_empty") == 0)
+	{
+		object->matlab_internal_attributes.MATLAB_empty = TRUE;
+	}
+	else if(strcmp(name, "MATLAB_object_decode") == 0)
+	{
+		object->matlab_internal_attributes.MATLAB_object_decode = *((objectDecodingHint*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)));
+	}
+}
+
+void selectMatlabClass(Data* object)
+{
+	//most likely first because this can be expensive in large numbers
+	if(strcmp("double", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxDOUBLE_CLASS;
+	}
+	else if(strcmp("char", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxCHAR_CLASS;
+	}
+	else if(strcmp("logical", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxLOGICAL_CLASS;
+	}
+	else if(strcmp("struct", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxSTRUCT_CLASS;
+	}
+	else if(strcmp("cell", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxCELL_CLASS;
+	}
+	else if(strcmp("function_handle", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxFUNCTION_CLASS;
+	}
+	else if(strcmp("table", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxOBJECT_CLASS;
+	}
+	else if(strcmp("uint8", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxUINT8_CLASS;
+	}
+	else if(strcmp("uint16", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxUINT16_CLASS;
+	}
+	else if(strcmp("uint32", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxUINT32_CLASS;
+	}
+	else if(strcmp("uint64", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxUINT64_CLASS;
+	}
+	else if(strcmp("int8", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxINT8_CLASS;
+	}
+	else if(strcmp("int16", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxINT16_CLASS;
+	}
+	else if(strcmp("int32", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxINT32_CLASS;
+	}
+	else if(strcmp("int64", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxINT64_CLASS;
+	}
+	else if(strcmp("single", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxSINGLE_CLASS;
+	}
+	else if(strcmp("opaque", object->matlab_class) == 0)
+	{
+		object->matlab_internal_type = mxOPAQUE_CLASS;
+	}
+	else
+	{
+		object->matlab_internal_type = mxUNKNOWN_CLASS;
+	}
+	
+	
 }
 
 

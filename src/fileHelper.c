@@ -12,7 +12,7 @@ Superblock getSuperblock(void)
 byte* findSuperblock(void)
 {
 	//Assuming that superblock is in first 8 512 byte chunks
-	byte* chunk_start = navigateTo(0, alloc_gran, TREE);
+	byte* chunk_start = navigateTo(0, alloc_gran);
 	uint16_t chunk_address = 0;
 	
 	while(strncmp(FORMAT_SIG, (char*)chunk_start, 8) != 0 && chunk_address < alloc_gran)
@@ -51,26 +51,6 @@ Superblock fillSuperblock(byte* superblock_pointer)
 }
 
 
-void freeAllMaps(void)
-{
-	for(int i = 0; i < NUM_TREE_MAPS; i++)
-	{
-		if(tree_maps[i].used == TRUE)
-		{
-			freeMap(tree_maps[i]);
-		}
-	}
-	
-	for(int i = 0; i < NUM_HEAP_MAPS; i++)
-	{
-		if(heap_maps[i].used == TRUE)
-		{
-			freeMap(heap_maps[i]);
-		}
-	}
-}
-
-
 void freeMap(MemMap map)
 {
 	map.used = FALSE;
@@ -81,57 +61,57 @@ void freeMap(MemMap map)
 }
 
 
-byte* navigateTo(uint64_t address, uint64_t bytes_needed, int map_type)
+byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
-	MemMap* these_maps;
-	switch(map_type)
-	{
-		case TREE:
-			these_maps = tree_maps;
-			break;
-		case HEAP:
-			these_maps = heap_maps;
-			break;
-		default:
-			these_maps = tree_maps;
-	}
+	size_t start_page = address/alloc_gran;
+	size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
 	
-	for(int i = 0; i < map_nums[map_type]; i++)
+	if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
 	{
-		if(address >= these_maps[i].offset && address + bytes_needed <= these_maps[i].offset + these_maps[i].bytes_mapped && these_maps[i].used == TRUE)
-		{
-			return these_maps[i].map_start + address - these_maps[i].offset;
-		}
+		page_objects[start_page].last_use_time_stamp = usage_iterator;
+		return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 	}
-	
-	//only remap if we really need to (this removes the need for checks/headaches inside main functions)
-	int map_index = map_queue_fronts[map_type];
 	
 	//unmap current page
-	if(these_maps[map_index].used == TRUE)
+	if(page_objects[start_page].is_mapped == TRUE)
 	{
-		freeMap(these_maps[map_index]);
+		//second parameter doesnt do anything on windows
+		if(munmap(page_objects[start_page].pg_start_p, page_objects[start_page].map_end - page_objects[start_page].map_base) != 0)
+		{
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+		}
+		
+		page_objects[start_page].is_mapped = FALSE;
+		page_objects[start_page].pg_start_p = NULL;
+		page_objects[start_page].map_base = UNDEF_ADDR;
+		page_objects[start_page].map_end = UNDEF_ADDR;
+
+#ifdef DO_MEMDUMP
+		memdump("U");
+#endif
+	
 	}
 	
-	//map new page at needed location
-	//TODO check if we even need to do this... I don't think so
-	size_t offset_denom = alloc_gran < file_size? alloc_gran : file_size;
-	these_maps[map_index].offset = (OffsetType)((address/offset_denom)*offset_denom);
-	these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
-	these_maps[map_index].bytes_mapped = these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
-	these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
+	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
 	
-	these_maps[map_index].used = TRUE;
-	if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
+	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
-		these_maps[map_index].used = FALSE;
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %s\n\n", strerror(errno));
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
 	}
 	
-	map_queue_fronts[map_type] = (map_queue_fronts[map_type] + 1)%map_nums[map_type];
+	page_objects[start_page].is_mapped = TRUE;
+	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
+	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
+
+#ifdef DO_MEMDUMP
+	memdump("M");
+#endif
 	
-	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
+	page_objects[start_page].last_use_time_stamp = usage_iterator;
+	
+	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+	
 }
 
 
@@ -139,7 +119,7 @@ byte* navigatePolitely(uint64_t address, uint64_t bytes_needed)
 {
 	
 	size_t start_page = address/alloc_gran;
-	size_t end_page = (address + bytes_needed)/alloc_gran; //INCLUSIVE
+	size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
@@ -380,118 +360,16 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 
 }
 
-
-//OBSOLETE (unused)
-byte* navigateWithMapIndex(uint64_t address, uint64_t bytes_needed, int map_type, int map_index)
-{
-	
-	MemMap* these_maps;
-	switch(map_type)
-	{
-		case TREE:
-			these_maps = tree_maps;
-			break;
-		case HEAP:
-			these_maps = heap_maps;
-			break;
-		default:
-			these_maps = tree_maps;
-	}
-	
-	if(!(address >= these_maps[map_index].offset && address + bytes_needed <= these_maps[map_index].offset + these_maps[map_index].bytes_mapped) || these_maps[map_index].used == FALSE)
-	{
-		
-		//unmap current page
-		if(these_maps[map_index].used == TRUE)
-		{
-			freeMap(these_maps[map_index]);
-		}
-		
-		//map new page at needed location
-		size_t offset_denom = alloc_gran < file_size? alloc_gran : file_size;
-		these_maps[map_index].offset = (OffsetType)((address/offset_denom)*offset_denom);
-		these_maps[map_index].bytes_mapped = address - these_maps[map_index].offset + bytes_needed;
-		these_maps[map_index].bytes_mapped =
-				these_maps[map_index].bytes_mapped < file_size - these_maps[map_index].offset? these_maps[map_index].bytes_mapped : file_size - these_maps[map_index].offset;
-		these_maps[map_index].map_start = mmap(NULL, these_maps[map_index].bytes_mapped, PROT_READ, MAP_PRIVATE, fd, these_maps[map_index].offset);
-		these_maps[map_index].used = TRUE;
-		if(these_maps[map_index].map_start == NULL || these_maps[map_index].map_start == MAP_FAILED)
-		{
-			these_maps[map_index].used = FALSE;
-			readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateWithMapIndex(). Check errno %s\n\n", strerror(errno));
-		}
-		
-	}
-	
-	return these_maps[map_index].map_start + address - these_maps[map_index].offset;
-	
-}
-
-
 void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;
 	
 	if(data_object->data_arrays.is_mx_used != TRUE)
 	{
-		if(data_object->data_arrays.ui8_data != NULL)
+		if(data_object->data_arrays.data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui8_data);
-			data_object->data_arrays.ui8_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i8_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i8_data);
-			data_object->data_arrays.i8_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui16_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui16_data);
-			data_object->data_arrays.ui16_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i16_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i16_data);
-			data_object->data_arrays.i16_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui32_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui32_data);
-			data_object->data_arrays.ui32_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i32_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i32_data);
-			data_object->data_arrays.i32_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui64_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui64_data);
-			data_object->data_arrays.ui64_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i64_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i64_data);
-			data_object->data_arrays.i64_data = NULL;
-		}
-		
-		if(data_object->data_arrays.single_data != NULL)
-		{
-			mxFree(data_object->data_arrays.single_data);
-			data_object->data_arrays.single_data = NULL;
-		}
-		
-		if(data_object->data_arrays.double_data != NULL)
-		{
-			mxFree(data_object->data_arrays.double_data);
-			data_object->data_arrays.double_data = NULL;
+			free(data_object->data_arrays.data);
+			data_object->data_arrays.data = NULL;
 		}
 	}
 	
@@ -536,64 +414,10 @@ void freeDataObjectTree(Data* data_object)
 	
 	if(data_object->data_arrays.is_mx_used != TRUE)
 	{
-		if(data_object->data_arrays.ui8_data != NULL)
+		if(data_object->data_arrays.data != NULL)
 		{
-			mxFree(data_object->data_arrays.ui8_data);
-			data_object->data_arrays.ui8_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i8_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i8_data);
-			data_object->data_arrays.i8_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui16_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui16_data);
-			data_object->data_arrays.ui16_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i16_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i16_data);
-			data_object->data_arrays.i16_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui32_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui32_data);
-			data_object->data_arrays.ui32_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i32_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i32_data);
-			data_object->data_arrays.i32_data = NULL;
-		}
-		
-		if(data_object->data_arrays.ui64_data != NULL)
-		{
-			mxFree(data_object->data_arrays.ui64_data);
-			data_object->data_arrays.ui64_data = NULL;
-		}
-		
-		if(data_object->data_arrays.i64_data != NULL)
-		{
-			mxFree(data_object->data_arrays.i64_data);
-			data_object->data_arrays.i64_data = NULL;
-		}
-		
-		if(data_object->data_arrays.single_data != NULL)
-		{
-			mxFree(data_object->data_arrays.single_data);
-			data_object->data_arrays.single_data = NULL;
-		}
-		
-		if(data_object->data_arrays.double_data != NULL)
-		{
-			mxFree(data_object->data_arrays.double_data);
-			data_object->data_arrays.double_data = NULL;
+			free(data_object->data_arrays.data);
+			data_object->data_arrays.data = NULL;
 		}
 	}
 	
@@ -640,7 +464,6 @@ void freeDataObjectTree(Data* data_object)
 
 void endHooks(void)
 {
-	freeAllMaps();
 	
 	freeQueue(varname_queue);
 	freeQueue(object_queue);
@@ -654,6 +477,8 @@ void endHooks(void)
 		}
 		free(parameters.full_variable_names);
 	}
+	
+	destroyPageObjects();
 	
 	if(fd >= 0)
 	{

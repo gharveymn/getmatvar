@@ -234,10 +234,12 @@ void makeEvalArray(char* eval_vector)
 		}
 		eval_vector[offset] = '=';
 		offset++;
-		memcpy(&eval_vector[offset], eval_obj->data_arrays.ui16_data, eval_obj->num_elems * sizeof(uint16_t));
+		memcpy(&eval_vector[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
 		offset += eval_obj->num_elems;
 		eval_vector[offset] = ';';
 		offset++;
 	}
+	
+	free(eval_vector);
 	
 }

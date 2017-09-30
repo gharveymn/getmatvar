@@ -37,7 +37,6 @@
 
 
 #include "extlib/mman-win32/mman.h"
-#include "extlib/param.h"
 #include <pthread.h>
 //#include "extlib/pthreads-win32/include/pthread.h"
 #else
@@ -51,8 +50,7 @@ typedef int errno_t;
 typedef uint64_t OffsetType;
 #endif
 
-#define TRUE 1
-#define FALSE 0
+typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
 #define MATFILE_SIG_LEN 19
@@ -68,8 +66,6 @@ typedef uint64_t OffsetType;
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
-#define NUM_TREE_MAPS 4
-#define NUM_HEAP_MAPS 2
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
 
@@ -107,31 +103,7 @@ typedef uint64_t OffsetType;
 //typedefs
 
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
-typedef uint8_t bool_t;
 typedef uint64_t address_t;
-
-//typedef struct
-//{
-//	uint64_t parent_obj_header_address;
-//	uint64_t tree_address;
-//	uint64_t heap_address;
-//} AddrTrio;
-
-//typedef struct
-//{
-//	//this is an ENTRY for a SNOD
-//
-//	uint64_t name_offset;
-//	char* name; //this is actually a pointer in a mmap
-//
-//	uint64_t parent_obj_header_address;
-//	uint64_t this_obj_header_address;
-//
-//	uint64_t parent_tree_address;
-//	uint64_t this_tree_address;
-//	uint64_t sub_tree_address; //invoked if cache type 1
-//
-//} SNODEntry;
 
 typedef struct
 {
@@ -155,24 +127,55 @@ typedef struct
 
 typedef enum
 {
-	NULLTYPE_DATA = 1 << 0,
-	UINT8_DATA = 1 << 1,
-	INT8_DATA = 1 << 2,
-	UINT16_DATA = 1 << 3,
-	INT16_DATA = 1 << 4,
-	UINT32_DATA = 1 << 5,
-	INT32_DATA = 1 << 6,
-	UINT64_DATA = 1 << 7,
-	INT64_DATA = 1 << 8,
-	SINGLE_DATA = 1 << 9,
-	DOUBLE_DATA = 1 << 10,
-	REF_DATA = 1 << 11,
-	STRUCT_DATA = 1 << 12,
-	FUNCTION_HANDLE_DATA = 1 << 13,
-	TABLE_DATA = 1 << 14,
-	SPARSE_DATA = 1 << 15,
-	UNDEF_DATA = 1 << 18
-} DataType;
+	HDF5_FIXED_POINT = 0,
+	HDF5_FLOATING_POINT,
+	HDF5_TIME,
+	HDF5_STRING,
+	HDF5_BIT_FIELD,
+	HDF5_OPAQUE,
+	HDF5_COMPOUND,
+	HDF5_REFERENCE,
+	HDF5_ENUMERATED,
+	HDF5_VARIABLE_LENGTH,
+	HDF5_ARRAY,
+	HDF5_UNKNOWN
+} HDF5Datatype;
+
+#ifdef NO_MEX
+//from matrix.h
+
+typedef enum
+{
+	mxUNKNOWN_CLASS = 0,
+	mxCELL_CLASS,
+	mxSTRUCT_CLASS,
+	mxLOGICAL_CLASS,
+	mxCHAR_CLASS,
+	mxVOID_CLASS,
+	mxDOUBLE_CLASS,
+	mxSINGLE_CLASS,
+	mxINT8_CLASS,
+	mxUINT8_CLASS,
+	mxINT16_CLASS,
+	mxUINT16_CLASS,
+	mxINT32_CLASS,
+	mxUINT32_CLASS,
+	mxINT64_CLASS,
+	mxUINT64_CLASS,
+	mxFUNCTION_CLASS,
+	mxOPAQUE_CLASS,
+	mxOBJECT_CLASS, /* keep the last real item in the list */
+#if defined(_LP64) || defined(_WIN64)
+	mxINDEX_CLASS = mxUINT64_CLASS,
+#else
+	mxINDEX_CLASS = mxUINT32_CLASS,
+#endif
+	/* TEMPORARY AND NASTY HACK UNTIL mxSPARSE_CLASS IS COMPLETELY ELIMINATED */
+			mxSPARSE_CLASS = mxVOID_CLASS /* OBSOLETE! DO NOT USE */
+} mxClassID;
+
+#endif
+
 
 typedef enum
 {
@@ -214,16 +217,7 @@ typedef struct
 typedef struct
 {
 	int is_mx_used;
-	uint8_t* ui8_data; //note that ui8 stores logicals and ui8s
-	int8_t* i8_data;
-	uint16_t* ui16_data; //note that ui16 stores strings, and ui16s
-	int16_t* i16_data;
-	uint32_t* ui32_data;
-	int32_t* i32_data;
-	uint64_t* ui64_data;
-	int64_t* i64_data;
-	float* single_data;
-	double* double_data;
+	byte* data;
 	uint64_t* sub_object_header_offsets;
 } DataArrays;
 
@@ -235,10 +229,27 @@ typedef struct
 	char* short_name;
 } NameStruct;
 
+typedef enum
+{
+	NO_OBJ_HINT = 0,
+	FUNCTION_HINT,
+	OBJECT_HINT,
+	OPAQUE_HINT
+} objectDecodingHint;
+
+typedef struct
+{
+	bool_t MATLAB_sparse;
+	bool_t MATLAB_empty;
+	objectDecodingHint MATLAB_object_decode;
+} MatlabAttributes;
+
 typedef struct data_ Data;
 struct data_
 {
-	DataType type;
+	HDF5Datatype hdf5_internal_type;
+	mxClassID matlab_internal_type;
+	MatlabAttributes matlab_internal_attributes;
 	bool_t is_filled;
 	bool_t is_finalized;
 	mxComplexity complexity_flag;
@@ -270,7 +281,7 @@ struct data_
 
 typedef enum
 {
-	GROUP = (uint8_t)0, CHUNK = (uint8_t)1, NODETYPE_UNDEFINED
+	GROUP = (uint8_t) 0, CHUNK = (uint8_t) 1, NODETYPE_UNDEFINED
 } NodeType;
 
 typedef enum
@@ -326,17 +337,20 @@ void getDataObjects(const char* filename, char** variable_names, int num_names);
 void findAndFillVariable(char* variable_name);
 void collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length);
 errno_t allocateSpace(Data* object);
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order);
+void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size,
+			ByteOrder data_byte_order);
 void initializeMaps(void);
-void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map);
+void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size,
+					  ByteOrder data_byte_order, const uint64_t* index_map);
 void initializeObject(Data* object);
-uint16_t interpretMessages(Data* object, address_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker);
+uint16_t interpretMessages(Data* object, address_t header_address, uint32_t header_length, uint16_t message_num,
+					  uint16_t num_msgs, uint16_t repeat_tracker);
 Data* connectSubObject(Data* object, address_t sub_obj_address, char* name);
 void initializePageObjects(void);
 void freeVarname(void* vn);
 void initialize(void);
 uint32_t getNumSymbols(address_t address);
-void fillObject(Data* data_object, uint64_t this_obj_address);
+void fillObject(Data* object, uint64_t this_obj_address);
 void readTreeNode(Data* object, address_t node_address, address_t heap_address);
 void readSnod(Data* object, address_t node_address, address_t heap_address);
 void fillFunctionHandleData(Data* fh);
@@ -349,7 +363,7 @@ void makeObjectTreeSkeleton(void);
 Superblock getSuperblock(void);
 byte* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
-byte* navigateTo(address_t address, uint64_t bytes_needed, int map_type);
+byte* navigateTo(uint64_t address, uint64_t bytes_needed);
 byte* navigatePolitely(address_t address, uint64_t bytes_needed);
 void releasePages(address_t address, uint64_t bytes_needed);
 byte* navigateWithMapIndex(address_t address, uint64_t bytes_needed, int map_type, int map_index);
@@ -371,6 +385,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, address_t msg_address,
 void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
 void readAttributeMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size);
+void selectMatlabClass(Data* object);
 
 //getPageSize.c
 size_t getPageSize(void);
@@ -386,7 +401,8 @@ void freeTree(TreeNode* node);
 errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
-void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
+void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32],
+				    uint8_t num_dims);
 
 void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[], ...);
@@ -404,12 +420,6 @@ char error_id[ERROR_BUFFER_SIZE];
 char error_message[ERROR_BUFFER_SIZE];
 char warn_id[WARNING_BUFFER_SIZE];
 char warn_message[WARNING_BUFFER_SIZE];
-
-
-MemMap tree_maps[NUM_TREE_MAPS];
-MemMap heap_maps[NUM_HEAP_MAPS];
-int map_nums[2];
-int map_queue_fronts[2]; //cycle thru a queue so that we dont overwrite too soon
 
 paramStruct parameters;
 Queue* varname_queue;

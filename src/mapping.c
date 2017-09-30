@@ -43,8 +43,10 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		sprintf(error_message, "lseek failed, check errno %s\n\n", strerror(errno));
 		return;
 	}
+	num_pages = file_size/alloc_gran + 1;
+	initializePageObjects();
 	
-	byte* head = navigateTo(0, MATFILE_SIG_LEN, TREE);
+	byte* head = navigateTo(0, MATFILE_SIG_LEN);
 	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
 		char filetype[MATFILE_SIG_LEN];
@@ -61,10 +63,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		}
 		return;
 	}
-	
-	num_pages = file_size/alloc_gran + 1;
-	
-	initializePageObjects();
 	
 	//find superblock
 	s_block = getSuperblock();
@@ -88,7 +86,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	
 	
 	destroyPageObjects();
-	freeAllMaps();
 
 #ifdef DO_MEMDUMP
 	pthread_cond_destroy(&dump_ready);
@@ -108,29 +105,50 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 }
 
 
-void initializeMaps(void)
+void initializeObject(Data* object)
 {
 	
-	for(int i = 0; i < NUM_TREE_MAPS; i++)
+	object->is_filled = FALSE;
+	object->is_finalized = FALSE;
+	
+	object->data_arrays.is_mx_used = FALSE;
+	object->data_arrays.data = NULL;
+	object->data_arrays.sub_object_header_offsets = NULL;
+	
+	object->chunked_info.num_filters = 0;
+	object->chunked_info.num_chunked_dims = 0;
+	object->chunked_info.num_chunked_elems = 0;
+	for(int i = 0; i < MAX_NUM_FILTERS; i++)
 	{
-		tree_maps[i].used = FALSE;
-		tree_maps[i].bytes_mapped = 0;
-		tree_maps[i].map_start = NULL;
-		tree_maps[i].offset = 0;
+		object->chunked_info.filters[i].client_data = NULL;
 	}
 	
-	for(int i = 0; i < NUM_HEAP_MAPS; i++)
-	{
-		heap_maps[i].used = FALSE;
-		heap_maps[i].bytes_mapped = 0;
-		heap_maps[i].map_start = NULL;
-		heap_maps[i].offset = 0;
-	}
+	object->super_object = NULL;
+	object->sub_objects = NULL;
 	
-	map_nums[TREE] = NUM_TREE_MAPS;
-	map_nums[HEAP] = NUM_HEAP_MAPS;
-	map_queue_fronts[TREE] = 0;
-	map_queue_fronts[HEAP] = 0;
+	object->matlab_internal_attributes.MATLAB_sparse = FALSE;
+	object->matlab_internal_attributes.MATLAB_empty = FALSE;
+	object->matlab_internal_attributes.MATLAB_object_decode = NO_OBJ_HINT;
+	
+	object->names.long_name_length = 0;
+	object->names.long_name = NULL;
+	object->names.short_name_length = 0;
+	object->names.short_name = NULL;
+	
+	//zero by default for REF_DATA data
+	object->layout_class = 0;
+	object->datatype_bit_field = 0;
+	object->byte_order = LITTLE_ENDIAN;
+	object->hdf5_internal_type = HDF5_UNKNOWN;
+	object->matlab_internal_type = mxUNKNOWN_CLASS;
+	object->complexity_flag = mxREAL;
+	
+	object->num_dims = 0;
+	object->num_elems = 0;
+	object->elem_size = 0;
+	object->num_sub_objs = 0;
+	object->data_address = UNDEF_ADDR;
+	object->this_obj_address = UNDEF_ADDR;
 	
 }
 
@@ -222,103 +240,29 @@ Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* name)
 }
 
 
-void fillObject(Data* data_object, uint64_t this_obj_address)
+void fillObject(Data* object, uint64_t this_obj_address)
 {
 	
-	if(data_object->is_filled == TRUE)
+	if(object->is_filled == TRUE)
 	{
 		return;
 	}
 	
-	data_object->is_filled = TRUE;
+	object->is_filled = TRUE;
 	
 	//by only asking for enough bytes to get the header length there is a chance a mapping can be reused
-	byte* header_pointer = navigateTo(this_obj_address, 16, TREE);
+	byte* header_pointer = navigateTo(this_obj_address, 16);
 	uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
 	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	
-	data_object->this_obj_address = this_obj_address;
-	collectMetaData(data_object, this_obj_address, num_msgs, header_length);
+	object->this_obj_address = this_obj_address;
+	collectMetaData(object, this_obj_address, num_msgs, header_length);
 	
-}
-
-
-void initializeObject(Data* object)
-{
-	
-	object->is_filled = FALSE;
-	object->is_finalized = FALSE;
-	
-	object->data_arrays.is_mx_used = FALSE;
-	object->data_arrays.ui8_data = NULL;
-	object->data_arrays.i8_data = NULL;
-	object->data_arrays.ui16_data = NULL;
-	object->data_arrays.i16_data = NULL;
-	object->data_arrays.ui32_data = NULL;
-	object->data_arrays.i32_data = NULL;
-	object->data_arrays.ui64_data = NULL;
-	object->data_arrays.i64_data = NULL;
-	object->data_arrays.single_data = NULL;
-	object->data_arrays.double_data = NULL;
-	object->data_arrays.sub_object_header_offsets = NULL;
-	
-	object->chunked_info.num_filters = 0;
-	object->chunked_info.num_chunked_dims = 0;
-	object->chunked_info.num_chunked_elems = 0;
-	for(int i = 0; i < MAX_NUM_FILTERS; i++)
-	{
-		object->chunked_info.filters[i].client_data = NULL;
-	}
-	
-	object->super_object = NULL;
-	object->sub_objects = NULL;
-	
-	
-	object->names.long_name_length = 0;
-	object->names.long_name = NULL;
-	object->names.short_name_length = 0;
-	object->names.short_name = NULL;
-	
-	//zero by default for REF_DATA data
-	object->layout_class = 0;
-	object->datatype_bit_field = 0;
-	object->byte_order = LITTLE_ENDIAN;
-	object->type = UNDEF_DATA;
-	object->complexity_flag = mxREAL;
-	
-	object->num_dims = 0;
-	object->num_elems = 0;
-	object->elem_size = 0;
-	object->num_sub_objs = 0;
-	object->data_address = UNDEF_ADDR;
-	object->this_obj_address = UNDEF_ADDR;
-	
-}
-
-
-void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
-{
-	
-	interpretMessages(object, header_address, header_length, 0, num_msgs, 0);
-	
-	//TODO make this more robust at some point
-	//matlab stores nulls like this
-	if(object->num_elems == 2 && object->num_dims == 1)
-	{
-		object->num_elems = 0;
-		for(int i = 0; i < object->num_dims; i++)
-		{
-			object->dims[i] = 0;
-		}
-		object->num_dims = 0;
-		return;
-	}
-	
-	if(object->type == UNDEF_DATA)
+	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
 	{
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:unknownDataTypeError");
-		sprintf(error_message, "Unknown data type encountered.\n\n");
+		sprintf(error_message, "Unknown data type encountered in the HDF5 file.\n\n");
 		return;
 	}
 	
@@ -356,7 +300,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	}
 	
 	// we have encountered a cell array
-	if(object->data_arrays.sub_object_header_offsets != NULL && object->type == REF_DATA)
+	if(object->data_arrays.sub_object_header_offsets != NULL && object->matlab_internal_type == mxCELL_CLASS)
 	{
 		object->sub_objects = malloc(object->num_elems * sizeof(Data*));
 		object->num_sub_objs = object->num_elems;
@@ -385,13 +329,33 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 			
 		}
 	}
+	
+}
+
+
+void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
+{
+	
+	interpretMessages(object, header_address, header_length, 0, num_msgs, 0);
+	
+	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
+	{
+		object->num_elems = 0;
+		for(int i = 0; i < object->num_dims; i++)
+		{
+			object->dims[i] = 0;
+		}
+		object->num_dims = 0;
+		return;
+	}
+	
 }
 
 
 uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
 {
 	
-	byte* header_pointer = navigateTo(header_address, header_length, TREE);
+	byte* header_pointer = navigateTo(header_address, header_length);
 	
 	uint64_t cont_header_address = UNDEF_ADDR;
 	uint32_t cont_header_length = 0;
@@ -457,7 +421,7 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 				message_num++;
 				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length, message_num, num_msgs, repeat_tracker);
 				//renavigate in case the continuation message was far away (automatically checks if we need to)
-				header_pointer = navigateTo(header_address, header_length, TREE);
+				header_pointer = navigateTo(header_address, header_length);
 				
 				break;
 			default:
@@ -477,44 +441,28 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 errno_t allocateSpace(Data* object)
 {
 	//maybe figure out a way to just pass this to a single array
-	switch(object->type)
+	switch(object->matlab_internal_type)
 	{
-		case INT8_DATA:
-			object->data_arrays.i8_data = mxMalloc(object->num_elems*object->elem_size);
+		case mxINT8_CLASS:
+		case mxUINT8_CLASS:
+		case mxINT16_CLASS:
+		case mxUINT16_CLASS:
+		case mxINT32_CLASS:
+		case mxUINT32_CLASS:
+		case mxINT64_CLASS:
+		case mxUINT64_CLASS:
+		case mxSINGLE_CLASS:
+		case mxDOUBLE_CLASS:
+		case mxLOGICAL_CLASS:
+		case mxCHAR_CLASS:
+			object->data_arrays.data = mxMalloc(object->num_elems*object->elem_size);
 			break;
-		case UINT8_DATA:
-			object->data_arrays.ui8_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case INT16_DATA:
-			object->data_arrays.i16_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case UINT16_DATA:
-			object->data_arrays.ui16_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case INT32_DATA:
-			object->data_arrays.i32_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case UINT32_DATA:
-			object->data_arrays.ui32_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case INT64_DATA:
-			object->data_arrays.i64_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case UINT64_DATA:
-			object->data_arrays.ui64_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case SINGLE_DATA:
-			object->data_arrays.single_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case DOUBLE_DATA:
-			object->data_arrays.double_data = mxMalloc(object->num_elems*object->elem_size);
-			break;
-		case REF_DATA:
+		case mxCELL_CLASS:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
 			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
 			break;
-		case STRUCT_DATA:
-		case FUNCTION_HANDLE_DATA:
+		case mxSTRUCT_CLASS:
+		case mxFUNCTION_CLASS:
 			//Don't allocate anything yet. This will be handled later
 			object->num_elems = 1;
 			object->num_dims = 2;
@@ -522,16 +470,15 @@ errno_t allocateSpace(Data* object)
 			object->dims[1] = 1;
 			object->dims[2] = 0;
 			break;
-		case TABLE_DATA:
-		case SPARSE_DATA:
+		case mxOBJECT_CLASS:
+		case mxSPARSE_CLASS:
 			//do nothing
 			break;
-		case NULLTYPE_DATA:
 		default:
 			//this shouldn't happen
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:thisShouldntHappen");
-			sprintf(error_message, "Allocated space ran with an NULLTYPE_DATA for some reason.\n\n");
+			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
 			return 1;
 		
 	}
@@ -553,45 +500,29 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		}
 	}
 	
-	switch(object->type)
+	switch(object->matlab_internal_type)
 	{
-		case INT8_DATA:
-			memcpy(&object->data_arrays.i8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
+		case mxINT8_CLASS:
+		case mxUINT8_CLASS:
+		case mxINT16_CLASS:
+		case mxUINT16_CLASS:
+		case mxINT32_CLASS:
+		case mxUINT32_CLASS:
+		case mxINT64_CLASS:
+		case mxUINT64_CLASS:
+		case mxSINGLE_CLASS:
+		case mxDOUBLE_CLASS:
+		case mxLOGICAL_CLASS:
+		case mxCHAR_CLASS:
+			memcpy(object->data_arrays.data + elem_size*starting_index, data_pointer, (condition - starting_index)*elem_size);
 			break;
-		case UINT8_DATA:
-			memcpy(&object->data_arrays.ui8_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case INT16_DATA:
-			memcpy(&object->data_arrays.i16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case UINT16_DATA:
-			memcpy(&object->data_arrays.ui16_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case INT32_DATA:
-			memcpy(&object->data_arrays.i32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case UINT32_DATA:
-			memcpy(&object->data_arrays.ui32_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case INT64_DATA:
-			memcpy(&object->data_arrays.i64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case UINT64_DATA:
-			memcpy(&object->data_arrays.ui64_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case SINGLE_DATA:
-			memcpy(&object->data_arrays.single_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case DOUBLE_DATA:
-			memcpy(&object->data_arrays.double_data[starting_index], data_pointer, (condition - starting_index)*elem_size);
-			break;
-		case REF_DATA:
+		case mxCELL_CLASS:
 			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			break;
-		case STRUCT_DATA:
-		case FUNCTION_HANDLE_DATA:
-		case TABLE_DATA:
-		case SPARSE_DATA:
+		case mxSTRUCT_CLASS:
+		case mxFUNCTION_CLASS:
+		case mxOBJECT_CLASS:
+		case mxSPARSE_CLASS:
 		default:
 			//nothing to be done
 			break;
@@ -615,89 +546,37 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 	
 	
 	int object_data_index = 0;
-	switch(object->type)
+	switch(object->matlab_internal_type)
 	{
-		case INT8_DATA:
+		case mxINT8_CLASS:
+		case mxUINT8_CLASS:
+		case mxINT16_CLASS:
+		case mxUINT16_CLASS:
+		case mxINT32_CLASS:
+		case mxUINT32_CLASS:
+		case mxINT64_CLASS:
+		case mxUINT64_CLASS:
+		case mxSINGLE_CLASS:
+		case mxDOUBLE_CLASS:
+		case mxLOGICAL_CLASS:
+		case mxCHAR_CLASS:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.i8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
+				memcpy(object->data_arrays.data + elem_size*index_map[j], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case UINT8_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.ui8_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case INT16_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.i16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case UINT16_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.ui16_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case INT32_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.i32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case UINT32_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.ui32_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case INT64_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.i64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case UINT64_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.ui64_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case SINGLE_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				memcpy(&object->data_arrays.single_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case DOUBLE_DATA:
-			for(uint64_t j = 0; j < num_elems; j++)
-			{
-				object->data_arrays.double_data[index_map[j]] = *(double*)(data_pointer + object_data_index*elem_size);
-				//memcpy(&object->data_arrays.double_data[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
-			}
-			break;
-		case REF_DATA:
+		case mxCELL_CLASS:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
 				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
 				object_data_index++;
 			}
 			break;
-		case STRUCT_DATA:
-		case FUNCTION_HANDLE_DATA:
-		case TABLE_DATA:
+		case mxSTRUCT_CLASS:
+		case mxFUNCTION_CLASS:
+		case mxOBJECT_CLASS:
+		case mxSPARSE_CLASS:
 		default:
 			//nothing to be done
 			break;
@@ -789,7 +668,7 @@ Data* findObjectByHeaderAddress(address_t address)
 void fillDataTree(Data* object)
 {
 	fillObject(object, object->this_obj_address);
-	if(object->type == FUNCTION_HANDLE_DATA)
+	if(object->matlab_internal_type == mxFUNCTION_CLASS)
 	{
 		fillFunctionHandleData(object);
 	}
@@ -815,12 +694,13 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
-	byte* tree_pointer = navigateTo(node_address, default_bytes, META_DATA_BYTE_ORDER);
-	
+	byte* tree_pointer = navigateTo(node_address, default_bytes);
 	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	tree_pointer = navigateTo(node_address, default_bytes);
 	
 	//group node B-Tree traversal (version 0)
 	byte* key_pointer = tree_pointer + 8 + 2*s_block.size_of_offsets;
+	address_t key_address = node_address + 8 + 2*s_block.size_of_offsets;
 	
 	
 	//quickly get the total number of possible subobjects first so we can allocate the subobject array
@@ -828,9 +708,10 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
 	for(int i = 0; i < entries_used; i++)
 	{
+		key_pointer = navigateTo(key_address, default_bytes);
 		sub_node_address_list[i] = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		max_num_sub_objs += getNumSymbols(sub_node_address_list[i]);
-		key_pointer += s_block.size_of_lengths + s_block.size_of_offsets;
+		key_address += s_block.size_of_lengths + s_block.size_of_offsets;
 	}
 	
 	if(object->sub_objects == NULL)
@@ -851,16 +732,16 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
-	byte* snod_pointer = navigateTo(node_address, 8, META_DATA_BYTE_ORDER);
+	byte* snod_pointer = navigateTo(node_address, 8);
 	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	snod_pointer = navigateTo(node_address, s_block.sym_table_entry_size * num_symbols, META_DATA_BYTE_ORDER);
-	byte* heap_pointer = navigateTo(heap_address, default_bytes, META_DATA_BYTE_ORDER);
+	snod_pointer = navigateTo(node_address, s_block.sym_table_entry_size * num_symbols);
+	byte* heap_pointer = navigateTo(heap_address, default_bytes);
 	
 	uint32_t cache_type;
 	
 	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size);
 	
 	for(int i = num_symbols - 1; i >= 0; i--)
 	{
@@ -884,8 +765,8 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 			//there is a specific subtree that we need to parse for function handles
 			readTreeNode(sub_object, sub_tree_address, sub_heap_address);
 			
-			snod_pointer = navigateTo(node_address, default_bytes, TREE);
-			heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size, HEAP);
+			snod_pointer = navigateTo(node_address, default_bytes);
+			heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size);
 			
 		}
 		else if(cache_type == 2)
@@ -905,7 +786,7 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 
 uint32_t getNumSymbols(uint64_t address)
 {
-	byte* p = navigateTo(address, 8, TREE);
+	byte* p = navigateTo(address, 8);
 	return (uint16_t)getBytesAsNumber(p + 6, 2, META_DATA_BYTE_ORDER);
 }
 
@@ -945,7 +826,7 @@ void fillFunctionHandleData(Data* fh)
 	char* func_name = NULL;
 	for(; fh_len > 0; fh_len--)
 	{
-		func_name = (char*)&fh_data->data_arrays.ui16_data[fh_data->num_elems - fh_len];
+		func_name = (char*)(fh_data->data_arrays.data + (fh_data->num_elems - fh_len) * sizeof(uint16_t));
 		if(*func_name == '@')
 		{
 			break;
@@ -955,15 +836,16 @@ void fillFunctionHandleData(Data* fh)
 	if(fh_len == 0)
 	{
 		//need to add the '@' character
-		fh->data_arrays.ui16_data = mxMalloc((1 + fh_data->num_elems) * fh_data->elem_size);
-		fh->data_arrays.ui16_data[0] = 64; //this is the '@' character
-		memcpy(&fh->data_arrays.ui16_data[1], fh_data->data_arrays.ui16_data, fh_data->num_elems*fh_data->elem_size);
+		fh->data_arrays.data = mxMalloc((1 + fh_data->num_elems) * fh_data->elem_size);
+		uint16_t seperator = 64;
+		memcpy(fh->data_arrays.data, &seperator, sizeof(uint16_t)); //this is the '@' character
+		memcpy(fh->data_arrays.data + sizeof(uint16_t), fh_data->data_arrays.data, fh_data->num_elems*fh_data->elem_size);
 		fh->num_elems = 1 + fh_data->num_elems; //+ 1 for the seperator
 	}
 	else
 	{
-		fh->data_arrays.ui16_data = mxMalloc((fh_len) * fh_data->elem_size);
-		memcpy(fh->data_arrays.ui16_data, func_name, fh_len * fh_data->elem_size);
+		fh->data_arrays.data = mxMalloc((fh_len) * fh_data->elem_size);
+		memcpy(fh->data_arrays.data, func_name, fh_len * fh_data->elem_size);
 		fh->num_elems = fh_len;
 	}
 	
@@ -989,7 +871,6 @@ void freeVarname(void* vn)
 void initialize(void)
 {
 	//init maps, needed so we don't confuse ending hooks in the case of error
-	initializeMaps();
 	varname_queue = NULL;
 	object_queue = NULL;
 	eval_objects = NULL;

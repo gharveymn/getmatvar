@@ -58,7 +58,6 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			src/extlib/mman-win32/mman.h
 			src/extlib/thpool/thpool.c
 			src/extlib/thpool/thpool.h
-			src/extlib/param.h
 			src/chunkedData.c
 			src/fileHelper.c
 			src/getSystemInfo.c
