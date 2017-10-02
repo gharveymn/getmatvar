@@ -14,18 +14,36 @@ SET(SOURCE_FILES
 		extlib/thpool/thpool.h
 		extlib/libdeflate/x64/win/libdeflate.h
 		extlib/pthreads-win32/include/pthread.h
-		fileHelper.c
+		navigate.c
 		getSystemInfo.c
-		mapping.c
-		mapping.h
+		getDataObjects.c
+		headers/getDataObjects.h
 		numberHelper.c
 		ezq.c
-		chunkedData.c
-		mexPointerSetters.c
+		placeChunkedData.c
+		mexSet.c
 		readMessage.c
-		getmatvar_.h
-		ezq.h
-		getmatvar_.c)
+		headers/getmatvar_.h
+		headers/ezq.h
+		getmatvar_.c
+		superblock.c
+		createDataObjects.c
+		init.c
+		headers/init.h
+		fillDataObjects.c
+		headers/fillDataObjects.h
+		utils.c headers/utils.h
+		placeData.c
+		headers/placeData.h
+		cleanup.c
+		headers/cleanup.h
+		headers/placeChunkedData.h
+		headers/readMessage.h
+		headers/numberHelper.h
+		headers/getSystemInfo.h
+		headers/navigate.h
+		headers/superblock.h
+		headers/createDataObjects.h)
 
 ADD_LIBRARY(${MEX_FILE_NAME} SHARED ${SOURCE_FILES} ${CMAKE_SOURCE_DIR}/Matlabdef.def)
 

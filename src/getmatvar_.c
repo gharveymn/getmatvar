@@ -1,5 +1,5 @@
-#include "mapping.h"
-#include "ezq.h"
+#include "headers/getDataObjects.h"
+#include "headers/ezq.h"
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -23,6 +23,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			free(parameters.full_variable_names[i]);
 		}
 		free(parameters.full_variable_names);
+		mxFree(parameters.filename);
+
+		fprintf(stderr, "\nProgram exited successfully.\n");
 	}
 	
 }
@@ -67,8 +70,6 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	
 	freeQueue(eval_objects);
 	freeQueue(object_queue);
-	
-	fprintf(stderr, "\nProgram exited successfully.\n");
 	
 }
 
@@ -144,7 +145,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 		readMXError("getmatvar:invalidFileNameType", "The file name must be a character vector\n\n");
 	}
 	
-	char* input;
+	char* input = NULL;
 	parameters.filename = mxArrayToString(prhs[0]);
 	parameters.num_vars = 0;
 	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
@@ -330,6 +331,13 @@ void readInput(int nrhs, const mxArray* prhs[])
 				readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
 			}
 		}
+		
+		if(input != NULL)
+		{
+			mxFree(input);
+			input = NULL;
+		}
+		
 	}
 	
 	if(parameters.num_vars == 0)
@@ -342,6 +350,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 	}
 	parameters.full_variable_names[parameters.num_vars] = NULL;
 }
+
 
 void makeEvalArray(mxArray** super_structure)
 {

@@ -1,4 +1,4 @@
-#include "mapping.h"
+#include "headers/readMessage.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
@@ -46,10 +46,10 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			break;
 		case HDF5_COMPOUND:
 			object->complexity_flag = mxCOMPLEX;
-			msg_pointer = navigateTo(msg_address + 48, 20);
+			msg_pointer = renavigateTo(msg_address + 48, 20);
 			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
 			object->num_elems *= 2;
-			navigateTo(msg_address, msg_size);
+			renavigateTo(msg_address, msg_size);
 			break;
 		default:
 			object->byte_order = LITTLE_ENDIAN;

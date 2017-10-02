@@ -24,10 +24,23 @@ LIBS=-lm -lpthread
 _DEPS = mapping.h libdeflate.h thpool.h queue.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = ../$(TST_DIR)/mexemulate.o mapping.o fileHelper.o \
-numberHelper.o ezq.o getSystemInfo.o \
-readMessage.o chunkedData.o \
-extlib/thpool/thpool.o
+_OBJ = ../$(TST_DIR)/mexemulate.o \
+cleanup.o \
+createDataObjects.o \
+ezq.o \
+fillDataObjects.o \
+getDataObjects.o \
+getSystemInfo.o \
+init.o \
+navigate.o \
+numberHelper.o \
+placeChunkedData.o \
+placeData.o \
+readMessage.o \
+superblock.o \
+utils.o \
+extlib/thpool/thpool.o \
+extlib/mman-win32/mman.o
 
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 

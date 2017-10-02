@@ -58,16 +58,33 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			src/extlib/mman-win32/mman.h
 			src/extlib/thpool/thpool.c
 			src/extlib/thpool/thpool.h
-			src/chunkedData.c
-			src/fileHelper.c
+			src/placeChunkedData.c
+			src/navigate.c
 			src/getSystemInfo.c
-			src/mapping.c
-			src/mapping.h
+			src/getDataObjects.c
+			src/headers/getDataObjects.h
 			src/numberHelper.c
 			src/ezq.c
-			src/ezq.h
+			src/headers/ezq.h
 			src/readMessage.c
-			tests/mexemulate.c)
+			tests/mexemulate.c
+			src/superblock.c
+			src/createDataObjects.c
+			src/init.c
+			src/headers/init.h
+			src/fillDataObjects.c
+			src/headers/fillDataObjects.h
+			src/utils.c src/headers/utils.h
+			src/placeData.c
+			src/headers/placeData.h
+			src/cleanup.c
+			src/headers/cleanup.h
+			src/headers/placeChunkedData.h
+			src/headers/readMessage.h
+			src/headers/numberHelper.h
+			src/headers/getSystemInfo.h
+			src/headers/navigate.h
+			src/headers/superblock.h)
 
 	ADD_EXECUTABLE(${OUT_NAME} ${SOURCE_FILES})
 
