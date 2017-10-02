@@ -44,7 +44,7 @@ void freeDataObject(void* object)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{
-			free(data_object->data_arrays.data);
+			mxFree(data_object->data_arrays.data);
 			data_object->data_arrays.data = NULL;
 		}
 	}

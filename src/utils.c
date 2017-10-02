@@ -1,4 +1,6 @@
 #include "headers/utils.h"
+#include "headers/getDataObjects.h"
+
 
 /*for use on a single level*/
 Data* findSubObjectByShortName(Data* object, char* name)
@@ -29,6 +31,20 @@ Data* findObjectByHeaderAddress(address_t address)
 	
 	return NULL;
 	
+}
+
+
+
+uint16_t getRealNameLength(Data* object)
+{
+	uint16_t real_name_length = object->names.short_name_length;
+	Data* curr = object->super_object;
+	while(curr != NULL)
+	{
+		real_name_length += curr->names.short_name_length + 1;
+		curr = curr->super_object;
+	}
+	return real_name_length;
 }
 
 

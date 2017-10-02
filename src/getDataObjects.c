@@ -1,4 +1,5 @@
 #include "headers/getDataObjects.h"
+#include "headers/ezq.h"
 //#pragma message ("getmatvar is compiling on WINDOWS")
 
 
@@ -6,9 +7,9 @@
 void getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
-	super_object = malloc(sizeof(Data));
-	initializeObject(super_object);
-	enqueue(object_queue, super_object);
+	virtual_super_object = malloc(sizeof(Data));
+	initializeObject(virtual_super_object);
+	enqueue(object_queue, virtual_super_object);
 	
 	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
@@ -22,8 +23,8 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	
 	num_avail_threads = getNumProcessors() - 1;
 	
-	
 	//init queues
+	top_level_objects = initQueue(NULL);
 	varname_queue = initQueue(freeVarname);
 	
 	//open the file descriptor
@@ -93,8 +94,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	
 	freeQueue(varname_queue);
 	varname_queue = NULL;
-	
-	
 	destroyPageObjects();
 
 #ifdef DO_MEMDUMP
@@ -102,14 +101,15 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	pthread_mutex_destroy(&dump_lock);
 #endif
 	
-	//remove unwanted/unfilled top level objects
-	for(int i = super_object->num_sub_objs - 1; i >= 0; i--)
+	free(virtual_super_object->sub_objects);
+	virtual_super_object->sub_objects = malloc(top_level_objects->length*sizeof(Data*));
+	virtual_super_object->num_sub_objs = (uint32_t)top_level_objects->length;
+	for(int i = 0; top_level_objects->length > 0; i++)
 	{
-		if(super_object->sub_objects[i]->is_filled == FALSE)
-		{
-			super_object->sub_objects[i] = NULL; //ok because objects are kept track of in a queue
-			super_object->num_sub_objs--;
-		}
+		virtual_super_object->sub_objects[i] = dequeue(top_level_objects);
+		virtual_super_object->sub_objects[i]->super_object = NULL;
 	}
+	
+	freeQueue(top_level_objects);
 
 }

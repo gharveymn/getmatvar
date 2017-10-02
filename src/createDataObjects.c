@@ -2,7 +2,7 @@
 
 void makeObjectTreeSkeleton(void)
 {
-	readTreeNode(super_object, s_block.root_tree_address, s_block.root_heap_address);
+	readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
 }
 
 void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
@@ -108,15 +108,15 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 }
 
 
-Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* name)
+Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* sub_obj_name)
 {
 	
 	Data* sub_object = malloc(sizeof(Data));
 	initializeObject(sub_object);
 	sub_object->this_obj_address = sub_obj_address;
-	sub_object->names.short_name_length = (uint16_t)strlen(name);
+	sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
 	sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1) * sizeof(char));
-	strcpy(sub_object->names.short_name, name);
+	strcpy(sub_object->names.short_name, sub_obj_name);
 	object->sub_objects[object->num_sub_objs] = sub_object;
 	object->num_sub_objs++;
 	
@@ -137,6 +137,8 @@ Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* name)
 		sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1) * sizeof(char));
 		strcpy(sub_object->names.long_name, sub_object->names.short_name);
 	}
+	
+	sub_object->super_object = object;
 	
 	return sub_object;
 	

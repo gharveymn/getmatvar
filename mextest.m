@@ -1,14 +1,15 @@
 addpath('res')
 addpath('bin')
-file = 'res/my_struct1.mat';
-vars = {''};
+file = 'res/alltypes.mat';
+vars = {'my_struct', ''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
 userview = memory;
 disp(userview.MemUsedMATLAB)
 tic
-getmatvar(file, '-sw');%, vars{:});
+%getmatvar(file, vars{:}, '-sw');
+getmatvar(file, vars{:}, '-sw');
 %getmatvar(file, '-threads', 0);
 toc
 userview = memory;

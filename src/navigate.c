@@ -45,12 +45,19 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 #endif
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
-			page_objects[start_page].num_using++;
-			page_objects[start_page].last_use_time_stamp = usage_iterator;
-			usage_iterator++;
-			pthread_mutex_unlock(&page_objects[start_page].lock);
-			
-			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			//confirm
+			if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+			{
+				page_objects[start_page].num_using++;
+				page_objects[start_page].last_use_time_stamp = usage_iterator;
+				usage_iterator++;
+				pthread_mutex_unlock(&page_objects[start_page].lock);
+				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			}
+			else
+			{
+				pthread_mutex_unlock(&page_objects[start_page].lock);
+			}
 			
 		}
 		else

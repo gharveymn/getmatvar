@@ -1,27 +1,8 @@
-#include "headers/getDataObjects.h"
+#include "headers/placeChunkedData.h"
 
 
-static Data* object;
-bool_t is_working;
-//pthread_t gc;
-//pthread_attr_t attr;
-
-#if UINTPTR_MAX == 0xffffffff
-#include "extlib/libdeflate/x86/libdeflate.h"
-#elif UINTPTR_MAX == 0xffffffffffffffff
-#include "extlib/libdeflate/x64/libdeflate.h"
-
-
-#else
-//you need at least 19th century hardware to run this
-#endif
-
-void* garbageCollection_(void* nothing);
-
-
-errno_t getChunkedData(Data* obj)
+errno_t getChunkedData(Data* object)
 {
-	object = obj;
 	if(chunkTreeRoots == NULL)
 	{
 		chunkTreeRoots = initQueue(freeTree);
@@ -66,7 +47,7 @@ errno_t getChunkedData(Data* obj)
 		
 	}
 	
-	ret = decompressChunk(root);
+	ret = decompressChunk(root, object);
 	
 	if(will_multithread == TRUE)
 	{
@@ -81,7 +62,7 @@ errno_t getChunkedData(Data* obj)
 }
 
 
-errno_t decompressChunk(TreeNode* node)
+errno_t decompressChunk(TreeNode* node, Data* object)
 {
 	//this function just filters out all nodes which aren't one level above the leaves
 	
@@ -93,7 +74,7 @@ errno_t decompressChunk(TreeNode* node)
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		if(decompressChunk(node->children[i]) != 0)
+		if(decompressChunk(node->children[i], object) != 0)
 		{
 			return 1;
 		}
@@ -108,6 +89,7 @@ errno_t decompressChunk(TreeNode* node)
 	
 	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
 	thread_object->node = node;
+	thread_object->object = object;
 	thread_object->err = 0;
 	
 	if(will_multithread == TRUE)
@@ -131,6 +113,7 @@ void* doInflate_(void* t)
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
 	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
 	TreeNode* node = thread_obj->node;
+	Data* object = thread_obj->object;
 	uint64_t these_num_chunked_elems = 0;
 	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
 	uint64_t these_chunked_updates[HDF5_MAX_DIMS];

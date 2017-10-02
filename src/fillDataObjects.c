@@ -1,23 +1,36 @@
 #include "headers/fillDataObjects.h"
+#include "headers/getDataObjects.h"
 
 
 void fillVariable(char* variable_name)
 {
+	
+	if(is_done == TRUE)
+	{
+		return;
+	}
+	
 	char* delim = ".", * token;
 	flushQueue(varname_queue);
 	if(strcmp(variable_name, "\0") == 0)
 	{
-		for(int i = 0; i < super_object->num_sub_objs; i++)
+		for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 		{
-			if(super_object->sub_objects[i]->names.short_name[0] != '#')
+			if(virtual_super_object->sub_objects[i]->names.short_name[0] != '#')
 			{
-				fillDataTree(super_object->sub_objects[i]);
+				fillDataTree(virtual_super_object->sub_objects[i]);
+				enqueue(top_level_objects, virtual_super_object->sub_objects[i]);
 			}
 		}
+		is_done = TRUE;
 	}
 	else
 	{
-		token = strtok(variable_name, delim);
+		//TODO make this cleaner
+		//copy over variable name before tokenizing so we can print variable not found output if needed
+		char* variable_name_cpy = malloc((strlen(variable_name) + 1)* sizeof(char));
+		strcpy(variable_name_cpy, variable_name);
+		token = strtok(variable_name_cpy, delim);
 		while(token != NULL)
 		{
 			char* vn = malloc((strlen(token) + 1)*sizeof(char));
@@ -26,19 +39,22 @@ void fillVariable(char* variable_name)
 			token = strtok(NULL, delim);
 		}
 		
-		Data* object = super_object;
+		Data* object = virtual_super_object;
 		do
 		{
 			object = findSubObjectByShortName(object, dequeue(varname_queue));
 			if(object == NULL)
 			{
 				sprintf(warn_message, "Variable \'%s\' was not found.", variable_name);
+				free(variable_name_cpy);
 				readMXWarn("getmatvar:variableNotFound", warn_message);
 				return;
 			}
 		} while(varname_queue->length > 0);
 		
 		fillDataTree(object);
+		enqueue(top_level_objects, object);
+		free(variable_name_cpy);
 		
 	}
 	
@@ -140,7 +156,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
 			address_t new_obj_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
-			//search from super_object since the reference might be in #refs#
+			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
 			object->sub_objects[i] = ref;
 			fillDataTree(ref);
@@ -153,6 +169,12 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				n /= 10;
 				num_digits++;
 			} while(n != 0);
+			
+			free(ref->names.short_name);
+			ref->names.short_name_length = (uint16_t)(object->names.short_name_length + 1 + num_digits + 1);
+			ref->names.short_name = malloc((ref->names.short_name_length + 1) * sizeof(char));
+			sprintf(ref->names.short_name, "%s{%d}", object->names.short_name, i+1);
+			ref->names.short_name[ref->names.short_name_length] = '\0';
 			
 			free(ref->names.long_name);
 			ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
@@ -301,6 +323,7 @@ void fillFunctionHandleData(Data* fh)
 	Data* function_handle = findSubObjectByShortName(fh, "function_handle");
 	Data* fh_data = findSubObjectByShortName(function_handle, "function");
 	fillObject(fh_data, fh_data->this_obj_address);
+	fh->elem_size = fh_data->elem_size;
 	
 	//dont use strchr because we need to know the length of the copied string
 	uint32_t fh_len = fh_data->num_elems;

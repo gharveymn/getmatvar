@@ -8,7 +8,7 @@ typedef enum
 
 void readInput(int nrhs, char* prhs[]);
 void makeReturnStructure(int num_elems);
-void makeEvalArray(char* eval_vector);
+void makeEvalArray(void);
 
 
 int main(int argc, char* argv[])
@@ -46,18 +46,21 @@ void makeReturnStructure(const int num_elems)
 	{
 		readMXError(error_id, error_message);
 	}
-	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
-	for(int i = 0; i < super_object->num_sub_objs; i++)
+	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
+	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
-		varnames[i] = malloc((super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
-		strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
+		varnames[i] = malloc((virtual_super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], virtual_super_object->sub_objects[i]->names.short_name);
 	}
 	
-	for(int i = 0; i < super_object->num_sub_objs; i++)
+	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		free(varnames[i]);
 	}
 	free(varnames);
+	
+	enqueue(eval_objects, virtual_super_object->sub_objects[0]);
+	makeEvalArray();
 	
 	freeQueue(eval_objects);
 	freeQueue(object_queue);
@@ -190,7 +193,7 @@ void readInput(int nrhs, char* prhs[])
 			else
 			{
 				kwarg_expected = NOT_AN_ARGUMENT;
-				parameters.full_variable_names[parameters.num_vars] = malloc(strlen(input)*sizeof(char));
+				parameters.full_variable_names[parameters.num_vars] = malloc((strlen(input) + 1)*sizeof(char));
 				strcpy(parameters.full_variable_names[parameters.num_vars], input);
 				parameters.num_vars++;
 			}
@@ -209,7 +212,7 @@ void readInput(int nrhs, char* prhs[])
 	parameters.full_variable_names[parameters.num_vars] = NULL;
 }
 
-void makeEvalArray(char* eval_vector)
+void makeEvalArray(void)
 {
 	uint32_t total_length = 0;
 	Data* eval_obj;
@@ -217,10 +220,17 @@ void makeEvalArray(char* eval_vector)
 	{
 		eval_obj = dequeue(eval_objects);
 		//long_name=expression;
+		uint16_t real_name_length = getRealNameLength(eval_obj);
+		memmove(eval_obj->names.long_name,
+			   eval_obj->names.long_name + eval_obj->names.long_name_length - real_name_length,
+			   real_name_length+1);
+		
+		eval_obj->names.long_name_length = real_name_length;
+		
 		total_length += eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
 	}
 	
-	eval_vector = malloc(total_length * sizeof(uint16_t));
+	char* eval_vector = malloc(total_length * sizeof(uint16_t));
 	
 	uint32_t offset = 0;
 	restartQueue(eval_objects);

@@ -40,7 +40,6 @@ readMessage.o \
 superblock.o \
 utils.o \
 extlib/thpool/thpool.o \
-extlib/mman-win32/mman.o
 
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 

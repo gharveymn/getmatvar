@@ -311,12 +311,14 @@ size_t alloc_gran;
 size_t file_size;
 size_t num_pages;
 bool_t error_flag;
+bool_t is_done;
 char error_id[ERROR_BUFFER_SIZE];
 char error_message[ERROR_BUFFER_SIZE];
 char warn_id[WARNING_BUFFER_SIZE];
 char warn_message[WARNING_BUFFER_SIZE];
 
 paramStruct parameters;
+Queue* top_level_objects;
 Queue* varname_queue;
 Queue* object_queue;
 Queue* eval_objects;
@@ -340,7 +342,7 @@ pageObject* page_objects;
 uint32_t usage_iterator;
 double sum_usage_offset;
 
-Data* super_object;
+Data* virtual_super_object;
 
 int max_depth;
 

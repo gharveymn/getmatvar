@@ -4,16 +4,18 @@
 void initialize(void)
 {
 	//init maps, needed so we don't confuse ending hooks in the case of error
+	top_level_objects = NULL;
 	varname_queue = NULL;
 	object_queue = NULL;
 	eval_objects = NULL;
+	is_done = FALSE;
 	fd = -1;
 	num_threads_to_use = -1;
 	will_multithread = TRUE;
 	will_suppress_warnings = FALSE;
 	max_depth = 0;
 	error_flag = FALSE;
-	super_object = NULL;
+	virtual_super_object = NULL;
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
 	parameters.num_vars = 0;

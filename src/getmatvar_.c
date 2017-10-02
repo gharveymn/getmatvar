@@ -43,26 +43,26 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	{
 		readMXError(error_id, error_message);
 	}
-	char** varnames = malloc((super_object->num_sub_objs)*sizeof(char*));
-	for(int i = 0; i < super_object->num_sub_objs; i++)
+	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
+	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
-		varnames[i] = malloc((super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
-		strcpy(varnames[i], super_object->sub_objects[i]->names.short_name);
+		varnames[i] = malloc((virtual_super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], virtual_super_object->sub_objects[i]->names.short_name);
 	}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, super_object->num_sub_objs, varnames);
+	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, virtual_super_object->num_sub_objs, varnames);
 #pragma GCC diagnostic pop
 	
-	makeSubstructure(super_structure[0], super_object->num_sub_objs, super_object->sub_objects, mxSTRUCT_CLASS);
+	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	
 	if(nlhs == 2)
 	{
 		makeEvalArray(super_structure);
 	}
 	
-	for(int i = 0; i < super_object->num_sub_objs; i++)
+	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		free(varnames[i]);
 	}
@@ -134,6 +134,63 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	}
 	
 	return returnStructure;
+	
+}
+
+
+void makeEvalArray(mxArray** super_structure)
+{
+	uint32_t total_length = 0;
+	Data* eval_obj;
+	while(eval_objects->length > 0)
+	{
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		uint16_t real_name_length = getRealNameLength(eval_obj);
+		memmove(eval_obj->names.long_name,
+			   eval_obj->names.long_name + eval_obj->names.long_name_length - real_name_length,
+			   real_name_length+1);
+		
+		eval_obj->names.long_name_length = real_name_length;
+		
+		total_length += RETURN_STRUCT_NAME_LEN + 1 + eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
+	}
+	
+	const mwSize eval_vector_dims[3] = {1,total_length,0};
+	
+	super_structure[1] = mxCreateCharArray(2, eval_vector_dims);
+	uint16_t* mx_eval_vector_ptr = mxGetChars(super_structure[1]);
+	
+	uint16_t offset = 0;
+	restartQueue(eval_objects);
+	while(eval_objects->length > 0)
+	{
+		
+		eval_obj = dequeue(eval_objects);
+		//long_name=expression;
+		for(int i = 0; i < RETURN_STRUCT_NAME_LEN; i++, offset++)
+		{
+			memcpy(&mx_eval_vector_ptr[offset], &RETURN_STRUCT_NAME[i], sizeof(uint8_t));
+		}
+		
+		mx_eval_vector_ptr[offset] = '.';
+		offset++;
+		
+		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
+		{
+			memcpy(&mx_eval_vector_ptr[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
+		}
+		
+		mx_eval_vector_ptr[offset] = '=';
+		offset++;
+		
+		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
+		offset += eval_obj->num_elems;
+		
+		mx_eval_vector_ptr[offset] = ';';
+		offset++;
+		
+	}
 	
 }
 
@@ -262,7 +319,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 					}
 					else
 					{
-					mt_error:
+						mt_error:
 						for(int j = parameters.num_vars - 1; j >= 0; j--)
 						{
 							free(parameters.full_variable_names[j]);
@@ -349,54 +406,4 @@ void readInput(int nrhs, const mxArray* prhs[])
 		parameters.num_vars = 1;
 	}
 	parameters.full_variable_names[parameters.num_vars] = NULL;
-}
-
-
-void makeEvalArray(mxArray** super_structure)
-{
-	uint32_t total_length = 0;
-	Data* eval_obj;
-	while(eval_objects->length > 0)
-	{
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		total_length += RETURN_STRUCT_NAME_LEN + 1 + eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
-	}
-	
-	const mwSize eval_vector_dims[3] = {1,total_length,0};
-	
-	super_structure[1] = mxCreateCharArray(2, eval_vector_dims);
-	uint16_t* mx_eval_vector_ptr = mxGetChars(super_structure[1]);
-	
-	uint32_t offset = 0;
-	restartQueue(eval_objects);
-	while(eval_objects->length > 0)
-	{
-		
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		for(int i = 0; i < RETURN_STRUCT_NAME_LEN; i++, offset++)
-		{
-			memcpy(&mx_eval_vector_ptr[offset], &RETURN_STRUCT_NAME[i], sizeof(uint8_t));
-		}
-		
-		mx_eval_vector_ptr[offset] = '.';
-		offset++;
-		
-		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
-		{
-			memcpy(&mx_eval_vector_ptr[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
-		}
-		
-		mx_eval_vector_ptr[offset] = '=';
-		offset++;
-		
-		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
-		offset += eval_obj->num_elems;
-		
-		mx_eval_vector_ptr[offset] = ';';
-		offset++;
-		
-	}
-	
 }

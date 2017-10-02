@@ -4,6 +4,16 @@
 
 #include "getDataObjects.h"
 
+#if UINTPTR_MAX == 0xffffffff
+#include "../extlib/libdeflate/x86/libdeflate.h"
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#include "../extlib/libdeflate/x64/libdeflate.h"
+
+
+#else
+//you need at least 19th century hardware to run this
+#endif
+
 typedef enum
 {
 	GROUP = (uint8_t) 0, CHUNK = (uint8_t) 1, NODETYPE_UNDEFINED
@@ -38,18 +48,23 @@ typedef struct inflate_thread_obj_ inflate_thread_obj;
 struct inflate_thread_obj_
 {
 	TreeNode* node;
+	Data* object;
 	errno_t err;
 };
 
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
-errno_t decompressChunk(TreeNode* node);
+errno_t decompressChunk(TreeNode* node, Data* object);
 void* doInflate_(void* t);
 void freeTree(void* n);
 errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
 void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
+void* garbageCollection_(void* nothing);
 
+//pthread_t gc;
+//pthread_attr_t attr;
 Queue* chunkTreeRoots;
+bool_t is_working;
 
 #endif //PLACE_CHUNKED_DATA_H
