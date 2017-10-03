@@ -1,5 +1,4 @@
 #include "headers/fillDataObjects.h"
-#include "headers/getDataObjects.h"
 
 
 void fillVariable(char* variable_name)
@@ -42,17 +41,63 @@ void fillVariable(char* variable_name)
 		Data* object = virtual_super_object;
 		do
 		{
-			object = findSubObjectByShortName(object, dequeue(varname_queue));
-			if(object == NULL)
+			char* var = dequeue(varname_queue);
+			if(var[strlen(var)-1] == '}')
 			{
-				sprintf(warn_message, "Variable \'%s\' was not found.", variable_name);
-				free(variable_name_cpy);
-				readMXWarn("getmatvar:variableNotFound", warn_message);
-				return;
+				Queue* cell_var_queue = initQueue(freeVarname);
+				char* cell_var_cpy = malloc((strlen(var) + 1)* sizeof(char));
+				strcpy(cell_var_cpy, var);
+				token = strtok(cell_var_cpy, "{");
+				while(token != NULL)
+				{
+					char* cvn = malloc((strlen(token) + 1)*sizeof(char));
+					strcpy(cvn, token);
+					enqueue(cell_var_queue, cvn);
+					token = strtok(NULL, "{");
+				}
+				
+				do
+				{
+					object = findSubObjectByShortName(object, dequeue(cell_var_queue));
+					if(object == NULL)
+					{
+						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+						freeQueue(cell_var_queue);
+						free(variable_name_cpy);
+						free(cell_var_cpy);
+						readMXWarn("getmatvar:variableNotFound", warn_message);
+						return;
+					}
+					else if(cell_var_queue->length != 0) //don't fill the last object yet, use the tree filler below
+					{
+						fillObject(object, object->this_obj_address);
+					}
+				} while(cell_var_queue->length > 0);
+				
+				freeQueue(cell_var_queue);
+				free(cell_var_cpy);
+				
 			}
+			else
+			{
+				object = findSubObjectByShortName(object, var);
+				if(object == NULL)
+				{
+					sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+					free(variable_name_cpy);
+					readMXWarn("getmatvar:variableNotFound", warn_message);
+					return;
+				}
+			}
+			
+			
 		} while(varname_queue->length > 0);
 		
 		fillDataTree(object);
+		while(object->super_object->matlab_internal_type == mxCELL_CLASS)
+		{
+			object = object->super_object;
+		}
 		enqueue(top_level_objects, object);
 		free(variable_name_cpy);
 		
@@ -159,7 +204,6 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
 			object->sub_objects[i] = ref;
-			fillDataTree(ref);
 			
 			//get the number of digits in i + 1
 			int n = i + 1;
@@ -171,9 +215,9 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			} while(n != 0);
 			
 			free(ref->names.short_name);
-			ref->names.short_name_length = (uint16_t)(object->names.short_name_length + 1 + num_digits + 1);
+			ref->names.short_name_length = (uint16_t)(num_digits + 1);
 			ref->names.short_name = malloc((ref->names.short_name_length + 1) * sizeof(char));
-			sprintf(ref->names.short_name, "%s{%d}", object->names.short_name, i+1);
+			sprintf(ref->names.short_name, "%d}", i+1);
 			ref->names.short_name[ref->names.short_name_length] = '\0';
 			
 			free(ref->names.long_name);
@@ -181,6 +225,8 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			ref->names.long_name = malloc((ref->names.long_name_length + 1) * sizeof(char));
 			sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, i+1);
 			ref->names.long_name[ref->names.long_name_length] = '\0';
+			
+			ref->super_object = object;
 			
 		}
 	}

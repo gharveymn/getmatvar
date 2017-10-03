@@ -1,5 +1,5 @@
 #include "headers/getDataObjects.h"
-#include "headers/ezq.h"
+
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
@@ -257,22 +257,12 @@ void readInput(int nrhs, const mxArray* prhs[])
 						num_threads_to_use = (int)res;
 						if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
 						{
-							for(int j = parameters.num_vars - 1; j >= 0; j--)
-							{
-								free(parameters.full_variable_names[j]);
-							}
-							free(parameters.full_variable_names);
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}
 					}
 					
 					if(num_threads_to_use < 0)
 					{
-						for(int j = parameters.num_vars - 1; j >= 0; j--)
-						{
-							free(parameters.full_variable_names[j]);
-						}
-						free(parameters.full_variable_names);
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
@@ -320,11 +310,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 					else
 					{
 						mt_error:
-						for(int j = parameters.num_vars - 1; j >= 0; j--)
-						{
-							free(parameters.full_variable_names[j]);
-						}
-						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
 					}
 					
@@ -337,11 +322,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
-					for(int j = parameters.num_vars - 1; j >= 0; j--)
-					{
-						free(parameters.full_variable_names[j]);
-					}
-					free(parameters.full_variable_names);
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 				
 			}
@@ -380,11 +360,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 			}
 			else
 			{
-				for(int j = parameters.num_vars - 1; j >= 0; j--)
-				{
-					free(parameters.full_variable_names[j]);
-				}
-				free(parameters.full_variable_names);
 				readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must be character vectors.\n\n");
 			}
 		}

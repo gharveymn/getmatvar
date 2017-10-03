@@ -176,6 +176,7 @@ void endHooks(void)
 	freeQueue(varname_queue);
 	freeQueue(object_queue);
 	freeQueue(eval_objects);
+	freeQueue(top_level_objects);
 	
 	if(parameters.full_variable_names != NULL)
 	{

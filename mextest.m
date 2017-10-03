@@ -1,7 +1,7 @@
 addpath('res')
 addpath('bin')
-file = 'res/alltypes.mat';
-vars = {'my_struct', ''};
+file = 'res/cell_with_funcs.mat';
+vars = {'cell_with_funcs{1}'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
@@ -19,7 +19,7 @@ disp(userview.MemUsedMATLAB)
 
 % using load function
 tic
-load(file);
+%load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))

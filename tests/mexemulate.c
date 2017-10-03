@@ -59,7 +59,7 @@ void makeReturnStructure(const int num_elems)
 	}
 	free(varnames);
 	
-	enqueue(eval_objects, virtual_super_object->sub_objects[0]);
+	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
 	makeEvalArray();
 	
 	freeQueue(eval_objects);
@@ -95,11 +95,6 @@ void readInput(int nrhs, char* prhs[])
 					{
 						if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 						{
-							for(int j = parameters.num_vars - 1; j >= 0; j--)
-							{
-								free(parameters.full_variable_names[j]);
-							}
-							free(parameters.full_variable_names);
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}
 					}
@@ -109,21 +104,11 @@ void readInput(int nrhs, char* prhs[])
 					num_threads_to_use = (int)res;
 					if(endptr == input && errno == ERANGE)
 					{
-						for(int j = parameters.num_vars - 1; j >= 0; j--)
-						{
-							free(parameters.full_variable_names[j]);
-						}
-						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 					}
 					
 					if(num_threads_to_use < 0)
 					{
-						for(int j = parameters.num_vars - 1; j >= 0; j--)
-						{
-							free(parameters.full_variable_names[j]);
-						}
-						free(parameters.full_variable_names);
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
@@ -148,11 +133,6 @@ void readInput(int nrhs, char* prhs[])
 					}
 					else
 					{
-						for(int j = parameters.num_vars - 1; j >= 0; j--)
-						{
-							free(parameters.full_variable_names[j]);
-						}
-						free(parameters.full_variable_names);
 						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
 					}
 					break;
@@ -160,11 +140,6 @@ void readInput(int nrhs, char* prhs[])
 					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
-					for(int j = parameters.num_vars - 1; j >= 0; j--)
-					{
-						free(parameters.full_variable_names[j]);
-					}
-					free(parameters.full_variable_names);
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 			}
 			kwarg_expected = NOT_AN_ARGUMENT;

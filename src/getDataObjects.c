@@ -101,13 +101,17 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	pthread_mutex_destroy(&dump_lock);
 #endif
 	
-	free(virtual_super_object->sub_objects);
-	virtual_super_object->sub_objects = malloc(top_level_objects->length*sizeof(Data*));
 	virtual_super_object->num_sub_objs = (uint32_t)top_level_objects->length;
-	for(int i = 0; top_level_objects->length > 0; i++)
+	
+	if(virtual_super_object->num_sub_objs > 0)
 	{
-		virtual_super_object->sub_objects[i] = dequeue(top_level_objects);
-		virtual_super_object->sub_objects[i]->super_object = NULL;
+		free(virtual_super_object->sub_objects);
+		virtual_super_object->sub_objects = malloc(top_level_objects->length*sizeof(Data*));
+		for(int i = 0; top_level_objects->length > 0; i++)
+		{
+			virtual_super_object->sub_objects[i] = dequeue(top_level_objects);
+			virtual_super_object->sub_objects[i]->super_object = NULL;
+		}
 	}
 	
 	freeQueue(top_level_objects);
