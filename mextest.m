@@ -1,25 +1,23 @@
 addpath('res')
 addpath('bin')
-file = 'res/cell_with_funcs.mat';
-vars = {'cell_with_funcs{1}'};
+file = 'res/a.mat';
+vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmemused)
 tic
 %getmatvar(file, vars{:}, '-sw');
 getmatvar(file, vars{:}, '-sw');
 %getmatvar(file, '-threads', 0);
 toc
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmemused)
 %a = t;
 %ex = extPar;
 
 % using load function
 tic
-%load(file);
+load(file);
 toc
 
 %disp(sum(a(:) ~= t(:)))
