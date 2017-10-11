@@ -194,7 +194,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	}
 	
 	// we have encountered a cell array
-	if(object->data_arrays.sub_object_header_offsets != NULL && object->matlab_internal_type == mxCELL_CLASS)
+	if(object->data_arrays.sub_object_header_offsets != NULL && object->hdf5_internal_type == HDF5_REFERENCE)
 	{
 		object->sub_objects = malloc(object->num_elems * sizeof(Data*));
 		object->num_sub_objs = object->num_elems;

@@ -26,15 +26,17 @@ errno_t getChunkedData(Data* object)
 	{
 		
 		inflate_thread_obj_queue = initQueue(free);
+		int num_threads;
 		
-		if(num_threads_to_use != -1)
+		if(num_threads_user_def != -1)
 		{
-			num_threads = num_threads_to_use;
+			num_threads = num_threads_user_def;
 		}
 		else
 		{
 			//num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
-			num_threads = MIN(num_threads, num_avail_threads);
+			//num_threads = MIN(num_threads, num_avail_threads);
+			num_threads = num_avail_threads;
 			num_threads = MAX(num_threads, 1);
 		}
 		
@@ -72,7 +74,7 @@ errno_t decompressChunk(TreeNode* node, Data* object)
 		return 0;
 	}
 	
-	for(int i = 0; i < node->entries_used; i++)
+	for(int i = node->entries_used - 1; i >= 0; i--)
 	{
 		if(decompressChunk(node->children[i], object) != 0)
 		{
@@ -80,7 +82,7 @@ errno_t decompressChunk(TreeNode* node, Data* object)
 		}
 	}
 	
-	//there must be at least one child
+	//there must be at least one child since it didn't return in the first if block
 	if(node->children[0]->leaf_type != RAWDATA)
 	{
 		//only want nodes which are parents of the leaves to save memory

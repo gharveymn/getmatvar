@@ -1,4 +1,4 @@
-function [mem] = getmemused()
+function [mem] = getmemstr()
 
     if(~isempty(strfind(lower(computer),'win')))
         

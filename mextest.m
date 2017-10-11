@@ -1,17 +1,17 @@
 addpath('res')
 addpath('bin')
-file = 'res/a.mat';
+file = 'res/t.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
-disp(getmemused)
+disp(getmemstr)
 tic
 %getmatvar(file, vars{:}, '-sw');
 getmatvar(file, vars{:}, '-sw');
 %getmatvar(file, '-threads', 0);
 toc
-disp(getmemused)
+disp(getmemstr)
 %a = t;
 %ex = extPar;
 

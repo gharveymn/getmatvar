@@ -101,22 +101,22 @@ void readInput(int nrhs, char* prhs[])
 					
 					char* endptr;
 					long res = (int)strtol(input, &endptr, 10);
-					num_threads_to_use = (int)res;
+					num_threads_user_def = (int)res;
 					if(endptr == input && errno == ERANGE)
 					{
 						readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 					}
 					
-					if(num_threads_to_use < 0)
+					if(num_threads_user_def < 0)
 					{
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
 					
 					//TEMPORARY, REMOVE WHEN WE HAVE MT_KWARG WORKING
-					if(num_threads_to_use == 0)
+					if(num_threads_user_def == 0)
 					{
-						num_threads_to_use = -1;
+						num_threads_user_def = -1;
 					}
 					
 					break;

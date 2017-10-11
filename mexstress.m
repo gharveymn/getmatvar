@@ -1,5 +1,4 @@
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmemstr)
 
 addpath('res')
 addpath('bin')
@@ -7,11 +6,11 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/my_struct.mat';
+file = 'res/t.mat';
 vars = {''};
 domemory = false;
 compare = false;
-numtests = 10000;
+numtests = 1000;
 stride = 100;
 mvgavgtime = zeros(stride,1);
 strideload = 100;
@@ -55,5 +54,4 @@ else
 	end
 	fprintf('\n');
 end
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmemstr)

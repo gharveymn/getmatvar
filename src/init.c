@@ -10,7 +10,7 @@ void initialize(void)
 	eval_objects = NULL;
 	is_done = FALSE;
 	fd = -1;
-	num_threads_to_use = -1;
+	num_threads_user_def = -1;
 	will_multithread = TRUE;
 	will_suppress_warnings = FALSE;
 	max_depth = 0;

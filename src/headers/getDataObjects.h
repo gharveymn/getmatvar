@@ -54,12 +54,8 @@ typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
 #define MATFILE_SIG_LEN 19
-#define FUNCTION_HANDLE_SIG "R2VuZSBIYXJ2ZXkgOik="
 #define RETURN_STRUCT_NAME "Q291cnRuZXkgQm9ubmVyIDop"
 #define RETURN_STRUCT_NAME_LEN 24
-#define FUNCTION_HANDLE_SIG_LEN 20
-#define TREE 0
-#define HEAP 1
 #define UNDEF_ADDR 0xffffffffffffffff
 #define CLASS_LENGTH 200
 #define NAME_LENGTH 200
@@ -330,8 +326,7 @@ uint64_t default_bytes;
 Queue* inflate_thread_obj_queue;
 threadpool threads;
 int num_avail_threads;		//number of processors - 1
-int num_threads_to_use;		//user specifies number of threads
-int num_threads;			//internal number of threads actually used
+int num_threads_user_def;		//user specifies number of threads
 bool_t will_multithread;
 bool_t will_suppress_warnings;
 
@@ -339,8 +334,8 @@ bool_t threads_are_started; //only start the thread pool once
 pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
 
-uint32_t usage_iterator;
-double sum_usage_offset;
+volatile uint32_t usage_iterator;
+volatile double sum_usage_offset;
 
 Data* virtual_super_object;
 

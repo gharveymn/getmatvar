@@ -8,7 +8,6 @@
 #include "getDataObjects.h"
 
 void freeVarname(void* vn);
-void releasePages(address_t address, uint64_t bytes_needed);
 void freeDataObject(void* object);
 void freeDataObjectTree(Data* data_object);
 void destroyPageObjects(void);

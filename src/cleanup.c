@@ -11,31 +11,6 @@ void freeVarname(void* vn)
 }
 
 
-void releasePages(uint64_t address, uint64_t bytes_needed)
-{
-	
-	//call this after done with using the pointer
-	size_t start_page = address/alloc_gran;
-	//size_t end_page = (address + bytes_needed)/alloc_gran; //INCLUSIVE
-	
-	/*-----------------------------------------WINDOWS-----------------------------------------*/
-#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
-	
-	pthread_mutex_lock(&page_objects[start_page].lock);
-	page_objects[start_page].num_using--;
-	pthread_mutex_unlock(&page_objects[start_page].lock);
-
-#else /*-----------------------------------------UNIX-----------------------------------------*/
-	
-	//release locks
-	pthread_mutex_lock(&page_objects[start_page].lock);
-	page_objects[start_page].num_using--;
-	pthread_mutex_unlock(&page_objects[start_page].lock);
-#endif
-
-}
-
-
 void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;

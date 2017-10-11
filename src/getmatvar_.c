@@ -231,7 +231,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 					
 					if(mxIsNumeric(prhs[i]) && mxIsScalar(prhs[i]))
 					{
-						num_threads_to_use = (int)mxGetScalar(prhs[i]);
+						num_threads_user_def = (int)mxGetScalar(prhs[i]);
 					}
 					else if(mxIsChar(prhs[i]))
 					{
@@ -254,23 +254,23 @@ void readInput(int nrhs, const mxArray* prhs[])
 						
 						char* endptr;
 						long res = (int)strtol(input, &endptr, 10);
-						num_threads_to_use = (int)res;
+						num_threads_user_def = (int)res;
 						if(endptr == input || ((res == LONG_MAX || res == LONG_MIN) && errno == ERANGE))
 						{
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}
 					}
 					
-					if(num_threads_to_use < 0)
+					if(num_threads_user_def < 0)
 					{
 						readMXError("getmatvar:tooManyThreadsError", "Too many threads were requested.\n\n");
 					}
 					
 					
 					//TEMPORARY, REMOVE WHEN WE HAVE MT_KWARG WORKING
-					if(num_threads_to_use == 0)
+					if(num_threads_user_def == 0)
 					{
-						num_threads_to_use = -1;
+						num_threads_user_def = -1;
 					}
 					
 					break;
@@ -297,9 +297,9 @@ void readInput(int nrhs, const mxArray* prhs[])
 						else if(strncmp(input, "max", 3) == 0)
 						{
 							//overridden by the threads setting, so if still -1 don't execute
-							if(num_threads_to_use == -1)
+							if(num_threads_user_def == -1)
 							{
-								num_threads_to_use = getNumProcessors();
+								num_threads_user_def = getNumProcessors();
 							}
 						}
 						else
