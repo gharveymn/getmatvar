@@ -22,8 +22,8 @@ Usage:
 
 
 	options:
-		'-t(hreads)'	specify the number of threads to use, requires an integer oparg
-		'-m(ultithread)'	specify whether to multithread, requires a boolean oparg
+		'-t(hreads)'			specify the number of threads to use, requires an integer oparg
+		'-m(ultithread)'		specify whether to multithread, requires a boolean oparg
 		'-suppress-warnings'/'-sw'	suppress warnings from the function, no oparg
 
 Example:
@@ -36,7 +36,7 @@ If you find it more convenient, you can also invoke the MEX function directly. I
 Example:
 	>> my_array = rand(100,101,102);
 	>> save('my_workspace.mat','my_array');
-	>> s = getmatvar_('my_workspace.mat', 'my_array');
+	>> [s,~] = getmatvar_('my_workspace.mat', 'my_array');
 	>> s
 	s = 
   	  struct with fields:
@@ -61,10 +61,12 @@ The batch scripts named `build_with_msvc.bat` and `build_with_mingw.bat` will bu
 
 The Make file is set up to compile the debug build on Unix systems only at the moment.
 
-### Issues
+### Known Issues
 
-Indeed this is Windows native, but compilation on Unix shouldn't require too much troubleshooting --- I've tried to make the source as system-friendly as possible. Try using running `mexmake.m` to compile with `mex` before changing anything. 
+Indeed this is Windows native, but compilation on Unix shouldn't require too much troubleshooting --- I've tried to make the source as system-friendly as possible. Try using running `mexmake.m` to compile with `mex` before changing anything.
+
+This library does not support MATLAB objects other than function handles as of yet. I have managed to reverse engineer their system, but I'm quite busy now, so that may be implemented by around December.
 
 ### Acknowledgements
 
-Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, Johan Hanssen Seferidis for `threadpool`, as well as Earnie Boyd for the `param.h` header. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
+Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, and Johan Hanssen Seferidis for `threadpool`. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
