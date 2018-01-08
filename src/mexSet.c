@@ -1,4 +1,6 @@
 #include "headers/getDataObjects.h"
+
+
 void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
@@ -215,4 +217,5 @@ DataArrays rearrangeImaginaryData(Data* object)
 	}
 	
 	return imag_data;
+	
 }

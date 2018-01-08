@@ -1,4 +1,5 @@
 #include "headers/placeChunkedData.h"
+#include "headers/getDataObjects.h"
 
 
 errno_t getChunkedData(Data* object)
@@ -130,9 +131,11 @@ void* doInflate_(void* t)
 	{
 		
 		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
-		const byte* data_pointer = navigateTo(node->children[i]->address, node->keys[i].size);
+		//const byte* data_pointer = navigateTo(node->children[i]->address, node->keys[i].size);
+		const byte* data_pointer = navigateTo(node->children[i]->address, 0);
 		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
-		releasePages(node->children[i]->address, node->keys[i].size);
+		//releasePages(node->children[i]->address, node->keys[i].size);
+		releasePages(node->children[i]->address, 0);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -173,6 +176,7 @@ void* doInflate_(void* t)
 		 *  ||  chunk (collides)   |                          ||
 		 *   ==================================================
 		 */
+		
 		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
 		for(int j = 0; j < object->num_dims; j++)
 		{
@@ -331,6 +335,14 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		
 		releasePages(key_address, bytes_needed);
 		fillNode(node->children[i], num_chunked_dims);
+		
+		size_t page_index = node->children[i]->address/alloc_gran;
+		if(node->children[i]->leaf_type == RAWDATA)
+		{
+			page_objects[page_index].total_num_mappings++;
+			page_objects[page_index].max_map_end =
+					MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i].size - 1);
+		}
 		
 		key_address += key_size + s_block.size_of_offsets;
 		key_pointer = navigateTo(key_address, bytes_needed);

@@ -13,8 +13,12 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
 	size_t start_page = address/alloc_gran;
-	size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
+	//size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
 	
+	address_t start_address = page_objects[start_page].pg_start_a;
+	
+	//0 bytes_needed indicates operation done in parallel
+	address_t end_address = bytes_needed != 0 ? address + bytes_needed - 1 : page_objects[start_page].max_map_end;
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
@@ -37,7 +41,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+		if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
 		{
 		
 #ifdef DO_MEMDUMP
@@ -46,7 +50,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
-			if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+			if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
 				page_objects[start_page].last_use_time_stamp = usage_iterator;
@@ -88,29 +92,10 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 	}
 	
-	
-	
 	//if this page has already been mapped unmap since we can't fit
-	if(page_objects[start_page].is_mapped == TRUE)
-	{
-		//second parameter doesnt do anything on windows
-		if(munmap(page_objects[start_page].pg_start_p, page_objects[start_page].map_end - page_objects[start_page].map_base) != 0)
-		{
-			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
-		}
-		
-		page_objects[start_page].is_mapped = FALSE;
-		page_objects[start_page].pg_start_p = NULL;
-		page_objects[start_page].map_base = UNDEF_ADDR;
-		page_objects[start_page].map_end = UNDEF_ADDR;
-
-#ifdef DO_MEMDUMP
-		memdump("U");
-#endif
+	freePageObject(start_page);
 	
-	}
-	
-	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
+	page_objects[start_page].pg_start_p = mmap(NULL, end_address - start_address, PROT_READ, MAP_PRIVATE, fd, start_address);
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
@@ -118,8 +103,8 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
-	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
+	page_objects[start_page].map_base = start_address;
+	page_objects[start_page].map_end = end_address;
 
 #ifdef DO_MEMDUMP
 	memdump("M");
@@ -151,7 +136,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_base <= address && address + bytes_needed <= page_objects[start_page].map_end)
+		if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
 		{
 
 #ifdef DO_MEMDUMP
@@ -159,10 +144,19 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 #endif
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
-			page_objects[start_page].num_using++;
-			pthread_mutex_unlock(&page_objects[start_page].lock);
-			
-			return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			//confirm
+			if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
+			{
+				page_objects[start_page].num_using++;
+				page_objects[start_page].last_use_time_stamp = usage_iterator;
+				usage_iterator++;
+				pthread_mutex_unlock(&page_objects[start_page].lock);
+				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
+			}
+			else
+			{
+				pthread_mutex_unlock(&page_objects[start_page].lock);
+			}
 			
 		}
 		else
@@ -173,6 +167,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 			pthread_spin_lock(&if_lock);
 			if(page_objects[start_page].num_using == 0)
 			{
+			
 				pthread_mutex_lock(&page_objects[start_page].lock);
 				
 				//the state may have changed while acquiring the lock, so check again
@@ -193,37 +188,19 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 	}
 	
-	
-	
 	//if this page has already been mapped unmap since we can't fit
-	if(page_objects[start_page].is_mapped == TRUE)
-	{
-		if(munmap(page_objects[start_page].pg_start_p, page_objects[start_page].map_end - page_objects[start_page].map_base) != 0)
-		{
-			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
-		}
-		
-		page_objects[start_page].is_mapped = FALSE;
-		page_objects[start_page].pg_start_p = NULL;
-		page_objects[start_page].map_base = UNDEF_ADDR;
-		page_objects[start_page].map_end = UNDEF_ADDR;
-
-#ifdef DO_MEMDUMP
-		memdump("U");
-#endif
+	freePageObject(start_page);
 	
-	}
-	
-	page_objects[start_page].pg_start_p = mmap(NULL, page_objects[end_page].pg_end_a - page_objects[start_page].pg_start_a, PROT_READ, MAP_PRIVATE, fd, page_objects[start_page].pg_start_a);
+	page_objects[start_page].pg_start_p = mmap(NULL, end_address - start_address, PROT_READ, MAP_PRIVATE, fd, start_address);
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigatePolitely(). Check errno %d\n\n", errno);
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_base = page_objects[start_page].pg_start_a;
-	page_objects[start_page].map_end = page_objects[end_page].pg_end_a;
+	page_objects[start_page].map_base = start_address;
+	page_objects[start_page].map_end = end_address;
 	
 #ifdef DO_MEMDUMP
 	memdump("M");
@@ -250,6 +227,22 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 	
 	pthread_mutex_lock(&page_objects[start_page].lock);
 	page_objects[start_page].num_using--;
+	
+	//0 bytes_needed indicates operation done in parallel
+	if(bytes_needed == 0)
+	{
+		page_objects[start_page].total_num_mappings--;
+		//we will free each page if it isnt immediately being used to ensure we don't
+		//map twice as much memory as we really need
+		//destroys performance
+		//idea -- bin each of the needed maps and sort/optimize to unmap only once
+		//store number of maps needed and max extent
+		if(page_objects[start_page].total_num_mappings == 0)
+		{
+			freePageObject(start_page);
+			//fprintf(stderr, "%d ran", (int) start_page);
+		}
+	}
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
@@ -257,6 +250,21 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 	//release locks
 	pthread_mutex_lock(&page_objects[start_page].lock);
 	page_objects[start_page].num_using--;
+	if(bytes_needed == 0)
+	{
+		page_objects[start_page].total_num_mappings--;
+		
+		//we will free each page if it isnt immediately being used to ensure we don't
+		//map twice as much memory as we really need
+		//destroys performance
+		//idea -- bin each of the needed maps and sort/optimize to unmap only once
+		//store number of maps needed and max extent
+		if(page_objects[start_page].total_num_mappings == 0)
+		{
+			freePageObject(start_page);
+			//fprintf(stderr, "%d ran", (int) start_page);
+		}
+	}
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 #endif
 

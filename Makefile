@@ -21,7 +21,24 @@ LIB_PARAMS=$(foreach d, $(LIB), -I$d)
 
 LIBS=-lm -lpthread
 
-_DEPS = mapping.h libdeflate.h thpool.h queue.h
+IDIR = src/headers
+_DEPS = cleanup.h \
+createDataObjects.h \
+ezq.h \
+fillDataObjects.h \
+getDataObjects.h \
+getSystemInfo.h \
+init.h \
+navigate.h \
+numberHelper.h \
+placeChunkedData.h \
+placeData.h \
+readMessage.h \
+superblock.h \
+utils.h \
+getDataObjects.h \
+../extlib/libdeflate/x64/libdeflate.h \
+../extlib/thpool/thpool.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = ../$(TST_DIR)/mexemulate.o \
@@ -39,7 +56,7 @@ placeData.o \
 readMessage.o \
 superblock.o \
 utils.o \
-extlib/thpool/thpool.o \
+extlib/thpool/thpool.o
 
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
@@ -49,9 +66,9 @@ $(OBJ_DIR)/%.o: %.c $(DEPS)
 
 CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
-all: mapping
+all: mexemulate
 
-mapping: $(OBJ) src/extlib/libdeflate/x64/unix/libdeflate.a
+mexemulate: $(OBJ) src/extlib/libdeflate/x64/unix/libdeflate.a
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 src/extlib/libdeflate/x64/unix/libdeflate.a:

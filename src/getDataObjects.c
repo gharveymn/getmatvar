@@ -14,7 +14,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
-
+	
 #ifdef DO_MEMDUMP
 	pthread_cond_init(&dump_ready, NULL);
 	pthread_mutex_init(&dump_lock, NULL);

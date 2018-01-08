@@ -1,4 +1,6 @@
 #include "headers/init.h"
+#include "headers/getDataObjects.h"
+
 
 /*this intializer should be called in the entry function before anything else */
 void initialize(void)
@@ -86,6 +88,8 @@ void initializePageObjects(void)
 		page_objects[i].pg_start_p = NULL;
 		page_objects[i].num_using = 0;
 		page_objects[i].last_use_time_stamp = 0;
+		page_objects[i].max_map_end = 0;
+		page_objects[i].total_num_mappings = 0;
 	}
 	usage_iterator = 0;
 	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);

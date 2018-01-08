@@ -34,7 +34,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 void makeReturnStructure(mxArray** super_structure, int nlhs)
 {
 	object_queue = initQueue(freeDataObject);
-	eval_objects = initQueue(NULL);
 	
 	mwSize ret_struct_dims[1] = {1};
 	
@@ -57,18 +56,12 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	
 	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	
-	if(nlhs == 2)
-	{
-		makeEvalArray(super_structure);
-	}
-	
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		free(varnames[i]);
 	}
 	free(varnames);
 	
-	freeQueue(eval_objects);
 	freeQueue(object_queue);
 	
 }
@@ -115,9 +108,6 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case mxFUNCTION_CLASS:
-				enqueue(eval_objects, objects[index]);
-				objects[index]->data_arrays.is_mx_used = FALSE;
-				break;
 			case mxOBJECT_CLASS:
 				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
 				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
@@ -134,63 +124,6 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	}
 	
 	return returnStructure;
-	
-}
-
-
-void makeEvalArray(mxArray** super_structure)
-{
-	uint32_t total_length = 0;
-	Data* eval_obj;
-	while(eval_objects->length > 0)
-	{
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		uint16_t real_name_length = getRealNameLength(eval_obj);
-		memmove(eval_obj->names.long_name,
-			   eval_obj->names.long_name + eval_obj->names.long_name_length - real_name_length,
-			   real_name_length+1);
-		
-		eval_obj->names.long_name_length = real_name_length;
-		
-		total_length += RETURN_STRUCT_NAME_LEN + 1 + eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
-	}
-	
-	const mwSize eval_vector_dims[3] = {1,total_length,0};
-	
-	super_structure[1] = mxCreateCharArray(2, eval_vector_dims);
-	uint16_t* mx_eval_vector_ptr = mxGetChars(super_structure[1]);
-	
-	uint16_t offset = 0;
-	restartQueue(eval_objects);
-	while(eval_objects->length > 0)
-	{
-		
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		for(int i = 0; i < RETURN_STRUCT_NAME_LEN; i++, offset++)
-		{
-			memcpy(&mx_eval_vector_ptr[offset], &RETURN_STRUCT_NAME[i], sizeof(uint8_t));
-		}
-		
-		mx_eval_vector_ptr[offset] = '.';
-		offset++;
-		
-		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
-		{
-			memcpy(&mx_eval_vector_ptr[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
-		}
-		
-		mx_eval_vector_ptr[offset] = '=';
-		offset++;
-		
-		memcpy(&mx_eval_vector_ptr[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
-		offset += eval_obj->num_elems;
-		
-		mx_eval_vector_ptr[offset] = ';';
-		offset++;
-		
-	}
 	
 }
 

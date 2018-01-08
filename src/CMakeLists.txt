@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.7)
-PROJECT(MatFile_Parsing_Win)
+PROJECT(getmatvar)
 
 SET(MEX_FILE_NAME getmatvar_)
 

@@ -279,12 +279,14 @@ typedef struct
 {
 	pthread_mutex_t lock;
 	bool_t is_mapped;
-	uint64_t pg_start_a;
-	uint64_t pg_end_a;
-	uint64_t map_base;//if already mapped by windows, the base offset of this map
-	uint64_t map_end; //if already mapped by windows, what offset this map extends to
+	address_t pg_start_a;
+	address_t pg_end_a;
+	address_t map_base;//if already mapped by windows, the base offset of this map
+	address_t map_end; //if already mapped by windows, what offset this map extends to
+	address_t max_map_end;
 	byte* pg_start_p;
 	uint8_t num_using;
+	uint32_t total_num_mappings;
 	uint32_t last_use_time_stamp;
 } pageObject;
 

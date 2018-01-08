@@ -145,6 +145,29 @@ void destroyPageObjects(void)
 	
 }
 
+void freePageObject(size_t page_index)
+{
+	
+	if(page_objects[page_index].is_mapped == TRUE)
+	{
+		//second parameter doesnt do anything on windows
+		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_base) != 0)
+		{
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
+		}
+		
+		page_objects[page_index].is_mapped = FALSE;
+		page_objects[page_index].pg_start_p = NULL;
+		page_objects[page_index].map_base = UNDEF_ADDR;
+		page_objects[page_index].map_end = UNDEF_ADDR;
+
+#ifdef DO_MEMDUMP
+		memdump("U");
+#endif
+	
+	}
+}
+
 void endHooks(void)
 {
 	

@@ -10,7 +10,6 @@ void readInput(int nrhs, char* prhs[]);
 void makeReturnStructure(int num_elems);
 void makeEvalArray(void);
 
-
 int main(int argc, char* argv[])
 {
 	
@@ -65,7 +64,7 @@ void makeReturnStructure(const int num_elems)
 	freeQueue(eval_objects);
 	freeQueue(object_queue);
 	
-	fprintf(stderr, "\nProgram exited successfully.\n");
+	fprintf(stderr, "\nProgram exited successfully.\n\n");
 	
 }
 

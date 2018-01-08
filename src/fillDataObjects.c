@@ -110,21 +110,13 @@ void fillVariable(char* variable_name)
 void fillDataTree(Data* object)
 {
 	
-	//main objective
 	fillObject(object, object->this_obj_address);
 	
-	if(object->matlab_internal_type == mxFUNCTION_CLASS)
+	for(int i = 0; i < object->num_sub_objs; i++)
 	{
-		fillFunctionHandleData(object);
+		fillDataTree(object->sub_objects[i]);
 	}
-	else
-	{
-		for(int i = 0; i < object->num_sub_objs; i++)
-		{
-			fillDataTree(object->sub_objects[i]);
-		}
-		object->is_finalized = TRUE;
-	}
+	object->is_finalized = TRUE;
 	
 }
 
@@ -337,72 +329,6 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	
 	releasePages(header_address, header_length);
 	return (uint16_t)(message_num - 1);
-	
-}
-
-void fillFunctionHandleData(Data* fh)
-{
-	/*
-	 * need to traverse structure:
-	 *
-	 * fh_data-
-	 *    |-function_handle-
-	 *    |                 |-file
-	 *    |                 |-function		<-- NEED
-	 *    |                 |-(within_file)
-	 *    |                 |-type
-	 *    |                 |-(workspace)
-	 *    |-matlabroot
-	 *    |-sentinel
-	 *    |-separator
-	 *
-	 */
-	
-	// the object may be filled but not finalized, like in this case where
-	// we have to retrieve some extra data from the substructure
-	if(fh->is_finalized == TRUE)
-	{
-		return;
-	}
-	fh->is_finalized = TRUE;
-	
-	Data* function_handle = findSubObjectByShortName(fh, "function_handle");
-	Data* fh_data = findSubObjectByShortName(function_handle, "function");
-	fillObject(fh_data, fh_data->this_obj_address);
-	fh->elem_size = fh_data->elem_size;
-	
-	//dont use strchr because we need to know the length of the copied string
-	uint32_t fh_len = fh_data->num_elems;
-	char* func_name = NULL;
-	for(; fh_len > 0; fh_len--)
-	{
-		func_name = (char*)(fh_data->data_arrays.data + (fh_data->num_elems - fh_len) * sizeof(uint16_t));
-		if(*func_name == '@')
-		{
-			break;
-		}
-	}
-	
-	if(fh_len == 0)
-	{
-		//need to add the '@' character
-		fh->data_arrays.data = mxMalloc((1 + fh_data->num_elems) * fh_data->elem_size);
-		uint16_t seperator = 64;
-		memcpy(fh->data_arrays.data, &seperator, sizeof(uint16_t)); //this is the '@' character
-		memcpy(fh->data_arrays.data + sizeof(uint16_t), fh_data->data_arrays.data, fh_data->num_elems*fh_data->elem_size);
-		fh->num_elems = 1 + fh_data->num_elems; //+ 1 for the seperator
-	}
-	else
-	{
-		fh->data_arrays.data = mxMalloc((fh_len) * fh_data->elem_size);
-		memcpy(fh->data_arrays.data, func_name, fh_len * fh_data->elem_size);
-		fh->num_elems = fh_len;
-	}
-	
-	fh->num_dims = 2;
-	fh->dims[0] = 1;
-	fh->dims[1] = fh->num_elems;
-	fh->dims[2] = 0;
 	
 }
 

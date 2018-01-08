@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
-PROJECT(MatFile_Parsing_Win_Mex)
+PROJECT(getmatvar)
 
 MESSAGE(STATUS "Building with configuration CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
