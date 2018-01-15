@@ -21,7 +21,6 @@ void initialize(void)
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
 	parameters.num_vars = 0;
-	chunkTreeRoots = NULL;
 }
 
 

@@ -44,16 +44,21 @@ struct tree_node_
 	TreeNode** children;
 };
 
-typedef struct inflate_thread_obj_ inflate_thread_obj;
+typedef struct inflate_thread_obj_ InflateThreadObj;
 struct inflate_thread_obj_
 {
-	TreeNode* node;
 	Data* object;
 	errno_t err;
 };
 
+typedef struct
+{
+	Key data_key;
+	TreeNode* data_node;
+} DataPair;
+
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
-errno_t decompressChunk(TreeNode* node, Data* object);
+errno_t decompressChunk(Data* object);
 void* doInflate_(void* t);
 void freeTree(void* n);
 errno_t getChunkedData(Data* obj);
@@ -64,7 +69,6 @@ void* garbageCollection_(void* nothing);
 
 //pthread_t gc;
 //pthread_attr_t attr;
-Queue* chunkTreeRoots;
 bool_t is_working;
 
 #endif //PLACE_CHUNKED_DATA_H

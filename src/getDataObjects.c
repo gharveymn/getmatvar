@@ -79,16 +79,9 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		fillVariable(variable_names[name_index]);
 	}
 	
-	if(chunkTreeRoots != NULL)
-	{
-		freeQueue(chunkTreeRoots);
-		chunkTreeRoots = NULL;
-	}
-	
 	close(fd);
 	if(threads_are_started == TRUE)
 	{
-		pthread_mutex_destroy(&thread_acquisition_lock);
 		thpool_destroy(threads);
 	}
 	

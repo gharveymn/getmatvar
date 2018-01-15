@@ -12,7 +12,7 @@ getmatvar(file, vars{:}, '-sw');
 %getmatvar(file, '-threads', 0);
 toc
 disp(getmemstr)
-%a = t;
+a = t;
 %ex = extPar;
 
 % using load function

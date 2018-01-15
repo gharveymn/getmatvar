@@ -31,6 +31,7 @@ void enqueue(Queue* queue, void* data);
 void priorityEnqueue(Queue* queue, void* data);
 void* dequeue(Queue* queue);
 void* peekQueue(Queue* queue, int queue_location);
+Queue* mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*));
 void flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);

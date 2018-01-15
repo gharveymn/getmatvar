@@ -262,7 +262,7 @@ void releasePages(uint64_t address, uint64_t bytes_needed)
 		if(page_objects[start_page].total_num_mappings == 0)
 		{
 			freePageObject(start_page);
-			//fprintf(stderr, "%d ran", (int) start_page);
+			//fprintf(stderr, "%d\n", (int) start_page);
 		}
 	}
 	pthread_mutex_unlock(&page_objects[start_page].lock);

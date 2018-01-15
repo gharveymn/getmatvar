@@ -26,7 +26,7 @@ try
 		'utils.c',...
 		'extlib/thpool/thpool.c'};
 	
-	mexflags = {'-O', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))
 		

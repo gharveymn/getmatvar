@@ -166,6 +166,20 @@ void* peekQueue(Queue* queue, int queue_location)
 }
 
 
+Queue* mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*))
+{
+	Queue* new_queue = initQueue(free_function);
+	for(int i = 0; i < num_queues; i++)
+	{
+		while(queues[i]->length > 0)
+		{
+			enqueue(new_queue, dequeue(queues[i]));
+		}
+	}
+	return new_queue;
+}
+
+
 void flushQueue(Queue* queue)
 {
 	if(queue != NULL)

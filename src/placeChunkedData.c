@@ -1,17 +1,21 @@
 #include "headers/placeChunkedData.h"
 #include "headers/getDataObjects.h"
+#include "headers/ezq.h"
 
+static Queue** data_page_buckets;
+static Queue* mt_data_queue;
 
 errno_t getChunkedData(Data* object)
 {
-	if(chunkTreeRoots == NULL)
-	{
-		chunkTreeRoots = initQueue(freeTree);
-	}
 	
 	TreeNode* root = malloc(sizeof(TreeNode));
-	enqueue(chunkTreeRoots, root);
 	root->address = object->data_address;
+	
+	data_page_buckets = malloc(num_pages*sizeof(Queue));
+	for(int i = 0; i < num_pages; i++)
+	{
+		data_page_buckets[i] = initQueue(NULL);
+	}
 	
 	//fill the chunk tree
 	errno_t ret = fillNode(root, object->chunked_info.num_chunked_dims);
@@ -23,10 +27,19 @@ errno_t getChunkedData(Data* object)
 		return ret;
 	}
 	
+	mt_data_queue = mergeQueue(data_page_buckets, (int)num_pages, free);
+	for(int i = 0; i < num_pages; i++)
+	{
+		freeQueue(data_page_buckets[i]);
+	}
+	free(data_page_buckets);
+	
+	InflateThreadObj* thread_object = malloc(sizeof(InflateThreadObj));
+	thread_object->object = object;
+	thread_object->err = 0;
+	
 	if(will_multithread == TRUE)
 	{
-		
-		inflate_thread_obj_queue = initQueue(free);
 		int num_threads;
 		
 		if(num_threads_user_def != -1)
@@ -41,57 +54,40 @@ errno_t getChunkedData(Data* object)
 			num_threads = MAX(num_threads, 1);
 		}
 		
-		if(threads_are_started == FALSE)
+		pthread_t* chunk_threads = malloc(num_threads*sizeof(pthread_t));
+		pthread_attr_t attr;
+		void* status;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+		for(int i = 0; i < num_threads; i++)
 		{
-			pthread_mutex_init(&thread_acquisition_lock, NULL);
-			threads = thpool_init(num_threads);
-			threads_are_started = TRUE;
+			pthread_create(&chunk_threads[i], &attr, doInflate_, (void *)thread_object);
 		}
+		pthread_attr_destroy(&attr);
+		for(int i = 0; i < num_threads; i++)
+		{
+			pthread_join(chunk_threads[i], &status);
+		}
+		free(chunk_threads);
 		
 	}
-	
-	ret = decompressChunk(root, object);
-	
-	if(will_multithread == TRUE)
+	else
 	{
-		//is_working = FALSE;
-		//pthread_join(gc, NULL);
-		thpool_wait(threads);
-		freeQueue(inflate_thread_obj_queue);
+		doInflate_((void*)thread_object);
 	}
+	free(thread_object);
 	
+	freeQueue(mt_data_queue);
+	freeTree(root);
 	
 	return ret;
 }
 
 
-errno_t decompressChunk(TreeNode* node, Data* object)
+errno_t decompressChunk(Data* object)
 {
-	//this function just filters out all nodes which aren't one level above the leaves
 	
-	if(node->address == UNDEF_ADDR || node->node_type == NODETYPE_UNDEFINED || node->node_level < 0 || node->children == NULL)
-	{
-		//don't do the decompression from the leaf level or for any undefined object
-		return 0;
-	}
-	
-	for(int i = node->entries_used - 1; i >= 0; i--)
-	{
-		if(decompressChunk(node->children[i], object) != 0)
-		{
-			return 1;
-		}
-	}
-	
-	//there must be at least one child since it didn't return in the first if block
-	if(node->children[0]->leaf_type != RAWDATA)
-	{
-		//only want nodes which are parents of the leaves to save memory
-		return 0;
-	}
-	
-	inflate_thread_obj* thread_object = malloc(sizeof(inflate_thread_obj));
-	thread_object->node = node;
+	InflateThreadObj* thread_object = malloc(sizeof(InflateThreadObj));
 	thread_object->object = object;
 	thread_object->err = 0;
 	
@@ -99,11 +95,6 @@ errno_t decompressChunk(TreeNode* node, Data* object)
 	{
 		enqueue(inflate_thread_obj_queue, thread_object);
 		thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
-	}
-	else
-	{
-		doInflate_((void*)thread_object);
-		free(thread_object);
 	}
 	
 	return 0;
@@ -114,8 +105,7 @@ errno_t decompressChunk(TreeNode* node, Data* object)
 void* doInflate_(void* t)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
-	inflate_thread_obj* thread_obj = (inflate_thread_obj*)t;
-	TreeNode* node = thread_obj->node;
+	InflateThreadObj* thread_obj = (InflateThreadObj*)t;
 	Data* object = thread_obj->object;
 	uint64_t these_num_chunked_elems = 0;
 	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
@@ -127,15 +117,29 @@ void* doInflate_(void* t)
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	
-	for(int i = 0; i < node->entries_used; i++)
+	Key data_key;
+	TreeNode* data_node;
+	while(mt_data_queue->length > 0)
 	{
 		
-		const uint64_t chunk_start_index = findArrayPosition(node->keys[i].chunk_start, object->dims, object->num_dims);
+		DataPair* dp = (DataPair*)dequeue(mt_data_queue);
+		if(dp == NULL)
+		{
+			//in case it gets dequeued after the loop check but before the lock
+			break;
+		}
+		else
+		{
+			data_key = dp->data_key;
+			data_node = dp->data_node;
+		}
+		
+		const uint64_t chunk_start_index = findArrayPosition(data_key.chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = navigateTo(node->children[i]->address, node->keys[i].size);
-		const byte* data_pointer = navigateTo(node->children[i]->address, 0);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, node->keys[i].size, decompressed_data_buffer, actual_size, NULL);
+		const byte* data_pointer = navigateTo(data_node->address, 0);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key.size, decompressed_data_buffer, actual_size, NULL);
 		//releasePages(node->children[i]->address, node->keys[i].size);
-		releasePages(node->children[i]->address, 0);
+		releasePages(data_node->address, 0);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -180,7 +184,7 @@ void* doInflate_(void* t)
 		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
 		for(int j = 0; j < object->num_dims; j++)
 		{
-			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - MAX((int)(node->keys[i].chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]), 0);
+			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - MAX((int)(data_key.chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]), 0);
 			these_chunked_updates[j] = object->chunked_info.chunk_update[j];
 		}
 		
@@ -342,6 +346,10 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 			page_objects[page_index].total_num_mappings++;
 			page_objects[page_index].max_map_end =
 					MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i].size - 1);
+			DataPair* dp = malloc(sizeof(DataPair));
+			dp->data_key = node->keys[i];
+			dp->data_node = node->children[i];
+			enqueue(data_page_buckets[page_index], dp);
 		}
 		
 		key_address += key_size + s_block.size_of_offsets;
