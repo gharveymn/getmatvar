@@ -26,5 +26,7 @@ mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
 const char** getFieldNames(Data* object);
 DataArrays rearrangeImaginaryData(Data* object);
 
+bool_t warnedObjectVar;
+bool_t warnedUnknownVar;
 
 #endif //GET_MAT_VAR

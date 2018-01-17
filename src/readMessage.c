@@ -191,6 +191,18 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	else if(strcmp(name, "MATLAB_object_decode") == 0)
 	{
 		object->matlab_internal_attributes.MATLAB_object_decode = *((objectDecodingHint*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)));
+		if(object->matlab_internal_attributes.MATLAB_object_decode == FUNCTION_HINT)
+		{
+			object->matlab_internal_type = mxFUNCTION_CLASS;
+		}
+		else if(object->matlab_internal_attributes.MATLAB_object_decode == OBJECT_HINT)
+		{
+			object->matlab_internal_type = mxOBJECT_CLASS;
+		}
+		else if(object->matlab_internal_attributes.MATLAB_object_decode == OPAQUE_HINT)
+		{
+			object->matlab_internal_type = mxOPAQUE_CLASS;
+		}
 	}
 }
 

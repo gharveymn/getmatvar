@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 void makeReturnStructure(const int num_elems)
 {
 	object_queue = initQueue(freeDataObject);
-	eval_objects = initQueue(NULL);
+	eval_objects = initQueue(nullFreeFunction);
 	
 	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
 	if(error_flag == TRUE)
@@ -59,7 +59,7 @@ void makeReturnStructure(const int num_elems)
 	free(varnames);
 	
 	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
-	makeEvalArray();
+	//makeEvalArray();
 	
 	freeQueue(eval_objects);
 	freeQueue(object_queue);

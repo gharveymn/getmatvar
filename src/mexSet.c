@@ -19,7 +19,7 @@ void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, 
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, mxNumericPtr);
+		mxSetField(returnStructure, index, varname, mxNumericPtr);
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
@@ -40,7 +40,7 @@ void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mw
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, mxLogicPtr);
+		mxSetField(returnStructure, index, varname, mxLogicPtr);
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
@@ -61,7 +61,7 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, mxCharPtr);
+		mxSetField(returnStructure, index, varname, mxCharPtr);
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
@@ -130,7 +130,7 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, mxCELL_CLASS));
+		mxSetField(returnStructure, index, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, mxCELL_CLASS));
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
@@ -150,7 +150,7 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
+		mxSetField(returnStructure, index, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{

@@ -34,10 +34,23 @@ errno_t allocateSpace(Data* object)
 			break;
 		case mxOBJECT_CLASS:
 		case mxSPARSE_CLASS:
+		case mxOPAQUE_CLASS:
 			//do nothing
 			break;
+		case mxUNKNOWN_CLASS:
+			if(object->struct_array_flag == TRUE)
+			{
+				object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
+			}
+			else
+			{
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:unknownTypeError");
+				sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
+				return 1;
+			}
+			break;
 		default:
-			//this shouldn't happen
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:thisShouldntHappen");
 			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
@@ -85,6 +98,14 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		case mxFUNCTION_CLASS:
 		case mxOBJECT_CLASS:
 		case mxSPARSE_CLASS:
+		case mxOPAQUE_CLASS:
+			break;
+		case mxUNKNOWN_CLASS:
+			if(object->struct_array_flag == TRUE)
+			{
+				memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			}
+			break;
 		default:
 			//nothing to be done
 			break;

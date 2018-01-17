@@ -14,7 +14,7 @@ errno_t getChunkedData(Data* object)
 	data_page_buckets = malloc(num_pages*sizeof(Queue));
 	for(int i = 0; i < num_pages; i++)
 	{
-		data_page_buckets[i] = initQueue(NULL);
+		data_page_buckets[i] = initQueue(nullFreeFunction);
 	}
 	
 	//fill the chunk tree

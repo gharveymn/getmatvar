@@ -5,6 +5,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
 	initialize();
+	warnedObjectVar = FALSE;
+	warnedUnknownVar = FALSE;
 	
 	if(nrhs < 1)
 	{
@@ -70,6 +72,20 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, mxClassID super_structure_type)
 {
 	
+	if(num_elems == 0)
+	{
+		return NULL;
+	}
+	
+	if(objects[0]->struct_array_flag == TRUE)
+	{
+		for(mwIndex index = 0; index < num_elems; index++)
+		{
+			makeSubstructure(returnStructure, objects[index]->num_sub_objs, objects[index]->sub_objects, mxSTRUCT_CLASS);
+		}
+		return returnStructure;
+	}
+	
 	for(mwIndex index = 0; index < num_elems; index++)
 	{
 		
@@ -87,36 +103,63 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case mxUINT64_CLASS:
 			case mxSINGLE_CLASS:
 			case mxDOUBLE_CLASS:
-				setNumericPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setNumericPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				break;
 			case mxSPARSE_CLASS:
-				setSpsPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setSpsPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				break;
 			case mxLOGICAL_CLASS:
-				setLogicPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setLogicPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				break;
 			case mxCHAR_CLASS:
-				setCharPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setCharPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				break;
 			case mxCELL_CLASS:
-				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				//Indicate we should free any memory used by this
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case mxSTRUCT_CLASS:
-				setStructPtr(objects[index], returnStructure, objects[index]->names.short_name, index, super_structure_type);
+				setStructPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 			case mxFUNCTION_CLASS:
 			case mxOBJECT_CLASS:
-				readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
+			case mxOPAQUE_CLASS:
+				if(warnedObjectVar == FALSE)
+				{
+					//run only once
+					readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
+					warnedObjectVar = TRUE;
+				}
+				if (super_structure_type == mxSTRUCT_CLASS)
+				{
+					mxSetField(returnStructure, index, objects[index]->names.short_name, NULL);
+				}
+				else if (super_structure_type == mxCELL_CLASS)
+				{
+					//is a cell array
+					mxSetCell(returnStructure, index, NULL);
+				}
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
-				readMXWarn("getmatvar:unknownOutputType", "Could not return a variable. Unknown variable type.");
-				mxRemoveField(returnStructure, mxGetFieldNumber(returnStructure, objects[index]->names.short_name));
+				if(warnedUnknownVar == FALSE)
+				{
+					//run only once
+					readMXWarn("getmatvar:unknownOutputType", "Could not return a variable. Unknown variable type.");
+					warnedUnknownVar = TRUE;
+				}
+				if (super_structure_type == mxSTRUCT_CLASS)
+				{
+					mxSetField(returnStructure, index, objects[index]->names.short_name, NULL);
+				}
+				else if (super_structure_type == mxCELL_CLASS)
+				{
+					//is a cell array
+					mxSetCell(returnStructure, index, NULL);
+				}
 				objects[index]->data_arrays.is_mx_used = FALSE;
 				break;
 		}

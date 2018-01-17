@@ -27,9 +27,9 @@ Queue* getDataObjects(const char* filename, char** variable_names, int num_names
 	num_avail_threads = getNumProcessors() - 1;
 	
 	//init queues
-	addr_queue = initQueue(NULL);
+	addr_queue = initQueue(nullFreeFunction);
 	varname_queue = initQueue(freeVarname);
-	header_queue = initQueue(NULL);
+	header_queue = initQueue(nullFreeFunction);
 	
 	//open the file descriptor
 	fd = open(filename, O_RDONLY);

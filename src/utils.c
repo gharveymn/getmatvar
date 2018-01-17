@@ -48,6 +48,12 @@ uint16_t getRealNameLength(Data* object)
 }
 
 
+void nullFreeFunction(void* param)
+{
+	//do nothing
+}
+
+
 void readMXError(const char error_id[], const char error_message[], ...)
 {
 	

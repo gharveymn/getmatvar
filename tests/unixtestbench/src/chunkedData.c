@@ -50,7 +50,7 @@ errno_t getChunkedData(Data* obj)
 		return ret;
 	}
 	
-	thread_object_queue = initQueue(NULL);
+	thread_object_queue = initQueue(nullFreeFunction);
 	
 	if(num_threads_to_use != -1)
 	{

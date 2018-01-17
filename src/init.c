@@ -26,7 +26,7 @@ void initialize(void)
 
 void initializeObject(Data* object)
 {
-	
+	object->struct_array_flag = FALSE;
 	object->is_filled = FALSE;
 	object->is_finalized = FALSE;
 	
@@ -65,6 +65,7 @@ void initializeObject(Data* object)
 	object->num_elems = 0;
 	object->elem_size = 0;
 	object->num_sub_objs = 0;
+	object->s_c_array_index = 0;
 	object->data_address = UNDEF_ADDR;
 	object->this_obj_address = UNDEF_ADDR;
 	

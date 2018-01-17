@@ -139,6 +139,18 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	collectMetaData(object, this_obj_address, num_msgs, header_length);
 	
+	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
+	{
+		object->struct_array_flag = TRUE;
+		//pretend this is a cell
+		object->matlab_internal_type = mxCELL_CLASS;
+		for(int i = 0; i < object->num_dims; i++)
+		{
+			object->super_object->dims[i] = object->dims[i];
+		}
+		object->super_object->num_dims = object->num_dims;
+	}
+	
 	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
 	{
 		error_flag = TRUE;
@@ -195,6 +207,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			address_t new_obj_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
+			ref->s_c_array_index = (uint32_t)i;
 			object->sub_objects[i] = ref;
 			
 			//get the number of digits in i + 1
@@ -206,17 +219,42 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				num_digits++;
 			} while(n != 0);
 			
-			free(ref->names.short_name);
-			ref->names.short_name_length = (uint16_t)(num_digits + 1);
-			ref->names.short_name = malloc((ref->names.short_name_length + 1) * sizeof(char));
-			sprintf(ref->names.short_name, "%d}", i+1);
-			ref->names.short_name[ref->names.short_name_length] = '\0';
-			
-			free(ref->names.long_name);
-			ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
-			ref->names.long_name = malloc((ref->names.long_name_length + 1) * sizeof(char));
-			sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, i+1);
-			ref->names.long_name[ref->names.long_name_length] = '\0';
+			if(object->struct_array_flag == FALSE)
+			{
+				//make names for cells, ie. blah{k}
+				free(ref->names.short_name);
+				ref->names.short_name_length = (uint16_t)(num_digits + 1);
+				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+				sprintf(ref->names.short_name, "%d}", i + 1);
+				ref->names.short_name[ref->names.short_name_length] = '\0';
+				
+				free(ref->names.long_name);
+				ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
+				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
+				sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, i + 1);
+				ref->names.long_name[ref->names.long_name_length] = '\0';
+			}
+			else
+			{
+				//make names for struct array, ie. blah(k).bleh
+				//make names for cells, ie. blah{k}
+//				free(ref->names.short_name);
+//				ref->names.short_name_length = (uint16_t)(num_digits + 1 + 1 + object->names.short_name_length);
+//				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+//				sprintf(ref->names.short_name, "%d).%s", i + 1, object->names.short_name);
+//				ref->names.short_name[ref->names.short_name_length] = '\0';
+				free(ref->names.short_name);
+				ref->names.short_name_length = (uint16_t)(object->names.short_name_length);
+				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+				sprintf(ref->names.short_name, "%s", object->names.short_name);
+				ref->names.short_name[ref->names.short_name_length] = '\0';
+				
+				free(ref->names.long_name);
+				ref->names.long_name_length = (uint16_t)(object->super_object->names.long_name_length + 1 + num_digits + 1 + 1 + object->names.short_name_length);
+				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
+				sprintf(ref->names.long_name, "%s(%d).%s", object->super_object->names.long_name, i + 1, object->names.short_name);
+				ref->names.long_name[ref->names.long_name_length] = '\0';
+			}
 			
 			ref->super_object = object;
 			

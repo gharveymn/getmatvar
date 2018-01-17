@@ -246,6 +246,7 @@ struct data_
 	HDF5Datatype hdf5_internal_type;
 	mxClassID matlab_internal_type;
 	MatlabAttributes matlab_internal_attributes;
+	bool_t struct_array_flag;
 	bool_t is_filled;
 	bool_t is_finalized;
 	mxComplexity complexity_flag;
@@ -261,6 +262,8 @@ struct data_
 	uint8_t num_dims;
 	uint32_t num_elems;
 	size_t elem_size;
+	
+	uint32_t s_c_array_index;
 	
 	uint8_t layout_class;
 	address_t data_address;
