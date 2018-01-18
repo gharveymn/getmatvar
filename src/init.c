@@ -9,7 +9,6 @@ void initialize(void)
 	top_level_objects = NULL;
 	varname_queue = NULL;
 	object_queue = NULL;
-	eval_objects = NULL;
 	is_done = FALSE;
 	fd = -1;
 	num_threads_user_def = -1;

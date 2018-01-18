@@ -279,7 +279,7 @@ void selectMatlabClass(Data* object)
 	}
 	else
 	{
-		object->matlab_internal_type = mxUNKNOWN_CLASS;
+		//do nothing
 	}
 	
 	

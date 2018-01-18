@@ -48,7 +48,8 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 		return;
 	}
 	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	snod_pointer = st_renavigateTo(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
+	uint64_t total_snod_size = 8 + (num_symbols - 1) * s_block.sym_table_entry_size + 3 * s_block.size_of_offsets + 8 + s_block.size_of_offsets;
+	snod_pointer = st_renavigateTo(snod_pointer, node_address, total_snod_size);
 	
 	uint32_t cache_type;
 	
@@ -78,12 +79,12 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 					getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + 3*s_block.size_of_offsets + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			
 			//parse the subtree
-			st_releasePages(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
+			st_releasePages(snod_pointer, node_address, total_snod_size);
 			st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
 			
 			readTreeNode(sub_object, sub_tree_address, sub_heap_address);
 			
-			snod_pointer = st_navigateTo(node_address, num_symbols * s_block.sym_table_entry_size);
+			snod_pointer = st_navigateTo(node_address, total_snod_size);
 			heap_data_segment_pointer = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
 			
 		}
@@ -101,7 +102,7 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 		
 	}
 	
-	st_releasePages(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
+	st_releasePages(snod_pointer, node_address, total_snod_size);
 	st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
 	
 }
@@ -113,7 +114,10 @@ Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* sub_obj_nam
 	Data* sub_object = malloc(sizeof(Data));
 	initializeObject(sub_object);
 	sub_object->this_obj_address = sub_obj_address;
+	
+	//very expensive for some reason---change
 	sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
+	
 	sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1) * sizeof(char));
 	strcpy(sub_object->names.short_name, sub_obj_name);
 	enqueue(object->sub_objects, sub_object);

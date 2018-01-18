@@ -67,6 +67,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	free(varnames);
 	
 	freeQueue(object_queue);
+	object_queue = NULL;
 	
 }
 

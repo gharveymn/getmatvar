@@ -2,11 +2,12 @@ addpath('tests');
 addpath('bin');
 clear;
 
+rng('shuffle')
 numtests = 10000;
 lents = 0;
 for i = 1:numtests
 	if(mod(i,2) == 1)
-		test_struct1 = randVarGen(3,1,5);
+		test_struct1 = randVarGen(1,1,500000);
 		save('res/test_struct1.mat', 'test_struct1');
 		clear('test_struct1');
 		getmatvar('res/test_struct1.mat','-sw');

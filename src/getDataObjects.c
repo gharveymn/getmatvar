@@ -80,6 +80,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	
 	close(fd);
+	fd = -1;
 	
 	freeQueue(varname_queue);
 	varname_queue = NULL;
@@ -105,5 +106,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	
 	freeQueue(top_level_objects);
+	top_level_objects = NULL;
 
 }
