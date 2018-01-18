@@ -29,7 +29,6 @@
 
 #include <stdarg.h>
 #include "ezq.h"
-#include "../extlib/thpool/thpool.h"
 
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
@@ -274,7 +273,7 @@ struct data_
 	address_t this_obj_address;
 	
 	Data* super_object;
-	Data** sub_objects;
+	Queue* sub_objects;
 	uint32_t num_sub_objs;
 };
 
@@ -329,7 +328,6 @@ Superblock s_block;
 uint64_t default_bytes;
 
 Queue* inflate_thread_obj_queue;
-threadpool threads;
 int num_avail_threads;		//number of processors - 1
 int num_threads_user_def;		//user specifies number of threads
 bool_t will_multithread;

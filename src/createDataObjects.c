@@ -3,15 +3,16 @@
 void makeObjectTreeSkeleton(void)
 {
 	readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
+	
 }
 
 void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
-	byte* tree_pointer = navigateTo(node_address, 8);
+	byte* tree_pointer = st_navigateTo(node_address, 8);
 	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	releasePages(node_address, 8);
+	st_releasePages(tree_pointer, node_address, 8);
 	
 	uint64_t total_size = entries_used*(s_block.size_of_lengths + s_block.size_of_offsets) + (uint64_t)8 + 2*s_block.size_of_offsets;
 	
@@ -19,20 +20,13 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	address_t key_address = node_address + 8 + 2*s_block.size_of_offsets;
 	
 	//quickly get the total number of possible subobjects first so we can allocate the subobject array
-	uint16_t max_num_sub_objs = 0; //may be fewer than this number by throwing away the refs and such things
 	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
 	for(int i = 0; i < entries_used; i++)
 	{
-		byte* key_pointer = navigateTo(key_address, total_size - (key_address - node_address));
+		byte* key_pointer = st_navigateTo(key_address, total_size - (key_address - node_address));
 		sub_node_address_list[i] = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		releasePages(key_address,total_size - (key_address - node_address));
-		max_num_sub_objs += getNumSymbols(sub_node_address_list[i]);
+		st_releasePages(key_pointer, key_address, total_size - (key_address - node_address));
 		key_address += s_block.size_of_lengths + s_block.size_of_offsets;
-	}
-	
-	if(object->sub_objects == NULL)
-	{
-		object->sub_objects = malloc(max_num_sub_objs*sizeof(Data*));
 	}
 	
 	for(int i = 0; i < entries_used; i++)
@@ -46,18 +40,23 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 
 void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
-	
-	byte* snod_pointer = navigateTo(node_address, 8);
-	uint16_t num_symbols = (uint16_t)getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	snod_pointer = renavigateTo(node_address, num_symbols * s_block.sym_table_entry_size);
+	byte* snod_pointer = st_navigateTo(node_address, 8);
+	if(memcmp(snod_pointer, "TREE", 4) == 0)
+	{
+		st_releasePages(snod_pointer, node_address, 8);
+		readTreeNode(object, node_address, heap_address);
+		return;
+	}
+	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	snod_pointer = st_renavigateTo(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
 	
 	uint32_t cache_type;
 	
-	byte* heap_pointer = navigateTo(heap_address, (uint64_t)8 + 2*s_block.size_of_lengths);
+	byte* heap_pointer = st_navigateTo(heap_address, (uint64_t) 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets);
 	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	releasePages(heap_address, (uint64_t)8 + 2*s_block.size_of_lengths);
-	byte* heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size);
+	st_releasePages(heap_pointer, heap_address, (uint64_t) 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets);
+	byte* heap_data_segment_pointer = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
 	
 	for(int i = num_symbols - 1; i >= 0; i--)
 	{
@@ -78,14 +77,14 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 			uint64_t sub_heap_address =
 					getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + 3*s_block.size_of_offsets + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			
-			//parse a subtree
-			releasePages(node_address, num_symbols * s_block.sym_table_entry_size);
-			releasePages(heap_data_segment_address, heap_data_segment_size);
+			//parse the subtree
+			st_releasePages(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
+			st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
 			
 			readTreeNode(sub_object, sub_tree_address, sub_heap_address);
 			
-			snod_pointer = navigateTo(node_address, num_symbols * s_block.sym_table_entry_size);
-			heap_data_segment_pointer = navigateTo(heap_data_segment_address, heap_data_segment_size);
+			snod_pointer = st_navigateTo(node_address, num_symbols * s_block.sym_table_entry_size);
+			heap_data_segment_pointer = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
 			
 		}
 		else if(cache_type == 2)
@@ -102,8 +101,8 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 		
 	}
 	
-	releasePages(node_address, num_symbols * s_block.sym_table_entry_size);
-	releasePages(heap_data_segment_address, heap_data_segment_size);
+	st_releasePages(snod_pointer, node_address, num_symbols * s_block.sym_table_entry_size);
+	st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
 	
 }
 
@@ -117,7 +116,7 @@ Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* sub_obj_nam
 	sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
 	sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1) * sizeof(char));
 	strcpy(sub_object->names.short_name, sub_obj_name);
-	object->sub_objects[object->num_sub_objs] = sub_object;
+	enqueue(object->sub_objects, sub_object);
 	object->num_sub_objs++;
 	
 	
@@ -142,13 +141,4 @@ Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* sub_obj_nam
 	
 	return sub_object;
 	
-}
-
-
-uint16_t getNumSymbols(uint64_t address)
-{
-	byte* p = navigateTo(address, 8);
-	uint16_t ret = (uint16_t)getBytesAsNumber(p + 6, 2, META_DATA_BYTE_ORDER);
-	releasePages(address, 8);
-	return ret;
 }

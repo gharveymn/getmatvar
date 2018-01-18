@@ -168,8 +168,10 @@ const char** getFieldNames(Data* object)
 	const char** varnames = malloc(object->num_sub_objs*sizeof(char*));
 	for(uint16_t index = 0; index < object->num_sub_objs; index++)
 	{
-		varnames[index] = object->sub_objects[index]->names.short_name;
+		Data* obj = dequeue(object->sub_objects);
+		varnames[index] = obj->names.short_name;
 	}
+	restartQueue(object->sub_objects);
 	return varnames;
 }
 

@@ -47,9 +47,11 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
-		varnames[i] = malloc((virtual_super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
-		strcpy(varnames[i], virtual_super_object->sub_objects[i]->names.short_name);
+		Data* obj = dequeue(virtual_super_object->sub_objects);
+		varnames[i] = malloc((obj->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], obj->names.short_name);
 	}
+	restartQueue(virtual_super_object->sub_objects);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
@@ -69,7 +71,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 }
 
 
-mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** objects, mxClassID super_structure_type)
+mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* objects, mxClassID super_structure_type)
 {
 	
 	if(num_elems == 0)
@@ -77,11 +79,12 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 		return NULL;
 	}
 	
-	if(objects[0]->struct_array_flag == TRUE)
+	if(((Data*)peekQueue(objects, QUEUE_FRONT))->struct_array_flag == TRUE)
 	{
 		for(mwIndex index = 0; index < num_elems; index++)
 		{
-			makeSubstructure(returnStructure, objects[index]->num_sub_objs, objects[index]->sub_objects, mxSTRUCT_CLASS);
+			Data* obj = dequeue(objects);
+			makeSubstructure(returnStructure, obj->num_sub_objs, obj->sub_objects, mxSTRUCT_CLASS);
 		}
 		return returnStructure;
 	}
@@ -89,9 +92,11 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 	for(mwIndex index = 0; index < num_elems; index++)
 	{
 		
-		objects[index]->data_arrays.is_mx_used = TRUE;
+		Data* obj = dequeue(objects);
 		
-		switch(objects[index]->matlab_internal_type)
+		obj->data_arrays.is_mx_used = TRUE;
+		
+		switch(obj->matlab_internal_type)
 		{
 			case mxINT8_CLASS:
 			case mxUINT8_CLASS:
@@ -103,25 +108,25 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 			case mxUINT64_CLASS:
 			case mxSINGLE_CLASS:
 			case mxDOUBLE_CLASS:
-				setNumericPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
+				setNumericPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				break;
 			case mxSPARSE_CLASS:
-				setSpsPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
+				setSpsPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				break;
 			case mxLOGICAL_CLASS:
-				setLogicPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
+				setLogicPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				break;
 			case mxCHAR_CLASS:
-				setCharPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
+				setCharPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				break;
 			case mxCELL_CLASS:
-				setCellPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
+				setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				//Indicate we should free any memory used by this
-				objects[index]->data_arrays.is_mx_used = FALSE;
+				obj->data_arrays.is_mx_used = FALSE;
 				break;
 			case mxSTRUCT_CLASS:
-				setStructPtr(objects[index], returnStructure, objects[index]->names.short_name, objects[index]->s_c_array_index, super_structure_type);
-				objects[index]->data_arrays.is_mx_used = FALSE;
+				setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+				obj->data_arrays.is_mx_used = FALSE;
 				break;
 			case mxFUNCTION_CLASS:
 			case mxOBJECT_CLASS:
@@ -132,18 +137,17 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 					readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
 					warnedObjectVar = TRUE;
 				}
-				if (super_structure_type == mxSTRUCT_CLASS)
-				{
-					mxSetField(returnStructure, index, objects[index]->names.short_name, NULL);
-				}
-				else if (super_structure_type == mxCELL_CLASS)
-				{
-					//is a cell array
-					mxSetCell(returnStructure, index, NULL);
-				}
-				objects[index]->data_arrays.is_mx_used = FALSE;
+//				if (super_structure_type == mxSTRUCT_CLASS)
+//				{
+//					mxSetField(returnStructure, index, obj->names.short_name, NULL);
+//				}
+//				else if (super_structure_type == mxCELL_CLASS)
+//				{
+//					//is a cell array
+//					mxSetCell(returnStructure, index, NULL);
+//				}
+				obj->data_arrays.is_mx_used = FALSE;
 				break;
-				//in this case we want to actually remove the whole thing because it is triggered by the object not being found, so fall through
 			default:
 				if(warnedUnknownVar == FALSE)
 				{
@@ -153,14 +157,14 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Data** 
 				}
 				if (super_structure_type == mxSTRUCT_CLASS)
 				{
-					mxSetField(returnStructure, index, objects[index]->names.short_name, NULL);
+					mxSetField(returnStructure, index, obj->names.short_name, NULL);
 				}
 				else if (super_structure_type == mxCELL_CLASS)
 				{
 					//is a cell array
 					mxSetCell(returnStructure, index, NULL);
 				}
-				objects[index]->data_arrays.is_mx_used = FALSE;
+				obj->data_arrays.is_mx_used = FALSE;
 				break;
 		}
 		

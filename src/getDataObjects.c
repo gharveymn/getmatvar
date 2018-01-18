@@ -50,7 +50,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	num_pages = file_size/alloc_gran + 1;
 	initializePageObjects();
 	
-	byte* head = navigateTo(0, MATFILE_SIG_LEN);
+	byte* head = st_navigateTo(0, MATFILE_SIG_LEN);
 	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
 		char filetype[MATFILE_SIG_LEN];
@@ -67,7 +67,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		}
 		return;
 	}
-	releasePages(0, MATFILE_SIG_LEN);
+	st_releasePages(head, 0, MATFILE_SIG_LEN);
 	
 	//find superblock
 	s_block = getSuperblock();
@@ -80,10 +80,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	
 	close(fd);
-	if(threads_are_started == TRUE)
-	{
-		thpool_destroy(threads);
-	}
 	
 	freeQueue(varname_queue);
 	varname_queue = NULL;
@@ -98,13 +94,14 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	
 	if(virtual_super_object->num_sub_objs > 0)
 	{
-		free(virtual_super_object->sub_objects);
-		virtual_super_object->sub_objects = malloc(top_level_objects->length*sizeof(Data*));
+		flushQueue(virtual_super_object->sub_objects);
 		for(int i = 0; top_level_objects->length > 0; i++)
 		{
-			virtual_super_object->sub_objects[i] = dequeue(top_level_objects);
-			virtual_super_object->sub_objects[i]->super_object = NULL;
+			Data* obj = dequeue(top_level_objects);
+			enqueue(virtual_super_object->sub_objects, obj);
+			obj->super_object = NULL;
 		}
+		restartQueue(top_level_objects);
 	}
 	
 	freeQueue(top_level_objects);

@@ -1,6 +1,6 @@
 addpath('res')
 addpath('bin')
-file = 'res/my_struct1.mat';
+file = 'res/test_struct.mat';
 vars = {''};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
@@ -12,7 +12,7 @@ getmatvar(file, vars{:}, '-sw');
 %getmatvar(file, '-threads', 0);
 toc
 disp(getmemstr)
-a = t;
+%a = t;
 %ex = extPar;
 
 % using load function

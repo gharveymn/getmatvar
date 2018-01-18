@@ -10,8 +10,6 @@ SET(SOURCE_FILES
 		${MATLAB_INCLUDE_DIR}/mex.h
 		extlib/mman-win32/mman.c
 		extlib/mman-win32/mman.h
-		extlib/thpool/thpool.c
-		extlib/thpool/thpool.h
 		extlib/libdeflate/x64/win/libdeflate.h
 		extlib/pthreads-win32/include/pthread.h
 		navigate.c
@@ -48,7 +46,6 @@ SET(SOURCE_FILES
 ADD_LIBRARY(${MEX_FILE_NAME} SHARED ${SOURCE_FILES} ${CMAKE_SOURCE_DIR}/Matlabdef.def)
 
 SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
-SET(THPOOL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/thpool)
 
 # 32-bit or 64-bit mex
 IF(WIN32)
@@ -88,7 +85,7 @@ ELSE(WIN32)
 	ENDIF()
 ENDIF(WIN32)
 
-INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${PTHREADS_INCLUDE_DIR} ${THPOOL_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${PTHREADS_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(${MEX_FILE_NAME} ${LIB_DEFLATE_LIBRARY} ${PTHREADS_LIBRARY})
 TARGET_LINK_LIBRARIES(${MEX_FILE_NAME} ${MATLAB_MEX_LIBRARY} ${MATLAB_MX_LIBRARY})
 

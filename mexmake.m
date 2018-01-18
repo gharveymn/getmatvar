@@ -4,6 +4,8 @@ cd src
 
 try
 	
+	mexflags = {'-O', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];
 	pthreadsw32_path_include = ['-I' pwd '/extlib/pthreads-win32/include'];
@@ -23,10 +25,7 @@ try
 		'placeData.c',...
 		'readMessage.c',...
 		'superblock.c',...
-		'utils.c',...
-		'extlib/thpool/thpool.c'};
-	
-	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+		'utils.c'};
 	
 	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))
 		

@@ -50,10 +50,9 @@ void freeDataObject(void* object)
 	
 	if(data_object->sub_objects != NULL)
 	{
-		free(data_object->sub_objects);
+		freeQueue(data_object->sub_objects);
 		data_object->sub_objects = NULL;
 	}
-	
 	
 	free(data_object);
 	
@@ -100,9 +99,10 @@ void freeDataObjectTree(Data* data_object)
 	{
 		for(int j = 0; j < data_object->num_sub_objs; j++)
 		{
-			freeDataObjectTree(data_object->sub_objects[j]);
+			Data* obj = dequeue(data_object->sub_objects);
+			freeDataObjectTree(obj);
 		}
-		free(data_object->sub_objects);
+		freeQueue(data_object->sub_objects);
 		data_object->sub_objects = NULL;
 	}
 	
@@ -153,7 +153,7 @@ void freePageObject(size_t page_index)
 		//second parameter doesnt do anything on windows
 		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_base) != 0)
 		{
-			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in mt_navigateTo(). Check errno %d\n\n", errno);
 		}
 		
 		page_objects[page_index].is_mapped = FALSE;

@@ -2,17 +2,17 @@
 
 Superblock getSuperblock(void)
 {
-	byte* superblock_pointer = findSuperblock();
+	byte* chunk_start = st_navigateTo(0, default_bytes);
+	byte* superblock_pointer = findSuperblock(chunk_start);
 	Superblock s_block = fillSuperblock(superblock_pointer);
-	releasePages(0, default_bytes);
+	st_releasePages(chunk_start, 0, default_bytes);
 	return s_block;
 }
 
 
-byte* findSuperblock(void)
+byte* findSuperblock(byte* chunk_start)
 {
 	//Assuming that superblock is in first 8 512 byte chunks
-	byte* chunk_start = navigateTo(0, default_bytes);
 	uint16_t chunk_address = 0;
 	
 	while(strncmp(FORMAT_SIG, (char*)chunk_start, 8) != 0 && chunk_address < default_bytes)

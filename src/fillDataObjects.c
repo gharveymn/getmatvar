@@ -15,12 +15,14 @@ void fillVariable(char* variable_name)
 	{
 		for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 		{
-			if(virtual_super_object->sub_objects[i]->names.short_name[0] != '#')
+			Data* obj = dequeue(virtual_super_object->sub_objects);
+			if(obj->names.short_name[0] != '#')
 			{
-				fillDataTree(virtual_super_object->sub_objects[i]);
-				enqueue(top_level_objects, virtual_super_object->sub_objects[i]);
+				fillDataTree(obj);
+				enqueue(top_level_objects, obj);
 			}
 		}
+		restartQueue(virtual_super_object->sub_objects);
 		is_done = TRUE;
 	}
 	else
@@ -114,8 +116,10 @@ void fillDataTree(Data* object)
 	
 	for(int i = 0; i < object->num_sub_objs; i++)
 	{
-		fillDataTree(object->sub_objects[i]);
+		Data* obj = dequeue(object->sub_objects);
+		fillDataTree(obj);
 	}
+	restartQueue(object->sub_objects);
 	object->is_finalized = TRUE;
 	
 }
@@ -131,13 +135,14 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	object->is_filled = TRUE;
 	
-	byte* header_pointer = navigateTo(this_obj_address, 12);
+	byte* header_pointer = st_navigateTo(this_obj_address, 12);
 	uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
 	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	object->this_obj_address = this_obj_address;
-	releasePages(this_obj_address, 12);
+	st_releasePages(header_pointer, this_obj_address, 12);
 	
-	collectMetaData(object, this_obj_address, num_msgs, header_length);
+	//aligned on 8-byte boundaries, so msgs start at +16
+	collectMetaData(object, this_obj_address + 16, num_msgs, header_length);
 	
 	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
 	{
@@ -176,9 +181,9 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		case 1:
 			//compact storage or contiguous storage
 			//placeData will just segfault if it has an error, ie. if this encounters an error something is very wrong
-			object->data_pointer = navigateTo(object->data_address, object->num_elems * object->elem_size);
+			object->data_pointer = st_navigateTo(object->data_address, object->num_elems * object->elem_size);
 			placeData(object, object->data_pointer, 0, object->num_elems, object->elem_size, object->byte_order);
-			releasePages(object->data_address, object->num_elems * object->elem_size);
+			st_releasePages(object->data_pointer, object->data_address, object->num_elems * object->elem_size);
 			break;
 		case 2:
 			//chunked storage
@@ -200,7 +205,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	// we have encountered a cell array
 	if(object->data_arrays.sub_object_header_offsets != NULL && object->hdf5_internal_type == HDF5_REFERENCE)
 	{
-		object->sub_objects = malloc(object->num_elems * sizeof(Data*));
+		flushQueue(object->sub_objects);
 		object->num_sub_objs = object->num_elems;
 		for(int i = object->num_elems - 1; i >= 0; i--)
 		{
@@ -208,7 +213,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
 			ref->s_c_array_index = (uint32_t)i;
-			object->sub_objects[i] = ref;
+			enqueue(object->sub_objects, ref);
 			
 			//get the number of digits in i + 1
 			int n = i + 1;
@@ -283,10 +288,10 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 }
 
 
-uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t header_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
+uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
 {
 	
-	byte* header_pointer = navigateTo(header_address, header_length);
+	byte* msgs_start_pointer = st_navigateTo(msgs_start_address, msgs_length);
 	
 	uint64_t cont_header_address = UNDEF_ADDR;
 	uint32_t cont_header_length = 0;
@@ -296,15 +301,16 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 	uint64_t msg_address = 0;
 	byte* msg_pointer = NULL;
 	uint32_t bytes_read = 0;
+	uint8_t msg_sub_header_size = 8;
 	
 	//interpret messages in header
-	for(; message_num < num_msgs && bytes_read < header_length; message_num++)
+	for(; message_num < num_msgs && bytes_read < msgs_length; message_num++)
 	{
-		msg_type = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read, 2, META_DATA_BYTE_ORDER);
-		//msg_address = header_address + 16 + bytes_read;
-		msg_size = (uint16_t)getBytesAsNumber(header_pointer + 16 + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
-		msg_pointer = header_pointer + 16 + bytes_read + 8;
-		msg_address = header_address + 16 + bytes_read + 8;
+		msg_type = (uint16_t)getBytesAsNumber(msgs_start_pointer + bytes_read, 2, META_DATA_BYTE_ORDER);
+		//msg_address = msgs_start_address + bytes_read;
+		msg_size = (uint16_t)getBytesAsNumber(msgs_start_pointer + bytes_read + 2, 2, META_DATA_BYTE_ORDER);
+		msg_pointer = msgs_start_pointer + bytes_read + msg_sub_header_size;
+		msg_address = msgs_start_address + bytes_read + msg_sub_header_size;
 		
 		switch(msg_type)
 		{
@@ -351,9 +357,9 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
 				
-				releasePages(header_address, header_length);
-				message_num = interpretMessages(object, cont_header_address - 16, cont_header_length, message_num, num_msgs, repeat_tracker);
-				header_pointer = navigateTo(header_address, header_length);
+				st_releasePages(msgs_start_pointer, msgs_start_address, msgs_length);
+				message_num = interpretMessages(object, cont_header_address, cont_header_length, message_num, num_msgs, repeat_tracker);
+				msgs_start_pointer = st_navigateTo(msgs_start_address, msgs_length);
 				break;
 			default:
 				//ignore message
@@ -361,11 +367,11 @@ uint16_t interpretMessages(Data* object, uint64_t header_address, uint32_t heade
 				break;
 		}
 		
-		bytes_read += msg_size + 8;
+		bytes_read += msg_size + msg_sub_header_size;
 		
 	}
 	
-	releasePages(header_address, header_length);
+	st_releasePages(msgs_start_pointer, msgs_start_address, msgs_length);
 	return (uint16_t)(message_num - 1);
 	
 }

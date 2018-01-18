@@ -48,9 +48,11 @@ void makeReturnStructure(const int num_elems)
 	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
-		varnames[i] = malloc((virtual_super_object->sub_objects[i]->names.short_name_length + 1)*sizeof(char));
-		strcpy(varnames[i], virtual_super_object->sub_objects[i]->names.short_name);
+		Data* obj = dequeue(virtual_super_object->sub_objects);
+		varnames[i] = malloc((obj->names.short_name_length + 1)*sizeof(char));
+		strcpy(varnames[i], obj->names.short_name);
 	}
+	restartQueue(virtual_super_object->sub_objects);
 	
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{

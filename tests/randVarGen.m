@@ -40,15 +40,18 @@ function [ret] = randVarGen(maxDepth, currDepth, maxElements)
 	divs = nums(mod(numvarsz, nums) == 0);
 	temp = numvarsz;
 	dims = {};
-	while(temp > 1)
+	while(true)
 		randdiv = divs(randi(numel(divs)));
 		dims = [dims {randdiv}];
 		temp = temp / randdiv;
 		divs = divs(mod(temp,divs) == 0);
+		if(temp == 1)
+			break;
+		end
 	end
 	
-	if(numvarsz == 1)
-		dims = {1};
+	if(numel(dims) == 1)
+		dims = [dims {1}];
 	end
 	
 	switch(vartypegen)

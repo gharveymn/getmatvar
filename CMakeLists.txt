@@ -18,7 +18,6 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 	ENDIF(MSVC)
 
 	SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
-	SET(THPOOL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/thpool)
 
 	# 32-bit or 64-bit mex
 	IF(WIN32)
@@ -56,8 +55,6 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			src/extlib/libdeflate/x64/win/libdeflate.h
 			src/extlib/mman-win32/mman.c
 			src/extlib/mman-win32/mman.h
-			src/extlib/thpool/thpool.c
-			src/extlib/thpool/thpool.h
 			src/placeChunkedData.c
 			src/navigate.c
 			src/getSystemInfo.c

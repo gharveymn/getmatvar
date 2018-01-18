@@ -1,15 +1,46 @@
 #include "headers/getDataObjects.h"
 
 
-byte* renavigateTo(uint64_t address, uint64_t bytes_needed)
+byte* st_renavigateTo(byte* page_start_pointer, uint64_t address, uint64_t bytes_needed)
 {
 	//use this on subsequent calls to the same address
-	releasePages(address, bytes_needed);
-	return navigateTo(address, bytes_needed);
+	st_releasePages(page_start_pointer, address, bytes_needed);
+	return st_navigateTo(address, bytes_needed);
 }
 
 
-byte* navigateTo(uint64_t address, uint64_t bytes_needed)
+byte* st_navigateTo(uint64_t address, uint64_t bytes_needed)
+{
+	address_t page_start_address = address - (address % alloc_gran);
+	byte* page_start_pointer = mmap(NULL, (address + bytes_needed) - page_start_address, PROT_READ, MAP_PRIVATE, fd, page_start_address);
+	if(page_start_pointer == NULL || page_start_pointer== MAP_FAILED)
+	{
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
+	}
+	return page_start_pointer + (address % alloc_gran);
+}
+
+
+void st_releasePages(byte* address_pointer, uint64_t address, uint64_t bytes_needed)
+{
+	address_t page_start_address = address - (address % alloc_gran);
+	byte* page_start_pointer = address_pointer - (address % alloc_gran);
+	if(munmap(page_start_pointer, (address + bytes_needed) - page_start_address) != 0)
+	{
+		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
+	}
+}
+
+
+byte* mt_renavigateTo(uint64_t address, uint64_t bytes_needed)
+{
+	//use this on subsequent calls to the same address
+	mt_releasePages(address, bytes_needed);
+	return mt_navigateTo(address, bytes_needed);
+}
+
+
+byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
 	size_t start_page = address/alloc_gran;
@@ -99,7 +130,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
-		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in navigateTo(). Check errno %d\n\n", errno);
+		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in mt_navigateTo(). Check errno %d\n\n", errno);
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
@@ -215,7 +246,7 @@ byte* navigateTo(uint64_t address, uint64_t bytes_needed)
 }
 
 
-void releasePages(uint64_t address, uint64_t bytes_needed)
+void mt_releasePages(uint64_t address, uint64_t bytes_needed)
 {
 	
 	//call this after done with using the pointer

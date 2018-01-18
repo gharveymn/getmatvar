@@ -6,11 +6,11 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/my_struct1.mat';
+file = 'res/test_struct.mat';
 vars = {''};
-domemory = false;
+domemory = true;
 compare = false;
-numtests = 10000;
+numtests = 1000;
 stride = 100;
 mvgavgtime = zeros(stride,1);
 strideload = 100;
@@ -18,10 +18,11 @@ mvgavgtimeload = zeros(strideload,1);
 memvals = rand(numtests+1,1);
 lents = 0;
 if(domemory)
+	userview = memory;
 	memvals(1) = userview.MemUsedMATLAB;
 	for i = 1:numtests
 
-		getmatvar(file, vars{:});
+		getmatvar(file, vars{:}, '-sw');
 
 		timestr = sprintf('%d/%d',i,numtests);
 		fprintf([repmat('\b',1,lents) timestr]);

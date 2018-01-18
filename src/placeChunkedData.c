@@ -84,24 +84,6 @@ errno_t getChunkedData(Data* object)
 }
 
 
-errno_t decompressChunk(Data* object)
-{
-	
-	InflateThreadObj* thread_object = malloc(sizeof(InflateThreadObj));
-	thread_object->object = object;
-	thread_object->err = 0;
-	
-	if(will_multithread == TRUE)
-	{
-		enqueue(inflate_thread_obj_queue, thread_object);
-		thpool_add_work(threads, (void*)doInflate_, (void*)thread_object);
-	}
-	
-	return 0;
-	
-}
-
-
 void* doInflate_(void* t)
 {
 	//make sure this is done after the recursive calls since we will run out of memory otherwise
@@ -135,11 +117,11 @@ void* doInflate_(void* t)
 		}
 		
 		const uint64_t chunk_start_index = findArrayPosition(data_key.chunk_start, object->dims, object->num_dims);
-		//const byte* data_pointer = navigateTo(node->children[i]->address, node->keys[i].size);
-		const byte* data_pointer = navigateTo(data_node->address, 0);
+		//const byte* data_pointer = st_navigateTo(node->children[i]->address, node->keys[i].size);
+		const byte* data_pointer = mt_navigateTo(data_node->address, 0);
 		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key.size, decompressed_data_buffer, actual_size, NULL);
-		//releasePages(node->children[i]->address, node->keys[i].size);
-		releasePages(data_node->address, 0);
+		//st_releasePages(node->children[i]->address, node->keys[i].size);
+		mt_releasePages(data_node->address, 0);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
@@ -275,7 +257,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		return 0;
 	}
 	
-	byte* tree_pointer = navigateTo(node->address, 8);
+	byte* tree_pointer = st_navigateTo(node->address, 8);
 	
 	if(strncmp((char*)tree_pointer, "TREE", 4) != 0)
 	{
@@ -292,7 +274,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		{
 			node->leaf_type = RAWDATA;
 		}
-		releasePages(node->address, 8);
+		st_releasePages(tree_pointer, node->address, 8);
 		return 0;
 	}
 	
@@ -320,10 +302,10 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	//(Dimensionality+1)*16 bytes
 	key_size = 4 + 4 + (num_chunked_dims + 1)*8;
 	
-	releasePages(node->address, 8);
+	st_releasePages(tree_pointer, node->address, 8);
 	uint64_t key_address = node->address + 8 + 2*s_block.size_of_offsets;
 	bytes_needed = 8 + num_chunked_dims*8 + key_size + s_block.size_of_offsets;
-	byte* key_pointer = navigateTo(key_address, bytes_needed);
+	byte* key_pointer = st_navigateTo(key_address, bytes_needed);
 	node->keys[0].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 	node->keys[0].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	for(int j = 0; j < num_chunked_dims; j++)
@@ -337,7 +319,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		node->children[i] = malloc(sizeof(TreeNode));
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		
-		releasePages(key_address, bytes_needed);
+		st_releasePages(key_pointer, key_address, bytes_needed);
 		fillNode(node->children[i], num_chunked_dims);
 		
 		size_t page_index = node->children[i]->address/alloc_gran;
@@ -353,7 +335,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		}
 		
 		key_address += key_size + s_block.size_of_offsets;
-		key_pointer = navigateTo(key_address, bytes_needed);
+		key_pointer = st_navigateTo(key_address, bytes_needed);
 		
 		node->keys[i + 1].size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 		node->keys[i + 1].filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
@@ -366,7 +348,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		
 	}
 	
-	releasePages(key_address, bytes_needed);
+	st_releasePages(key_pointer, key_address, bytes_needed);
 	return 0;
 	
 }

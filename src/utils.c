@@ -7,11 +7,14 @@ Data* findSubObjectByShortName(Data* object, char* name)
 {
 	for(int i = 0; i < object->num_sub_objs; i++)
 	{
-		if(strcmp(object->sub_objects[i]->names.short_name, name) == 0)
+		Data* obj = dequeue(object->sub_objects);
+		if(strcmp(obj->names.short_name, name) == 0)
 		{
-			return object->sub_objects[i];
+			restartQueue(object->sub_objects);
+			return obj;
 		}
 	}
+	restartQueue(object->sub_objects);
 	return NULL;
 }
 

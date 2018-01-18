@@ -7,11 +7,10 @@ TST_DIR=tests
 
 
 LIBDEFLATE_INC=./src/extlib/libdeflate/x64/unix
-THREADPOOL_INC=./src/extlib/thpool
 
 LIBDEFLATE_LIB=./src/extlib/libdeflate/x64/unix
 
-INC=$(LIBDEFLATE_INC) $(THREADPOOL_INC)
+INC=$(LIBDEFLATE_INC)
 INC_PARAMS=$(foreach d, $(INC), -I$d)
 
 
@@ -37,8 +36,7 @@ readMessage.h \
 superblock.h \
 utils.h \
 getDataObjects.h \
-../extlib/libdeflate/x64/libdeflate.h \
-../extlib/thpool/thpool.h
+../extlib/libdeflate/x64/libdeflate.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = ../$(TST_DIR)/mexemulate.o \
@@ -55,8 +53,7 @@ placeChunkedData.o \
 placeData.o \
 readMessage.o \
 superblock.o \
-utils.o \
-extlib/thpool/thpool.o
+utils.o
 
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
