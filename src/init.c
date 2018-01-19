@@ -27,9 +27,9 @@ void initializeObject(Data* object)
 {
 	object->struct_array_flag = FALSE;
 	object->is_filled = FALSE;
-	object->is_finalized = FALSE;
-	
-	object->data_arrays.is_mx_used = FALSE;
+	//object->is_finalized = FALSE;
+	object->is_reference = FALSE;
+	object->is_mx_used = FALSE;
 	object->data_arrays.data = NULL;
 	object->data_arrays.sub_object_header_offsets = NULL;
 	

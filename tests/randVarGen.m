@@ -1,4 +1,9 @@
-function [ret] = randVarGen(maxDepth, currDepth, maxElements)
+function [ret] = randVarGen(maxDepth, maxElements, ignoreUnusables)
+	ret = randVarGen_(maxDepth, 1, maxElements, ignoreUnusables);
+end
+
+
+function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 	
 	%TODO add sparses
 	
@@ -97,25 +102,33 @@ function [ret] = randVarGen(maxDepth, currDepth, maxElements)
 			ret = uint64(randi(intmax,dims{:}));
 		case(14)
 			% 	14	mxFUNCTION_CLASS,
-			af1 = @(x) x + 17;
-			af2 = @(x,y,z) x*y*z;
-			sf1 = @simplefunction1;
-			sf2 = @simplefunction2;
-			
-			funcs = {af1,af2,sf1,sf2};
-			ret = funcs{randi(numel(funcs))};
+			if(ignoreUnusables)
+				ret = rand(dims{:},'double');
+			else
+				af1 = @(x) x + 17;
+				af2 = @(x,y,z) x*y*z;
+				sf1 = @simplefunction1;
+				sf2 = @simplefunction2;
+
+				funcs = {af1,af2,sf1,sf2};
+				ret = funcs{randi(numel(funcs))};
+			end
 		case(15)
 			% 	15	mxOPAQUE_CLASS,
 			% not sure how to generate, generate a double array instead
 			ret = rand(dims{:},'double');
 		case(16)
 			% 	16	mxOBJECT_CLASS,
-			ret = BasicClass(randi(intmax),dims);
+			if(ignoreUnusables)
+				ret = rand(dims{:},'double');
+			else
+				ret = BasicClass(randi(intmax),dims);
+			end
 		case(17)
 			% 	17	mxCELL_CLASS,
 			ret = cell(dims{:});
 			for k = 1:numel(ret)
-				ret{k} = randVarGen(maxDepth,currDepth + 1, maxElements);
+				ret{k} = randVarGen_(maxDepth, currDepth + 1, maxElements, ignoreUnusables);
 			end
 		case(18)
 			% 	18	mxSTRUCT_CLASS
@@ -125,7 +138,7 @@ function [ret] = randVarGen(maxDepth, currDepth, maxElements)
 			retFields = fieldnames(ret);
 			for k = 1:numel(ret)
 				for j = 1:numel(retFields)
-					eval(['ret(k).' retFields{j} ' = randVarGen(maxDepth, currDepth + 1, maxElements);']);
+					eval(['ret(k).' retFields{j} ' = randVarGen_(maxDepth, currDepth + 1, maxElements, ignoreUnusables);']);
 				end
 			end
 			

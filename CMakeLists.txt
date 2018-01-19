@@ -81,7 +81,7 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			src/headers/numberHelper.h
 			src/headers/getSystemInfo.h
 			src/headers/navigate.h
-			src/headers/superblock.h)
+			src/headers/superblock.h src/mtezq.c src/headers/mtezq.h)
 
 	ADD_EXECUTABLE(${OUT_NAME} ${SOURCE_FILES})
 

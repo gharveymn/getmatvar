@@ -91,7 +91,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		mxSetData(mxSpsPtr, data->data_arrays.data);
 	}
 	
-	data->data_arrays.is_mx_used = TRUE;
+	data->is_mx_used = TRUE;
 	
 	mwIndex* irPtr = mxGetIr(mxSpsPtr);
 	for(int i = 0; i < ir->num_elems; i++)
@@ -99,7 +99,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		irPtr[i] = ((mwIndex*)ir->data_arrays.data)[i];
 	}
 	
-	ir->data_arrays.is_mx_used = FALSE;
+	ir->is_mx_used = FALSE;
 	
 	mwIndex* jcPtr = mxGetJc(mxSpsPtr);
 	for(int i = 0; i < jc->num_elems; i++)
@@ -107,7 +107,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		jcPtr[i] = ((mwIndex*)jc->data_arrays.data)[i];
 	}
 	
-	jc->data_arrays.is_mx_used = FALSE;
+	jc->is_mx_used = FALSE;
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{

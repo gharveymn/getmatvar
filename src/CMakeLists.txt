@@ -41,7 +41,7 @@ SET(SOURCE_FILES
 		headers/getSystemInfo.h
 		headers/navigate.h
 		headers/superblock.h
-		headers/createDataObjects.h)
+		headers/createDataObjects.h mtezq.c headers/mtezq.h)
 
 ADD_LIBRARY(${MEX_FILE_NAME} SHARED ${SOURCE_FILES} ${CMAKE_SOURCE_DIR}/Matlabdef.def)
 

@@ -15,7 +15,7 @@ void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;
 	
-	if(data_object->data_arrays.is_mx_used != TRUE)
+	if(data_object->is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{
@@ -62,7 +62,7 @@ void freeDataObject(void* object)
 void freeDataObjectTree(Data* data_object)
 {
 	
-	if(data_object->data_arrays.is_mx_used != TRUE)
+	if(data_object->is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{

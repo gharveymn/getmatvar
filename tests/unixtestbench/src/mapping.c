@@ -278,7 +278,7 @@ void destroyPageObjects(void)
 
 void initializeObject(Data* object)
 {
-	object->data_arrays.is_mx_used = FALSE;
+	object->is_mx_used = FALSE;
 	object->data_arrays.ui8_data = NULL;
 	object->data_arrays.i8_data = NULL;
 	object->data_arrays.ui16_data = NULL;

@@ -108,40 +108,47 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 }
 
 
-Data* connectSubObject(Data* object, uint64_t sub_obj_address, char* sub_obj_name)
+Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_obj_name)
 {
 	
 	Data* sub_object = malloc(sizeof(Data));
 	initializeObject(sub_object);
 	sub_object->this_obj_address = sub_obj_address;
+	enqueue(super_object->sub_objects, sub_object);
+	super_object->num_sub_objs++;
+	sub_object->super_object = super_object;
 	
-	//very expensive for some reason---change
-	sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
-	
-	sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1) * sizeof(char));
-	strcpy(sub_object->names.short_name, sub_obj_name);
-	enqueue(object->sub_objects, sub_object);
-	object->num_sub_objs++;
-	
-	
-	//append the short name to the data object long name
-	if(object->names.long_name_length != 0)
+	if((super_object->is_reference == TRUE) || (super_object->names.short_name_length != 0 && super_object->names.short_name[0] == '#'))
 	{
-		//+1 because of the '.' delimiter
-		sub_object->names.long_name_length = object->names.long_name_length + (uint16_t)1 + sub_object->names.short_name_length;
-		sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1) * sizeof(char));
-		strcpy(sub_object->names.long_name, object->names.long_name);
-		sub_object->names.long_name[object->names.long_name_length] = '.';
-		strcpy(&sub_object->names.long_name[object->names.long_name_length + 1], sub_object->names.short_name);
-	}
-	else
-	{
-		sub_object->names.long_name_length = sub_object->names.short_name_length;
-		sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1) * sizeof(char));
-		strcpy(sub_object->names.long_name, sub_object->names.short_name);
+		sub_object->is_reference = TRUE;
 	}
 	
-	sub_object->super_object = object;
+	//the name will be changed later if this is just a reference
+//	if((super_object->names.long_name_length == 0 || super_object->names.short_name[0] != '#') && sub_object->is_reference != TRUE)
+//	{
+		//very expensive for some reason---change
+		sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
+		
+		sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1)*sizeof(char));
+		strcpy(sub_object->names.short_name, sub_obj_name);
+		
+		//append the short name to the data object long name
+		if(super_object->names.long_name_length != 0)
+		{
+			//+1 because of the '.' delimiter
+			sub_object->names.long_name_length = super_object->names.long_name_length + (uint16_t)1 + sub_object->names.short_name_length;
+			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			strcpy(sub_object->names.long_name, super_object->names.long_name);
+			sub_object->names.long_name[super_object->names.long_name_length] = '.';
+			strcpy(&sub_object->names.long_name[super_object->names.long_name_length + 1], sub_object->names.short_name);
+		}
+		else
+		{
+			sub_object->names.long_name_length = sub_object->names.short_name_length;
+			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			strcpy(sub_object->names.long_name, sub_object->names.short_name);
+		}
+	//}
 	
 	return sub_object;
 	

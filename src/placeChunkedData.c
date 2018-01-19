@@ -1,9 +1,8 @@
 #include "headers/placeChunkedData.h"
-#include "headers/getDataObjects.h"
-#include "headers/ezq.h"
+#include "headers/mtezq.h"
 
 static Queue** data_page_buckets;
-static Queue* mt_data_queue;
+static MTQueue* mt_data_queue;
 
 errno_t getChunkedData(Data* object)
 {
@@ -27,8 +26,8 @@ errno_t getChunkedData(Data* object)
 		return ret;
 	}
 	
-	mt_data_queue = mergeQueue(data_page_buckets, (int)num_pages, free);
-	for(int i = 0; i < num_pages; i++)
+	mt_data_queue = mt_mergeQueue(data_page_buckets, (int)num_pages, free);
+	for (int i = 0; i < num_pages; i++)
 	{
 		freeQueue(data_page_buckets[i]);
 	}
@@ -40,6 +39,7 @@ errno_t getChunkedData(Data* object)
 	
 	if(will_multithread == TRUE)
 	{
+
 		int num_threads;
 		
 		if(num_threads_user_def != -1)
@@ -77,7 +77,7 @@ errno_t getChunkedData(Data* object)
 	}
 	free(thread_object);
 	
-	freeQueue(mt_data_queue);
+	mt_freeQueue(mt_data_queue);
 	freeTree(root);
 	
 	return ret;
@@ -91,12 +91,15 @@ void* doInflate_(void* t)
 	Data* object = thread_obj->object;
 	uint64_t these_num_chunked_elems = 0;
 	uint32_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
-	uint64_t these_chunked_updates[HDF5_MAX_DIMS];
-	const size_t actual_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
+	uint64_t these_index_updates[HDF5_MAX_DIMS] = {0};
+	uint64_t these_chunked_updates[HDF5_MAX_DIMS] = {0};
+	const size_t max_est_decomp_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
+	size_t actual_size_out = 0;
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	byte* decompressed_data_buffer = malloc(object->chunked_info.num_chunked_elems*object->elem_size);
+	byte* decompressed_data_buffer = malloc(max_est_decomp_size);
 	uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+	uint64_t* db_index_sequence = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	uint32_t chunk_pos[HDF5_MAX_DIMS + 1] = {0};
 	
 	Key data_key;
@@ -104,7 +107,7 @@ void* doInflate_(void* t)
 	while(mt_data_queue->length > 0)
 	{
 		
-		DataPair* dp = (DataPair*)dequeue(mt_data_queue);
+		DataPair* dp = (DataPair*)mt_dequeue(mt_data_queue);
 		if(dp == NULL)
 		{
 			//in case it gets dequeued after the loop check but before the lock
@@ -119,7 +122,7 @@ void* doInflate_(void* t)
 		const uint64_t chunk_start_index = findArrayPosition(data_key.chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = st_navigateTo(node->children[i]->address, node->keys[i].size);
 		const byte* data_pointer = mt_navigateTo(data_node->address, 0);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key.size, decompressed_data_buffer, actual_size, NULL);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key.size, decompressed_data_buffer, max_est_decomp_size, &actual_size_out);
 		//st_releasePages(node->children[i]->address, node->keys[i].size);
 		mt_releasePages(data_node->address, 0);
 		switch(thread_obj->err)
@@ -140,7 +143,7 @@ void* doInflate_(void* t)
 				error_flag = TRUE;
 				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(error_message, "libdeflate failed because the output buffer was not large enough (tried to put "
-						"%d bytes into %d byte buffer).\n\n", (int)actual_size, CHUNK_BUFFER_SIZE);
+						"%d bytes into %d byte buffer).\n\n", (int)max_est_decomp_size, CHUNK_BUFFER_SIZE);
 				return (void*)&thread_obj->err;
 			default:
 				//do nothing
@@ -166,15 +169,18 @@ void* doInflate_(void* t)
 		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
 		for(int j = 0; j < object->num_dims; j++)
 		{
+			//if the chunk collides with the edge, make sure the dimensions of the chunk respect that
 			these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - MAX((int)(data_key.chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]), 0);
-			these_chunked_updates[j] = object->chunked_info.chunk_update[j];
+			these_index_updates[j] = object->chunked_info.chunk_update[j];
+			these_chunked_updates[j] = 0;
 		}
 		
 		for(int j = 0; j < object->num_dims; j++)
 		{
 			if(unlikely(these_chunked_dims[j] != object->chunked_info.chunked_dims[j]))
 			{
-				makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->dims, object->num_dims);
+				makeChunkedUpdates(these_index_updates, these_chunked_dims, object->dims, object->num_dims);
+				makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->chunked_info.chunked_dims, object->num_dims);
 				these_num_chunked_elems = 1;
 				for(int k = 0; k < object->chunked_info.num_chunked_dims; k++)
 				{
@@ -185,14 +191,16 @@ void* doInflate_(void* t)
 		}
 		
 		//copy over data
+		//memset(index_map, 0xFF, object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 		memset(chunk_pos, 0, sizeof(chunk_pos));
 		uint8_t curr_max_dim = 2;
-		uint64_t db_pos = 0;
-		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && db_pos < these_num_chunked_elems; anchor = db_pos)
+		uint64_t db_pos = 0, num_used = 0;
+		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
 		{
-			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++)
+			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++, num_used++)
 			{
 				index_map[db_pos] = index;
+				db_index_sequence[num_used] = db_pos;
 			}
 			chunk_pos[1]++;
 			uint8_t use_update = 0;
@@ -202,21 +210,22 @@ void* doInflate_(void* t)
 				{
 					chunk_pos[j] = 0;
 					chunk_pos[j + 1]++;
-					curr_max_dim = curr_max_dim <= j + 1? curr_max_dim + (uint8_t)1 : curr_max_dim;
+					curr_max_dim = curr_max_dim <= j + 1 ? curr_max_dim + (uint8_t)1 : curr_max_dim;
 					use_update++;
 				}
 			}
-			index += these_chunked_updates[use_update];
+			index += these_index_updates[use_update];
+			db_pos += these_chunked_updates[use_update];
 		}
 		
-		
-		placeDataWithIndexMap(object, decompressed_data_buffer, db_pos, object->elem_size, object->byte_order, index_map);
+		placeDataWithIndexMap(object, decompressed_data_buffer, num_used, object->elem_size, object->byte_order, index_map, db_index_sequence);
 		
 	}
 	
 	libdeflate_free_decompressor(ldd);
 	free(decompressed_data_buffer);
 	free(index_map);
+	free(db_index_sequence);
 	return NULL;
 	
 }
@@ -326,8 +335,8 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		if(node->children[i]->leaf_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_end =
-					MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i].size - 1);
+			page_objects[page_index].max_map_end = 
+					MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i].size);
 			DataPair* dp = malloc(sizeof(DataPair));
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];

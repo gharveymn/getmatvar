@@ -6,9 +6,9 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/test_struct.mat';
+file = 'res/test_struct2.mat';
 vars = {''};
-domemory = true;
+domemory = false;
 compare = false;
 numtests = 1000;
 stride = 100;

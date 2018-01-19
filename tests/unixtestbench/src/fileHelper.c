@@ -605,7 +605,7 @@ void freeDataObject(void* object)
 {
 	Data* data_object = (Data*) object;
 	
-	if(data_object->data_arrays.is_mx_used != TRUE)
+	if(data_object->is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.ui8_data != NULL)
 		{
@@ -695,61 +695,61 @@ void freeDataObject(void* object)
 void freeDataObjectTree(Data* super_object)
 {
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui8_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.ui8_data != NULL)
 	{
 		free(super_object->data_arrays.ui8_data);
 		super_object->data_arrays.ui8_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i8_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.i8_data != NULL)
 	{
 		free(super_object->data_arrays.i8_data);
 		super_object->data_arrays.i8_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui16_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.ui16_data != NULL)
 	{
 		free(super_object->data_arrays.ui16_data);
 		super_object->data_arrays.ui16_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i16_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.i16_data != NULL)
 	{
 		free(super_object->data_arrays.i16_data);
 		super_object->data_arrays.i16_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui32_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.ui32_data != NULL)
 	{
 		free(super_object->data_arrays.ui32_data);
 		super_object->data_arrays.ui32_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i32_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.i32_data != NULL)
 	{
 		free(super_object->data_arrays.i32_data);
 		super_object->data_arrays.i32_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.ui64_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.ui64_data != NULL)
 	{
 		free(super_object->data_arrays.ui64_data);
 		super_object->data_arrays.ui64_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.i64_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.i64_data != NULL)
 	{
 		free(super_object->data_arrays.i64_data);
 		super_object->data_arrays.i64_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.single_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.single_data != NULL)
 	{
 		free(super_object->data_arrays.single_data);
 		super_object->data_arrays.single_data = NULL;
 	}
 	
-	if(super_object->data_arrays.is_mx_used != TRUE && super_object->data_arrays.double_data != NULL)
+	if(super_object->is_mx_used != TRUE && super_object->data_arrays.double_data != NULL)
 	{
 		free(super_object->data_arrays.double_data);
 		super_object->data_arrays.double_data = NULL;

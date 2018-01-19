@@ -95,7 +95,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 		
 		Data* obj = dequeue(objects);
 		
-		obj->data_arrays.is_mx_used = TRUE;
+		obj->is_mx_used = TRUE;
 		
 		switch(obj->matlab_internal_type)
 		{
@@ -123,11 +123,11 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 			case mxCELL_CLASS:
 				setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				//Indicate we should free any memory used by this
-				obj->data_arrays.is_mx_used = FALSE;
+				obj->is_mx_used = FALSE;
 				break;
 			case mxSTRUCT_CLASS:
 				setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				obj->data_arrays.is_mx_used = FALSE;
+				obj->is_mx_used = FALSE;
 				break;
 			case mxFUNCTION_CLASS:
 			case mxOBJECT_CLASS:
@@ -147,7 +147,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 //					//is a cell array
 //					mxSetCell(returnStructure, index, NULL);
 //				}
-				obj->data_arrays.is_mx_used = FALSE;
+				obj->is_mx_used = FALSE;
 				break;
 			default:
 				if(warnedUnknownVar == FALSE)
@@ -165,7 +165,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 					//is a cell array
 					mxSetCell(returnStructure, index, NULL);
 				}
-				obj->data_arrays.is_mx_used = FALSE;
+				obj->is_mx_used = FALSE;
 				break;
 		}
 		
@@ -328,6 +328,11 @@ void readInput(int nrhs, const mxArray* prhs[])
 					else if(strcmp(input, "-suppress-warnings") == 0 || strcmp(input, "-sw") == 0)
 					{
 						will_suppress_warnings = TRUE;
+						kwarg_flag = FALSE;
+					}
+					else if(strcmp(input, "-st") == 0)
+					{
+						will_multithread = FALSE;
 						kwarg_flag = FALSE;
 					}
 				}

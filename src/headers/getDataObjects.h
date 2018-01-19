@@ -211,7 +211,6 @@ typedef struct
 
 typedef struct
 {
-	int is_mx_used;
 	byte* data;
 	uint64_t* sub_object_header_offsets;
 } DataArrays;
@@ -247,7 +246,9 @@ struct data_
 	MatlabAttributes matlab_internal_attributes;
 	bool_t struct_array_flag;
 	bool_t is_filled;
-	bool_t is_finalized;
+	bool_t is_mx_used;
+	//bool_t is_finalized;
+	bool_t is_reference;
 	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;

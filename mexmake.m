@@ -4,7 +4,7 @@ cd src
 
 try
 	
-	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-O', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];
@@ -15,6 +15,7 @@ try
 		'cleanup.c',...
 		'createDataObjects.c',...
 		'ezq.c',...
+		'mtezq.c',...
 		'fillDataObjects.c',...
 		'getDataObjects.c',...
 		'getSystemInfo.c',...
@@ -55,7 +56,7 @@ try
 	end
 	
 	cd ..
-	clear libdeflate_path pthreadvc2_path clear output_path
+	clear mexflags sources libdeflate_path_lib pthreadsw32_path_lib pthreadsw32_path_include output_path
 	
 catch ME
 	

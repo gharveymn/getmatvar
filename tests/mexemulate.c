@@ -163,6 +163,11 @@ void readInput(int nrhs, char* prhs[])
 					will_suppress_warnings = TRUE;
 					kwarg_flag = FALSE;
 				}
+				else if(strcmp(input, "-st") == 0)
+				{
+					will_multithread = FALSE;
+					kwarg_flag = FALSE;
+				}
 			}
 			else
 			{

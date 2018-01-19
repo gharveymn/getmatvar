@@ -24,6 +24,7 @@ IDIR = src/headers
 _DEPS = cleanup.h \
 createDataObjects.h \
 ezq.h \
+mtezq.h\
 fillDataObjects.h \
 getDataObjects.h \
 getSystemInfo.h \
@@ -43,6 +44,7 @@ _OBJ = ../$(TST_DIR)/mexemulate.o \
 cleanup.o \
 createDataObjects.o \
 ezq.o \
+mtezq.o \
 fillDataObjects.o \
 getDataObjects.o \
 getSystemInfo.o \

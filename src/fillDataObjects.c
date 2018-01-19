@@ -120,7 +120,7 @@ void fillDataTree(Data* object)
 		fillDataTree(obj);
 	}
 	restartQueue(object->sub_objects);
-	object->is_finalized = TRUE;
+	//object->is_finalized = TRUE;
 	
 }
 

@@ -1,8 +1,6 @@
 #ifndef EZQ_H
 #define EZQ_H
 
-#include <pthread.h>
-
 #define QUEUE_FRONT 0
 #define QUEUE_BACK 1
 
@@ -22,7 +20,6 @@ typedef struct
 	void (* free_function)(void*);
 	int length;
 	int total_length;
-	pthread_mutex_t lock;
 } Queue;
 
 

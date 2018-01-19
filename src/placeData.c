@@ -115,7 +115,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 }
 
 
-void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map)
+void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map, const uint64_t* index_sequence)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
@@ -128,7 +128,6 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 	}
 	
 	
-	int object_data_index = 0;
 	switch(object->matlab_internal_type)
 	{
 		case mxINT8_CLASS:
@@ -145,15 +144,13 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case mxCHAR_CLASS:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(object->data_arrays.data + elem_size*index_map[j], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
+				memcpy(object->data_arrays.data + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, elem_size);
 			}
 			break;
 		case mxCELL_CLASS:
 			for(uint64_t j = 0; j < num_elems; j++)
 			{
-				memcpy(&object->data_arrays.sub_object_header_offsets[index_map[j]], data_pointer + object_data_index*elem_size, elem_size);
-				object_data_index++;
+				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, elem_size);
 			}
 			break;
 		case mxSTRUCT_CLASS:
