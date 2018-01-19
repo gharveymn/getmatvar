@@ -22,14 +22,15 @@ function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 	% 	12	mxINT64_CLASS,
 	% 	13	mxUINT64_CLASS,
 	% 	14	mxFUNCTION_CLASS,
-	% 	15	mxOPAQUE_CLASS,
+	% 	15	mxOPAQUE_CLASS/SPARSES,
 	% 	16	mxOBJECT_CLASS,
 	% 	17	mxCELL_CLASS,
 	% 	18	mxSTRUCT_CLASS
 	
 	if(maxDepth <= currDepth)
 		%dont make another layer
-		vartypegen = randi(16);
+		vartypegen = 3;
+		%vartypegen = randi(16);
 	else
 		vartypegen = randi(18);
 	end
@@ -67,9 +68,13 @@ function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 			% 	2	mxCHAR_CLASS,
 			ret = char(randi(65536,dims{:})-1);
 		case(3)
-			% 	3	mxVOID_CLASS,
-			%reserved, make a double instead
-			ret = rand(dims{:},'double');
+			% 	3	mxVOID_CLASS/SPARSE,
+			%reserved, make a double instead or sparse
+			if(numel(dims) == 2)
+				ret = sparse(logical(rand(dims{:}) > 0.5).*rand(dims{:},'double'));
+			else
+				ret = rand(dims{:},'double');
+			end
 		case(4)
 			% 	4	mxDOUBLE_CLASS,
 			ret = rand(dims{:},'double');
@@ -115,8 +120,12 @@ function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 			end
 		case(15)
 			% 	15	mxOPAQUE_CLASS,
-			% not sure how to generate, generate a double array instead
-			ret = rand(dims{:},'double');
+			% not sure how to generate, generate a sparse array instead
+			if(numel(dims) == 2)
+				ret = sparse(logical(rand(dims{:}) > 0.5).*rand(dims{:},'double'));
+			else
+				ret = rand(dims{:},'double');
+			end
 		case(16)
 			% 	16	mxOBJECT_CLASS,
 			if(ignoreUnusables)
