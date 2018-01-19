@@ -118,13 +118,13 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 	super_object->num_sub_objs++;
 	sub_object->super_object = super_object;
 	
-	if((super_object->is_reference == TRUE) || (super_object->names.short_name_length != 0 && super_object->names.short_name[0] == '#'))
+	if((super_object->data_flags.is_reference == TRUE) || (super_object->names.short_name_length != 0 && super_object->names.short_name[0] == '#'))
 	{
-		sub_object->is_reference = TRUE;
+		sub_object->data_flags.is_reference = TRUE;
 	}
 	
 	//the name will be changed later if this is just a reference
-//	if((super_object->names.long_name_length == 0 || super_object->names.short_name[0] != '#') && sub_object->is_reference != TRUE)
+//	if((super_object->names.long_name_length == 0 || super_object->names.short_name[0] != '#') && sub_object->data_flags.is_reference != TRUE)
 //	{
 		//very expensive for some reason---change
 		sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);

@@ -17,6 +17,7 @@ res/*
 *mapping
 mexemulate
 
+*.vspx
 *ipch/
 *.aps
 *.ncb

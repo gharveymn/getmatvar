@@ -1,4 +1,5 @@
 #include "headers/fillDataObjects.h"
+#include "headers/getDataObjects.h"
 
 
 void fillVariable(char* variable_name)
@@ -9,7 +10,7 @@ void fillVariable(char* variable_name)
 		return;
 	}
 	
-	char* delim = ".", * token;
+	char* delim = ".{}()", * token;
 	flushQueue(varname_queue);
 	if(strcmp(variable_name, "\0") == 0)
 	{
@@ -34,9 +35,25 @@ void fillVariable(char* variable_name)
 		token = strtok(variable_name_cpy, delim);
 		while(token != NULL)
 		{
-			char* vn = malloc((strlen(token) + 1)*sizeof(char));
-			strcpy(vn, token);
-			enqueue(varname_queue, vn);
+			size_t vnlen = strlen(token);
+			VariableNameToken* varname_token = malloc(sizeof(VariableNameToken));
+			varname_token->variable_local_name = malloc((vnlen + 1)*sizeof(char));
+			strcpy(varname_token->variable_local_name, token);
+			varname_token->variable_local_index = 0;
+			varname_token->variable_name_type = VT_LOCAL_INDEX;
+			for(int i = 0; i < vnlen; i++)
+			{
+				if(varname_token->variable_local_name[i] < '0' || varname_token->variable_local_name[i] > '9')
+				{
+					varname_token->variable_local_index = 0;
+					varname_token->variable_name_type = VT_LOCAL_NAME;
+				}
+				else
+				{
+					varname_token->variable_local_index = varname_token->variable_local_index * 10 + (varname_token->variable_local_name[i] - '0');
+				}
+			}
+			enqueue(varname_queue, varname_token);
 			token = strtok(NULL, delim);
 		}
 		
@@ -120,7 +137,7 @@ void fillDataTree(Data* object)
 		fillDataTree(obj);
 	}
 	restartQueue(object->sub_objects);
-	//object->is_finalized = TRUE;
+	//object->data_flags.is_finalized = TRUE;
 	
 }
 
@@ -128,12 +145,12 @@ void fillDataTree(Data* object)
 void fillObject(Data* object, uint64_t this_obj_address)
 {
 	
-	if(object->is_filled == TRUE)
+	if(object->data_flags.is_filled == TRUE)
 	{
 		return;
 	}
 	
-	object->is_filled = TRUE;
+	object->data_flags.is_filled = TRUE;
 	
 	byte* header_pointer = st_navigateTo(this_obj_address, 12);
 	uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
@@ -144,9 +161,9 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	//aligned on 8-byte boundaries, so msgs start at +16
 	collectMetaData(object, this_obj_address + 16, num_msgs, header_length);
 	
-	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
+	if(object->hdf5_internal_type == HDF5_REFERENCE  && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
 	{
-		object->struct_array_flag = TRUE;
+		object->data_flags.is_struct_array = TRUE;
 		//pretend this is a cell
 		object->matlab_internal_type = mxCELL_CLASS;
 		for(int i = 0; i < object->num_dims; i++)
@@ -154,6 +171,16 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			object->super_object->dims[i] = object->dims[i];
 		}
 		object->super_object->num_dims = object->num_dims;
+	}
+	
+	if(object->matlab_internal_attributes.MATLAB_sparse == TRUE)
+	{
+		object->matlab_sparse_type = object->matlab_internal_type;
+		object->matlab_internal_type = mxSPARSE_CLASS;
+	}
+	else if(object->super_object->matlab_internal_attributes.MATLAB_sparse == TRUE)
+	{
+		object->matlab_internal_type = mxUINT64_CLASS;
 	}
 	
 	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
@@ -168,8 +195,6 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	if(allocateSpace(object) != 0)
 	{
 		error_flag = TRUE;
-		sprintf(error_id, "getmatvar:allocationError");
-		sprintf(error_message, "Unknown error happened during allocation.\n\n");
 		return;
 	}
 	
@@ -224,7 +249,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				num_digits++;
 			} while(n != 0);
 			
-			if(object->struct_array_flag == FALSE)
+			if(object->data_flags.is_struct_array == FALSE)
 			{
 				//make names for cells, ie. blah{k}
 				free(ref->names.short_name);

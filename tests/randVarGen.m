@@ -29,8 +29,7 @@ function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 	
 	if(maxDepth <= currDepth)
 		%dont make another layer
-		vartypegen = 3;
-		%vartypegen = randi(16);
+		vartypegen = randi(16);
 	else
 		vartypegen = randi(18);
 	end
@@ -71,7 +70,10 @@ function [ret] = randVarGen_(maxDepth, currDepth, maxElements, ignoreUnusables)
 			% 	3	mxVOID_CLASS/SPARSE,
 			%reserved, make a double instead or sparse
 			if(numel(dims) == 2)
-				ret = sparse(logical(rand(dims{:}) > 0.5).*rand(dims{:},'double'));
+				ret = sparse(logical(rand(dims{:}) > 0.5));
+				if(randi(2) == 1)
+					ret = ret.*rand(dims{:},'double');
+				end
 			else
 				ret = rand(dims{:},'double');
 			end

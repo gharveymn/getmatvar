@@ -80,7 +80,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 		return NULL;
 	}
 	
-	if(((Data*)peekQueue(objects, QUEUE_FRONT))->struct_array_flag == TRUE)
+	if(((Data*)peekQueue(objects, QUEUE_FRONT))->data_flags.is_struct_array == TRUE)
 	{
 		for(mwIndex index = 0; index < num_elems; index++)
 		{
@@ -95,7 +95,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 		
 		Data* obj = dequeue(objects);
 		
-		obj->is_mx_used = TRUE;
+		obj->data_flags.is_mx_used = TRUE;
 		
 		switch(obj->matlab_internal_type)
 		{
@@ -123,11 +123,11 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 			case mxCELL_CLASS:
 				setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
 				//Indicate we should free any memory used by this
-				obj->is_mx_used = FALSE;
+				obj->data_flags.is_mx_used = FALSE;
 				break;
 			case mxSTRUCT_CLASS:
 				setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				obj->is_mx_used = FALSE;
+				obj->data_flags.is_mx_used = FALSE;
 				break;
 			case mxFUNCTION_CLASS:
 			case mxOBJECT_CLASS:
@@ -147,7 +147,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 //					//is a cell array
 //					mxSetCell(returnStructure, index, NULL);
 //				}
-				obj->is_mx_used = FALSE;
+				obj->data_flags.is_mx_used = FALSE;
 				break;
 			default:
 				if(warnedUnknownVar == FALSE)
@@ -165,7 +165,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 					//is a cell array
 					mxSetCell(returnStructure, index, NULL);
 				}
-				obj->is_mx_used = FALSE;
+				obj->data_flags.is_mx_used = FALSE;
 				break;
 		}
 		

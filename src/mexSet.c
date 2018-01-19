@@ -9,11 +9,11 @@ void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, 
 	{
 		DataArrays imag_data = rearrangeImaginaryData(object);
 		mxSetData(mxNumericPtr, (void*)object->data_arrays.data);
-		mxSetImagData(mxNumericPtr, imag_data.data);
+		mxSetImagData(mxNumericPtr, (void*)imag_data.data);
 	}
 	else
 	{
-		mxSetData(mxNumericPtr, object->data_arrays.data);
+		mxSetData(mxNumericPtr, (void*)object->data_arrays.data);
 	}
 	mxSetDimensions(mxNumericPtr, obj_dims, object->num_dims);
 	
@@ -79,39 +79,68 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	Data* data = findSubObjectByShortName(object, "data");
 	Data* ir = findSubObjectByShortName(object, "ir");
 	Data* jc = findSubObjectByShortName(object, "jc");
-	mxArray* mxSpsPtr = mxCreateSparse(object->dims[0],jc->num_elems - 1, ir->num_elems,object->complexity_flag);
-	if(object->complexity_flag == mxCOMPLEX)
+	//mxArray* mxSpsPtr = mxCreateSparse(object->dims[0], jc->num_elems - 1, ir->num_elems, object->complexity_flag);
+	mxArray* mxSpsPtr = NULL;
+	
+	switch(object->matlab_sparse_type)
 	{
-		DataArrays imag_data = rearrangeImaginaryData(data);
-		mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
-		mxSetImagData(mxSpsPtr, (void*)imag_data.data);
+		case mxDOUBLE_CLASS:
+			mxSpsPtr = mxCreateSparse(((mwSize*)object->dims)[0], ((mwSize*)jc->dims)[0] - 1, 0, object->complexity_flag);
+			break;
+		case mxLOGICAL_CLASS:
+			mxSpsPtr = mxCreateSparseLogicalMatrix(((mwSize*)object->dims)[0], ((mwSize*)jc->dims)[0] - 1, 0);
+			break;
+		default:
+			//error;
+			break;
+			
+	}
+
+	if (data == NULL)
+	{
+		//Already set to zero and NULL
+		//mxSetNzmax(mxSpsPtr, 0)
 	}
 	else
 	{
-		mxSetData(mxSpsPtr, data->data_arrays.data);
+
+		mxSetNzmax(mxSpsPtr, (mwSize)ir->num_elems);
+
+		if(object->complexity_flag == mxCOMPLEX)
+		{
+			DataArrays imag_data = rearrangeImaginaryData(data);
+			mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
+			mxSetImagData(mxSpsPtr, (void*)imag_data.data);
+		}
+		else
+		{
+			mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
+		}
+		data->data_flags.is_mx_used = TRUE;
+
+		mwIndex* irPtr = mxMalloc(ir->num_elems*sizeof(mwIndex));
+		for (int i = 0; i < ir->num_elems; i++)
+		{
+			irPtr[i] = ((mwIndex*)ir->data_arrays.data)[i];
+		}
+		mxSetIr(mxSpsPtr, irPtr);
+
+		ir->data_flags.is_mx_used = FALSE;
+
 	}
-	
-	data->is_mx_used = TRUE;
-	
-	mwIndex* irPtr = mxGetIr(mxSpsPtr);
-	for(int i = 0; i < ir->num_elems; i++)
-	{
-		irPtr[i] = ((mwIndex*)ir->data_arrays.data)[i];
-	}
-	
-	ir->is_mx_used = FALSE;
+
+	//sparse matrices always have two dimensions
 	
 	mwIndex* jcPtr = mxGetJc(mxSpsPtr);
 	for(int i = 0; i < jc->num_elems; i++)
 	{
 		jcPtr[i] = ((mwIndex*)jc->data_arrays.data)[i];
 	}
-	
-	jc->is_mx_used = FALSE;
+	jc->data_flags.is_mx_used = FALSE;
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, 0, varname, mxSpsPtr);
+		mxSetField(returnStructure, index, varname, mxSpsPtr);
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{

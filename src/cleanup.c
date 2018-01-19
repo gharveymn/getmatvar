@@ -1,12 +1,17 @@
 #include "headers/cleanup.h"
+#include "headers/getDataObjects.h"
 
 
 void freeVarname(void* vn)
 {
-	char* varname = (char*)vn;
-	if(varname != NULL && strcmp(varname, "\0") != 0)
+	VariableNameToken* varname_token = (VariableNameToken*)vn;
+	if(varname_token != NULL)
 	{
-		free(varname);
+		if(varname_token->variable_local_name != NULL && strcmp(varname_token->variable_local_name, "\0") != 0)
+		{
+			free(varname_token->variable_local_name);
+		}
+		free(varname_token);
 	}
 }
 
@@ -15,7 +20,7 @@ void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;
 	
-	if(data_object->is_mx_used != TRUE)
+	if(data_object->data_flags.is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{
@@ -62,7 +67,7 @@ void freeDataObject(void* object)
 void freeDataObjectTree(Data* data_object)
 {
 	
-	if(data_object->is_mx_used != TRUE)
+	if(data_object->data_flags.is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{

@@ -238,17 +238,23 @@ typedef struct
 	objectDecodingHint MATLAB_object_decode;
 } MatlabAttributes;
 
+typedef struct
+{
+	bool_t is_struct_array;
+	bool_t is_filled;
+	bool_t is_mx_used;
+	//bool_t is_finalized;
+	bool_t is_reference;
+} DataFlags;
+
 typedef struct data_ Data;
 struct data_
 {
 	HDF5Datatype hdf5_internal_type;
 	mxClassID matlab_internal_type;
+	mxClassID matlab_sparse_type;
 	MatlabAttributes matlab_internal_attributes;
-	bool_t struct_array_flag;
-	bool_t is_filled;
-	bool_t is_mx_used;
-	//bool_t is_finalized;
-	bool_t is_reference;
+	DataFlags data_flags;
 	mxComplexity complexity_flag;
 	uint32_t datatype_bit_field;
 	ByteOrder byte_order;
@@ -298,7 +304,21 @@ typedef struct
 	int num_vars;
 	char** full_variable_names;
 	char* filename;
-} paramStruct;
+} ParamStruct;
+
+typedef enum
+{
+	VT_UNKNOWN,
+	VT_LOCAL_NAME,
+	VT_LOCAL_INDEX
+} VariableNameType;
+
+typedef struct
+{
+	VariableNameType variable_name_type;
+	uint64_t variable_local_index;
+	char* variable_local_name;
+} VariableNameToken;
 
 //mapping.c
 void getDataObjects(const char* filename, char** variable_names, int num_names);
@@ -318,7 +338,7 @@ char error_message[ERROR_BUFFER_SIZE];
 char warn_id[WARNING_BUFFER_SIZE];
 char warn_message[WARNING_BUFFER_SIZE];
 
-paramStruct parameters;
+ParamStruct parameters;
 Queue* top_level_objects;
 Queue* varname_queue;
 Queue* object_queue;

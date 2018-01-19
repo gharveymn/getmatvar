@@ -25,11 +25,12 @@ void initialize(void)
 
 void initializeObject(Data* object)
 {
-	object->struct_array_flag = FALSE;
-	object->is_filled = FALSE;
-	//object->is_finalized = FALSE;
-	object->is_reference = FALSE;
-	object->is_mx_used = FALSE;
+	object->data_flags.is_struct_array = FALSE;
+	//object->data_flags.is_sparse = FALSE;
+	object->data_flags.is_filled = FALSE;
+	//object->data_flags.is_finalized = FALSE;
+	object->data_flags.is_reference = FALSE;
+	object->data_flags.is_mx_used = FALSE;
 	object->data_arrays.data = NULL;
 	object->data_arrays.sub_object_header_offsets = NULL;
 	
@@ -58,6 +59,7 @@ void initializeObject(Data* object)
 	object->byte_order = LITTLE_ENDIAN;
 	object->hdf5_internal_type = HDF5_UNKNOWN;
 	object->matlab_internal_type = mxUNKNOWN_CLASS;
+	object->matlab_sparse_type = mxUNKNOWN_CLASS;
 	object->complexity_flag = mxREAL;
 	
 	object->num_dims = 0;

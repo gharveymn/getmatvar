@@ -35,11 +35,11 @@ if(domemory)
 	xlim([0,numtests]);
 else
 	for i = 1:numtests
-		tic
+		tic;
 		getmatvar(file, vars{:}, '-suppress-warnings');
 		mvgavgtime(mod(i,stride+1)+1) = toc;
 		if(compare)
-			tic
+			tic;
 			load(file);
 			mvgavgtimeload(mod(i,strideload+1)+1) = toc;
 			

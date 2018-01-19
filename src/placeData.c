@@ -1,8 +1,10 @@
 #include "headers/placeData.h"
+#include "headers/getDataObjects.h"
+
 
 errno_t allocateSpace(Data* object)
 {
-	//maybe figure out a way to just pass this to a single array
+	
 	switch(object->matlab_internal_type)
 	{
 		case mxINT8_CLASS:
@@ -38,17 +40,10 @@ errno_t allocateSpace(Data* object)
 			//do nothing
 			break;
 		case mxUNKNOWN_CLASS:
-			if(object->struct_array_flag == TRUE)
-			{
-				object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
-			}
-			else
-			{
-				error_flag = TRUE;
-				sprintf(error_id, "getmatvar:unknownTypeError");
-				sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
-				return 1;
-			}
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:unknownTypeError");
+			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
+			return 1;
 			break;
 		default:
 			error_flag = TRUE;
@@ -101,7 +96,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		case mxOPAQUE_CLASS:
 			break;
 		case mxUNKNOWN_CLASS:
-			if(object->struct_array_flag == TRUE)
+			if(object->data_flags.is_struct_array == TRUE)
 			{
 				memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
 			}
