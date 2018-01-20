@@ -4,7 +4,7 @@ cd src
 
 try
 	
-	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-O', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];

@@ -10,7 +10,14 @@ MTQueue* mt_initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
-	new_queue->free_function = free_function;
+	if(free_function == NULL)
+	{
+		new_queue->free_function = _mt_nullFreeFunction;
+	}
+	else
+	{
+		new_queue->free_function = free_function;
+	}
 	pthread_mutex_init(&new_queue->lock, NULL);
 	return new_queue;
 }
@@ -259,6 +266,11 @@ void mt_freeQueue(MTQueue* queue)
 		pthread_mutex_destroy(&queue->lock);
 		free(queue);
 	}
+}
+
+void _mt_nullFreeFunction(void* param)
+{
+	//do nothing
 }
 
 

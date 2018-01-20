@@ -10,8 +10,6 @@ void fillVariable(char* variable_name)
 		return;
 	}
 	
-	char* delim = ".{}()", * token;
-	flushQueue(varname_queue);
 	if(strcmp(variable_name, "\0") == 0)
 	{
 		for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
@@ -28,97 +26,114 @@ void fillVariable(char* variable_name)
 	}
 	else
 	{
-		//TODO make this cleaner
-		//copy over variable name before tokenizing so we can print variable not found output if needed
-		char* variable_name_cpy = malloc((strlen(variable_name) + 1)* sizeof(char));
-		strcpy(variable_name_cpy, variable_name);
-		token = strtok(variable_name_cpy, delim);
-		while(token != NULL)
-		{
-			size_t vnlen = strlen(token);
-			VariableNameToken* varname_token = malloc(sizeof(VariableNameToken));
-			varname_token->variable_local_name = malloc((vnlen + 1)*sizeof(char));
-			strcpy(varname_token->variable_local_name, token);
-			varname_token->variable_local_index = 0;
-			varname_token->variable_name_type = VT_LOCAL_INDEX;
-			for(int i = 0; i < vnlen; i++)
-			{
-				if(varname_token->variable_local_name[i] < '0' || varname_token->variable_local_name[i] > '9')
-				{
-					varname_token->variable_local_index = 0;
-					varname_token->variable_name_type = VT_LOCAL_NAME;
-				}
-				else
-				{
-					varname_token->variable_local_index = varname_token->variable_local_index * 10 + (varname_token->variable_local_name[i] - '0');
-				}
-			}
-			enqueue(varname_queue, varname_token);
-			token = strtok(NULL, delim);
-		}
+		
+		makeVarnameQueue(variable_name);
 		
 		Data* object = virtual_super_object;
 		do
 		{
-			char* var = dequeue(varname_queue);
-			if(var[strlen(var)-1] == '}')
+			VariableNameToken* varname_token = dequeue(varname_queue);
+			
+			switch(varname_token->variable_name_type)
 			{
-				Queue* cell_var_queue = initQueue(freeVarname);
-				char* cell_var_cpy = malloc((strlen(var) + 1)* sizeof(char));
-				strcpy(cell_var_cpy, var);
-				token = strtok(cell_var_cpy, "{");
-				while(token != NULL)
-				{
-					char* cvn = malloc((strlen(token) + 1)*sizeof(char));
-					strcpy(cvn, token);
-					enqueue(cell_var_queue, cvn);
-					token = strtok(NULL, "{");
-				}
-				
-				do
-				{
-					object = findSubObjectByShortName(object, dequeue(cell_var_queue));
+				case VT_LOCAL_NAME:
+					object = findSubObjectByShortName(object, varname_token->variable_local_name);
 					if(object == NULL)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						freeQueue(cell_var_queue);
-						free(variable_name_cpy);
-						free(cell_var_cpy);
 						readMXWarn("getmatvar:variableNotFound", warn_message);
 						return;
 					}
-					else if(cell_var_queue->length != 0) //don't fill the last object yet, use the tree filler below
+					break;
+				case VT_LOCAL_INDEX:
+					
+					if(object->data_flags.is_filled != TRUE)
 					{
 						fillObject(object, object->this_obj_address);
 					}
-				} while(cell_var_queue->length > 0);
-				
-				freeQueue(cell_var_queue);
-				free(cell_var_cpy);
-				
+					
+					if(object->matlab_internal_type == mxSTRUCT_CLASS)
+					{
+						
+						//matlab reads struct arrays as my_struct(3).dog
+						//but stores them as my_struct.dog(3)
+						
+						VariableNameToken* field = dequeue(varname_queue);
+						object = findSubObjectByShortName(object, field->variable_local_name);
+						if(object == NULL)
+						{
+							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+							readMXWarn("getmatvar:variableNotFound", warn_message);
+							return;
+						}
+						
+						if(object->data_flags.is_filled != TRUE)
+						{
+							fillObject(object, object->this_obj_address);
+						}
+						
+					}
+					
+					object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+					if(object == NULL)
+					{
+						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+						readMXWarn("getmatvar:variableNotFound", warn_message);
+						return;
+					}
+					break;
+				case VT_LOCAL_COORDINATES:
+					
+					if(object->data_flags.is_filled != TRUE)
+					{
+						fillObject(object, object->this_obj_address);
+					}
+					
+					if(object->matlab_internal_type == mxSTRUCT_CLASS)
+					{
+						
+						//matlab reads struct arrays as my_struct(3).dog
+						//but stores them as my_struct.dog(3)
+						
+						VariableNameToken* field = dequeue(varname_queue);
+						object = findSubObjectByShortName(object, field->variable_local_name);
+						if(object == NULL)
+						{
+							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+							readMXWarn("getmatvar:variableNotFound", warn_message);
+							return;
+						}
+						
+						if(object->data_flags.is_filled != TRUE)
+						{
+							fillObject(object, object->this_obj_address);
+						}
+						
+					}
+					
+					varname_token->variable_local_index = coordToInd(varname_token->variable_local_coordinates, object->dims, object->num_dims);
+					object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+					if(object == NULL)
+					{
+						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+						readMXWarn("getmatvar:variableNotFound", warn_message);
+						return;
+					}
+					break;
+				default:
+					break;
 			}
-			else
-			{
-				object = findSubObjectByShortName(object, var);
-				if(object == NULL)
-				{
-					sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-					free(variable_name_cpy);
-					readMXWarn("getmatvar:variableNotFound", warn_message);
-					return;
-				}
-			}
-			
 			
 		} while(varname_queue->length > 0);
 		
 		fillDataTree(object);
+		
+		//FIX THIS -- SHOULD RETURN THE ACTUAL VARIABLE RATHER THAN THE CELL CONTAINER RIGHT?
 		while(object->super_object->matlab_internal_type == mxCELL_CLASS)
 		{
 			object = object->super_object;
 		}
 		enqueue(top_level_objects, object);
-		free(variable_name_cpy);
 		
 	}
 	
@@ -160,6 +175,11 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	//aligned on 8-byte boundaries, so msgs start at +16
 	collectMetaData(object, this_obj_address + 16, num_msgs, header_length);
+	
+	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
+	{
+		return;
+	}
 	
 	if(object->hdf5_internal_type == HDF5_REFERENCE  && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
 	{
@@ -232,11 +252,20 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	{
 		flushQueue(object->sub_objects);
 		object->num_sub_objs = object->num_elems;
-		for(int i = object->num_elems - 1; i >= 0; i--)
+		for(uint32_t i = 0; i < object->num_elems; i++)
 		{
 			address_t new_obj_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
+			while(object->sub_objects->length > 0)
+			{
+				Data* obj = dequeue(object->sub_objects);
+				if(obj == ref)
+				{
+					ref = cloneData(obj);
+				}
+			}
+			restartQueue(object->sub_objects);
 			ref->s_c_array_index = (uint32_t)i;
 			enqueue(object->sub_objects, ref);
 			

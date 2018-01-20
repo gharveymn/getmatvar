@@ -34,5 +34,6 @@ void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);
 void restartQueue(Queue* queue);
 void cleanQueue(Queue* queue);
+void _nullFreeFunction(void*);
 
 #endif //EZQ_H

@@ -43,7 +43,7 @@ void initializeObject(Data* object)
 	}
 	
 	object->super_object = NULL;
-	object->sub_objects = initQueue(nullFreeFunction);
+	object->sub_objects = initQueue(NULL);
 	
 	object->matlab_internal_attributes.MATLAB_sparse = FALSE;
 	object->matlab_internal_attributes.MATLAB_empty = FALSE;

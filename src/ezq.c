@@ -10,7 +10,14 @@ Queue* initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
-	new_queue->free_function = free_function;
+	if(free_function == NULL)
+	{
+		new_queue->free_function = _nullFreeFunction;
+	}
+	else
+	{
+		new_queue->free_function = free_function;
+	}
 	return new_queue;
 }
 
@@ -221,4 +228,10 @@ void freeQueue(Queue* queue)
 		flushQueue(queue);
 		free(queue);
 	}
+}
+
+
+void _nullFreeFunction(void* param)
+{
+	//do nothing
 }

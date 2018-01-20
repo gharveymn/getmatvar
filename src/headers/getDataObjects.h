@@ -310,13 +310,15 @@ typedef enum
 {
 	VT_UNKNOWN,
 	VT_LOCAL_NAME,
-	VT_LOCAL_INDEX
+	VT_LOCAL_INDEX,
+	VT_LOCAL_COORDINATES
 } VariableNameType;
 
 typedef struct
 {
 	VariableNameType variable_name_type;
 	uint64_t variable_local_index;
+	uint32_t variable_local_coordinates[HDF5_MAX_DIMS];
 	char* variable_local_name;
 } VariableNameToken;
 

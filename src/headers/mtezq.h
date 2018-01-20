@@ -28,5 +28,6 @@ void mt_freeQueue(MTQueue* queue);
 void mt_resetQueue(MTQueue* queue);
 void mt_restartQueue(MTQueue* queue);
 void mt_cleanQueue(MTQueue* queue);
+void _mt_nullFreeFunction(void*);
 
 #endif //MTEZQ_H

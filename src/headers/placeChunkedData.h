@@ -3,6 +3,7 @@
 
 
 #include "getDataObjects.h"
+#include "mtezq.h"
 
 #if UINTPTR_MAX == 0xffffffff
 #include "../extlib/libdeflate/x86/libdeflate.h"
@@ -48,6 +49,7 @@ typedef struct inflate_thread_obj_ InflateThreadObj;
 struct inflate_thread_obj_
 {
 	Data* object;
+	MTQueue* mt_data_queue;
 	errno_t err;
 };
 
