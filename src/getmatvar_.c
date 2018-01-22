@@ -44,28 +44,16 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	{
 		readMXError(error_id, error_message);
 	}
-	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
-	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
-	{
-		Data* obj = dequeue(virtual_super_object->sub_objects);
-		varnames[i] = malloc((obj->names.short_name_length + 1)*sizeof(char));
-		strcpy(varnames[i], obj->names.short_name);
-	}
-	restartQueue(virtual_super_object->sub_objects);
+	char** field_names = getFieldNames(virtual_super_object);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, virtual_super_object->num_sub_objs, varnames);
+	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, virtual_super_object->num_sub_objs, field_names);
 #pragma GCC diagnostic pop
 	
 	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	
-	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
-	{
-		free(varnames[i]);
-	}
-	free(varnames);
-	
+	free(field_names);
 	freeQueue(object_queue);
 	object_queue = NULL;
 	
@@ -150,21 +138,22 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 				obj->data_flags.is_mx_used = FALSE;
 				break;
 			default:
-				if(warnedUnknownVar == FALSE)
-				{
-					//run only once
-					readMXWarn("getmatvar:unknownOutputType", "Could not return a variable. Unknown variable type.");
-					warnedUnknownVar = TRUE;
-				}
-				if (super_structure_type == mxSTRUCT_CLASS)
-				{
-					mxSetField(returnStructure, index, obj->names.short_name, NULL);
-				}
-				else if (super_structure_type == mxCELL_CLASS)
-				{
-					//is a cell array
-					mxSetCell(returnStructure, index, NULL);
-				}
+//				if(warnedUnknownVar == FALSE)
+//				{
+//					//run only once
+//					readMXWarn("getmatvar:unknownOutputType", "Could not return a variable. Unknown variable type.");
+//					warnedUnknownVar = TRUE;
+//				}
+//				if (super_structure_type == mxSTRUCT_CLASS)
+//				{
+//					mxSetField(returnStructure, index, obj->names.short_name, NULL);
+//				}
+//				else if (super_structure_type == mxCELL_CLASS)
+//				{
+//					//is a cell array
+//					mxSetCell(returnStructure, index, NULL);
+//				}
+				//this will happen for NULL objects
 				obj->data_flags.is_mx_used = FALSE;
 				break;
 		}
@@ -186,7 +175,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 	char* input = NULL;
 	parameters.filename = mxArrayToString(prhs[0]);
 	parameters.num_vars = 0;
-	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
+	parameters.full_variable_names = malloc(nrhs*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
 	for(int i = 1; i < nrhs; i++)
@@ -194,11 +183,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 		
 		if(mxGetClassID(prhs[i]) == mxSTRING_CLASS)
 		{
-			for(int j = parameters.num_vars - 1; j >= 0; j--)
-			{
-				free(parameters.full_variable_names[j]);
-			}
-			free(parameters.full_variable_names);
 			readMXError("getmatvar:invalidInputType", "This function does not support strings.\n\n");
 		}
 		
@@ -224,11 +208,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 						{
 							if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 							{
-								for(int j = parameters.num_vars - 1; j >= 0; j--)
-								{
-									free(parameters.full_variable_names[j]);
-								}
-								free(parameters.full_variable_names);
 								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 							}
 						}
@@ -314,7 +293,11 @@ void readInput(int nrhs, const mxArray* prhs[])
 			if(mxIsChar(prhs[i]))
 			{
 				input = mxArrayToString(prhs[i]);
-				if(strncmp(input, "-", 1) == 0)
+				if(*input == 0)
+				{
+					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must have non-zero length.\n\n");
+				}
+				else if(strncmp(input, "-", 1) == 0)
 				{
 					kwarg_flag = TRUE;
 					if(strcmp(input, "-t") == 0)
@@ -339,7 +322,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 				else
 				{
 					kwarg_expected = NOT_AN_ARGUMENT;
-					parameters.full_variable_names[parameters.num_vars] = malloc(strlen(input)*sizeof(char)); /*this gets freed in getDataObjects*/
+					parameters.full_variable_names[parameters.num_vars] = malloc((strlen(input) + 1)*sizeof(char)); /*this gets freed in getDataObjects*/
 					strcpy(parameters.full_variable_names[parameters.num_vars], input);
 					parameters.num_vars++;
 				}

@@ -29,16 +29,18 @@ void freeDataObject(void* object)
 		}
 	}
 	
-	if(data_object->names.short_name != NULL)
+	if(data_object->names.short_name_length != 0)
 	{
 		free(data_object->names.short_name);
 		data_object->names.short_name = NULL;
+		data_object->names.short_name_length = 0;
 	}
 	
-	if(data_object->names.long_name != NULL)
+	if(data_object->names.long_name_length != 0)
 	{
 		free(data_object->names.long_name);
 		data_object->names.long_name = NULL;
+		data_object->names.short_name_length = 0;
 	}
 	
 	if(data_object->data_arrays.sub_object_header_offsets != NULL)
@@ -76,16 +78,18 @@ void freeDataObjectTree(Data* data_object)
 		}
 	}
 	
-	if(data_object->names.short_name != NULL)
+	if(data_object->names.short_name_length != 0)
 	{
 		free(data_object->names.short_name);
 		data_object->names.short_name = NULL;
+		data_object->names.short_name_length = 0;
 	}
 	
-	if(data_object->names.long_name != NULL)
+	if(data_object->names.long_name_length != 0)
 	{
 		free(data_object->names.long_name);
 		data_object->names.long_name = NULL;
+		data_object->names.short_name_length = 0;
 	}
 	
 	if(data_object->data_arrays.sub_object_header_offsets != NULL)

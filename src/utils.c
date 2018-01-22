@@ -1,5 +1,4 @@
 #include "headers/utils.h"
-#include "headers/getDataObjects.h"
 
 
 /*for use on a single level*/
@@ -18,6 +17,7 @@ Data* findSubObjectByShortName(Data* object, char* name)
 	return NULL;
 }
 
+
 /*for use on a single level*/
 Data* findSubObjectBySCIndex(Data* object, uint64_t index)
 {
@@ -34,6 +34,7 @@ Data* findSubObjectBySCIndex(Data* object, uint64_t index)
 	return NULL;
 }
 
+
 /*searches entire tree*/
 Data* findObjectByHeaderAddress(address_t address)
 {
@@ -44,9 +45,11 @@ Data* findObjectByHeaderAddress(address_t address)
 		Data* object = dequeue(object_queue);
 		if(object->this_obj_address == address)
 		{
+			restartQueue(object_queue);
 			return object;
 		}
 	} while(object_queue->length > 0);
+	restartQueue(object_queue);
 	
 	return NULL;
 	
@@ -57,7 +60,7 @@ void parseCoordinates(VariableNameToken* vnt)
 {
 	char* delim = ",", * coord_num_str;
 	size_t vnlen = strlen(vnt->variable_local_name);
-	char* variable_name_cpy = malloc((vnlen + 1)* sizeof(char));
+	char* variable_name_cpy = malloc((vnlen + 1)*sizeof(char));
 	memcpy(variable_name_cpy, vnt->variable_local_name, vnlen*sizeof(char));
 	variable_name_cpy[vnlen] = '\0';
 	coord_num_str = strtok(variable_name_cpy, delim);
@@ -81,7 +84,7 @@ uint64_t coordToInd(const uint32_t* coords, const uint32_t* dims, uint8_t num_di
 	uint64_t mult = 1;
 	for(int i = 0; i < num_dims; i++)
 	{
-		ret += (coords[i]-1)*mult;
+		ret += (coords[i] - 1)*mult;
 		mult *= dims[i];
 	}
 	return ret;
@@ -124,7 +127,7 @@ Data* cloneData(Data* old_object)
 	new_object->names.short_name = malloc((new_object->names.short_name_length + 1)*sizeof(char));
 	strcpy(new_object->names.short_name, old_object->names.short_name);
 	
-	new_object->layout_class = old_object->layout_class;			//3 by default for non-data
+	new_object->layout_class = old_object->layout_class;               //3 by default for non-data
 	new_object->datatype_bit_field = old_object->datatype_bit_field;
 	new_object->byte_order = old_object->byte_order;
 	new_object->hdf5_internal_type = old_object->hdf5_internal_type;
@@ -165,8 +168,9 @@ void makeVarnameQueue(char* variable_name)
 	char* delim = ".{}()", * token;
 	flushQueue(varname_queue);
 	
-	char* variable_name_cpy = malloc((strlen(variable_name) + 1)* sizeof(char));
+	char* variable_name_cpy = malloc((strlen(variable_name) + 1)*sizeof(char));
 	strcpy(variable_name_cpy, variable_name);
+	removeSpaces(variable_name_cpy);
 	token = strtok(variable_name_cpy, delim);
 	while(token != NULL)
 	{
@@ -219,6 +223,23 @@ void makeVarnameQueue(char* variable_name)
 	free(variable_name_cpy);
 	
 }
+
+
+void removeSpaces(char* source)
+{
+	char* i = source;
+	char* j = source;
+	while(*j != 0)
+	{
+		*i = *j++;
+		if(*i != ' ')
+		{
+			i++;
+		}
+	}
+	*i = 0;
+}
+
 
 void readMXError(const char error_id[], const char error_message[], ...)
 {

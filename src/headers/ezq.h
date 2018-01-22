@@ -18,8 +18,8 @@ typedef struct
 	QueueNode* front;
 	QueueNode* back;
 	void (* free_function)(void*);
-	int length;
-	int total_length;
+	size_t length;
+	size_t total_length;
 } Queue;
 
 
@@ -28,7 +28,7 @@ void enqueue(Queue* queue, void* data);
 void priorityEnqueue(Queue* queue, void* data);
 void* dequeue(Queue* queue);
 void* peekQueue(Queue* queue, int queue_location);
-Queue* mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*));
+void mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
 void flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);

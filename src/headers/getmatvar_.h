@@ -23,7 +23,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type);
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type);
 mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
-const char** getFieldNames(Data* object);
+char** getFieldNames(Data* object);
 DataArrays rearrangeImaginaryData(Data* object);
 
 bool_t warnedObjectVar;

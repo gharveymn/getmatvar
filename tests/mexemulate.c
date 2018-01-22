@@ -147,6 +147,10 @@ void readInput(int nrhs, char* prhs[])
 		else
 		{
 			input = prhs[i];
+			if(*input == 0)
+			{
+				readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must have non-zero length.\n\n");
+			}
 			if(strncmp(input, "-", 1) == 0)
 			{
 				kwarg_flag = TRUE;

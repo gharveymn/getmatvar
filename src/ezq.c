@@ -158,21 +158,17 @@ void* peekQueue(Queue* queue, int queue_location)
 }
 
 
-Queue* mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*))
+void mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
 {
-	Queue* new_queue = initQueue(free_function);
-	new_queue->abs_front = queues[0]->abs_front;
-	new_queue->front = queues[0]->front;
-	new_queue->back = queues[0]->back;
 	for(int i = 0; i < num_queues; i++)
 	{
-		while(queues[i]->length > 0)
+		size_t q_len = queues[i]->length;
+		for(int j = 0; j < q_len; j++)
 		{
 			enqueue(new_queue, dequeue(queues[i]));
 		}
 		restartQueue(queues[i]);
 	}
-	return new_queue;
 }
 
 
@@ -180,7 +176,7 @@ void flushQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
-		while(queue->abs_front != NULL)
+		while(queue->total_length > 0)
 		{
 			QueueNode* next = queue->abs_front->next;
 			if(queue->abs_front->data != NULL && queue->free_function != NULL)
@@ -189,12 +185,12 @@ void flushQueue(Queue* queue)
 			}
 			free(queue->abs_front);
 			queue->abs_front = next;
+			queue->total_length--;
 		}
 		queue->abs_front = NULL;
 		queue->front = NULL;
 		queue->back = NULL;
 		queue->length = 0;
-		queue->total_length = 0;
 	}
 }
 

@@ -45,13 +45,22 @@ struct tree_node_
 	TreeNode** children;
 };
 
-typedef struct inflate_thread_obj_ InflateThreadObj;
-struct inflate_thread_obj_
+typedef struct
 {
 	Data* object;
 	MTQueue* mt_data_queue;
+	pthread_cond_t* pthread_sync;
+	pthread_mutex_t* pthread_mtx;
+	bool_t* main_thread_ready;
 	errno_t err;
-};
+} InflateThreadObj;
+
+typedef struct
+{
+	InflateThreadObj* inflate_thread_obj;
+	pthread_attr_t attr_join;
+	pthread_t* threads;
+} ThreadStartupObj;
 
 typedef struct
 {
@@ -68,6 +77,7 @@ uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_di
 void memdump(const char type[]);
 void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
 void* garbageCollection_(void* nothing);
+void startThreads_(void* thread_startup_obj);
 
 //pthread_t gc;
 //pthread_attr_t attr;

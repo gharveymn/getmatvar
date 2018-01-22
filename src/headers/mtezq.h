@@ -10,8 +10,8 @@ typedef struct
 	QueueNode* front;
 	QueueNode* back;
 	void (* free_function)(void*);
-	int length;
-	int total_length;
+	size_t length;
+	size_t total_length;
 	pthread_mutex_t lock;
 } MTQueue;
 
@@ -21,8 +21,8 @@ void mt_enqueue(MTQueue* queue, void* data);
 void mt_priorityEnqueue(MTQueue* queue, void* data);
 void* mt_dequeue(MTQueue* queue);
 void* mt_peekQueue(MTQueue* queue, int queue_location);
-MTQueue* mt_mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*));
-MTQueue* mt_mergeMTQueue(MTQueue** queues, int num_queues, void (* free_function)(void*));
+void mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues);
+void mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues);
 void mt_flushQueue(MTQueue* queue);
 void mt_freeQueue(MTQueue* queue);
 void mt_resetQueue(MTQueue* queue);

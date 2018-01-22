@@ -182,30 +182,31 @@ void* mt_peekQueue(MTQueue* queue, int queue_location)
 }
 
 
-MTQueue* mt_mergeQueue(Queue** queues, int num_queues, void (* free_function)(void*))
+void mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues)
 {
-	Queue* trans_queue = mergeQueue(queues, num_queues, free_function);
-	MTQueue* new_queue = mt_convertQueue(trans_queue);
-	free(trans_queue);
-	return new_queue;
+	for(int i = 0; i < num_queues; i++)
+	{
+		size_t q_len = queues[i]->length;
+		for(int j = 0; j < q_len; j++)
+		{
+			mt_enqueue(new_queue, dequeue(queues[i]));
+		}
+		restartQueue(queues[i]);
+	}
 }
 
 
-MTQueue* mt_mergeMTQueue(MTQueue** queues, int num_queues, void (* free_function)(void*))
+void mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues)
 {
-	MTQueue* new_queue = mt_initQueue(free_function);
-	new_queue->abs_front = queues[0]->abs_front;
-	new_queue->front = queues[0]->front;
-	new_queue->back = queues[0]->back;
 	for(int i = 0; i < num_queues; i++)
 	{
-		while(queues[i]->length > 0)
+		size_t q_len = queues[i]->length;
+		for(int j = 0; j < q_len; j++)
 		{
 			mt_enqueue(new_queue, mt_dequeue(queues[i]));
 		}
 		mt_restartQueue(queues[i]);
 	}
-	return new_queue;
 }
 
 
@@ -214,7 +215,7 @@ void mt_flushQueue(MTQueue* queue)
 	if(queue != NULL)
 	{
 		pthread_mutex_lock(&queue->lock);
-		while(queue->abs_front != NULL)
+		while(queue->total_length > 0)
 		{
 			QueueNode* next = queue->abs_front->next;
 			if(queue->abs_front->data != NULL && queue->free_function != NULL)
@@ -223,12 +224,12 @@ void mt_flushQueue(MTQueue* queue)
 			}
 			free(queue->abs_front);
 			queue->abs_front = next;
+			queue->total_length--;
 		}
 		queue->abs_front = NULL;
 		queue->front = NULL;
 		queue->back = NULL;
 		queue->length = 0;
-		queue->total_length = 0;
 		pthread_mutex_unlock(&queue->lock);
 	}
 }

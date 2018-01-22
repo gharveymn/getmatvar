@@ -41,7 +41,7 @@ void fillVariable(char* variable_name)
 					if(object == NULL)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						readMXWarn("getmatvar:variableNotFound", warn_message);
+						readMXError("getmatvar:variableNotFound", warn_message);
 						return;
 					}
 					break;
@@ -55,15 +55,21 @@ void fillVariable(char* variable_name)
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
 					{
 						
+						if(varname_queue->length == 0)
+						{
+							sprintf(warn_message, "Selection of array elements is not supported. Could not return \'%s\'.\n", variable_name);
+							readMXError("getmatvar:arrayElementError", warn_message);
+							return;
+						}
+						
 						//matlab reads struct arrays as my_struct(3).dog
 						//but stores them as my_struct.dog(3)
-						
 						VariableNameToken* field = dequeue(varname_queue);
 						object = findSubObjectByShortName(object, field->variable_local_name);
 						if(object == NULL)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-							readMXWarn("getmatvar:variableNotFound", warn_message);
+							readMXError("getmatvar:variableNotFound", warn_message);
 							return;
 						}
 						
@@ -78,7 +84,7 @@ void fillVariable(char* variable_name)
 					if(object == NULL)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						readMXWarn("getmatvar:variableNotFound", warn_message);
+						readMXError("getmatvar:variableNotFound", warn_message);
 						return;
 					}
 					break;
@@ -92,6 +98,13 @@ void fillVariable(char* variable_name)
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
 					{
 						
+						if(varname_queue->length == 0)
+						{
+							sprintf(warn_message, "Selection of array elements is not supported. Could not return \'%s\'.\n", variable_name);
+							readMXError("getmatvar:arrayElementError", warn_message);
+							return;
+						}
+						
 						//matlab reads struct arrays as my_struct(3).dog
 						//but stores them as my_struct.dog(3)
 						
@@ -100,7 +113,7 @@ void fillVariable(char* variable_name)
 						if(object == NULL)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-							readMXWarn("getmatvar:variableNotFound", warn_message);
+							readMXError("getmatvar:variableNotFound", warn_message);
 							return;
 						}
 						
@@ -116,7 +129,7 @@ void fillVariable(char* variable_name)
 					if(object == NULL)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						readMXWarn("getmatvar:variableNotFound", warn_message);
+						readMXError("getmatvar:variableNotFound", warn_message);
 						return;
 					}
 					break;
@@ -128,11 +141,36 @@ void fillVariable(char* variable_name)
 		
 		fillDataTree(object);
 		
-		//FIX THIS -- SHOULD RETURN THE ACTUAL VARIABLE RATHER THAN THE CELL CONTAINER RIGHT?
-		while(object->super_object->matlab_internal_type == mxCELL_CLASS)
+		size_t n = top_level_objects->length;
+		uint16_t num_digits = 0;
+		do
 		{
-			object = object->super_object;
+			n /= 10;
+			num_digits++;
+		} while(n != 0);
+		
+		if(object->names.short_name_length != 0)
+		{
+			free(object->names.short_name);
+			object->names.short_name = NULL;
+			object->names.short_name_length = 0;
 		}
+		
+		if(object->names.long_name_length != 0)
+		{
+			free(object->names.long_name);
+			object->names.long_name = NULL;
+			object->names.long_name_length = 0;
+		}
+		
+		object->names.short_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
+		object->names.short_name = malloc((object->names.short_name_length + 1)*sizeof(char));
+		sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
+		
+		object->names.long_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
+		object->names.long_name = malloc((object->names.long_name_length + 1)*sizeof(char));
+		sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
+		
 		enqueue(top_level_objects, object);
 		
 	}
@@ -278,16 +316,28 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				num_digits++;
 			} while(n != 0);
 			
+			if(ref->names.short_name_length != 0)
+			{
+				free(ref->names.short_name);
+				ref->names.short_name = NULL;
+				ref->names.short_name_length = 0;
+			}
+			
+			if(ref->names.long_name_length != 0)
+			{
+				free(ref->names.long_name);
+				ref->names.long_name = NULL;
+				ref->names.long_name_length = 0;
+			}
+			
 			if(object->data_flags.is_struct_array == FALSE)
 			{
 				//make names for cells, ie. blah{k}
-				free(ref->names.short_name);
 				ref->names.short_name_length = (uint16_t)(num_digits + 1);
 				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
 				sprintf(ref->names.short_name, "%d}", i + 1);
 				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
-				free(ref->names.long_name);
 				ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
 				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
 				sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, i + 1);
@@ -302,13 +352,12 @@ void fillObject(Data* object, uint64_t this_obj_address)
 //				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
 //				sprintf(ref->names.short_name, "%d).%s", i + 1, object->names.short_name);
 //				ref->names.short_name[ref->names.short_name_length] = '\0';
-				free(ref->names.short_name);
+				
 				ref->names.short_name_length = (uint16_t)(object->names.short_name_length);
 				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
 				sprintf(ref->names.short_name, "%s", object->names.short_name);
 				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
-				free(ref->names.long_name);
 				ref->names.long_name_length = (uint16_t)(object->super_object->names.long_name_length + 1 + num_digits + 1 + 1 + object->names.short_name_length);
 				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
 				sprintf(ref->names.long_name, "%s(%d).%s", object->super_object->names.long_name, i + 1, object->names.short_name);

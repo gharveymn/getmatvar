@@ -55,6 +55,8 @@ typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #define MATFILE_SIG_LEN 19
 #define RETURN_STRUCT_NAME "Q291cnRuZXkgQm9ubmVyIDop"
 #define RETURN_STRUCT_NAME_LEN 24
+#define SELECTION_SIG "R2VuZSBIYXJ2ZXkgOik"
+#define SELECTION_SIG_LEN 19
 #define UNDEF_ADDR 0xffffffffffffffff
 #define CLASS_LENGTH 200
 #define NAME_LENGTH 200

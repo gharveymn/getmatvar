@@ -174,7 +174,7 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 {
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	int num_fields = object->num_sub_objs;
-	const char** field_names = getFieldNames(object);
+	char** field_names = getFieldNames(object);
 	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, field_names);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
@@ -192,9 +192,9 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 }
 
 
-const char** getFieldNames(Data* object)
+char** getFieldNames(Data* object)
 {
-	const char** varnames = malloc(object->num_sub_objs*sizeof(char*));
+	char** varnames = malloc((object->num_sub_objs)*sizeof(char*));
 	for(uint16_t index = 0; index < object->num_sub_objs; index++)
 	{
 		Data* obj = dequeue(object->sub_objects);
