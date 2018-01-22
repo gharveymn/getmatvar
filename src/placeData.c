@@ -58,13 +58,13 @@ errno_t allocateSpace(Data* object)
 }
 
 
-void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64_t condition, size_t elem_size, ByteOrder data_byte_order)
+void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_ind, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__byte_order__ != data_byte_order)
 	{
-		for(uint64_t j = 0; j < condition - starting_index; j += elem_size)
+		for(uint64_t j = 0; j < num_elems; j += elem_size)
 		{
 			reverseBytes(data_pointer + j, elem_size);
 		}
@@ -84,10 +84,10 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		case mxDOUBLE_CLASS:
 		case mxLOGICAL_CLASS:
 		case mxCHAR_CLASS:
-			memcpy(object->data_arrays.data + elem_size*starting_index, data_pointer, (condition - starting_index)*elem_size);
+			memcpy(object->data_arrays.data + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
 			break;
 		case mxCELL_CLASS:
-			memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
+			memcpy(object->data_arrays.sub_object_header_offsets + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
 			break;
 		case mxSTRUCT_CLASS:
 		case mxFUNCTION_CLASS:
@@ -98,7 +98,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t starting_index, uint64
 		case mxUNKNOWN_CLASS:
 			if(object->data_flags.is_struct_array == TRUE)
 			{
-				memcpy(&object->data_arrays.sub_object_header_offsets[starting_index], data_pointer, (condition - starting_index)*elem_size);
+				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
 			}
 			break;
 		default:

@@ -265,7 +265,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			//compact storage or contiguous storage
 			//placeData will just segfault if it has an error, ie. if this encounters an error something is very wrong
 			object->data_pointer = st_navigateTo(object->data_address, object->num_elems * object->elem_size);
-			placeData(object, object->data_pointer, 0, object->num_elems, object->elem_size, object->byte_order);
+			placeData(object, object->data_pointer, 0, 0, object->num_elems, object->elem_size, object->byte_order);
 			st_releasePages(object->data_pointer, object->data_address, object->num_elems * object->elem_size);
 			break;
 		case 2:

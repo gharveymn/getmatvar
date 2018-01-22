@@ -8,8 +8,8 @@ numsamples = 1000;
 lents = 0;
 
 maxDepth = 2;
-minelem = 30;
-maxelem = 50;
+minelem = 50000;
+maxelem = 70000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;
@@ -41,6 +41,7 @@ for j = 1:numtests
 				tic;
 				load('res/test_struct1.mat');
 				mvgavgtimeload(mod(i-1,stride)+1) = toc;
+				
 				[similarity,gmv,ld] = compstruct(gmvtest_struct1, test_struct1);
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);
@@ -77,6 +78,7 @@ for j = 1:numtests
 				tic;
 				load('res/test_struct2.mat');
 				mvgavgtimeload(mod(i-1,stride)+1) = toc;
+				
 				[similarity,gmv,ld] = compstruct(gmvtest_struct2, test_struct2);
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);

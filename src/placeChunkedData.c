@@ -247,11 +247,15 @@ void* doInflate_(void* t)
 		uint64_t db_pos = 0, num_used = 0;
 		for(uint64_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
 		{
-			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++, num_used++)
-			{
-				index_map[db_pos] = index;
-				db_index_sequence[num_used] = db_pos;
-			}
+//			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++, num_used++)
+//			{
+//				index_map[db_pos] = index;
+//				db_index_sequence[num_used] = db_pos;
+//			}
+			placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], object->elem_size, object->byte_order);
+			db_pos += these_chunked_dims[0];
+			index += these_chunked_dims[0];
+			
 			chunk_pos[1]++;
 			uint8_t use_update = 0;
 			for(uint8_t j = 1; j < curr_max_dim; j++)
@@ -268,7 +272,7 @@ void* doInflate_(void* t)
 			db_pos += these_chunked_updates[use_update];
 		}
 		
-		placeDataWithIndexMap(object, decompressed_data_buffer, num_used, object->elem_size, object->byte_order, index_map, db_index_sequence);
+		//placeDataWithIndexMap(object, decompressed_data_buffer, num_used, object->elem_size, object->byte_order, index_map, db_index_sequence);
 	}
 	
 	libdeflate_free_decompressor(ldd);
