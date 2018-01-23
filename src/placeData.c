@@ -30,6 +30,11 @@ errno_t allocateSpace(Data* object)
 			//Don't allocate anything yet. This will be handled later
 			object->num_elems = 1;
 			object->num_dims = 2;
+			if(object->dims != NULL)
+			{
+				free(object->dims);
+			}
+			malloc(3*sizeof(uint32_t));
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;

@@ -62,6 +62,11 @@ void makeReturnStructure(const int num_elems)
 	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
 	//makeEvalArray();
 	
+	for(Data* obj = dequeue(object_queue); object_queue->length > 0; obj = dequeue(object_queue))
+	{
+		freeQueue(obj->sub_objects);
+		obj->sub_objects = NULL;
+	}
 	freeQueue(object_queue);
 	
 	fprintf(stderr, "\nProgram exited successfully.\n\n");

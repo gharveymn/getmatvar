@@ -34,13 +34,14 @@ void initializeObject(Data* object)
 	object->data_arrays.data = NULL;
 	object->data_arrays.sub_object_header_offsets = NULL;
 	
+	object->matlab_class = NULL;
+	
 	object->chunked_info.num_filters = 0;
+	object->chunked_info.filters = NULL;
 	object->chunked_info.num_chunked_dims = 0;
 	object->chunked_info.num_chunked_elems = 0;
-	for(int i = 0; i < MAX_NUM_FILTERS; i++)
-	{
-		object->chunked_info.filters[i].client_data = NULL;
-	}
+	object->chunked_info.chunked_dims = NULL;
+	object->chunked_info.chunk_update = NULL;
 	
 	object->super_object = NULL;
 	object->sub_objects = initQueue(NULL);
@@ -63,6 +64,7 @@ void initializeObject(Data* object)
 	object->complexity_flag = mxREAL;
 	
 	object->num_dims = 0;
+	object->dims = NULL;
 	object->num_elems = 0;
 	object->elem_size = 0;
 	object->num_sub_objs = 0;

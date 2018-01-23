@@ -1,4 +1,5 @@
 #include "headers/getDataObjects.h"
+#include "headers/ezq.h"
 
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -54,6 +55,12 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	
 	free(field_names);
+	
+	for(Data* obj = dequeue(object_queue); object_queue->length > 0; obj = dequeue(object_queue))
+	{
+		freeQueue(obj->sub_objects);
+		obj->sub_objects = NULL;
+	}
 	freeQueue(object_queue);
 	object_queue = NULL;
 	

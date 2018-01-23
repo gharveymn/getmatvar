@@ -75,7 +75,7 @@ void freeTree(void* n);
 errno_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
-void makeChunkedUpdates(uint64_t chunk_update[32], const uint32_t chunked_dims[32], const uint32_t dims[32], uint8_t num_dims);
+void makeChunkedUpdates(uint32_t* chunk_update, const uint32_t* chunked_dims, const uint32_t* dims, uint8_t num_dims);
 void* garbageCollection_(void* nothing);
 void startThreads_(void* thread_startup_obj);
 

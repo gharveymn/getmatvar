@@ -8,8 +8,8 @@ numsamples = 1000;
 lents = 0;
 
 maxDepth = 2;
-minelem = 50000;
-maxelem = 70000;
+minelem = 500;
+maxelem = 700;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;

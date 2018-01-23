@@ -49,10 +49,39 @@ void freeDataObject(void* object)
 		data_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
-	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+	if(data_object->chunked_info.filters != NULL)
 	{
-		free(data_object->chunked_info.filters[j].client_data);
-		data_object->chunked_info.filters[j].client_data = NULL;
+		for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+		{
+			free(data_object->chunked_info.filters[j].client_data);
+			data_object->chunked_info.filters[j].client_data = NULL;
+		}
+		free(data_object->chunked_info.filters);
+		data_object->chunked_info.filters = NULL;
+	}
+	
+	if(data_object->dims != NULL)
+	{
+		free(data_object->dims);
+		data_object->dims = NULL;
+	}
+	
+	if(data_object->chunked_info.chunked_dims != NULL)
+	{
+		free(data_object->chunked_info.chunked_dims);
+		data_object->chunked_info.chunked_dims = NULL;
+	}
+	
+	if(data_object->chunked_info.chunk_update != NULL)
+	{
+		free(data_object->chunked_info.chunk_update);
+		data_object->chunked_info.chunk_update = NULL;
+	}
+	
+	if(data_object->matlab_class != NULL)
+	{
+		free(data_object->matlab_class);
+		data_object->matlab_class = NULL;
 	}
 	
 	if(data_object->sub_objects != NULL)

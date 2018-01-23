@@ -380,10 +380,13 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
 	{
 		object->num_elems = 0;
-		for(int i = 0; i < object->num_dims; i++)
+		if(object->dims != NULL)
 		{
-			object->dims[i] = 0;
+			free(object->dims);
 		}
+		malloc(1*sizeof(uint32_t));
+		object->dims = malloc(2*sizeof(uint32_t));
+		object->dims[0] = 0;
 		object->num_dims = 0;
 		return;
 	}

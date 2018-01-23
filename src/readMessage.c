@@ -1,4 +1,5 @@
 #include "headers/readMessage.h"
+#include "headers/getDataObjects.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
@@ -6,7 +7,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
-	
+	object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
 	for(int i = 0; i < object->num_dims; i++)
 	{
 		object->dims[object->num_dims - i - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
@@ -81,12 +82,13 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
+			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
+			object->chunked_info.chunk_update = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
-				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
-																										META_DATA_BYTE_ORDER);
+				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4, META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			object->chunked_info.num_chunked_elems = 1;
@@ -107,7 +109,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
-	
+	object->chunked_info.filters = malloc(object->chunked_info.num_filters * sizeof(Filter));
 	byte* helper_pointer = NULL;
 	uint16_t name_size = 0;
 	
@@ -175,14 +177,21 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	if(strcmp(name, "MATLAB_class") == 0)
 	{
 		uint32_t attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp(name_size) + 4, 4, META_DATA_BYTE_ORDER);
-		strncpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), attribute_data_size);
+		object->matlab_class = malloc((attribute_data_size + 1)*sizeof(char));
+		memcpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), attribute_data_size*sizeof(char));
 		object->matlab_class[attribute_data_size] = 0x0;
 		selectMatlabClass(object);
 	}
 	else if(strcmp(name, "MATLAB_sparse") == 0)
 	{
 		object->matlab_internal_attributes.MATLAB_sparse = TRUE;
-		memcpy(&object->dims[0], (uint64_t*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), sizeof(uint64_t));
+		if(object->dims != NULL)
+		{
+			free(object->dims);
+		}
+		malloc(2*sizeof(uint32_t));
+		memcpy(object->dims, (uint32_t*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), sizeof(uint32_t));
+		object->dims[1] = 0;
 	}
 	else if(strcmp(name, "MATLAB_empty") == 0)
 	{

@@ -204,11 +204,11 @@ typedef struct
 typedef struct
 {
 	uint8_t num_filters;
-	Filter filters[MAX_NUM_FILTERS];
+	Filter* filters;
 	uint8_t num_chunked_dims;
 	uint32_t num_chunked_elems;
-	uint32_t chunked_dims[HDF5_MAX_DIMS + 1];
-	uint64_t chunk_update[HDF5_MAX_DIMS];
+	uint32_t* chunked_dims;
+	uint32_t* chunk_update;
 } ChunkedInfo;
 
 typedef struct
@@ -263,10 +263,10 @@ struct data_
 	
 	NameStruct names;
 	
-	char matlab_class[CLASS_LENGTH];
+	char* matlab_class;
 	ChunkedInfo chunked_info;
 	
-	uint32_t dims[HDF5_MAX_DIMS + 1];
+	uint32_t* dims;
 	uint8_t num_dims;
 	uint32_t num_elems;
 	size_t elem_size;
