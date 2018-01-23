@@ -31,15 +31,21 @@ void freeDataObject(void* object)
 	
 	if(data_object->names.short_name_length != 0)
 	{
-		free(data_object->names.short_name);
-		data_object->names.short_name = NULL;
+		if (data_object->names.short_name != NULL)
+		{
+			free(data_object->names.short_name);
+			data_object->names.short_name = NULL;
+		}
 		data_object->names.short_name_length = 0;
 	}
 	
 	if(data_object->names.long_name_length != 0)
 	{
-		free(data_object->names.long_name);
-		data_object->names.long_name = NULL;
+		if(data_object->names.long_name != NULL)
+		{
+			free(data_object->names.long_name);
+			data_object->names.long_name = NULL;
+		}
 		data_object->names.short_name_length = 0;
 	}
 	
@@ -221,6 +227,7 @@ void endHooks(void)
 		}
 		free(parameters.full_variable_names);
 	}
+	mxFree(parameters.filename);
 	
 	destroyPageObjects();
 	

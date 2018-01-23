@@ -96,11 +96,13 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	if(virtual_super_object->num_sub_objs > 0)
 	{
 		flushQueue(virtual_super_object->sub_objects);
-		for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
+		restartQueue(top_level_objects);
+		while(top_level_objects->length > 0)
 		{
 			Data* obj = dequeue(top_level_objects);
 			enqueue(virtual_super_object->sub_objects, obj);
 			obj->super_object = NULL;
+			obj->s_c_array_index = 0;
 		}
 		restartQueue(top_level_objects);
 	}

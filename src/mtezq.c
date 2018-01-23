@@ -10,14 +10,7 @@ MTQueue* mt_initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
-	if(free_function == NULL)
-	{
-		new_queue->free_function = _mt_nullFreeFunction;
-	}
-	else
-	{
-		new_queue->free_function = free_function;
-	}
+	new_queue->free_function = free_function;
 	pthread_mutex_init(&new_queue->lock, NULL);
 	return new_queue;
 }
@@ -67,6 +60,7 @@ void mt_enqueue(MTQueue* queue, void* data)
 	queue->length++;
 	queue->total_length++;
 	pthread_mutex_unlock(&queue->lock);
+	
 }
 
 
@@ -141,7 +135,7 @@ void mt_restartQueue(MTQueue* queue)
 void* mt_dequeue(MTQueue* queue)
 {
 	pthread_mutex_lock(&queue->lock);
-	if(queue->front != NULL)
+	if(queue->front != NULL && queue->length > 0)
 	{
 		void* to_return = queue->front->data;
 		QueueNode* new_front = queue->front->next;
@@ -160,24 +154,32 @@ void* mt_dequeue(MTQueue* queue)
 
 void* mt_peekQueue(MTQueue* queue, int queue_location)
 {
-	if(queue->front != NULL)
+	pthread_mutex_lock(&queue->lock);
+	QueueNode* ret = NULL;
+	if(queue->front != NULL && queue->length > 0)
 	{
 		if(queue_location == QUEUE_FRONT)
 		{
-			return queue->front->data;
+			ret = queue->front->data;
+			pthread_mutex_unlock(&queue->lock);
+			return ret;
 		}
 		else if(queue_location == QUEUE_BACK)
 		{
-			return queue->back->data;
+			ret = queue->back->data;
+			pthread_mutex_unlock(&queue->lock);
+			return ret;
 		}
 		else
 		{
-			return NULL;
+			pthread_mutex_unlock(&queue->lock);
+			return ret;
 		}
 	}
 	else
 	{
-		return NULL;
+		pthread_mutex_unlock(&queue->lock);
+		return ret;
 	}
 }
 
@@ -267,11 +269,6 @@ void mt_freeQueue(MTQueue* queue)
 		pthread_mutex_destroy(&queue->lock);
 		free(queue);
 	}
-}
-
-void _mt_nullFreeFunction(void* param)
-{
-	//do nothing
 }
 
 

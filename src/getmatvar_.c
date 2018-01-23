@@ -56,8 +56,9 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	
 	free(field_names);
 	
-	for(Data* obj = dequeue(object_queue); object_queue->length > 0; obj = dequeue(object_queue))
+	while(object_queue->length > 0)
 	{
+		Data* obj = dequeue(object_queue);
 		freeQueue(obj->sub_objects);
 		obj->sub_objects = NULL;
 	}

@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 			free(parameters.full_variable_names[i]);
 		}
 		free(parameters.full_variable_names);
-		
+		free(parameters.filename);
 	}
 	
 }
@@ -62,8 +62,9 @@ void makeReturnStructure(const int num_elems)
 	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
 	//makeEvalArray();
 	
-	for(Data* obj = dequeue(object_queue); object_queue->length > 0; obj = dequeue(object_queue))
+	while(object_queue->length > 0)
 	{
+		Data* obj = dequeue(object_queue);
 		freeQueue(obj->sub_objects);
 		obj->sub_objects = NULL;
 	}
@@ -78,7 +79,8 @@ void readInput(int nrhs, char* prhs[])
 {
 	
 	char* input;
-	parameters.filename = prhs[0];
+	parameters.filename = malloc((strlen(prhs[0]) + 1)*sizeof(char));
+	strcpy(parameters.filename, prhs[0]);
 	parameters.num_vars = 0;
 	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;

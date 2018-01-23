@@ -8,8 +8,8 @@ numsamples = 1000;
 lents = 0;
 
 maxDepth = 2;
-minelem = 500;
-maxelem = 700;
+minelem = 5;
+maxelem = 10;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;
@@ -19,7 +19,7 @@ avgnumelems = zeros(stride,1);
 data = zeros(numtests,2);
 
 doplot = false;
-donames = false;
+donames = true;
 doCompare = true;
 numelems = 0;
 avgmultiplier = 0;

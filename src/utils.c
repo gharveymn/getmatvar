@@ -1,10 +1,12 @@
 #include "headers/utils.h"
+#include "headers/ezq.h"
 
 
 /*for use on a single level*/
 Data* findSubObjectByShortName(Data* object, char* name)
 {
-	for(int i = 0; i < object->num_sub_objs; i++)
+	restartQueue(object->sub_objects);
+	while(object->sub_objects->length > 0)
 	{
 		Data* obj = dequeue(object->sub_objects);
 		if(strcmp(obj->names.short_name, name) == 0)
@@ -21,7 +23,8 @@ Data* findSubObjectByShortName(Data* object, char* name)
 /*for use on a single level*/
 Data* findSubObjectBySCIndex(Data* object, uint64_t index)
 {
-	for(int i = 0; i < object->num_sub_objs; i++)
+	restartQueue(object->sub_objects);
+	while(object->sub_objects->length > 0)
 	{
 		Data* obj = dequeue(object->sub_objects);
 		if(obj->s_c_array_index == index)
@@ -40,15 +43,15 @@ Data* findObjectByHeaderAddress(address_t address)
 {
 	
 	restartQueue(object_queue);
-	do
+	while(object_queue->length > 0)
 	{
-		Data* object = dequeue(object_queue);
-		if(object->this_obj_address == address)
+		Data* obj = dequeue(object_queue);
+		if(obj->this_obj_address == address)
 		{
 			restartQueue(object_queue);
-			return object;
+			return obj;
 		}
-	} while(object_queue->length > 0);
+	}
 	restartQueue(object_queue);
 	
 	return NULL;

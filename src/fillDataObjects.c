@@ -78,14 +78,28 @@ void fillVariable(char* variable_name)
 							fillObject(object, object->this_obj_address);
 						}
 						
+						//does not execute if the struct is 1x1
+						if(object->data_flags.is_struct_array == TRUE)
+						{
+							object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+							if(object == NULL)
+							{
+								sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+								readMXError("getmatvar:variableNotFound", warn_message);
+								return;
+							}
+						}
+						
 					}
-					
-					object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
-					if(object == NULL)
+					else
 					{
-						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						readMXError("getmatvar:variableNotFound", warn_message);
-						return;
+						object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+						if(object == NULL)
+						{
+							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+							readMXError("getmatvar:variableNotFound", warn_message);
+							return;
+						}
 					}
 					break;
 				case VT_LOCAL_COORDINATES:
@@ -122,15 +136,31 @@ void fillVariable(char* variable_name)
 							fillObject(object, object->this_obj_address);
 						}
 						
+						if(object->data_flags.is_struct_array == TRUE)
+						{
+							varname_token->variable_local_index = coordToInd(
+									varname_token->variable_local_coordinates, object->dims, object->num_dims);
+							object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+							if(object == NULL)
+							{
+								sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+								readMXError("getmatvar:variableNotFound", warn_message);
+								return;
+							}
+						}
+						
 					}
-					
-					varname_token->variable_local_index = coordToInd(varname_token->variable_local_coordinates, object->dims, object->num_dims);
-					object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
-					if(object == NULL)
+					else
 					{
-						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
-						readMXError("getmatvar:variableNotFound", warn_message);
-						return;
+						varname_token->variable_local_index = coordToInd(
+								varname_token->variable_local_coordinates, object->dims, object->num_dims);
+						object = findSubObjectBySCIndex(object, varname_token->variable_local_index);
+						if(object == NULL)
+						{
+							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+							readMXError("getmatvar:variableNotFound", warn_message);
+							return;
+						}
 					}
 					break;
 				default:

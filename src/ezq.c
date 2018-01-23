@@ -10,14 +10,7 @@ Queue* initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
-	if(free_function == NULL)
-	{
-		new_queue->free_function = _nullFreeFunction;
-	}
-	else
-	{
-		new_queue->free_function = free_function;
-	}
+	new_queue->free_function = free_function;
 	return new_queue;
 }
 
@@ -119,7 +112,7 @@ void restartQueue(Queue* queue)
 
 void* dequeue(Queue* queue)
 {
-	if(queue->front != NULL)
+	if(queue->front != NULL && queue->length > 0)
 	{
 		void* to_return = queue->front->data;
 		QueueNode* new_front = queue->front->next;
@@ -136,7 +129,7 @@ void* dequeue(Queue* queue)
 
 void* peekQueue(Queue* queue, int queue_location)
 {
-	if(queue->front != NULL)
+	if(queue->front != NULL && queue->length > 0)
 	{
 		if(queue_location == QUEUE_FRONT)
 		{
@@ -224,10 +217,4 @@ void freeQueue(Queue* queue)
 		flushQueue(queue);
 		free(queue);
 	}
-}
-
-
-void _nullFreeFunction(void* param)
-{
-	//do nothing
 }
