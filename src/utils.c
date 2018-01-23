@@ -96,37 +96,6 @@ Data* cloneData(Data* old_object)
 	
 	Data* new_object = malloc(sizeof(Data));
 	
-	new_object->data_flags.is_struct_array = old_object->data_flags.is_struct_array;
-	//new_object->data_flags.is_sparse = old_object->data_flags.is_sparse;
-	new_object->data_flags.is_filled = old_object->data_flags.is_filled;
-	//new_object->data_flags.is_finalized = old_object->data_flags.is_finalized;
-	new_object->data_flags.is_reference = old_object->data_flags.is_reference;
-	new_object->data_flags.is_mx_used = old_object->data_flags.is_mx_used;
-	new_object->data_arrays.data = old_object->data_arrays.data;
-	new_object->data_arrays.sub_object_header_offsets = old_object->data_arrays.sub_object_header_offsets;
-	
-	new_object->chunked_info.num_filters = old_object->chunked_info.num_filters;
-	new_object->chunked_info.num_chunked_dims = old_object->chunked_info.num_chunked_dims;
-	new_object->chunked_info.num_chunked_elems = old_object->chunked_info.num_chunked_elems;
-	for(int i = 0; i < MAX_NUM_FILTERS; i++)
-	{
-		new_object->chunked_info.filters[i].client_data = old_object->chunked_info.filters[i].client_data;
-	}
-	
-	new_object->super_object = old_object->super_object;
-	new_object->sub_objects = initQueue(NULL);
-	
-	new_object->matlab_internal_attributes.MATLAB_sparse = old_object->matlab_internal_attributes.MATLAB_sparse;
-	new_object->matlab_internal_attributes.MATLAB_empty = old_object->matlab_internal_attributes.MATLAB_empty;
-	new_object->matlab_internal_attributes.MATLAB_object_decode = old_object->matlab_internal_attributes.MATLAB_object_decode;
-	
-	new_object->names.long_name_length = old_object->names.long_name_length;
-	new_object->names.long_name = malloc((new_object->names.long_name_length + 1)*sizeof(char));
-	strcpy(new_object->names.long_name, old_object->names.long_name);
-	new_object->names.short_name_length = old_object->names.short_name_length;
-	new_object->names.short_name = malloc((new_object->names.short_name_length + 1)*sizeof(char));
-	strcpy(new_object->names.short_name, old_object->names.short_name);
-	
 	new_object->layout_class = old_object->layout_class;               //3 by default for non-data
 	new_object->datatype_bit_field = old_object->datatype_bit_field;
 	new_object->byte_order = old_object->byte_order;
@@ -142,6 +111,103 @@ Data* cloneData(Data* old_object)
 	new_object->s_c_array_index = old_object->s_c_array_index;
 	new_object->data_address = old_object->data_address;
 	new_object->this_obj_address = old_object->this_obj_address;
+	
+	
+	new_object->data_flags.is_struct_array = old_object->data_flags.is_struct_array;
+	new_object->data_flags.is_filled = old_object->data_flags.is_filled;
+	new_object->data_flags.is_reference = old_object->data_flags.is_reference;
+	new_object->data_flags.is_mx_used = old_object->data_flags.is_mx_used;
+	if(old_object->data_arrays.data != NULL)
+	{
+		new_object->data_arrays.data = malloc(old_object->num_elems*old_object->elem_size);
+	}
+	else
+	{
+		new_object->data_arrays.data = NULL;
+	}
+	
+	if(old_object->data_arrays.sub_object_header_offsets != NULL)
+	{
+		new_object->data_arrays.sub_object_header_offsets = malloc(old_object->num_elems*old_object->elem_size);
+	}
+	else
+	{
+		new_object->data_arrays.sub_object_header_offsets = NULL;
+	}
+	
+	new_object->chunked_info.num_filters = old_object->chunked_info.num_filters;
+	new_object->chunked_info.num_chunked_dims = old_object->chunked_info.num_chunked_dims;
+	new_object->chunked_info.num_chunked_elems = old_object->chunked_info.num_chunked_elems;
+	if(old_object->chunked_info.filters != NULL)
+	{
+		new_object->chunked_info.filters = malloc(new_object->chunked_info.num_filters *sizeof(Filter));
+		for(int i = 0; i < old_object->chunked_info.num_filters; i++)
+		{
+			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
+			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
+			new_object->chunked_info.filters[i].optional_flag = old_object->chunked_info.filters[i].optional_flag;
+			new_object->chunked_info.filters[i].client_data = malloc(new_object->chunked_info.filters[i].num_client_vals * sizeof(uint32_t));
+			for(int j = 0; j < new_object->chunked_info.filters[i].num_client_vals; j++)
+			{
+				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
+			}
+		}
+	}
+	else
+	{
+		old_object->chunked_info.filters = NULL;
+	}
+	
+	if(old_object->chunked_info.chunked_dims != NULL)
+	{
+		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+	}
+	else
+	{
+		new_object->chunked_info.chunked_dims = NULL;
+	}
+	
+	if(old_object->chunked_info.chunk_update != NULL)
+	{
+		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+	}
+	else
+	{
+		new_object->chunked_info.chunk_update = NULL;
+	}
+	
+	if(old_object->dims != NULL)
+	{
+		new_object->dims = malloc(new_object->num_dims * sizeof(uint32_t));
+		memcpy(new_object->dims, old_object->dims, new_object->num_dims * sizeof(uint32_t));
+	}
+	else
+	{
+		new_object->dims = NULL;
+	}
+	
+	
+	
+	new_object->super_object = old_object->super_object;
+	new_object->sub_objects = initQueue(NULL);
+	while(old_object->sub_objects->length > 0)
+	{
+		enqueue(new_object->sub_objects, dequeue(old_object->sub_objects));
+	}
+	restartQueue(old_object->sub_objects);
+	
+	new_object->matlab_internal_attributes.MATLAB_sparse = old_object->matlab_internal_attributes.MATLAB_sparse;
+	new_object->matlab_internal_attributes.MATLAB_empty = old_object->matlab_internal_attributes.MATLAB_empty;
+	new_object->matlab_internal_attributes.MATLAB_object_decode = old_object->matlab_internal_attributes.MATLAB_object_decode;
+	
+	new_object->names.long_name_length = old_object->names.long_name_length;
+	new_object->names.long_name = malloc((new_object->names.long_name_length + 1)*sizeof(char));
+	strcpy(new_object->names.long_name, old_object->names.long_name);
+	new_object->names.short_name_length = old_object->names.short_name_length;
+	new_object->names.short_name = malloc((new_object->names.short_name_length + 1)*sizeof(char));
+	strcpy(new_object->names.short_name, old_object->names.short_name);
 	
 	enqueue(object_queue, new_object);
 	

@@ -189,7 +189,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		{
 			free(object->dims);
 		}
-		malloc(2*sizeof(uint32_t));
+		object->dims = malloc(2*sizeof(uint32_t));
 		memcpy(object->dims, (uint32_t*)(msg_pointer + 8 + roundUp(name_size) + roundUp(datatype_size) + roundUp(dataspace_size)), sizeof(uint32_t));
 		object->dims[1] = 0;
 	}

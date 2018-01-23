@@ -19,7 +19,7 @@ avgnumelems = zeros(stride,1);
 data = zeros(numtests,2);
 
 doplot = false;
-donames = true;
+donames = false;
 doCompare = true;
 numelems = 0;
 avgmultiplier = 0;

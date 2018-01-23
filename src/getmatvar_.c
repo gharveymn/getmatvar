@@ -23,7 +23,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		makeReturnStructure(plhs, nlhs);
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
-			free(parameters.full_variable_names[i]);
+			mxFree(parameters.full_variable_names[i]);
 		}
 		free(parameters.full_variable_names);
 		mxFree(parameters.filename);
@@ -244,7 +244,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 				case MT_KWARG:
 					if(mxIsLogical(prhs[i]) == TRUE)
 					{
-						will_multithread = *mxGetLogicals(prhs[i]);
+						will_multithread = *(bool_t*)mxGetLogicals(prhs[i]);
 					}
 					else if(mxIsNumeric(prhs[i]) == TRUE)
 					{
@@ -302,6 +302,8 @@ void readInput(int nrhs, const mxArray* prhs[])
 				input = mxArrayToString(prhs[i]);
 				if(*input == 0)
 				{
+					mxFree(input);
+					input = NULL;
 					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must have non-zero length.\n\n");
 				}
 				else if(strncmp(input, "-", 1) == 0)
@@ -325,12 +327,14 @@ void readInput(int nrhs, const mxArray* prhs[])
 						will_multithread = FALSE;
 						kwarg_flag = FALSE;
 					}
+					
+						mxFree(input);
+						input = NULL;
 				}
 				else
 				{
 					kwarg_expected = NOT_AN_ARGUMENT;
-					parameters.full_variable_names[parameters.num_vars] = malloc((strlen(input) + 1)*sizeof(char)); /*this gets freed in getDataObjects*/
-					strcpy(parameters.full_variable_names[parameters.num_vars], input);
+					parameters.full_variable_names[parameters.num_vars] = input;
 					parameters.num_vars++;
 				}
 			}
@@ -340,11 +344,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 			}
 		}
 		
-		if(input != NULL)
-		{
-			mxFree(input);
-			input = NULL;
-		}
 		
 	}
 	
@@ -352,7 +351,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 	{
 		free(parameters.full_variable_names);
 		parameters.full_variable_names = malloc(2*sizeof(char*));
-		parameters.full_variable_names[0] = malloc(sizeof(char));
+		parameters.full_variable_names[0] = mxMalloc(sizeof(char));
 		parameters.full_variable_names[0][0] = '\0';
 		parameters.num_vars = 1;
 	}

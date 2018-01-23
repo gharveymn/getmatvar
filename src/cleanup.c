@@ -217,7 +217,7 @@ void endHooks(void)
 	{
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
-			free(parameters.full_variable_names[i]);
+			mxFree(parameters.full_variable_names[i]);
 		}
 		free(parameters.full_variable_names);
 	}

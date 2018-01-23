@@ -221,6 +221,8 @@ mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims)
 DataArrays rearrangeImaginaryData(Data* object)
 {
 	DataArrays imag_data;
+	imag_data.data = NULL;
+	imag_data.sub_object_header_offsets = NULL;
 	
 	switch(object->matlab_internal_type)
 	{

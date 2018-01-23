@@ -34,7 +34,7 @@ errno_t allocateSpace(Data* object)
 			{
 				free(object->dims);
 			}
-			malloc(3*sizeof(uint32_t));
+			object->dims = malloc(3*sizeof(uint32_t));
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
