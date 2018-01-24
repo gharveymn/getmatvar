@@ -63,7 +63,7 @@ OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 $(OBJ_DIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
+CFLAGS=-g3 -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mexemulate
 

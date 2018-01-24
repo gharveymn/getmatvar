@@ -1,5 +1,4 @@
 {
-    // See https://go.microsoft.com//fwlink//?linkid=834763 for more information about this file.
 	"configurations": [
 		{
 			"name": "x86-Debug",
@@ -47,9 +46,15 @@
 			"configurationType": "NO_MEX",
 			"inheritEnvironments": [ "msvc_x64" ],
 			"buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-			"cmakeCommandArgs": "",
+			"cmakeCommandArgs": "MSVC",
 			"buildCommandArgs": "-v",
-			"ctestCommandArgs": ""
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "USE_MSVC",
+					"value": "TRUE"
+				}
+			]
 		}
 	]
 }

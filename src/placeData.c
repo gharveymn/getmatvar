@@ -75,6 +75,7 @@ void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_
 		}
 	}
 	
+	//TODO remove this switch
 	switch(object->matlab_internal_type)
 	{
 		case mxINT8_CLASS:

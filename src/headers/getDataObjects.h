@@ -37,7 +37,7 @@
 
 #include "../extlib/mman-win32/mman.h"
 #include <pthread.h>
-//#include "extlib/pthreads-win32/include/pthread.h"
+//#include "../extlib/pthreads-win32/include/pthread.h"
 #else
 //#pragma message ("getmatvar is compiling on UNIX")
 #include <pthread.h>

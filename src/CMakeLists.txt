@@ -12,6 +12,8 @@ SET(SOURCE_FILES
 		extlib/mman-win32/mman.h
 		extlib/libdeflate/x64/win/libdeflate.h
 		extlib/pthreads-win32/include/pthread.h
+		extlib/pthreads-win32/include/sched.h
+		extlib/pthreads-win32/include/semaphore.h
 		navigate.c
 		getSystemInfo.c
 		getDataObjects.c

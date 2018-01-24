@@ -13,23 +13,28 @@ void makeEvalArray(void);
 int main(int argc, char* argv[])
 {
 	
-	initialize();
-	
 	if(argc < 2)
 	{
+		initialize();
 		readMXError("getmatvar:invalidNumInputs", "At least one input argument is required.\n\n");
 	}
 	else
 	{
-		
-		readInput(argc - 1, argv + 1);
-		makeReturnStructure(parameters.num_vars);
-		for(int i = 0; i < parameters.num_vars; i++)
+		for(int j = 0; j < 100; j++)
 		{
-			free(parameters.full_variable_names[i]);
+			initialize();
+			readInput(argc - 1, argv + 1);
+			makeReturnStructure(parameters.num_vars);
+			for(int i = 0; i < parameters.num_vars; i++)
+			{
+				free(parameters.full_variable_names[i]);
+			}
+			free(parameters.full_variable_names);
+			free(parameters.filename);
 		}
-		free(parameters.full_variable_names);
-		free(parameters.filename);
+
+		fprintf(stderr, "\nProgram exited successfully.\n\n");
+
 	}
 	
 }
@@ -69,8 +74,6 @@ void makeReturnStructure(const int num_elems)
 		obj->sub_objects = NULL;
 	}
 	freeQueue(object_queue);
-	
-	fprintf(stderr, "\nProgram exited successfully.\n\n");
 	
 }
 

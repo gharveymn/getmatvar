@@ -49,7 +49,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -73,7 +73,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -85,7 +85,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -160,7 +160,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -184,7 +184,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -196,7 +196,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -246,7 +246,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -270,7 +270,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -282,7 +282,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -357,7 +357,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -381,7 +381,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -393,7 +393,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -443,7 +443,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -467,7 +467,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -479,7 +479,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -554,7 +554,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -578,7 +578,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -590,7 +590,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /INCREMENTAL:NO /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -640,7 +640,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -664,7 +664,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -676,7 +676,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",
@@ -751,7 +751,7 @@
                     ],
                     "includePath": [
                       {
-                        "path": "C:/Program Files/MATLAB/R2017a/extern/include"
+                        "path": "C:/Program Files/MATLAB/R2017b/extern/include"
                       },
                       {
                         "path": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src/extlib/libdeflate/x64"
@@ -775,7 +775,7 @@
                   {
                     "isGenerated": false,
                     "sources": [
-                      "C:/Program Files/MATLAB/R2017a/extern/include/mex.h",
+                      "C:/Program Files/MATLAB/R2017b/extern/include/mex.h",
                       "extlib/mman-win32/mman.h",
                       "extlib/libdeflate/x64/libdeflate.h",
                       "mapping.h",
@@ -787,7 +787,7 @@
                 ],
                 "fullName": "getmatvar_.mexw64",
                 "linkFlags": "/machine:x64 /debug /INCREMENTAL /DEF:C:\\workspace\\c\\MatFile-Parsing\\MatFile-Parsing-Win\\Matlabdef.def",
-                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017a\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+                "linkLibraries": "..\\..\\src\\extlib\\libdeflate\\x64\\libdeflate.lib \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmex.lib\" \"C:\\Program Files\\MATLAB\\R2017b\\extern\\lib\\win64\\microsoft\\libmx.lib\" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
                 "linkerLanguage": "C",
                 "name": "getmatvar_",
                 "sourceDirectory": "C:/workspace/c/MatFile-Parsing/MatFile-Parsing-Win/src",

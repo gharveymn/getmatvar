@@ -9,13 +9,13 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 
 	SET(CMAKE_CXX_STANDARD 11)
 
-	if(MSVC)
+	if(MSVC OR (DEFINED USE_MSVC))
 		MESSAGE(STATUS "Building with MSVC")
 		ADD_DEFINITIONS(-DNO_MEX)
-	else(MSVC)
+	else(MSVC OR (DEFINED USE_MSVC))
 		MESSAGE(STATUS "Building with MinGW")
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -DNO_MEX")
-	ENDIF(MSVC)
+	ENDIF(MSVC OR (DEFINED USE_MSVC))
 
 	SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
 
@@ -26,8 +26,10 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
 			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
 			IF(MSVC)
+				MESSAGE(STATUS "Using 64 bit pthreadVC2.lib")
 				SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x64/pthreadVC2.lib)
 			ELSE(MSVC)
+				MESSAGE(STATUS "Using 64 bit libpthreadGC2.a")
 				SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x64/libpthreadGC2.a)
 			ENDIF(MSVC)
 
@@ -36,8 +38,10 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
 			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
 			IF(MSVC)
+				MESSAGE(STATUS "Using 32 bit pthreadVC2.lib")
 				SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x86/pthreadVC2.lib)
 			ELSE(MSVC)
+				MESSAGE(STATUS "Using 32 bit libpthreadGC2.a")
 				SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x86/libpthreadGC2.lib)
 			ENDIF(MSVC)
 		ENDIF()
@@ -49,12 +53,15 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 		ENDIF()
 	ENDIF(WIN32)
 
-	INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${THPOOL_INCLUDE_DIR})
+	INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${PTHREADS_INCLUDE_DIR})
 
 	SET(SOURCE_FILES
 			src/extlib/libdeflate/x64/win/libdeflate.h
 			src/extlib/mman-win32/mman.c
 			src/extlib/mman-win32/mman.h
+			src/extlib/pthreads-win32/include/pthread.h
+			src/extlib/pthreads-win32/include/sched.h
+			src/extlib/pthreads-win32/include/semaphore.h
 			src/placeChunkedData.c
 			src/navigate.c
 			src/getSystemInfo.c
@@ -85,7 +92,7 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 
 	ADD_EXECUTABLE(${OUT_NAME} ${SOURCE_FILES})
 
-	TARGET_LINK_LIBRARIES(${OUT_NAME} ${LIB_DEFLATE_LIBRARY})
+	TARGET_LINK_LIBRARIES(${OUT_NAME} ${LIB_DEFLATE_LIBRARY} ${PTHREADS_LIBRARY})
 
 ELSE("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 

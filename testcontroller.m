@@ -1,5 +1,5 @@
 addpath('tests');
-addpath('bin');
+addpath('mexbuildmsvc/src/Debug');
 clear;
 
 rng('shuffle')
