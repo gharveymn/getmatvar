@@ -368,6 +368,11 @@ volatile double sum_usage_offset;
 Data* virtual_super_object;
 
 int max_depth;
+#ifdef NO_MEX
+size_t curr_mmap_usage;
+size_t max_mmap_usage;
+pthread_mutex_t mmap_usage_update_lock;
+#endif
 
 #ifdef DO_MEMDUMP
 FILE* dump;

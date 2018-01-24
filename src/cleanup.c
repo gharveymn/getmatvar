@@ -199,6 +199,12 @@ void freePageObject(size_t page_index)
 		{
 			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in mt_navigateTo(). Check errno %d\n\n", errno);
 		}
+
+#ifdef NO_MEX
+		pthread_mutex_lock(&mmap_usage_update_lock);
+		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_base;
+		pthread_mutex_unlock(&mmap_usage_update_lock);
+#endif
 		
 		page_objects[page_index].is_mapped = FALSE;
 		page_objects[page_index].pg_start_p = NULL;

@@ -110,4 +110,8 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	freeQueue(top_level_objects);
 	top_level_objects = NULL;
 
+#ifdef NO_MEX
+	pthread_mutex_destroy(&mmap_usage_update_lock);
+#endif
+
 }

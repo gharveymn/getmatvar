@@ -49,7 +49,8 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 	}
 	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	uint64_t total_snod_size = 8 + (num_symbols - 1) * s_block.sym_table_entry_size + 3 * s_block.size_of_offsets + 8 + s_block.size_of_offsets;
-	snod_pointer = st_renavigateTo(snod_pointer, node_address, total_snod_size);
+	st_releasePages(snod_pointer, node_address, 8);
+	snod_pointer = st_navigateTo(node_address, total_snod_size);
 	
 	uint32_t cache_type;
 	

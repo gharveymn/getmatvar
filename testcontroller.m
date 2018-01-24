@@ -46,16 +46,21 @@ for j = 1:numtests
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);
 					%mindiffind = min(find(gmv ~= ld));
-					error('getmatvar failed to load correctly on test_struct1')
+					error('getmatvar failed to load test_struct1 correctly')
 				end
 				clear('gmvtest_struct1');
 			end
-			clear('test_struct1');
 			
 			if(donames)
 				for p = 1:numel(names)
 					save('res/test_struct1nametest.mat', 'names','p');
-					getmatvar('res/test_struct1.mat',names{p});
+					gmvret = getmatvar('res/test_struct1.mat',names{p});
+					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
+					if(~isempty(gmv) || ~isempty(ld))
+						%diffs = find(gmv ~= ld);
+						%mindiffind = min(find(gmv ~= ld));w
+						error(['getmatvar failed to select ' names{p} 'correctly']);
+					end
 					delete('res/test_struct1nametest.mat');
 				end
 			end
@@ -83,16 +88,21 @@ for j = 1:numtests
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);
 					%mindiffind = min(find(gmv ~= ld));
-					error('getmatvar failed to load correctly on test_struct2')
+					error('getmatvar failed to load test_struct2 correctly')
 				end
 				clear('gmvtest_struct2');
 			end
-			clear('test_struct2');
 			
 			if(donames)
 				for p = 1:numel(names)
 					save('res/test_struct2nametest.mat', 'names','p');
-					getmatvar('res/test_struct2.mat',names{p});
+					gmvret = getmatvar('res/test_struct2.mat',names{p});
+					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
+					if(~isempty(gmv) || ~isempty(ld))
+						%diffs = find(gmv ~= ld);
+						%mindiffind = min(find(gmv ~= ld));w
+						error(['getmatvar failed to select ' names{p} 'correctly']);
+					end
 					delete('res/test_struct2nametest.mat');
 				end
 			end

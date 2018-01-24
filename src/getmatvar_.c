@@ -78,62 +78,64 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 	
 	if(((Data*)peekQueue(objects, QUEUE_FRONT))->data_flags.is_struct_array == TRUE)
 	{
-		for(mwIndex index = 0; index < num_elems; index++)
+		//struct arrays are spoofed as cell arrays in getmatvar
+		while(objects->length > 0)
 		{
 			Data* obj = dequeue(objects);
 			makeSubstructure(returnStructure, obj->num_sub_objs, obj->sub_objects, mxSTRUCT_CLASS);
 		}
-		return returnStructure;
 	}
-	
-	for(mwIndex index = 0; index < num_elems; index++)
+	else
 	{
 		
-		Data* obj = dequeue(objects);
-		
-		obj->data_flags.is_mx_used = TRUE;
-		
-		switch(obj->matlab_internal_type)
+		while(objects->length > 0)
 		{
-			case mxINT8_CLASS:
-			case mxUINT8_CLASS:
-			case mxINT16_CLASS:
-			case mxUINT16_CLASS:
-			case mxINT32_CLASS:
-			case mxUINT32_CLASS:
-			case mxINT64_CLASS:
-			case mxUINT64_CLASS:
-			case mxSINGLE_CLASS:
-			case mxDOUBLE_CLASS:
-				setNumericPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				break;
-			case mxSPARSE_CLASS:
-				setSpsPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				break;
-			case mxLOGICAL_CLASS:
-				setLogicPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				break;
-			case mxCHAR_CLASS:
-				setCharPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				break;
-			case mxCELL_CLASS:
-				setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				//Indicate we should free any memory used by this
-				obj->data_flags.is_mx_used = FALSE;
-				break;
-			case mxSTRUCT_CLASS:
-				setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
-				obj->data_flags.is_mx_used = FALSE;
-				break;
-			case mxFUNCTION_CLASS:
-			case mxOBJECT_CLASS:
-			case mxOPAQUE_CLASS:
-				if(warnedObjectVar == FALSE)
-				{
-					//run only once
-					readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
-					warnedObjectVar = TRUE;
-				}
+			
+			Data* obj = dequeue(objects);
+			
+			obj->data_flags.is_mx_used = TRUE;
+			
+			switch(obj->matlab_internal_type)
+			{
+				case mxINT8_CLASS:
+				case mxUINT8_CLASS:
+				case mxINT16_CLASS:
+				case mxUINT16_CLASS:
+				case mxINT32_CLASS:
+				case mxUINT32_CLASS:
+				case mxINT64_CLASS:
+				case mxUINT64_CLASS:
+				case mxSINGLE_CLASS:
+				case mxDOUBLE_CLASS:
+					setNumericPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					break;
+				case mxSPARSE_CLASS:
+					setSpsPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					break;
+				case mxLOGICAL_CLASS:
+					setLogicPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					break;
+				case mxCHAR_CLASS:
+					setCharPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					break;
+				case mxCELL_CLASS:
+					setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					//Indicate we should free any memory used by this
+					obj->data_flags.is_mx_used = FALSE;
+					break;
+				case mxSTRUCT_CLASS:
+					setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					obj->data_flags.is_mx_used = FALSE;
+					break;
+				case mxFUNCTION_CLASS:
+				case mxOBJECT_CLASS:
+				case mxOPAQUE_CLASS:
+					if(warnedObjectVar == FALSE)
+					{
+						//run only once
+						readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
+						warnedObjectVar = TRUE;
+					}
 //				if (super_structure_type == mxSTRUCT_CLASS)
 //				{
 //					mxSetField(returnStructure, index, obj->names.short_name, NULL);
@@ -143,9 +145,9 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 //					//is a cell array
 //					mxSetCell(returnStructure, index, NULL);
 //				}
-				obj->data_flags.is_mx_used = FALSE;
-				break;
-			default:
+					obj->data_flags.is_mx_used = FALSE;
+					break;
+				default:
 //				if(warnedUnknownVar == FALSE)
 //				{
 //					//run only once
@@ -161,11 +163,11 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 //					//is a cell array
 //					mxSetCell(returnStructure, index, NULL);
 //				}
-				//this will happen for NULL objects
-				obj->data_flags.is_mx_used = FALSE;
-				break;
+					//this will happen for NULL objects
+					obj->data_flags.is_mx_used = FALSE;
+					break;
+			}
 		}
-		
 	}
 	
 	return returnStructure;

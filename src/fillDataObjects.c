@@ -44,13 +44,18 @@ void fillVariable(char* variable_name)
 						readMXError("getmatvar:variableNotFound", warn_message);
 						return;
 					}
+					fillObject(object, object->this_obj_address);
+					if(object->data_flags.is_struct_array == TRUE)
+					{
+						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
+						readMXError("getmatvar:variableNotFound", warn_message);
+						return;
+					}
 					break;
 				case VT_LOCAL_INDEX:
 					
-					if(object->data_flags.is_filled != TRUE)
-					{
-						fillObject(object, object->this_obj_address);
-					}
+					fillObject(object, object->this_obj_address);
+					
 					
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
 					{
@@ -73,10 +78,7 @@ void fillVariable(char* variable_name)
 							return;
 						}
 						
-						if(object->data_flags.is_filled != TRUE)
-						{
-							fillObject(object, object->this_obj_address);
-						}
+						fillObject(object, object->this_obj_address);
 						
 						//does not execute if the struct is 1x1
 						if(object->data_flags.is_struct_array == TRUE)
@@ -104,10 +106,8 @@ void fillVariable(char* variable_name)
 					break;
 				case VT_LOCAL_COORDINATES:
 					
-					if(object->data_flags.is_filled != TRUE)
-					{
-						fillObject(object, object->this_obj_address);
-					}
+					fillObject(object, object->this_obj_address);
+					
 					
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
 					{
@@ -131,10 +131,7 @@ void fillVariable(char* variable_name)
 							return;
 						}
 						
-						if(object->data_flags.is_filled != TRUE)
-						{
-							fillObject(object, object->this_obj_address);
-						}
+						fillObject(object, object->this_obj_address);
 						
 						if(object->data_flags.is_struct_array == TRUE)
 						{
@@ -254,11 +251,14 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		object->data_flags.is_struct_array = TRUE;
 		//pretend this is a cell
 		object->matlab_internal_type = mxCELL_CLASS;
-		for(int i = 0; i < object->num_dims; i++)
-		{
-			object->super_object->dims[i] = object->dims[i];
-		}
 		object->super_object->num_dims = object->num_dims;
+		if(object->super_object->dims != NULL)
+		{
+			free(object->super_object->dims);
+		}
+		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
+		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint32_t));
+		object->super_object->dims[object->num_dims] = 0;
 	}
 	
 	if(object->matlab_internal_attributes.MATLAB_sparse == TRUE)

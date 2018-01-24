@@ -3,7 +3,7 @@
 
 byte* st_renavigateTo(byte* page_start_pointer, uint64_t address, uint64_t bytes_needed)
 {
-	//use this on subsequent calls to the same address
+	//use this on subsequent calls to the same address (only on Windows)
 	st_releasePages(page_start_pointer, address, bytes_needed);
 	return st_navigateTo(address, bytes_needed);
 }
@@ -17,6 +17,10 @@ byte* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	{
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
 	}
+#ifdef NO_MEX
+	curr_mmap_usage += (address + bytes_needed) - page_start_address;
+	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
+#endif
 	return page_start_pointer + (address % alloc_gran);
 }
 
@@ -29,6 +33,9 @@ void st_releasePages(byte* address_pointer, uint64_t address, uint64_t bytes_nee
 	{
 		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
 	}
+#ifdef NO_MEX
+	curr_mmap_usage -= (address + bytes_needed) - page_start_address;
+#endif
 }
 
 
@@ -143,6 +150,14 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	page_objects[start_page].last_use_time_stamp = usage_iterator;
 	usage_iterator++;
+
+#ifdef NO_MEX
+	pthread_mutex_lock(&mmap_usage_update_lock);
+	curr_mmap_usage += end_address - start_address;
+	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
+	pthread_mutex_unlock(&mmap_usage_update_lock);
+#endif
+	
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 	
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
@@ -236,6 +251,13 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 #ifdef DO_MEMDUMP
 	memdump("M");
 #endif
+
+#ifdef NO_MEX
+	pthread_mutex_lock(&mmap_usage_update_lock);
+	curr_mmap_usage += end_address - start_address;
+	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
+	pthread_mutex_unlock(&mmap_usage_update_lock);
+#endif
 	
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 	
@@ -298,5 +320,7 @@ void mt_releasePages(uint64_t address, uint64_t bytes_needed)
 	}
 	pthread_mutex_unlock(&page_objects[start_page].lock);
 #endif
+
+
 
 }

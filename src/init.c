@@ -20,6 +20,11 @@ void initialize(void)
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
 	parameters.num_vars = 0;
+#ifdef NO_MEX
+	curr_mmap_usage = 0;
+	max_mmap_usage = 0;
+	pthread_mutex_init(&mmap_usage_update_lock, NULL);
+#endif
 }
 
 
