@@ -246,7 +246,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		return;
 	}
 	
-	if(object->hdf5_internal_type == HDF5_REFERENCE  && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
+	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
 	{
 		object->data_flags.is_struct_array = TRUE;
 		//pretend this is a cell

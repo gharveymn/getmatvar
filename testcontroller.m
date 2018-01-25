@@ -1,15 +1,15 @@
 addpath('tests');
-addpath('mexbuildmsvc/src/Debug');
+addpath('bin');
 clear;
 
 rng('shuffle')
 numtests = 1;
-numsamples = 1000;
+numsamples = 10000;
 lents = 0;
 
 maxDepth = 2;
-minelem = 5;
-maxelem = 10;
+minelem = 50000;
+maxelem = 100000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;
@@ -52,8 +52,8 @@ for j = 1:numtests
 			end
 			
 			if(donames)
+				save('res/test_struct1nametest.mat', 'names');
 				for p = 1:numel(names)
-					save('res/test_struct1nametest.mat', 'names','p');
 					gmvret = getmatvar('res/test_struct1.mat',names{p});
 					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
 					if(~isempty(gmv) || ~isempty(ld))
@@ -61,8 +61,8 @@ for j = 1:numtests
 						%mindiffind = min(find(gmv ~= ld));w
 						error(['getmatvar failed to select ' names{p} 'correctly']);
 					end
-					delete('res/test_struct1nametest.mat');
 				end
+				delete('res/test_struct1nametest.mat');
 			end
 			clear('test_struct1');
 			
@@ -94,8 +94,8 @@ for j = 1:numtests
 			end
 			
 			if(donames)
+				save('res/test_struct2nametest.mat', 'names');
 				for p = 1:numel(names)
-					save('res/test_struct2nametest.mat', 'names','p');
 					gmvret = getmatvar('res/test_struct2.mat',names{p});
 					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
 					if(~isempty(gmv) || ~isempty(ld))
@@ -103,8 +103,8 @@ for j = 1:numtests
 						%mindiffind = min(find(gmv ~= ld));w
 						error(['getmatvar failed to select ' names{p} 'correctly']);
 					end
-					delete('res/test_struct2nametest.mat');
 				end
+				delete('res/test_struct2nametest.mat');
 			end
 			clear('test_struct2');
 			

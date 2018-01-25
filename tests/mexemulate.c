@@ -20,8 +20,8 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		for(int j = 0; j < 100; j++)
-		{
+//		for(int j = 0; j < 10; j++)
+//		{
 			initialize();
 			readInput(argc - 1, argv + 1);
 			makeReturnStructure(parameters.num_vars);
@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 			}
 			free(parameters.full_variable_names);
 			free(parameters.filename);
-		}
+//		}
 
 		fprintf(stderr, "\nProgram exited successfully.\n\n");
 
