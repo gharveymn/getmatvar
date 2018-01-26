@@ -26,6 +26,13 @@ errno_t getChunkedData(Data* object)
 	thread_object.err = 0;
 	thread_object.main_thread_ready = &main_thread_ready;
 	
+	bool_t temp_mt_flag;
+	if(object->num_elems < 5000)
+	{
+		temp_mt_flag = will_multithread;
+		will_multithread = FALSE;
+	}
+	
 	if(will_multithread == TRUE)
 	{
 		
@@ -116,6 +123,11 @@ errno_t getChunkedData(Data* object)
 	
 	mt_freeQueue(mt_data_queue);
 	freeTree(root);
+	
+	if(object->num_elems < 5000)
+	{
+		will_multithread = temp_mt_flag;
+	}
 	
 	return ret;
 }
