@@ -1,9 +1,14 @@
 addpath('res')
 addpath('bin')
-%file = 'res/r.mat';
+file = 'res/test_struct2.mat';
 vars = {};
-file = 'D:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
+%file = 'D:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
+
+% using load function
+tic
+load(file);
+toc
 
 disp(getmemstr)
 tic
@@ -13,11 +18,6 @@ toc
 disp(getmemstr)
 %a = t;
 %ex = extPar;
-
-% using load function
-tic
-load(file);
-toc
 
 %disp(sum(a(:) ~= t(:)))
 

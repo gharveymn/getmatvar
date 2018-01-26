@@ -165,14 +165,14 @@ void destroyPageObjects(void)
 			if(page_objects[i].is_mapped == TRUE)
 			{
 				
-				if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
+				if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_start) != 0)
 				{
 					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 				}
 				
 				page_objects[i].is_mapped = FALSE;
 				page_objects[i].pg_start_p = NULL;
-				page_objects[i].map_base = UNDEF_ADDR;
+				page_objects[i].map_start = UNDEF_ADDR;
 				page_objects[i].map_end = UNDEF_ADDR;
 				
 			}
@@ -195,20 +195,20 @@ void freePageObject(size_t page_index)
 	if(page_objects[page_index].is_mapped == TRUE)
 	{
 		//second parameter doesnt do anything on windows
-		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_base) != 0)
+		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_start) != 0)
 		{
 			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in mt_navigateTo(). Check errno %d\n\n", errno);
 		}
 
 #ifdef NO_MEX
 		pthread_mutex_lock(&mmap_usage_update_lock);
-		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_base;
+		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_start;
 		pthread_mutex_unlock(&mmap_usage_update_lock);
 #endif
 		
 		page_objects[page_index].is_mapped = FALSE;
 		page_objects[page_index].pg_start_p = NULL;
-		page_objects[page_index].map_base = UNDEF_ADDR;
+		page_objects[page_index].map_start = UNDEF_ADDR;
 		page_objects[page_index].map_end = UNDEF_ADDR;
 
 #ifdef DO_MEMDUMP
@@ -218,12 +218,33 @@ void freePageObject(size_t page_index)
 	}
 }
 
+void freeMapObject(void* mo)
+{
+	mapObject* map_obj = (mapObject*)mo;
+	if(map_obj != NULL)
+	{
+		if(map_obj->is_mapped == TRUE)
+		{
+			if(munmap(map_obj->map_start_ptr, map_obj->map_end - map_obj->map_start) != 0)
+			{
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
+			}
+			map_obj->is_mapped = FALSE;
+#ifdef NO_MEX
+			curr_mmap_usage -= map_obj->map_end - map_obj->map_start;
+#endif
+		}
+		free(map_obj);
+	}
+}
+
 void endHooks(void)
 {
 	
 	freeQueue(varname_queue);
 	freeQueue(object_queue);
 	freeQueue(top_level_objects);
+	freeQueue(map_objects);
 	
 	if(parameters.full_variable_names != NULL)
 	{

@@ -1,54 +1,83 @@
 #include "headers/getDataObjects.h"
 
 
-byte* st_renavigateTo(byte* page_start_pointer, uint64_t address, uint64_t bytes_needed)
+mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
-	//use this on subsequent calls to the same address (only on Windows)
-	st_releasePages(page_start_pointer, address, bytes_needed);
-	return st_navigateTo(address, bytes_needed);
-}
-
-
-byte* st_navigateTo(uint64_t address, uint64_t bytes_needed)
-{
-	address_t page_start_address = address - (address % alloc_gran);
-	byte* page_start_pointer = mmap(NULL, (address + bytes_needed) - page_start_address, PROT_READ, MAP_PRIVATE, fd, page_start_address);
-	if(page_start_pointer == NULL || page_start_pointer== MAP_FAILED)
+	
+	address_t map_start = address - (address % alloc_gran); //the start of the page
+	address_t map_end = address + bytes_needed;
+	
+	initTraversal(map_objects);
+	mapObject* obj = NULL;
+	while((obj = (mapObject*)traverseQueue(map_objects)) != NULL)
+	{
+		if(obj->map_start <= address && map_end <= obj->map_end)
+		{
+			obj->num_using++;
+			if(is_super_mapped == TRUE)
+			{
+				obj->address_ptr = obj->map_start_ptr + address;
+			}
+			else
+			{
+				obj->address_ptr = obj->map_start_ptr + (address%alloc_gran);
+			}
+			return obj;
+		}
+	}
+	
+	mapObject* map_obj = malloc(sizeof(mapObject));
+	map_obj->map_start = map_start;
+	map_obj->map_end = map_end;
+	map_obj->num_using = 1;
+	map_obj->is_mapped = FALSE;
+	map_obj->map_start_ptr = mmap(NULL, map_end - map_start, PROT_READ, MAP_PRIVATE, fd, map_start);
+	if(map_obj->map_start_ptr == NULL || map_obj->map_start_ptr== MAP_FAILED)
 	{
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
 	}
+	map_obj->is_mapped = TRUE;
+	map_obj->address_ptr = map_obj->map_start_ptr + (address % alloc_gran);
+	
+	enqueue(map_objects, map_obj);
+	if(map_objects->length > max_num_map_objs)
+	{
+		obj = (mapObject*)peekQueue(map_objects, QUEUE_FRONT);
+		if(obj->num_using == 0)
+		{
+			mapObject* obs_obj = (mapObject*)dequeue(map_objects);
+			if(munmap(obs_obj->map_start_ptr, obs_obj->map_end - obs_obj->map_start) != 0)
+			{
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
+			}
+			obs_obj->is_mapped = FALSE;
 #ifdef NO_MEX
-	curr_mmap_usage += (address + bytes_needed) - page_start_address;
+			curr_mmap_usage -= obs_obj->map_end - obs_obj->map_start;
+#endif
+		}
+	}
+	
+#ifdef NO_MEX
+	curr_mmap_usage += (address + bytes_needed) - map_start;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
 #endif
-	return page_start_pointer + (address % alloc_gran);
+	return map_obj;
 }
 
 
-void st_releasePages(byte* address_pointer, uint64_t address, uint64_t bytes_needed)
+void st_releasePages(mapObject* map_obj)
 {
-	address_t page_start_address = address - (address % alloc_gran);
-	byte* page_start_pointer = address_pointer - (address % alloc_gran);
-	if(munmap(page_start_pointer, (address + bytes_needed) - page_start_address) != 0)
-	{
-		readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
-	}
-#ifdef NO_MEX
-	curr_mmap_usage -= (address + bytes_needed) - page_start_address;
-#endif
-}
-
-
-byte* mt_renavigateTo(uint64_t address, uint64_t bytes_needed)
-{
-	//use this on subsequent calls to the same address
-	mt_releasePages(address, bytes_needed);
-	return mt_navigateTo(address, bytes_needed);
+	map_obj->num_using--;
 }
 
 
 byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
+	
+	if(is_super_mapped == TRUE)
+	{
+		return super_pointer + address;
+	}
 	
 	size_t start_page = address/alloc_gran;
 	//size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
@@ -79,7 +108,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
+		if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
 		{
 		
 #ifdef DO_MEMDUMP
@@ -88,11 +117,9 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
-			if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
+			if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
-				page_objects[start_page].last_use_time_stamp = usage_iterator;
-				usage_iterator++;
 				pthread_mutex_unlock(&page_objects[start_page].lock);
 				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 			}
@@ -141,15 +168,13 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_base = start_address;
+	page_objects[start_page].map_start = start_address;
 	page_objects[start_page].map_end = end_address;
 
 #ifdef DO_MEMDUMP
 	memdump("M");
 #endif
-	
-	page_objects[start_page].last_use_time_stamp = usage_iterator;
-	usage_iterator++;
+
 
 #ifdef NO_MEX
 	pthread_mutex_lock(&mmap_usage_update_lock);
@@ -182,7 +207,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
+		if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
 		{
 
 #ifdef DO_MEMDUMP
@@ -191,11 +216,9 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
-			if(page_objects[start_page].map_base <= start_address && end_address <= page_objects[start_page].map_end)
+			if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
-				page_objects[start_page].last_use_time_stamp = usage_iterator;
-				usage_iterator++;
 				pthread_mutex_unlock(&page_objects[start_page].lock);
 				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 			}
@@ -245,7 +268,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_base = start_address;
+	page_objects[start_page].map_start = start_address;
 	page_objects[start_page].map_end = end_address;
 	
 #ifdef DO_MEMDUMP
@@ -270,6 +293,11 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 void mt_releasePages(uint64_t address, uint64_t bytes_needed)
 {
+	
+	if(is_super_mapped == TRUE)
+	{
+		return;
+	}
 	
 	//call this after done with using the pointer
 	size_t start_page = address/alloc_gran;

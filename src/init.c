@@ -9,6 +9,7 @@ void initialize(void)
 	top_level_objects = NULL;
 	varname_queue = NULL;
 	object_queue = NULL;
+	map_objects = NULL;
 	is_done = FALSE;
 	fd = -1;
 	num_threads_user_def = -1;
@@ -20,6 +21,9 @@ void initialize(void)
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
 	parameters.num_vars = 0;
+	max_num_map_objs = DEFAULT_MAX_NUM_MAP_OBJS;
+	is_super_mapped = FALSE;
+	super_pointer = NULL;
 #ifdef NO_MEX
 	curr_mmap_usage = 0;
 	max_mmap_usage = 0;
@@ -91,14 +95,12 @@ void initializePageObjects(void)
 		page_objects[i].is_mapped = FALSE;
 		page_objects[i].pg_start_a = alloc_gran*i;
 		page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
-		page_objects[i].map_base = UNDEF_ADDR;
+		page_objects[i].map_start = UNDEF_ADDR;
 		page_objects[i].map_end = UNDEF_ADDR;
 		page_objects[i].pg_start_p = NULL;
 		page_objects[i].num_using = 0;
-		page_objects[i].last_use_time_stamp = 0;
 		page_objects[i].max_map_end = 0;
 		page_objects[i].total_num_mappings = 0;
 	}
-	usage_iterator = 0;
 	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }

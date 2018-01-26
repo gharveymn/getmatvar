@@ -4,10 +4,10 @@ clear;
 
 rng('shuffle')
 numtests = 1;
-numsamples = 10000;
+numsamples = 1000;
 lents = 0;
 
-maxDepth = 2;
+maxDepth = 1;
 minelem = 50000;
 maxelem = 100000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
@@ -19,7 +19,7 @@ avgnumelems = zeros(stride,1);
 data = zeros(numtests,2);
 
 doplot = false;
-donames = true;
+donames = false;
 doCompare = true;
 numelems = 0;
 avgmultiplier = 0;

@@ -29,7 +29,8 @@ function [ret, numvarsz, teststrs] = randVarGen_(maxDepth, currDepth, maxElement
 	
 	if(maxDepth <= currDepth)
 		%dont make another layer
-		vartypegen = randi(16);
+		%vartypegen = randi(16);
+		vartypegen = 16;
 	else
 		vartypegen = randi(18);
 		%vartypegen = 17;
@@ -132,7 +133,7 @@ function [ret, numvarsz, teststrs] = randVarGen_(maxDepth, currDepth, maxElement
 		case(16)
 			% 	16	mxOBJECT_CLASS,
 			if(ignoreUnusables)
-				ret = rand(dims{:},'double');
+				ret = rand(dims{:},'double') + 1i*rand(dims{:},'double');
 			else
 				ret = BasicClass(randi(intmax),dims);
 			end

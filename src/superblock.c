@@ -2,10 +2,11 @@
 
 Superblock getSuperblock(void)
 {
-	byte* chunk_start = st_navigateTo(0, default_bytes);
-	byte* superblock_pointer = findSuperblock(chunk_start);
+	mapObject* chunk_start_map_obj = st_navigateTo(0, default_bytes);
+	byte* chunk_start_pointer = chunk_start_map_obj->address_ptr;
+	byte* superblock_pointer = findSuperblock(chunk_start_pointer);
 	Superblock s_block = fillSuperblock(superblock_pointer);
-	st_releasePages(chunk_start, 0, default_bytes);
+	st_releasePages(chunk_start_map_obj);
 	return s_block;
 }
 

@@ -17,6 +17,7 @@ typedef struct
 	QueueNode* abs_front; /* make it the queue's job to free all objects and data queued at the end */
 	QueueNode* front;
 	QueueNode* back;
+	QueueNode* traverse_front;
 	void (* free_function)(void*);
 	size_t length;
 	size_t total_length;
@@ -32,6 +33,8 @@ void mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
 void flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);
+void initTraversal(Queue* queue);
+void* traverseQueue(Queue* queue);
 void restartQueue(Queue* queue);
 void cleanQueue(Queue* queue);
 void _nullFreeFunction(void*);

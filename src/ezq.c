@@ -8,6 +8,7 @@ Queue* initQueue(void (* free_function)(void*))
 	new_queue->abs_front = NULL;
 	new_queue->front = NULL;
 	new_queue->back = NULL;
+	new_queue->traverse_front = NULL;
 	new_queue->length = 0;
 	new_queue->total_length = 0;
 	new_queue->free_function = free_function;
@@ -181,6 +182,7 @@ void flushQueue(Queue* queue)
 			queue->total_length--;
 		}
 		queue->abs_front = NULL;
+		queue->traverse_front = NULL;
 		queue->front = NULL;
 		queue->back = NULL;
 		queue->length = 0;
@@ -207,6 +209,31 @@ void cleanQueue(Queue* queue)
 			queue->total_length--;
 		}
 	}
+}
+
+
+void initTraversal(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		queue->traverse_front = queue->front;
+	}
+}
+
+
+void* traverseQueue(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		if(queue->traverse_front != NULL)
+		{
+			void* to_return = queue->traverse_front->data;
+			QueueNode* new_front = queue->traverse_front->next;
+			queue->traverse_front = new_front;
+			return to_return;
+		}
+	}
+	return NULL;
 }
 
 

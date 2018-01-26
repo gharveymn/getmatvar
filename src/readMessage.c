@@ -47,10 +47,10 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			break;
 		case HDF5_COMPOUND:
 			object->complexity_flag = mxCOMPLEX;
-			msg_pointer = st_renavigateTo(msg_pointer, msg_address + 48, 20);
-			readDataTypeMessage(object, msg_pointer, msg_address + 48, 20);
-			object->num_elems *= 2;
-			st_renavigateTo(msg_pointer, msg_address, msg_size);
+			mapObject* cmpd_map_obj = st_navigateTo(msg_address + 48, 20);
+			byte* cmpd_pointer = cmpd_map_obj->address_ptr;
+			readDataTypeMessage(object, cmpd_pointer, msg_address + 48, 20);
+			st_releasePages(cmpd_map_obj);
 			break;
 		default:
 			object->byte_order = LITTLE_ENDIAN;
@@ -74,18 +74,18 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 	{
 		case 0:
 			object->data_address = msg_address + 4;
-			object->data_pointer = msg_pointer + 4;
+			//object->data_pointer = msg_pointer + 4;
 			break;
 		case 1:
 			object->data_address = getBytesAsNumber(msg_pointer + 2, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-			object->data_pointer = msg_pointer + (object->data_address - msg_address);
+			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
 			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->chunked_info.chunk_update = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-			object->data_pointer = msg_pointer + (object->data_address - msg_address);
+			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
 				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4, META_DATA_BYTE_ORDER);

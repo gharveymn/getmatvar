@@ -237,10 +237,10 @@ DataArrays rearrangeImaginaryData(Data* object)
 		case mxSINGLE_CLASS:
 		case mxDOUBLE_CLASS:
 			imag_data.data = mxMalloc(object->num_elems*object->elem_size/2);
-			for(uint32_t i = 0; i < object->num_elems/2; i++)
+			for(uint32_t i = 0; i < object->num_elems; i++)
 			{
-				memcpy(imag_data.data + object->elem_size*i, object->data_arrays.data + (2*i + 1)*object->elem_size, object->elem_size);
-				memcpy(object->data_arrays.data + object->elem_size*i, object->data_arrays.data + (2*i)*object->elem_size, object->elem_size);
+				memcpy(imag_data.data + i*object->elem_size/2, object->data_arrays.data + (2*i + 1)*object->elem_size/2, object->elem_size/2);
+				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + (2*i)*object->elem_size/2, object->elem_size/2);
 			}
 			mxRealloc(object->data_arrays.data, object->num_elems*object->elem_size/2);
 			break;

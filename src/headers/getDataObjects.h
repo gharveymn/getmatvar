@@ -65,6 +65,7 @@ typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
+#define DEFAULT_MAX_NUM_MAP_OBJS 10;
 
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))
@@ -275,7 +276,6 @@ struct data_
 	
 	uint8_t layout_class;
 	address_t data_address;
-	byte* data_pointer;
 	DataArrays data_arrays;
 	
 	address_t parent_obj_address;
@@ -292,14 +292,23 @@ typedef struct
 	bool_t is_mapped;
 	address_t pg_start_a;
 	address_t pg_end_a;
-	address_t map_base;//if already mapped by windows, the base offset of this map
+	address_t map_start;//if already mapped by windows, the base offset of this map
 	address_t map_end; //if already mapped by windows, what offset this map extends to
 	address_t max_map_end;
 	byte* pg_start_p;
 	uint8_t num_using;
 	uint32_t total_num_mappings;
-	uint32_t last_use_time_stamp;
 } pageObject;
+
+typedef struct
+{
+	address_t map_start;//if already mapped by windows, the base offset of this map
+	address_t map_end; //if already mapped by windows, what offset this map extends to
+	byte* map_start_ptr;
+	byte* address_ptr;
+	uint32_t num_using;
+	bool_t is_mapped;
+} mapObject;
 
 typedef struct
 {
@@ -347,10 +356,13 @@ Queue* top_level_objects;
 Queue* varname_queue;
 Queue* object_queue;
 Queue* eval_objects;
+Queue* map_objects;
 
 int fd;
 Superblock s_block;
 uint64_t default_bytes;
+
+size_t max_num_map_objs;
 
 Queue* inflate_thread_obj_queue;
 int num_avail_threads;		//number of processors - 1
@@ -358,12 +370,12 @@ int num_threads_user_def;		//user specifies number of threads
 bool_t will_multithread;
 bool_t will_suppress_warnings;
 
+bool_t is_super_mapped;
+byte* super_pointer;
+
 bool_t threads_are_started; //only start the thread pool once
 pthread_mutex_t thread_acquisition_lock;
 pageObject* page_objects;
-
-volatile uint32_t usage_iterator;
-volatile double sum_usage_offset;
 
 Data* virtual_super_object;
 

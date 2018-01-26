@@ -10,9 +10,12 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
-	byte* tree_pointer = st_navigateTo(node_address, 8);
+	//guess how large the tree is going to be so we don't waste time mapping later
+	//mapObject* tree_map_obj = st_navigateTo(node_address, 8);
+	mapObject* tree_map_obj = st_navigateTo(node_address, 8);
+	byte* tree_pointer = tree_map_obj->address_ptr;
 	entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	st_releasePages(tree_pointer, node_address, 8);
+	st_releasePages(tree_map_obj);
 	
 	uint64_t total_size = entries_used*(s_block.size_of_lengths + s_block.size_of_offsets) + (uint64_t)8 + 2*s_block.size_of_offsets;
 	
@@ -23,9 +26,10 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
 	for(int i = 0; i < entries_used; i++)
 	{
-		byte* key_pointer = st_navigateTo(key_address, total_size - (key_address - node_address));
+		mapObject* key_map_obj = st_navigateTo(key_address, total_size - (key_address - node_address));
+		byte* key_pointer = key_map_obj->address_ptr;
 		sub_node_address_list[i] = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		st_releasePages(key_pointer, key_address, total_size - (key_address - node_address));
+		st_releasePages(key_map_obj);
 		key_address += s_block.size_of_lengths + s_block.size_of_offsets;
 	}
 	
@@ -40,25 +44,30 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 
 void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
-	byte* snod_pointer = st_navigateTo(node_address, 8);
+	mapObject* snod_map_obj = st_navigateTo(node_address, 8);
+	byte* snod_pointer = snod_map_obj->address_ptr;
 	if(memcmp(snod_pointer, "TREE", 4) == 0)
 	{
-		st_releasePages(snod_pointer, node_address, 8);
+		st_releasePages(snod_map_obj);
 		readTreeNode(object, node_address, heap_address);
 		return;
 	}
 	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	uint64_t total_snod_size = 8 + (num_symbols - 1) * s_block.sym_table_entry_size + 3 * s_block.size_of_offsets + 8 + s_block.size_of_offsets;
-	st_releasePages(snod_pointer, node_address, 8);
-	snod_pointer = st_navigateTo(node_address, total_snod_size);
+	uint64_t total_snod_size = (uint64_t)8 + (num_symbols - 1) * s_block.sym_table_entry_size + 3 * s_block.size_of_offsets + 8 + s_block.size_of_offsets;
+	st_releasePages(snod_map_obj);
+	snod_map_obj = st_navigateTo(node_address, total_snod_size);
+	snod_pointer = snod_map_obj->address_ptr;
 	
 	uint32_t cache_type;
 	
-	byte* heap_pointer = st_navigateTo(heap_address, (uint64_t) 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets);
+	
+	mapObject* heap_map_obj = st_navigateTo(heap_address, (uint64_t) 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets);
+	byte* heap_pointer = heap_map_obj ->address_ptr;
 	uint64_t heap_data_segment_size = getBytesAsNumber(heap_pointer + 8, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	uint64_t heap_data_segment_address = getBytesAsNumber(heap_pointer + 8 + 2*s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	st_releasePages(heap_pointer, heap_address, (uint64_t) 8 + 2 * s_block.size_of_lengths + s_block.size_of_offsets);
-	byte* heap_data_segment_pointer = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
+	st_releasePages(heap_map_obj);
+	mapObject* heap_data_segment_map_obj = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
+	byte* heap_data_segment_pointer = heap_data_segment_map_obj->address_ptr;
 	
 	for(int i = num_symbols - 1; i >= 0; i--)
 	{
@@ -80,13 +89,15 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 					getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + 3*s_block.size_of_offsets + 8, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			
 			//parse the subtree
-			st_releasePages(snod_pointer, node_address, total_snod_size);
-			st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
+			st_releasePages(snod_map_obj);
+			st_releasePages(heap_data_segment_map_obj);
 			
 			readTreeNode(sub_object, sub_tree_address, sub_heap_address);
 			
-			snod_pointer = st_navigateTo(node_address, total_snod_size);
-			heap_data_segment_pointer = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
+			snod_map_obj = st_navigateTo(node_address, total_snod_size);
+			snod_pointer = snod_map_obj->address_ptr;
+			heap_data_segment_map_obj = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
+			heap_data_segment_pointer = heap_data_segment_map_obj->address_ptr;
 			
 		}
 		else if(cache_type == 2)
@@ -103,8 +114,8 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 		
 	}
 	
-	st_releasePages(snod_pointer, node_address, total_snod_size);
-	st_releasePages(heap_data_segment_pointer, heap_data_segment_address, heap_data_segment_size);
+	st_releasePages(snod_map_obj);
+	st_releasePages(heap_data_segment_map_obj);
 	
 }
 

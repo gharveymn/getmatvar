@@ -26,6 +26,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	//init queues
 	top_level_objects = initQueue(NULL);
 	varname_queue = initQueue(freeVarname);
+	map_objects = initQueue(freeMapObject);
 	
 	//open the file descriptor
 	fd = open(filename, O_RDONLY);
@@ -50,11 +51,20 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	num_pages = file_size/alloc_gran + 1;
 	initializePageObjects();
 	
-	byte* head = st_navigateTo(0, MATFILE_SIG_LEN);
-	if(memcmp(head, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
+	if(file_size < 1024000)
+	{
+		is_super_mapped = TRUE;
+		will_multithread = FALSE;
+		mapObject* super_map_obj = st_navigateTo(0, file_size);
+		super_pointer = super_map_obj->address_ptr;
+	}
+	
+	mapObject* head_map_obj = st_navigateTo(0, MATFILE_SIG_LEN);
+	byte* head_pointer = head_map_obj->address_ptr;
+	if(memcmp(head_pointer, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
 		char filetype[MATFILE_SIG_LEN];
-		memcpy(filetype, head, MATFILE_SIG_LEN);
+		memcpy(filetype, head_pointer, MATFILE_SIG_LEN);
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:wrongFormatError");
 		if(memcmp(filetype, "MATLAB", 6) == 0)
@@ -67,7 +77,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		}
 		return;
 	}
-	st_releasePages(head, 0, MATFILE_SIG_LEN);
+	st_releasePages(head_map_obj);
 	
 	//find superblock
 	s_block = getSuperblock();
@@ -110,6 +120,9 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	freeQueue(top_level_objects);
 	top_level_objects = NULL;
 
+	freeQueue(map_objects);
+	map_objects = NULL;
+	
 #ifdef NO_MEX
 	pthread_mutex_destroy(&mmap_usage_update_lock);
 #endif

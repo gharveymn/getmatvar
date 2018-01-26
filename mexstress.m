@@ -6,11 +6,11 @@ addpath('bin')
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
-file = 'res/test_struct2.mat';
-vars = {''};
+file = 'res/my_struct1.mat';
+vars = {};
 domemory = false;
 compare = false;
-numtests = 1000;
+numtests = 10000;
 stride = 100;
 mvgavgtime = zeros(stride,1);
 strideload = 100;

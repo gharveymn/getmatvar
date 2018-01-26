@@ -197,9 +197,7 @@ void* doInflate_(void* t)
 				error_flag = TRUE;
 				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(error_message,
-					   "libdeflate failed because the output buffer was not large enough (tried to put "
-							   "%d bytes into %d byte buffer).\n\n", (int) max_est_decomp_size,
-					   CHUNK_BUFFER_SIZE);
+					   "libdeflate failed because the output buffer was not large enough");
 				return (void*) &thread_obj->err;
 			default:
 				//do nothing
@@ -330,7 +328,8 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		return 0;
 	}
 	
-	byte* tree_pointer = st_navigateTo(node->address, 8);
+	mapObject* tree_map_obj = st_navigateTo(node->address, 8);
+	byte* tree_pointer = tree_map_obj->address_ptr;
 	
 	if(strncmp((char*) tree_pointer, "TREE", 4) != 0)
 	{
@@ -347,7 +346,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		{
 			node->leaf_type = RAWDATA;
 		}
-		st_releasePages(tree_pointer, node->address, 8);
+		st_releasePages(tree_map_obj);
 		return 0;
 	}
 	
@@ -375,10 +374,11 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	//(Dimensionality+1)*16 bytes
 	key_size = 4 + 4 + (num_chunked_dims + 1) * 8;
 	
-	st_releasePages(tree_pointer, node->address, 8);
+	st_releasePages(tree_map_obj);
 	uint64_t key_address = node->address + 8 + 2 * s_block.size_of_offsets;
 	bytes_needed = 8 + num_chunked_dims * 8 + key_size + s_block.size_of_offsets;
-	byte* key_pointer = st_navigateTo(key_address, bytes_needed);
+	mapObject* key_map_obj = st_navigateTo(key_address, bytes_needed);
+	byte* key_pointer = key_map_obj->address_ptr;
 	node->keys[0].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 	node->keys[0].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	for(int j = 0; j < num_chunked_dims; j++)
@@ -395,7 +395,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 				getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) +
 				s_block.base_address;
 		
-		st_releasePages(key_pointer, key_address, bytes_needed);
+		st_releasePages(key_map_obj);
 		fillNode(node->children[i], num_chunked_dims);
 		
 		size_t page_index = node->children[i]->address / alloc_gran;
@@ -411,7 +411,8 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		}
 		
 		key_address += key_size + s_block.size_of_offsets;
-		key_pointer = st_navigateTo(key_address, bytes_needed);
+		key_map_obj = st_navigateTo(key_address, bytes_needed);
+		key_pointer = key_map_obj->address_ptr;
 		
 		node->keys[i + 1].size = (uint32_t) getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 		node->keys[i + 1].filter_mask = (uint32_t) getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
@@ -425,7 +426,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		
 	}
 	
-	st_releasePages(key_pointer, key_address, bytes_needed);
+	st_releasePages(key_map_obj);
 	return 0;
 	
 }
@@ -492,7 +493,7 @@ void memdump(const char* type)
 }
 #endif
 
-
+/*
 void* garbageCollection_(void* nothing)
 {
 	
@@ -508,7 +509,7 @@ void* garbageCollection_(void* nothing)
 				uint32_t usage_offset = usage_iterator - page_objects[i].last_use_time_stamp;
 				if(page_objects[i].num_using == 0 && usage_offset > sum_usage_offset / num_gc)
 				{
-					if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_base) != 0)
+					if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_start) != 0)
 					{
 						readMXError("getmatvar:badMunmapError",
 								  "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
@@ -526,6 +527,7 @@ void* garbageCollection_(void* nothing)
 	return NULL;
 	
 }
+*/
 
 
 void makeChunkedUpdates(uint32_t* chunk_update, const uint32_t* chunked_dims, const uint32_t* dims, uint8_t num_dims)

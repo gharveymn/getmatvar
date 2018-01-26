@@ -123,6 +123,7 @@ Data* cloneData(Data* old_object)
 	if(old_object->data_arrays.data != NULL)
 	{
 		new_object->data_arrays.data = malloc(old_object->num_elems*old_object->elem_size);
+		memcpy(new_object->data_arrays.data, old_object->data_arrays.data, old_object->num_elems*old_object->elem_size);
 	}
 	else
 	{
@@ -132,6 +133,7 @@ Data* cloneData(Data* old_object)
 	if(old_object->data_arrays.sub_object_header_offsets != NULL)
 	{
 		new_object->data_arrays.sub_object_header_offsets = malloc(old_object->num_elems*old_object->elem_size);
+		memcpy(new_object->data_arrays.sub_object_header_offsets, old_object->data_arrays.sub_object_header_offsets, old_object->num_elems*old_object->elem_size);
 	}
 	else
 	{

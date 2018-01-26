@@ -12,6 +12,7 @@ void freeDataObject(void* object);
 void freeDataObjectTree(Data* data_object);
 void destroyPageObjects(void);
 void freePageObject(size_t page_index);
+void freeMapObject(void* mo);
 void endHooks(void);
 
 #endif //CLEANUP_H

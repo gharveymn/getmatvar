@@ -232,11 +232,12 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	object->data_flags.is_filled = TRUE;
 	
-	byte* header_pointer = st_navigateTo(this_obj_address, 12);
+	mapObject* header_map_obj = st_navigateTo(this_obj_address, 12);
+	byte* header_pointer = header_map_obj->address_ptr;
 	uint32_t header_length = (uint32_t)getBytesAsNumber(header_pointer + 8, 4, META_DATA_BYTE_ORDER);
 	uint16_t num_msgs = (uint16_t)getBytesAsNumber(header_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	object->this_obj_address = this_obj_address;
-	st_releasePages(header_pointer, this_obj_address, 12);
+	st_releasePages(header_map_obj);
 	
 	//aligned on 8-byte boundaries, so msgs start at +16
 	collectMetaData(object, this_obj_address + 16, num_msgs, header_length);
@@ -244,31 +245,6 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
 	{
 		return;
-	}
-	
-	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
-	{
-		object->data_flags.is_struct_array = TRUE;
-		//pretend this is a cell
-		object->matlab_internal_type = mxCELL_CLASS;
-		object->super_object->num_dims = object->num_dims;
-		if(object->super_object->dims != NULL)
-		{
-			free(object->super_object->dims);
-		}
-		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
-		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint32_t));
-		object->super_object->dims[object->num_dims] = 0;
-	}
-	
-	if(object->matlab_internal_attributes.MATLAB_sparse == TRUE)
-	{
-		object->matlab_sparse_type = object->matlab_internal_type;
-		object->matlab_internal_type = mxSPARSE_CLASS;
-	}
-	else if(object->super_object->matlab_internal_attributes.MATLAB_sparse == TRUE)
-	{
-		object->matlab_internal_type = mxUINT64_CLASS;
 	}
 	
 	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
@@ -288,15 +264,16 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	
 	//fetch data
+	mapObject* data_map_obj;
 	switch(object->layout_class)
 	{
 		case 0:
 		case 1:
 			//compact storage or contiguous storage
 			//placeData will just segfault if it has an error, ie. if this encounters an error something is very wrong
-			object->data_pointer = st_navigateTo(object->data_address, object->num_elems * object->elem_size);
-			placeData(object, object->data_pointer, 0, 0, object->num_elems, object->elem_size, object->byte_order);
-			st_releasePages(object->data_pointer, object->data_address, object->num_elems * object->elem_size);
+			data_map_obj = st_navigateTo(object->data_address, object->num_elems * object->elem_size);
+			placeData(object, data_map_obj->address_ptr, 0, 0, object->num_elems, object->elem_size, object->byte_order);
+			st_releasePages(data_map_obj);
 			break;
 		case 2:
 			//chunked storage
@@ -420,13 +397,44 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		return;
 	}
 	
+	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
+	{
+		object->data_flags.is_struct_array = TRUE;
+		//pretend this is a cell
+		object->matlab_internal_type = mxCELL_CLASS;
+		object->super_object->num_dims = object->num_dims;
+		if(object->super_object->dims != NULL)
+		{
+			free(object->super_object->dims);
+		}
+		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
+		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint32_t));
+		object->super_object->dims[object->num_dims] = 0;
+	}
+	
+	if(object->matlab_internal_attributes.MATLAB_sparse == TRUE)
+	{
+		object->matlab_sparse_type = object->matlab_internal_type;
+		object->matlab_internal_type = mxSPARSE_CLASS;
+	}
+	else if(object->super_object->matlab_internal_attributes.MATLAB_sparse == TRUE)
+	{
+		object->matlab_internal_type = mxUINT64_CLASS;
+	}
+	
+	if(object->complexity_flag == mxCOMPLEX)
+	{
+		object->elem_size *= 2;
+	}
+	
 }
 
 
 uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
 {
 	
-	byte* msgs_start_pointer = st_navigateTo(msgs_start_address, msgs_length);
+	mapObject* msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
+	byte* msgs_start_pointer = msgs_start_map_obj->address_ptr;
 	
 	uint64_t cont_header_address = UNDEF_ADDR;
 	uint32_t cont_header_length = 0;
@@ -492,9 +500,10 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
 				
-				st_releasePages(msgs_start_pointer, msgs_start_address, msgs_length);
+				st_releasePages(msgs_start_map_obj);
 				message_num = interpretMessages(object, cont_header_address, cont_header_length, message_num, num_msgs, repeat_tracker);
-				msgs_start_pointer = st_navigateTo(msgs_start_address, msgs_length);
+				msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
+				msgs_start_pointer = msgs_start_map_obj->address_ptr;
 				break;
 			default:
 				//ignore message
@@ -506,7 +515,7 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 		
 	}
 	
-	st_releasePages(msgs_start_pointer, msgs_start_address, msgs_length);
+	st_releasePages(msgs_start_map_obj);
 	return (uint16_t)(message_num - 1);
 	
 }
