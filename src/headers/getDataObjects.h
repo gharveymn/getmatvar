@@ -65,7 +65,8 @@ typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
 #define ERROR_BUFFER_SIZE 5000
 #define WARNING_BUFFER_SIZE 1000
-#define DEFAULT_MAX_NUM_MAP_OBJS 10;
+#define DEFAULT_MAX_NUM_MAP_OBJS 10
+#define MIN_MT_ELEMS_THRESH 100000
 
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))

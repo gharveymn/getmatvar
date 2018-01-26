@@ -197,7 +197,7 @@ void freePageObject(size_t page_index)
 		//second parameter doesnt do anything on windows
 		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_start) != 0)
 		{
-			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in mt_navigateTo(). Check errno %d\n\n", errno);
+			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freePageObject(). Check errno %d\n\n", errno);
 		}
 
 #ifdef NO_MEX
@@ -227,7 +227,7 @@ void freeMapObject(void* mo)
 		{
 			if(munmap(map_obj->map_start_ptr, map_obj->map_end - map_obj->map_start) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_freeMapObject(). Check errno %d\n\n", errno);
 			}
 			map_obj->is_mapped = FALSE;
 #ifdef NO_MEX

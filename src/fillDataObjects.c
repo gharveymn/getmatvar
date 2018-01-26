@@ -422,11 +422,6 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		object->matlab_internal_type = mxUINT64_CLASS;
 	}
 	
-	if(object->complexity_flag == mxCOMPLEX)
-	{
-		object->elem_size *= 2;
-	}
-	
 }
 
 

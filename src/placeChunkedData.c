@@ -26,14 +26,7 @@ errno_t getChunkedData(Data* object)
 	thread_object.err = 0;
 	thread_object.main_thread_ready = &main_thread_ready;
 	
-	bool_t temp_mt_flag;
-	if(object->num_elems < 5000)
-	{
-		temp_mt_flag = will_multithread;
-		will_multithread = FALSE;
-	}
-	
-	if(will_multithread == TRUE)
+	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
 		
 		pthread_mutex_init(&pthread_mtx, NULL);
@@ -102,7 +95,7 @@ errno_t getChunkedData(Data* object)
 	free(data_page_buckets);
 	
 	
-	if(will_multithread == TRUE)
+	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
 		pthread_mutex_lock(&pthread_mtx);
 		main_thread_ready = TRUE;
@@ -123,11 +116,6 @@ errno_t getChunkedData(Data* object)
 	
 	mt_freeQueue(mt_data_queue);
 	freeTree(root);
-	
-	if(object->num_elems < 5000)
-	{
-		will_multithread = temp_mt_flag;
-	}
 	
 	return ret;
 }
@@ -160,7 +148,7 @@ void* doInflate_(void* t)
 	Key data_key;
 	TreeNode* data_node;
 	
-	if(will_multithread == TRUE)
+	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
 		pthread_mutex_lock(pthread_mtx);
 		while(*main_thread_ready != TRUE)

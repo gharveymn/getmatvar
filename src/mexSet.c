@@ -240,7 +240,7 @@ DataArrays rearrangeImaginaryData(Data* object)
 			for(uint32_t i = 0; i < object->num_elems; i++)
 			{
 				memcpy(imag_data.data + i*object->elem_size/2, object->data_arrays.data + (2*i + 1)*object->elem_size/2, object->elem_size/2);
-				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + (2*i)*object->elem_size/2, object->elem_size/2);
+				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + i*object->elem_size, object->elem_size/2);
 			}
 			mxRealloc(object->data_arrays.data, object->num_elems*object->elem_size/2);
 			break;

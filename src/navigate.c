@@ -11,17 +11,10 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	mapObject* obj = NULL;
 	while((obj = (mapObject*)traverseQueue(map_objects)) != NULL)
 	{
-		if(obj->map_start <= address && map_end <= obj->map_end)
+		if(obj->map_start <= address && map_end <= obj->map_end && obj->is_mapped == TRUE)
 		{
 			obj->num_using++;
-			if(is_super_mapped == TRUE)
-			{
-				obj->address_ptr = obj->map_start_ptr + address;
-			}
-			else
-			{
-				obj->address_ptr = obj->map_start_ptr + (address%alloc_gran);
-			}
+			obj->address_ptr = obj->map_start_ptr + (address - obj->map_start);
 			return obj;
 		}
 	}
@@ -38,8 +31,8 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	map_obj->is_mapped = TRUE;
 	map_obj->address_ptr = map_obj->map_start_ptr + (address % alloc_gran);
-	
 	enqueue(map_objects, map_obj);
+	
 	if(map_objects->length > max_num_map_objs)
 	{
 		obj = (mapObject*)peekQueue(map_objects, QUEUE_FRONT);
@@ -48,7 +41,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 			mapObject* obs_obj = (mapObject*)dequeue(map_objects);
 			if(munmap(obs_obj->map_start_ptr, obs_obj->map_end - obs_obj->map_start) != 0)
 			{
-				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_releasePages(). Check errno %d\n\n", errno);
+				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
 			}
 			obs_obj->is_mapped = FALSE;
 #ifdef NO_MEX

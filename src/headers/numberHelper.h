@@ -7,7 +7,7 @@
 
 #include "getDataObjects.h"
 
-int roundUp(int numToRound);
+size_t roundUp8(size_t numToRound);
 uint64_t getBytesAsNumber(byte* chunk_start, size_t num_bytes, ByteOrder endianness);
 void reverseBytes(byte* data_pointer, size_t num_elems);
 

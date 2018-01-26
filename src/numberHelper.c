@@ -27,9 +27,9 @@ uint64_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endian
 }
 
 
-int roundUp(int numToRound)
+size_t roundUp8(size_t numToRound)
 {
-	int remainder = numToRound%8;
+	size_t remainder = numToRound%8;
 	if(remainder == 0)
 	{
 		return numToRound;
