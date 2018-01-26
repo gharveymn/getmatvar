@@ -7,9 +7,9 @@ numtests = 1;
 numsamples = 1000;
 lents = 0;
 
-maxDepth = 3;
-minelem = 5;
-maxelem = 10;
+maxDepth = 2;
+minelem = 50000;
+maxelem = 100000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;
@@ -20,7 +20,7 @@ data = zeros(numtests,2);
 
 doplot = false;
 donames = true;
-doCompare = true;
+doCompare = false;
 numelems = 0;
 avgmultiplier = 0;
 
@@ -55,12 +55,14 @@ for j = 1:numtests
 				save('res/test_struct1nametest.mat', 'names');
 				for p = 1:numel(names)
 					gmvret = getmatvar('res/test_struct1.mat',names{p});
-					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
-					if(~isempty(gmv) || ~isempty(ld))
-						%diffs = find(gmv ~= ld);
-						%mindiffind = min(find(gmv ~= ld));w
-						error(['getmatvar failed to select ' names{p} 'correctly']);
-					end
+                    if(doCompare)
+                        eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
+                        if(~isempty(gmv) || ~isempty(ld))
+                            %diffs = find(gmv ~= ld);
+                            %mindiffind = min(find(gmv ~= ld));w
+                            error(['getmatvar failed to select ' names{p} 'correctly']);
+                        end
+                    end
 				end
 				delete('res/test_struct1nametest.mat');
 			end
@@ -83,7 +85,6 @@ for j = 1:numtests
 				tic;
 				load('res/test_struct2.mat');
 				mvgavgtimeload(mod(i-1,stride)+1) = toc;
-				
 				[similarity,gmv,ld] = compstruct(gmvtest_struct2, test_struct2);
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);
@@ -97,12 +98,14 @@ for j = 1:numtests
 				save('res/test_struct2nametest.mat', 'names');
 				for p = 1:numel(names)
 					gmvret = getmatvar('res/test_struct2.mat',names{p});
-					eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
-					if(~isempty(gmv) || ~isempty(ld))
-						%diffs = find(gmv ~= ld);
-						%mindiffind = min(find(gmv ~= ld));w
-						error(['getmatvar failed to select ' names{p} 'correctly']);
-					end
+					if(doCompare)
+                        eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
+                        if(~isempty(gmv) || ~isempty(ld))
+                            %diffs = find(gmv ~= ld);
+                            %mindiffind = min(find(gmv ~= ld));w
+                            error(['getmatvar failed to select ' names{p} 'correctly']);
+                        end
+                    end
 				end
 				delete('res/test_struct2nametest.mat');
 			end

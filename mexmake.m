@@ -4,7 +4,7 @@ cd src
 
 try
 	
-	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];
@@ -50,8 +50,9 @@ try
 		
 	elseif(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'gcc'))
 		
-		sources = [sources,{'extlib/libdeflate/x64/unix/libdeflate.a'}];
-		mex(pthreadsw32_path_include, mexflags{:} , sources{:})
+		%sources = [sources,{['-L' fullfile(pwd,'extlib','libdeflate','x64','unix')], '-ldeflate'}];
+		sources = [sources, {fullfile(pwd,'extlib','libdeflate','x64','unix','libdeflate.a')}];
+        mex(mexflags{:} , sources{:})
 		
 	end
 	
