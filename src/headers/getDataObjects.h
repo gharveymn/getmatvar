@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <io.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -351,7 +352,7 @@ void memdump(const char type[]);
 
 ByteOrder __byte_order__;
 size_t alloc_gran;
-size_t file_size;
+int64_t file_size;
 size_t num_pages;
 bool_t error_flag;
 bool_t is_done;

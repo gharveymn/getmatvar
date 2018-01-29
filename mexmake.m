@@ -4,7 +4,7 @@ cd src
 
 try
 	
-	mexflags = {'-O', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
 	

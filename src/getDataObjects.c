@@ -38,8 +38,8 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	
 	//get file size
-	file_size = (size_t)lseek(fd, 0, SEEK_END);
-	if(file_size == (size_t)-1)
+	file_size = (int64_t)_lseeki64(fd, 0, SEEK_END);
+	if(file_size < 0)
 	{
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:lseekFailureError");
@@ -49,6 +49,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	default_bytes = alloc_gran < file_size? alloc_gran : file_size;
 	num_pages = file_size/alloc_gran + 1;
 	
+	//1MB
 	if(file_size < 1024000)
 	{
 		is_super_mapped = TRUE;
