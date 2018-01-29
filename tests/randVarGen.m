@@ -71,9 +71,6 @@ function [ret, numvarsz, teststrs] = randVarGen_(maxDepth, currDepth, maxElement
 			%reserved, make a double instead or sparse
 			if(numel(dims) == 2)
 				ret = sparse(logical(rand(dims{:}) > 0.5));
-				if(randi(2) == 1)
-					ret = ret.*rand(dims{:},'double');
-				end
 			else
 				ret = rand(dims{:},'double');
 			end
@@ -85,28 +82,28 @@ function [ret, numvarsz, teststrs] = randVarGen_(maxDepth, currDepth, maxElement
 			ret = rand(dims{:},'single');
 		case(6)
 			% 	6	mxINT8_CLASS,
-			ret = int8(randi(intmax('int8'),dims{:}));
+			ret = randi(intmax('int8'),dims{:},'int8');
 		case(7)
 			% 	7	mxUINT8_CLASS,
-			ret = uint8(randi(intmax('uint8'),dims{:}));
+			ret = randi(intmax('uint8'),dims{:},'uint8');
 		case(8)
 			% 	8	mxINT16_CLASS,
-			ret = int16(randi(intmax('int16'),dims{:}));
+			ret = randi(intmax('int16'),dims{:},'int16');
 		case(9)
 			% 	9	mxUINT16_CLASS,
-			ret = uint16(randi(intmax('uint16'),dims{:}));
+			ret = randi(intmax('uint16'),dims{:},'uint16');
 		case(10)
 			% 	10	mxINT32_CLASS,
-			ret = int32(randi(intmax('int32'),dims{:}));
+			ret = randi(intmax('int32'),dims{:},'int32');
 		case(11)
 			% 	11	mxUINT32_CLASS,
-			ret = uint32(randi(intmax('uint32'),dims{:}));
+			ret = randi(intmax('uint32'),dims{:},'uint32');
 		case(12)
 			% 	12	mxINT64_CLASS,
-			ret = int64(randi(intmax,dims{:}));
+			ret = randi(intmax('int64'),dims{:},'int64');
 		case(13)
 			% 	13	mxUINT64_CLASS,
-			ret = uint64(randi(intmax,dims{:}));
+			ret = randi(intmax('uint64'),dims{:},'uint64');
 		case(14)
 			% 	14	mxFUNCTION_CLASS,
 			if(ignoreUnusables)

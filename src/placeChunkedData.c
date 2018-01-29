@@ -216,7 +216,7 @@ void* doInflate_(void* t)
 		pthread_mutex_lock(thread_mtx);
 		while(*main_thread_ready != TRUE)
 		{
-			pthread_cond_wait(pthread_sync, pthread_mtx);
+			pthread_cond_wait(thread_sync, thread_mtx);
 		}
 		pthread_mutex_unlock(thread_mtx);
 #endif

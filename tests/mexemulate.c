@@ -164,23 +164,27 @@ void readInput(int nrhs, char* prhs[])
 			if(strncmp(input, "-", 1) == 0)
 			{
 				kwarg_flag = TRUE;
-				if(strncmp(input, "-t", 2) == 0)
+				if(strcmp(input, "-t") == 0 && strlen(input) == 2)
 				{
 					kwarg_expected = THREAD_KWARG;
 				}
-				else if(strncmp(input, "-m", 2) == 0)
+				else if(strcmp(input, "-m") == 0 && strlen(input) == 2)
 				{
 					kwarg_expected = MT_KWARG;
 				}
-				else if(strcmp(input, "-suppress-warnings") == 0 || strcmp(input, "-sw") == 0)
+				else if((strcmp(input, "-suppress-warnings") == 0 && strlen(input) == strlen("-suppress-warnings")) || (strcmp(input, "-sw") == 0  && strlen(input) ==3))
 				{
 					will_suppress_warnings = TRUE;
 					kwarg_flag = FALSE;
 				}
-				else if(strcmp(input, "-st") == 0)
+				else if(strcmp(input, "-st") == 0 && strlen(input) == 3)
 				{
 					will_multithread = FALSE;
 					kwarg_flag = FALSE;
+				}
+				else
+				{
+					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
 				}
 			}
 			else

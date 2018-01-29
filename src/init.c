@@ -24,6 +24,10 @@ void initialize(void)
 	max_num_map_objs = DEFAULT_MAX_NUM_MAP_OBJS;
 	is_super_mapped = FALSE;
 	super_pointer = NULL;
+	memset(error_id, 0, sizeof(error_id));
+	memset(error_message, 0, sizeof(error_message));
+	memset(warn_id, 0, sizeof(warn_id));
+	memset(warn_message, 0, sizeof(warn_message));
 #ifdef NO_MEX
 	curr_mmap_usage = 0;
 	max_mmap_usage = 0;

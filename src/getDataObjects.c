@@ -61,7 +61,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	byte* head_pointer = head_map_obj->address_ptr;
 	if(memcmp(head_pointer, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
-		char filetype[MATFILE_SIG_LEN];
+		char filetype[MATFILE_SIG_LEN] = {0};
 		memcpy(filetype, head_pointer, MATFILE_SIG_LEN);
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:wrongFormatError");

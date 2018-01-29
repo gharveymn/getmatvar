@@ -7,7 +7,7 @@ numtests = 1;
 numsamples = 1000;
 lents = 0;
 
-maxDepth = 2;
+maxDepth = 1;
 minelem = 50000;
 maxelem = 100000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
@@ -20,7 +20,7 @@ data = zeros(numtests,2);
 
 doplot = false;
 donames = true;
-doCompare = false;
+doCompare = true;
 numelems = 0;
 avgmultiplier = 0;
 

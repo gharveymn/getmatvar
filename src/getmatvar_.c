@@ -308,30 +308,34 @@ void readInput(int nrhs, const mxArray* prhs[])
 					input = NULL;
 					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must have non-zero length.\n\n");
 				}
-				else if(strncmp(input, "-", 1) == 0)
+				else if(*input == '-')
 				{
 					kwarg_flag = TRUE;
-					if(strcmp(input, "-t") == 0)
+					if(strcmp(input, "-t") == 0 && strlen(input) == 2)
 					{
 						kwarg_expected = THREAD_KWARG;
 					}
-					else if(strcmp(input, "-m") == 0)
+					else if(strcmp(input, "-m") == 0 && strlen(input) == 2)
 					{
 						kwarg_expected = MT_KWARG;
 					}
-					else if(strcmp(input, "-suppress-warnings") == 0 || strcmp(input, "-sw") == 0)
+					else if((strcmp(input, "-suppress-warnings") == 0 && strlen(input) == strlen("-suppress-warnings")) || (strcmp(input, "-sw") == 0  && strlen(input) ==3))
 					{
 						will_suppress_warnings = TRUE;
 						kwarg_flag = FALSE;
 					}
-					else if(strcmp(input, "-st") == 0)
+					else if(strcmp(input, "-st") == 0 && strlen(input) == 3)
 					{
 						will_multithread = FALSE;
 						kwarg_flag = FALSE;
 					}
+					else
+					{
+						readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
+					}
 					
-						mxFree(input);
-						input = NULL;
+					mxFree(input);
+					input = NULL;
 				}
 				else
 				{
