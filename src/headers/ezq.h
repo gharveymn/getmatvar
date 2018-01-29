@@ -4,6 +4,9 @@
 #define QUEUE_FRONT 0
 #define QUEUE_BACK 1
 
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef struct QueueNode_ QueueNode;
 struct QueueNode_
 {

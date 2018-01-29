@@ -1,5 +1,4 @@
 #include "headers/getDataObjects.h"
-#include "headers/ezq.h"
 
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -107,24 +106,24 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 				case mxUINT64_CLASS:
 				case mxSINGLE_CLASS:
 				case mxDOUBLE_CLASS:
-					setNumericPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setNumericPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					break;
 				case mxSPARSE_CLASS:
-					setSpsPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setSpsPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					break;
 				case mxLOGICAL_CLASS:
-					setLogicPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setLogicPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					break;
 				case mxCHAR_CLASS:
-					setCharPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setCharPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					break;
 				case mxCELL_CLASS:
-					setCellPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setCellPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					//Indicate we should free any memory used by this
 					obj->data_flags.is_mx_used = FALSE;
 					break;
 				case mxSTRUCT_CLASS:
-					setStructPtr(obj, returnStructure, obj->names.short_name, obj->s_c_array_index, super_structure_type);
+					setStructPtr(obj, returnStructure, obj->names.short_name, (mwIndex)obj->s_c_array_index, super_structure_type);
 					obj->data_flags.is_mx_used = FALSE;
 					break;
 				case mxFUNCTION_CLASS:

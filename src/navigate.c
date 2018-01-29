@@ -82,7 +82,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
-#if ((defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__)
+#ifdef WIN32_LEAN_AND_MEAN
 	
 	//in Windows the .is_mapped becomes a flag for if the mapping originally came from this object
 	//if there is a map available the map_start and map_end addresses indicate where the start and end are
@@ -107,18 +107,18 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 #ifdef DO_MEMDUMP
 			memdump("R");
 #endif
-			
-			pthread_mutex_lock(&page_objects[start_page].lock);
+
+			EnterCriticalSection(&page_objects[start_page].lock);
 			//confirm
 			if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
-				pthread_mutex_unlock(&page_objects[start_page].lock);
+				LeaveCriticalSection(&page_objects[start_page].lock);
 				return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 			}
 			else
 			{
-				pthread_mutex_unlock(&page_objects[start_page].lock);
+				LeaveCriticalSection(&page_objects[start_page].lock);
 			}
 			
 		}
@@ -127,25 +127,25 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			//acquire lock if we need to remap
 			//lock the if so there isn't deadlock
-			pthread_spin_lock(&if_lock);
+			EnterCriticalSection(&if_lock);
 			if(page_objects[start_page].num_using == 0)
 			{
-				pthread_mutex_lock(&page_objects[start_page].lock);
+				EnterCriticalSection(&page_objects[start_page].lock);
 				
 				//the state may have changed while acquiring the lock, so check again
 				if(page_objects[start_page].num_using == 0)
 				{
 					page_objects[start_page].num_using++;
-					pthread_spin_unlock(&if_lock);
+					LeaveCriticalSection(&if_lock);
 					break;
 				}
 				else
 				{
-					pthread_mutex_unlock(&page_objects[start_page].lock);
+					LeaveCriticalSection(&page_objects[start_page].lock);
 				}
 			}
-			pthread_spin_unlock(&if_lock);
-			
+			LeaveCriticalSection(&if_lock);
+		
 		}
 		
 	}
@@ -170,13 +170,13 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 
 #ifdef NO_MEX
-	pthread_mutex_lock(&mmap_usage_update_lock);
+	EnterCriticalSection(&mmap_usage_update_lock);
 	curr_mmap_usage += end_address - start_address;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
-	pthread_mutex_unlock(&mmap_usage_update_lock);
+	LeaveCriticalSection(&mmap_usage_update_lock);
 #endif
 	
-	pthread_mutex_unlock(&page_objects[start_page].lock);
+	LeaveCriticalSection(&page_objects[start_page].lock);
 	
 	return page_objects[start_page].pg_start_p + (address - page_objects[start_page].pg_start_a);
 
@@ -297,9 +297,10 @@ void mt_releasePages(uint64_t address, uint64_t bytes_needed)
 	//size_t end_page = (address + bytes_needed - 1)/alloc_gran; //INCLUSIVE
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
-#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+#ifdef WIN32_LEAN_AND_MEAN
 	
-	pthread_mutex_lock(&page_objects[start_page].lock);
+	
+	EnterCriticalSection(&page_objects[start_page].lock);
 	page_objects[start_page].num_using--;
 	
 	//0 bytes_needed indicates operation done in parallel
@@ -317,7 +318,7 @@ void mt_releasePages(uint64_t address, uint64_t bytes_needed)
 			//fprintf(stderr, "%d ran", (int) start_page);
 		}
 	}
-	pthread_mutex_unlock(&page_objects[start_page].lock);
+	LeaveCriticalSection(&page_objects[start_page].lock);
 
 #else /*-----------------------------------------UNIX-----------------------------------------*/
 	

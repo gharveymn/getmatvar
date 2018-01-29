@@ -31,11 +31,11 @@ int main(int argc, char* argv[])
 			}
 			free(parameters.full_variable_names);
 			free(parameters.filename);
-		}
+//		}
 
 		fprintf(stderr, "\nProgram exited successfully.\n\n");
 		
-//	}
+	}
 
 }
 

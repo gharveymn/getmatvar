@@ -1,5 +1,4 @@
 #include "headers/readMessage.h"
-#include "headers/getDataObjects.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
@@ -7,10 +6,10 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
-	object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
+	object->dims = malloc((object->num_dims + 1)*sizeof(uint64_t));
 	for(int i = 0; i < object->num_dims; i++)
 	{
-		object->dims[object->num_dims - i - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, 4, META_DATA_BYTE_ORDER);
+		object->dims[object->num_dims - i - 1] = (uint64_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	}
 	object->dims[object->num_dims] = 0;
 	
@@ -33,7 +32,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 	//only run once
 	if(object->elem_size == 0)
 	{
-		object->elem_size = (uint32_t) getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
+		object->elem_size = (uint32_t)getBytesAsNumber(msg_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	}
 	object->datatype_bit_field = (uint32_t)getBytesAsNumber(msg_pointer + 1, 3, META_DATA_BYTE_ORDER);
 	
@@ -56,9 +55,9 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 		case HDF5_COMPOUND:
 			if(memcmp(msg_pointer + 8, "real", 4*sizeof(byte)) == 0)
 			{
-				object->complexity_flag = mxCOMPLEX;
+				object->complexity_flag = (mxComplexity)mxCOMPLEX;
 			}
-			size_t next_member_offset = 8 + roundUp8(strlen(msg_pointer) + 1) + 32;
+			size_t next_member_offset = 8 + roundUp8(strlen((char*)msg_pointer) + 1) + 32;
 			cmpd_pointer = msg_pointer + next_member_offset;
 			readDataTypeMessage(object, cmpd_pointer, msg_address + next_member_offset, 20);
 			break;
@@ -92,13 +91,15 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
-			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
-			object->chunked_info.chunk_update = malloc((object->chunked_info.num_chunked_dims + 1) * sizeof(uint32_t));
+			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
+			object->chunked_info.chunk_update = malloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
-				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint32_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4, META_DATA_BYTE_ORDER);
+				//chunked storage dims are 4 bytes wide
+				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint64_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
+																										META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			object->chunked_info.num_chunked_elems = 1;
@@ -119,7 +120,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
-	object->chunked_info.filters = malloc(object->chunked_info.num_filters * sizeof(Filter));
+	object->chunked_info.filters = malloc(object->chunked_info.num_filters*sizeof(Filter));
 	byte* helper_pointer = NULL;
 	uint16_t name_size = 0;
 	
@@ -188,8 +189,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	{
 		uint32_t attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp8(name_size) + 4, 4, META_DATA_BYTE_ORDER);
 		object->matlab_class = malloc((attribute_data_size + 1)*sizeof(char));
-		memcpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) +
-				roundUp8(dataspace_size)), attribute_data_size*sizeof(char));
+		memcpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), attribute_data_size*sizeof(char));
 		object->matlab_class[attribute_data_size] = 0x0;
 		selectMatlabClass(object);
 	}
@@ -200,9 +200,8 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		{
 			free(object->dims);
 		}
-		object->dims = malloc(2*sizeof(uint32_t));
-		memcpy(object->dims, (uint32_t*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) +
-				roundUp8(dataspace_size)), sizeof(uint32_t));
+		object->dims = malloc(2*sizeof(uint64_t));
+		memcpy(object->dims, (uint64_t*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), sizeof(uint64_t));
 		object->dims[1] = 0;
 	}
 	else if(strcmp(name, "MATLAB_empty") == 0)
@@ -211,10 +210,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	}
 	else if(strcmp(name, "MATLAB_object_decode") == 0)
 	{
-		object->matlab_internal_attributes.MATLAB_object_decode = *((objectDecodingHint*)(msg_pointer + 8 +
-				roundUp8(name_size) +
-				roundUp8(datatype_size) +
-				roundUp8(dataspace_size)));
+		object->matlab_internal_attributes.MATLAB_object_decode = *((objectDecodingHint*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)));
 		if(object->matlab_internal_attributes.MATLAB_object_decode == FUNCTION_HINT)
 		{
 			object->matlab_internal_type = mxFUNCTION_CLASS;
@@ -229,6 +225,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		}
 	}
 }
+
 
 void selectMatlabClass(Data* object)
 {

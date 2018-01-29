@@ -1,5 +1,4 @@
 #include "headers/cleanup.h"
-#include "headers/getDataObjects.h"
 
 
 void freeVarname(void* vn)
@@ -176,12 +175,19 @@ void destroyPageObjects(void)
 				page_objects[i].map_end = UNDEF_ADDR;
 				
 			}
-			
+
+#ifdef WIN32_LEAN_AND_MEAN
+			DeleteCriticalSection(&page_objects[i].lock);
+#else
 			pthread_mutex_destroy(&page_objects[i].lock);
-			
-		}
+#endif
 		
+		}
+#ifdef WIN32_LEAN_AND_MEAN
+		DeleteCriticalSection(&if_lock);
+#else
 		pthread_spin_destroy(&if_lock);
+#endif
 		free(page_objects);
 		page_objects = NULL;
 		
@@ -201,9 +207,15 @@ void freePageObject(size_t page_index)
 		}
 
 #ifdef NO_MEX
+#ifdef WIN32_LEAN_AND_MEAN
+		EnterCriticalSection(&mmap_usage_update_lock);
+		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_start;
+		LeaveCriticalSection(&mmap_usage_update_lock);
+#else
 		pthread_mutex_lock(&mmap_usage_update_lock);
 		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_start;
 		pthread_mutex_unlock(&mmap_usage_update_lock);
+#endif
 #endif
 		
 		page_objects[page_index].is_mapped = FALSE;

@@ -22,7 +22,7 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type);
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type);
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type);
-mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims);
+mwSize* makeObjDims(const uint64_t* dims, const mwSize num_dims);
 char** getFieldNames(Data* object);
 DataArrays rearrangeImaginaryData(Data* object);
 

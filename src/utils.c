@@ -1,5 +1,4 @@
 #include "headers/utils.h"
-#include "headers/ezq.h"
 
 
 /*for use on a single level*/
@@ -81,7 +80,7 @@ void parseCoordinates(VariableNameToken* vnt)
 }
 
 
-uint64_t coordToInd(const uint32_t* coords, const uint32_t* dims, uint8_t num_dims)
+uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_dims)
 {
 	uint64_t ret = 0;
 	uint64_t mult = 1;
@@ -165,8 +164,8 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
-		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
-		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	}
 	else
 	{
@@ -175,8 +174,8 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
-		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
-		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems * sizeof(uint32_t));
+		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
 	}
 	else
 	{
@@ -185,8 +184,8 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->dims != NULL)
 	{
-		new_object->dims = malloc(new_object->num_dims * sizeof(uint32_t));
-		memcpy(new_object->dims, old_object->dims, new_object->num_dims * sizeof(uint32_t));
+		new_object->dims = malloc(new_object->num_dims * sizeof(uint64_t));
+		memcpy(new_object->dims, old_object->dims, new_object->num_dims * sizeof(uint64_t));
 	}
 	else
 	{

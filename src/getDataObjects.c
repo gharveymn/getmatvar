@@ -1,5 +1,4 @@
 #include "headers/getDataObjects.h"
-#include "headers/ezq.h"
 //#pragma message ("getmatvar is compiling on WINDOWS")
 
 
@@ -49,7 +48,6 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	default_bytes = alloc_gran < file_size? alloc_gran : file_size;
 	num_pages = file_size/alloc_gran + 1;
-	initializePageObjects();
 	
 	if(file_size < 1024000)
 	{
@@ -124,7 +122,11 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	map_objects = NULL;
 	
 #ifdef NO_MEX
+#ifdef WIN32_LEAN_AND_MEAN
+	DeleteCriticalSection(&mmap_usage_update_lock);
+#else
 	pthread_mutex_destroy(&mmap_usage_update_lock);
+#endif
 #endif
 
 }

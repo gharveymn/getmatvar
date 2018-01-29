@@ -1,5 +1,4 @@
 #include "headers/init.h"
-#include "headers/getDataObjects.h"
 
 
 /*this intializer should be called in the entry function before anything else */
@@ -10,6 +9,7 @@ void initialize(void)
 	varname_queue = NULL;
 	object_queue = NULL;
 	map_objects = NULL;
+	page_objects = NULL;
 	is_done = FALSE;
 	fd = -1;
 	num_threads_user_def = -1;
@@ -27,7 +27,11 @@ void initialize(void)
 #ifdef NO_MEX
 	curr_mmap_usage = 0;
 	max_mmap_usage = 0;
+#ifdef WIN32_LEAN_AND_MEAN
+	InitializeCriticalSection(&mmap_usage_update_lock);
+#else
 	pthread_mutex_init(&mmap_usage_update_lock, NULL);
+#endif
 #endif
 }
 
@@ -70,7 +74,7 @@ void initializeObject(Data* object)
 	object->hdf5_internal_type = HDF5_UNKNOWN;
 	object->matlab_internal_type = mxUNKNOWN_CLASS;
 	object->matlab_sparse_type = mxUNKNOWN_CLASS;
-	object->complexity_flag = mxREAL;
+	object->complexity_flag = (mxComplexity)mxREAL;
 	
 	object->num_dims = 0;
 	object->dims = NULL;
@@ -86,21 +90,32 @@ void initializeObject(Data* object)
 
 void initializePageObjects(void)
 {
-	page_objects = malloc(num_pages*sizeof(pageObject));
-	for(int i = 0; i < num_pages; i++)
+	if(page_objects == NULL)
 	{
-		pthread_mutex_init(&page_objects[i].lock, NULL);
-		//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
-		//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
-		page_objects[i].is_mapped = FALSE;
-		page_objects[i].pg_start_a = alloc_gran*i;
-		page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
-		page_objects[i].map_start = UNDEF_ADDR;
-		page_objects[i].map_end = UNDEF_ADDR;
-		page_objects[i].pg_start_p = NULL;
-		page_objects[i].num_using = 0;
-		page_objects[i].max_map_end = 0;
-		page_objects[i].total_num_mappings = 0;
+		page_objects = malloc(num_pages*sizeof(pageObject));
+		for(int i = 0; i < num_pages; i++)
+		{
+#ifdef WIN32_LEAN_AND_MEAN
+			InitializeCriticalSection(&page_objects[i].lock);
+#else
+			pthread_mutex_init(&page_objects[i].lock, NULL);
+#endif
+			//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
+			//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
+			page_objects[i].is_mapped = FALSE;
+			page_objects[i].pg_start_a = alloc_gran*i;
+			page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
+			page_objects[i].map_start = UNDEF_ADDR;
+			page_objects[i].map_end = UNDEF_ADDR;
+			page_objects[i].pg_start_p = NULL;
+			page_objects[i].num_using = 0;
+			page_objects[i].max_map_end = 0;
+			page_objects[i].total_num_mappings = 0;
+		}
+#ifdef WIN32_LEAN_AND_MEAN
+		InitializeCriticalSection(&if_lock);
+#else
+		pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
+#endif
 	}
-	pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
 }

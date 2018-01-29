@@ -33,11 +33,21 @@
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 //#pragma message ("getmatvar is compiling on WINDOWS")
+#define WIN32_LEAN_AND_MEAN
+#ifdef WINVER
+#undef WINVER
+#define WINVER 0x0A00
+#endif
 
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
 
 #include "../extlib/mman-win32/mman.h"
-#include <pthread.h>
-//#include "../extlib/pthreads-win32/include/pthread.h"
+#include <windows.h>
+
+
 #else
 //#pragma message ("getmatvar is compiling on UNIX")
 #include <pthread.h>
@@ -49,7 +59,18 @@ typedef int errno_t;
 typedef uint64_t OffsetType;
 #endif
 
-typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#ifdef FALSE
+#undef FALSE
+#endif
+
+typedef enum
+{
+	FALSE = 0, TRUE = 1
+} bool_t;
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
 #define MATFILE_SIG_LEN 19
@@ -82,9 +103,10 @@ typedef enum {FALSE = (uint8_t)0, TRUE = (uint8_t)1 } bool_t;
 #ifdef NO_MEX
 #define mxMalloc malloc
 #define mxFree free
-#define mxComplexity int
-#define mxREAL 0
-#define mxCOMPLEX 1
+typedef enum
+{
+	mxREAL, mxCOMPLEX
+} mxComplexity;
 #endif
 
 //compiler hints
@@ -126,18 +148,7 @@ typedef struct
 
 typedef enum
 {
-	HDF5_FIXED_POINT = 0,
-	HDF5_FLOATING_POINT,
-	HDF5_TIME,
-	HDF5_STRING,
-	HDF5_BIT_FIELD,
-	HDF5_OPAQUE,
-	HDF5_COMPOUND,
-	HDF5_REFERENCE,
-	HDF5_ENUMERATED,
-	HDF5_VARIABLE_LENGTH,
-	HDF5_ARRAY,
-	HDF5_UNKNOWN
+	HDF5_FIXED_POINT = 0, HDF5_FLOATING_POINT, HDF5_TIME, HDF5_STRING, HDF5_BIT_FIELD, HDF5_OPAQUE, HDF5_COMPOUND, HDF5_REFERENCE, HDF5_ENUMERATED, HDF5_VARIABLE_LENGTH, HDF5_ARRAY, HDF5_UNKNOWN
 } HDF5Datatype;
 
 #ifdef NO_MEX
@@ -208,9 +219,9 @@ typedef struct
 	uint8_t num_filters;
 	Filter* filters;
 	uint8_t num_chunked_dims;
-	uint32_t num_chunked_elems;
-	uint32_t* chunked_dims;
-	uint32_t* chunk_update;
+	uint64_t num_chunked_elems;
+	uint64_t* chunked_dims;
+	uint64_t* chunk_update;
 } ChunkedInfo;
 
 typedef struct
@@ -229,10 +240,7 @@ typedef struct
 
 typedef enum
 {
-	NO_OBJ_HINT = 0,
-	FUNCTION_HINT,
-	OBJECT_HINT,
-	OPAQUE_HINT
+	NO_OBJ_HINT = 0, FUNCTION_HINT, OBJECT_HINT, OPAQUE_HINT
 } objectDecodingHint;
 
 typedef struct
@@ -247,7 +255,6 @@ typedef struct
 	bool_t is_struct_array;
 	bool_t is_filled;
 	bool_t is_mx_used;
-	//bool_t is_finalized;
 	bool_t is_reference;
 } DataFlags;
 
@@ -268,18 +275,18 @@ struct data_
 	char* matlab_class;
 	ChunkedInfo chunked_info;
 	
-	uint32_t* dims;
+	uint64_t* dims;
 	uint8_t num_dims;
-	uint32_t num_elems;
+	uint64_t num_elems;
 	size_t elem_size;
 	
-	uint32_t s_c_array_index;
+	uint64_t s_c_array_index;
 	
 	uint8_t layout_class;
 	address_t data_address;
 	DataArrays data_arrays;
 	
-	address_t parent_obj_address;
+	//address_t parent_obj_address;
 	address_t this_obj_address;
 	
 	Data* super_object;
@@ -289,7 +296,11 @@ struct data_
 
 typedef struct
 {
+#ifdef WIN32_LEAN_AND_MEAN
+	CRITICAL_SECTION lock;
+#else
 	pthread_mutex_t lock;
+#endif
 	bool_t is_mapped;
 	address_t pg_start_a;
 	address_t pg_end_a;
@@ -320,17 +331,14 @@ typedef struct
 
 typedef enum
 {
-	VT_UNKNOWN,
-	VT_LOCAL_NAME,
-	VT_LOCAL_INDEX,
-	VT_LOCAL_COORDINATES
+	VT_UNKNOWN, VT_LOCAL_NAME, VT_LOCAL_INDEX, VT_LOCAL_COORDINATES
 } VariableNameType;
 
 typedef struct
 {
 	VariableNameType variable_name_type;
 	uint64_t variable_local_index;
-	uint32_t variable_local_coordinates[HDF5_MAX_DIMS];
+	uint64_t variable_local_coordinates[HDF5_MAX_DIMS];
 	char* variable_local_name;
 } VariableNameToken;
 
@@ -366,8 +374,8 @@ uint64_t default_bytes;
 size_t max_num_map_objs;
 
 Queue* inflate_thread_obj_queue;
-int num_avail_threads;		//number of processors - 1
-int num_threads_user_def;		//user specifies number of threads
+int num_avail_threads;          //number of processors - 1
+int num_threads_user_def;          //user specifies number of threads
 bool_t will_multithread;
 bool_t will_suppress_warnings;
 
@@ -375,7 +383,11 @@ bool_t is_super_mapped;
 byte* super_pointer;
 
 bool_t threads_are_started; //only start the thread pool once
+#ifdef WIN32_LEAN_AND_MEAN
+CRITICAL_SECTION thread_acquisition_lock;
+#else
 pthread_mutex_t thread_acquisition_lock;
+#endif
 pageObject* page_objects;
 
 Data* virtual_super_object;
@@ -384,7 +396,11 @@ int max_depth;
 #ifdef NO_MEX
 size_t curr_mmap_usage;
 size_t max_mmap_usage;
+#ifdef WIN32_LEAN_AND_MEAN
+CRITICAL_SECTION mmap_usage_update_lock;
+#else
 pthread_mutex_t mmap_usage_update_lock;
+#endif
 #endif
 
 #ifdef DO_MEMDUMP
@@ -393,8 +409,12 @@ pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
 #endif
 
+#ifdef WIN32_LEAN_AND_MEAN
+CRITICAL_SECTION if_lock;
+#else
 #ifdef NO_MEX
 pthread_mutex_t if_lock;
+
 #define pthread_spin_lock pthread_mutex_lock
 #define pthread_spin_unlock pthread_mutex_unlock
 #define pthread_spin_init pthread_mutex_init
@@ -403,6 +423,7 @@ pthread_mutex_t if_lock;
 #define PTHREAD_PROCESS_SHARED NULL
 #else
 pthread_spinlock_t if_lock;
+#endif
 #endif
 
 #ifndef NO_MEX

@@ -205,7 +205,7 @@ char** getFieldNames(Data* object)
 }
 
 
-mwSize* makeObjDims(const uint32_t* dims, const mwSize num_dims)
+mwSize* makeObjDims(const uint64_t* dims, const mwSize num_dims)
 {
 	
 	mwSize* obj_dims = malloc(num_dims*sizeof(mwSize));

@@ -11,9 +11,6 @@ SET(SOURCE_FILES
 		extlib/mman-win32/mman.c
 		extlib/mman-win32/mman.h
 		extlib/libdeflate/x64/win/libdeflate.h
-		extlib/pthreads-win32/include/pthread.h
-		extlib/pthreads-win32/include/sched.h
-		extlib/pthreads-win32/include/semaphore.h
 		navigate.c
 		getSystemInfo.c
 		getDataObjects.c
@@ -55,22 +52,12 @@ IF(WIN32)
 		MESSAGE(STATUS "Compiling on 64 bit Windows")
 		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
 		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
-		IF(MSVC)
-			SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x64/pthreadVC2.lib)
-		ELSE(MSVC)
-			SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x64/libpthreadGC2.lib)
-		ENDIF(MSVC)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw64 PREFIX "")
 
 	ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		MESSAGE(STATUS "Compiling on 32 bit Windows")
 		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
 		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
-		IF(MSVC)
-			SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x86/pthreadVC2.lib)
-		ELSE(MSVC)
-			SET(PTHREADS_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/lib/x86/libpthreadGC2.lib)
-		ENDIF(MSVC)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw32 PREFIX "")
 	ENDIF()
 ELSE(WIN32)
@@ -88,7 +75,7 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${PTHREADS_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(${MEX_FILE_NAME} ${LIB_DEFLATE_LIBRARY} ${PTHREADS_LIBRARY})
+TARGET_LINK_LIBRARIES(${MEX_FILE_NAME} ${LIB_DEFLATE_LIBRARY})
 TARGET_LINK_LIBRARIES(${MEX_FILE_NAME} ${MATLAB_MEX_LIBRARY} ${MATLAB_MX_LIBRARY})
 
 INSTALL(TARGETS ${MEX_FILE_NAME} DESTINATION ${INSTALL_OUTPUT_PATH})

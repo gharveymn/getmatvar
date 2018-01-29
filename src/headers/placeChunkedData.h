@@ -29,7 +29,7 @@ typedef struct
 {
 	uint32_t size;
 	uint32_t filter_mask;
-	uint32_t chunk_start[HDF5_MAX_DIMS + 1];
+	uint64_t* chunk_start;
 	uint64_t local_heap_offset;
 } Key;
 
@@ -41,7 +41,7 @@ struct tree_node_
 	LeafType leaf_type;
 	int16_t node_level;
 	uint16_t entries_used;
-	Key* keys;
+	Key** keys;
 	TreeNode** children;
 };
 
@@ -49,33 +49,35 @@ typedef struct
 {
 	Data* object;
 	MTQueue* mt_data_queue;
-	pthread_cond_t* pthread_sync;
-	pthread_mutex_t* pthread_mtx;
+#ifdef WIN32_LEAN_AND_MEAN
+	CONDITION_VARIABLE* thread_sync;
+	CRITICAL_SECTION* thread_mtx;
+#else
+	pthread_cond_t* thread_sync;
+	pthread_mutex_t* thread_mtx;
+#endif
 	bool_t* main_thread_ready;
 	errno_t err;
 } InflateThreadObj;
 
 typedef struct
 {
-	InflateThreadObj* inflate_thread_obj;
-	pthread_attr_t attr_join;
-	pthread_t* threads;
-} ThreadStartupObj;
-
-typedef struct
-{
-	Key data_key;
+	Key* data_key;
 	TreeNode* data_node;
 } DataPair;
 
 errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
 errno_t decompressChunk(Data* object);
+#ifdef WIN32_LEAN_AND_MEAN
+DWORD doInflate_(void* t);
+#else
 void* doInflate_(void* t);
+#endif
 void freeTree(void* n);
 errno_t getChunkedData(Data* obj);
-uint64_t findArrayPosition(const uint32_t* chunk_start, const uint32_t* array_dims, uint8_t num_chunked_dims);
+uint64_t findArrayPosition(const uint64_t* chunk_start, const uint64_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
-void makeChunkedUpdates(uint32_t* chunk_update, const uint32_t* chunked_dims, const uint32_t* dims, uint8_t num_dims);
+void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims);
 void* garbageCollection_(void* nothing);
 void startThreads_(void* thread_startup_obj);
 

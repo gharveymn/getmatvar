@@ -4,11 +4,9 @@ cd src
 
 try
 	
-	mexflags = {'-g', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-O', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
 	
 	libdeflate_path_lib = ['-L' pwd '/extlib/libdeflate/x64/win'];
-	pthreadsw32_path_lib = ['-L' pwd '/extlib/pthreads-win32/lib/x64'];
-	pthreadsw32_path_include = ['-I' pwd '/extlib/pthreads-win32/include'];
 	
 	sources = {'getmatvar_.c',...
 		'mexSet.c',...
@@ -32,21 +30,19 @@ try
 		
 		sources = [sources,...
 			{'extlib/mman-win32/mman.c',...
-			'extlib/pthreads-win32/lib/x64/libpthreadGC2.lib',...
 			'extlib/libdeflate/x64/win/libdeflate.lib'}
 			];
 		
-		mex(pthreadsw32_path_include, mexflags{:} , sources{:})
+		mex(mexflags{:} , sources{:})
 		
 	elseif(startsWith(mex.getCompilerConfigurations('C','Selected').ShortName, 'MSVC'))
 		
 		sources = [sources,...
 			{'extlib/mman-win32/mman.c',...
-			'extlib/pthreads-win32/lib/x64/pthreadVC2.lib',...
 			'extlib/libdeflate/x64/win/libdeflate.lib'}
 			];
 		
-		mex(pthreadsw32_path_include, mexflags{:} , sources{:})
+		mex(mexflags{:} , sources{:})
 		
 	elseif(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'gcc'))
 		

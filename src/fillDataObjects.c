@@ -1,5 +1,4 @@
 #include "headers/fillDataObjects.h"
-#include "headers/getDataObjects.h"
 
 
 void fillVariable(char* variable_name)
@@ -296,8 +295,8 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	if(object->data_arrays.sub_object_header_offsets != NULL && object->hdf5_internal_type == HDF5_REFERENCE)
 	{
 		flushQueue(object->sub_objects);
-		object->num_sub_objs = object->num_elems;
-		for(uint32_t i = 0; i < object->num_elems; i++)
+		object->num_sub_objs = (uint32_t)object->num_elems;
+		for(uint64_t i = 0; i < object->num_elems; i++)
 		{
 			address_t new_obj_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			//search from virtual_super_object since the reference might be in #refs#
@@ -311,11 +310,11 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				}
 			}
 			restartQueue(object->sub_objects);
-			ref->s_c_array_index = (uint32_t)i;
+			ref->s_c_array_index = i;
 			enqueue(object->sub_objects, ref);
 			
 			//get the number of digits in i + 1
-			int n = i + 1;
+			int n = (int)i + 1;
 			uint16_t num_digits = 0;
 			do
 			{
@@ -342,12 +341,12 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				//make names for cells, ie. blah{k}
 				ref->names.short_name_length = (uint16_t)(num_digits + 1);
 				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
-				sprintf(ref->names.short_name, "%d}", i + 1);
+				sprintf(ref->names.short_name, "%d}", (int)i + 1);
 				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
 				ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
 				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
-				sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, i + 1);
+				sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, (int)i + 1);
 				ref->names.long_name[ref->names.long_name_length] = '\0';
 			}
 			else
@@ -367,7 +366,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 				
 				ref->names.long_name_length = (uint16_t)(object->super_object->names.long_name_length + 1 + num_digits + 1 + 1 + object->names.short_name_length);
 				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
-				sprintf(ref->names.long_name, "%s(%d).%s", object->super_object->names.long_name, i + 1, object->names.short_name);
+				sprintf(ref->names.long_name, "%s(%d).%s", object->super_object->names.long_name, (int)i + 1, object->names.short_name);
 				ref->names.long_name[ref->names.long_name_length] = '\0';
 			}
 			
@@ -391,7 +390,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		{
 			free(object->dims);
 		}
-		object->dims = malloc(2*sizeof(uint32_t));
+		object->dims = malloc(2*sizeof(uint64_t));
 		object->dims[0] = 0;
 		object->num_dims = 0;
 		return;
@@ -407,8 +406,8 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		{
 			free(object->super_object->dims);
 		}
-		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint32_t));
-		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint32_t));
+		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint64_t));
+		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint64_t));
 		object->super_object->dims[object->num_dims] = 0;
 	}
 	

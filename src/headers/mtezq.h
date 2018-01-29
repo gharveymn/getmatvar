@@ -1,7 +1,16 @@
 #ifndef MTEZQ_H
 #define MTEZQ_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 #include "ezq.h"
 
 typedef struct
@@ -12,7 +21,11 @@ typedef struct
 	void (* free_function)(void*);
 	size_t length;
 	size_t total_length;
+#ifdef WIN32_LEAN_AND_MEAN
+	CRITICAL_SECTION lock;
+#else
 	pthread_mutex_t lock;
+#endif
 } MTQueue;
 
 

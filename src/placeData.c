@@ -1,5 +1,4 @@
 #include "headers/placeData.h"
-#include "headers/getDataObjects.h"
 
 
 errno_t allocateSpace(Data* object)
@@ -34,7 +33,7 @@ errno_t allocateSpace(Data* object)
 			{
 				free(object->dims);
 			}
-			object->dims = malloc(3*sizeof(uint32_t));
+			object->dims = malloc(3*sizeof(uint64_t));
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;
@@ -75,7 +74,6 @@ void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_
 		}
 	}
 	
-	//TODO remove this switch
 	switch(object->matlab_internal_type)
 	{
 		case mxINT8_CLASS:

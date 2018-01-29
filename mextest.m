@@ -1,8 +1,8 @@
 addpath('res')
 addpath('bin')
-file = 'res/a.mat';
+file = 'res/my_struct1.mat';
 vars = {};
-%file = 'D:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
+file = 'D:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
 % using load function
