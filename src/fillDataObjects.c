@@ -409,10 +409,16 @@ int fillObject(Data* object, uint64_t this_obj_address)
 
 
 //TODO add error checking here for corrupted data
-void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
+int collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
 	
-	interpretMessages(object, header_address, header_length, 0, num_msgs, 0);
+	int err_flag = 0;
+	interpretMessages(object, header_address, header_length, 0, num_msgs, 0, &err_flag);
+	if(err_flag != 0)
+	{
+		return 1;
+	}
+	
 	
 	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
 	{
@@ -424,7 +430,7 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		object->dims = malloc(2*sizeof(uint64_t));
 		object->dims[0] = 0;
 		object->num_dims = 0;
-		return;
+		return 0;
 	}
 	
 	if(object->hdf5_internal_type == HDF5_REFERENCE && object->matlab_internal_type == mxUNKNOWN_CLASS && object->super_object->matlab_internal_type == mxSTRUCT_CLASS)
@@ -452,10 +458,12 @@ void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, u
 		object->matlab_internal_type = mxUINT64_CLASS;
 	}
 	
+	return 0;
+	
 }
 
 
-uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker)
+uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker, int* err_flag)
 {
 	
 	mapObject* msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
@@ -486,7 +494,7 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				// Dataspace message, not repeated
 				if((repeat_tracker & (1 << msg_type)) == FALSE)
 				{
-					readDataSpaceMessage(object, msg_pointer, msg_address, msg_size);
+					readDataSpaceMessage(object, msg_pointer, msg_address, msg_size, err_flag);
 					repeat_tracker |= 1 << msg_type;
 				}
 				break;
@@ -494,7 +502,7 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				// DataType message, not repeated
 				if((repeat_tracker & (1 << msg_type)) == FALSE)
 				{
-					readDataTypeMessage(object, msg_pointer, msg_address, msg_size);
+					readDataTypeMessage(object, msg_pointer, msg_address, msg_size, err_flag);
 					repeat_tracker |= 1 << msg_type;
 				}
 				break;
@@ -502,7 +510,7 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				// Data Layout message, not repeated
 				if((repeat_tracker & (1 << msg_type)) == FALSE)
 				{
-					readDataLayoutMessage(object, msg_pointer, msg_address, msg_size);
+					readDataLayoutMessage(object, msg_pointer, msg_address, msg_size, err_flag);
 					repeat_tracker |= 1 << msg_type;
 				}
 				break;
@@ -510,23 +518,33 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				//data storage pipeline message, not repeated
 				if((repeat_tracker & (1 << msg_type)) == FALSE)
 				{
-					readDataStoragePipelineMessage(object, msg_pointer, msg_address, msg_size);
+					readDataStoragePipelineMessage(object, msg_pointer, msg_address, msg_size, err_flag);
 					repeat_tracker |= 1 << msg_type;
 				}
 				break;
 			case 12:
 				//attribute message
-				readAttributeMessage(object, msg_pointer, msg_address, msg_size);
+				readAttributeMessage(object, msg_pointer, msg_address, msg_size, err_flag);
 				break;
 			case 16:
 				//object header continuation message
 				//ie no info for the object
+				
+				//expect version 1; version 2 has the signature "OCHK"
+				if(memcmp(msg_pointer, "OCHK", 4*sizeof(byte)) == 0)
+				{
+					sprintf(error_id, "getmatvar:internalError");
+					sprintf(error_message, "Unexpected continuation message version number 2 (expected 1).\n\n");
+					*err_flag = 1;
+					break;
+				}
+				
 				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
 				
 				st_releasePages(msgs_start_map_obj);
-				message_num = interpretMessages(object, cont_header_address, cont_header_length, message_num, num_msgs, repeat_tracker);
+				message_num = interpretMessages(object, cont_header_address, cont_header_length, message_num, num_msgs, repeat_tracker, err_flag);
 				msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
 				msgs_start_pointer = msgs_start_map_obj->address_ptr;
 				break;
@@ -534,6 +552,12 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 				//ignore message
 				//case 17 -- B tree already traversed and in queue
 				break;
+		}
+		
+		if(*err_flag != 0)
+		{
+			st_releasePages(msgs_start_map_obj);
+			return num_msgs;
 		}
 		
 		bytes_read += msg_size + msg_sub_header_size;

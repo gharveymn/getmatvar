@@ -77,6 +77,7 @@ int getDataObjects(const char* filename, char** variable_names, const int num_na
 		{
 			sprintf(error_message, "The input file must be a Version 7.3+ MAT-file. This is an unknown file format.\n\n");
 		}
+		st_releasePages(head_map_obj);
 		return 1;
 	}
 	st_releasePages(head_map_obj);

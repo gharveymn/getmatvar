@@ -1,11 +1,27 @@
 #include "headers/readMessage.h"
 
 
-void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, int* err_flag)
 {
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
+	if(*(msg_pointer) != 1)
+	{
+		sprintf(error_id, "getmatvar:internalError");
+		sprintf(error_message, "Unexpected dataspace message version number %d (expected 1).\n\n", (int)*msg_pointer);
+		*err_flag = 1;
+		return;
+	}
+	
 	object->num_dims = (uint8_t)*(msg_pointer + 1);
+	if(object->num_dims > HDF5_MAX_DIMS)
+	{
+		sprintf(error_id, "getmatvar:dataCorruptionError");
+		sprintf(error_message, "Data has too many dimensions---the file may be corrupted.\n\n");
+		*err_flag = 1;
+		return;
+		return;
+	}
 	object->dims = malloc((object->num_dims + 1)*sizeof(uint64_t));
 	for(int i = 0; i < object->num_dims; i++)
 	{
@@ -25,9 +41,17 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 }
 
 
-void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, int* err_flag)
 {
 	//assume version 1
+	if((*(msg_pointer) >> 4) != 1)
+	{
+		sprintf(error_id, "getmatvar:internalError");
+		sprintf(error_message, "Unexpected datatype message version number %d (expected 1).\n\n", (int)(*(msg_pointer) >> 4));
+		*err_flag = 1;
+		return;
+	}
+	
 	object->hdf5_internal_type = (HDF5Datatype)(*(msg_pointer) & 0x0F); //only want bottom 4 bits
 	//only run once
 	if(object->elem_size == 0)
@@ -59,7 +83,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 			}
 			size_t next_member_offset = 8 + roundUp8(strlen((char*)msg_pointer) + 1) + 32;
 			cmpd_pointer = msg_pointer + next_member_offset;
-			readDataTypeMessage(object, cmpd_pointer, msg_address + next_member_offset, 20);
+			readDataTypeMessage(object, cmpd_pointer, msg_address + next_member_offset, 20, err_flag);
 			break;
 		default:
 			object->byte_order = LITTLE_ENDIAN;
@@ -70,12 +94,15 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 }
 
 
-void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, int* err_flag)
 {
 	//assume version 3
 	if(*msg_pointer != 3)
 	{
-		readMXError("getmatvar:internalError", "Data layout version at address\n\n");
+		sprintf(error_id, "getmatvar:internalError");
+		sprintf(error_message, "Unexpected data layout message version number %d (expected 3).\n\n", (int)*(msg_pointer));
+		*err_flag = 1;
+		return;
 	}
 	
 	object->layout_class = (uint8_t)*(msg_pointer + 1);
@@ -112,13 +139,17 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Unknown data layout class\n\n");
+			sprintf(error_id, "getmatvar:internalError");
+			sprintf(error_message, "Unknown data layout class %d.\n\n", object->layout_class);
+			*err_flag = 1;
+			return;
 	}
 }
 
 
-void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, int* err_flag)
 {
+	
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
 	object->chunked_info.filters = malloc(object->chunked_info.num_filters*sizeof(Filter));
 	byte* helper_pointer = NULL;
@@ -170,16 +201,27 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 			
 			break;
 		default:
-			readMXError("getmatvar:internalError", "Unknown data storage pipeline version\n\n");
-			//fprintf(stderr, "Unknown data storage pipeline version %d at address 0x%llu.\n", *msg_pointer, msg_address);
-			//exit(EXIT_FAILURE);
+			sprintf(error_id, "getmatvar:internalError");
+			sprintf(error_message, "Unknown data storage pipeline version %d.\n\n", *msg_pointer);
+			*err_flag = 1;
+			return;
 		
 	}
 }
 
 
-void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
+void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, int* err_flag)
 {
+	
+	//assume version 1
+	if(*msg_pointer != 1)
+	{
+		sprintf(error_id, "getmatvar:internalError");
+		sprintf(error_message, "Unexpected attribute message version number %d (expected 1).\n\n", (int)*(msg_pointer));
+		*err_flag = 1;
+		return;
+	}
+	
 	char name[NAME_LENGTH] = {0};
 	uint16_t name_size = (uint16_t)getBytesAsNumber(msg_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	uint16_t datatype_size = (uint16_t)getBytesAsNumber(msg_pointer + 4, 2, META_DATA_BYTE_ORDER);

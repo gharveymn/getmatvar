@@ -5,12 +5,16 @@ Superblock getSuperblock(void)
 	mapObject* chunk_start_map_obj = st_navigateTo(0, default_bytes);
 	byte* chunk_start_pointer = chunk_start_map_obj->address_ptr;
 	byte* superblock_pointer = findSuperblock(chunk_start_pointer);
+	if(superblock_pointer == NULL)
+	{
+		readMXError(error_id, error_message);
+	}
 	Superblock s_block = fillSuperblock(superblock_pointer);
 	st_releasePages(chunk_start_map_obj);
 	return s_block;
 }
 
-
+//TODO change this to support entire searching entire file
 byte* findSuperblock(byte* chunk_start)
 {
 	//Assuming that superblock is in first 8 512 byte chunks
@@ -24,7 +28,9 @@ byte* findSuperblock(byte* chunk_start)
 	
 	if(chunk_address >= default_bytes)
 	{
-		readMXError("getmatvar:superblockNotFoundError", "Couldn't find superblock in first 8 512-byte chunks.\n\n");
+		sprintf(error_id, "getmatvar:superblockNotFoundError");
+		sprintf(error_message, "Couldn't find superblock in first 8 512-byte chunks.\n\n");
+		return NULL;
 	}
 	
 	return chunk_start;
