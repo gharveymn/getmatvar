@@ -31,7 +31,7 @@ int readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	{
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:invalidTree");
-		sprintf(error_message, "Tried to read from tree with no children.\n\n");
+		sprintf(error_message, "Tried to read from tree with no children. Data may have been corrupted.\n\n");
 		return 1;
 	}
 	

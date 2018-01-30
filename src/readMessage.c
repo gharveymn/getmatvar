@@ -17,7 +17,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	if(object->num_dims > HDF5_MAX_DIMS)
 	{
 		sprintf(error_id, "getmatvar:dataCorruptionError");
-		sprintf(error_message, "Data has too many dimensions---the file may be corrupted.\n\n");
+		sprintf(error_message, "Data has too many dimensions. Data may have been corrupted.\n\n");
 		*err_flag = 1;
 		return;
 		return;

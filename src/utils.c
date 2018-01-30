@@ -304,7 +304,7 @@ void readMXError(const char error_id[], const char error_message[], ...)
 	
 	va_list va;
 	va_start(va, error_message);
-	sprintf(message_buffer, error_message, va);
+	sprintf(message_buffer, error_message, va_arg(va, const char*));
 	strcat(message_buffer, MATLAB_HELP_MESSAGE);
 	endHooks();
 	va_end(va);
@@ -331,7 +331,7 @@ void readMXWarn(const char warn_id[], const char warn_message[], ...)
 		
 		va_list va;
 		va_start(va, warn_message);
-		sprintf(message_buffer, warn_message, va);
+		sprintf(message_buffer, warn_message, va_arg(va, const char*));
 		strcat(message_buffer, MATLAB_WARN_MESSAGE);
 		va_end(va);
 

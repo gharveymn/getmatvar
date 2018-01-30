@@ -3,8 +3,10 @@
 
 #include "getDataObjects.h"
 
+#define SUPERBLOCK_INTERVAL 512
+
 Superblock getSuperblock(void);
-byte* findSuperblock(byte* chunk_start);
+mapObject* findSuperblock(void);
 Superblock fillSuperblock(byte* superblock_pointer);
 
 #endif //SUPERBLOCK_H

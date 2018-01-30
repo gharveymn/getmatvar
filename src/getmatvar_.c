@@ -132,7 +132,7 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 					if(warnedObjectVar == FALSE)
 					{
 						//run only once
-						readMXWarn("getmatvar:invalidOutputType", "Could not return a variable. Objects are not yet supported.");
+						readMXWarn("getmatvar:invalidOutputType", "Could not return variable '%s'. Objects are not yet supported.", obj->names.long_name);
 						warnedObjectVar = TRUE;
 					}
 //				if (super_structure_type == mxSTRUCT_CLASS)
