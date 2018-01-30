@@ -314,7 +314,7 @@ void removeSpaces(char* source)
 void readMXError(const char error_id[], const char error_message[], ...)
 {
 	
-	char message_buffer[ERROR_BUFFER_SIZE] = {0};
+	char message_buffer[ERROR_MESSAGE_SIZE] = {0};
 	
 	va_list va;
 	va_start(va, error_message);
@@ -341,7 +341,7 @@ void readMXWarn(const char warn_id[], const char warn_message[], ...)
 	
 	if(will_suppress_warnings != TRUE)
 	{
-		char message_buffer[WARNING_BUFFER_SIZE] = {0};
+		char message_buffer[WARNING_MESSAGE_SIZE] = {0};
 		
 		va_list va;
 		va_start(va, warn_message);

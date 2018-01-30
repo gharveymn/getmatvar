@@ -21,21 +21,21 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 
 	# 32-bit or 64-bit mex
 	IF(WIN32)
-		IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-			MESSAGE(STATUS "Compiling on 64 bit Windows")
-			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
-			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
-
-		ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		IF((CMAKE_SIZEOF_VOID_P EQUAL 4) OR ("${BUILD_ENV}" STREQUAL "32BIT"))
 			MESSAGE(STATUS "Compiling on 32 bit Windows")
 			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
 			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
+
+		ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			MESSAGE(STATUS "Compiling on 64 bit Windows")
+			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
+			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
 		ENDIF()
 	ELSE(WIN32)
-		IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-			MESSAGE(STATUS "Compiling on 64 bit Linux")
-		ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 			MESSAGE(STATUS "Compiling on 32 bit Linux")
+		ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+			MESSAGE(STATUS "Compiling on 64 bit Linux")
 		ENDIF()
 	ENDIF(WIN32)
 
@@ -74,6 +74,12 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 			src/headers/superblock.h src/mtezq.c src/headers/mtezq.h)
 
 	ADD_EXECUTABLE(${OUT_NAME} ${SOURCE_FILES})
+
+	IF("${BUILD_ENV}" STREQUAL "32BIT")
+		set_target_properties(${OUT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+	ELSE("${BUILD_ENV}" STREQUAL "32BIT")
+		set_target_properties(${OUT_NAME} PROPERTIES COMPILE_FLAGS "-m64" LINK_FLAGS "-m64")
+	ENDIF("${BUILD_ENV}" STREQUAL "32BIT")
 
 	TARGET_LINK_LIBRARIES(${OUT_NAME} ${LIB_DEFLATE_LIBRARY})
 

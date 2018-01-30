@@ -5,12 +5,10 @@
 #include "getDataObjects.h"
 #include "mtezq.h"
 
-#if UINTPTR_MAX == 0xffffffff
+#if defined(GMV_32_BIT)
 #include "../extlib/libdeflate/x86/libdeflate.h"
-#elif UINTPTR_MAX == 0xffffffffffffffff
+#elif defined(GMV_64_BIT)
 #include "../extlib/libdeflate/x64/libdeflate.h"
-
-
 #else
 //you need at least 19th century hardware to run this
 #endif

@@ -8,18 +8,26 @@
 //#define DO_MEMDUMP
 //#define NO_MEX		pass this through gcc -DNO_MEX=TRUE
 
+#include <stdint.h>
+#if UINTPTR_MAX == 0xffffffff
+#define GMV_32_BIT
+#define _FILE_OFFSET_BITS 32
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#define GMV_64_BIT
+#define _FILE_OFFSET_BITS 64
+#else
+#error architecture is weird
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <io.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <stdint.h>
 #include <math.h>
 #include <assert.h>
-
+#include <errno.h>
 
 #ifndef NO_MEX
 
@@ -45,9 +53,21 @@
 #define _WIN32_WINNT 0x0A00
 #endif
 
+#include <io.h>
 #include "../extlib/mman-win32/mman.h"
 #include <windows.h>
 
+#ifdef GMV_64_BIT
+#ifdef lseek
+#undef lseek
+#endif
+#define lseek _lseeki64
+
+#ifdef off_t
+#undef off_t
+#endif
+#define off_t int64_t
+#endif
 
 #else
 //#pragma message ("getmatvar is compiling on UNIX")
@@ -57,7 +77,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 typedef int errno_t;
+
+#ifdef GMV_64_BIT
 typedef uint64_t OffsetType;
+#else
+typedef uint32 OffsetType;
+#endif
+
 #endif
 
 #ifdef TRUE
@@ -80,24 +106,34 @@ typedef enum
 #define SELECTION_SIG "R2VuZSBIYXJ2ZXkgOik"
 #define SELECTION_SIG_LEN 19
 #define UNDEF_ADDR 0xffffffffffffffff
-#define CLASS_LENGTH 200
 #define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
-#define CHUNK_BUFFER_SIZE 1048576 /*1MB size of the buffer used in zlib inflate (who doesn't have 1MB to spare?)*/
-#define ERROR_BUFFER_SIZE 5000
+#define ERROR_BUFFER_SIZE 500
 #define WARNING_BUFFER_SIZE 1000
+#define ERROR_MESSAGE_SIZE 5000
+#define WARNING_MESSAGE_SIZE 1000
 #define DEFAULT_MAX_NUM_MAP_OBJS 10
 #define MIN_MT_ELEMS_THRESH 100000
+#define ONE_MB 1024000
 
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))
 
-#define MATLAB_HELP_MESSAGE "Usage:\n \tgetmatvar(filename,variable)\n" \
-                         "\tgetmatvar(filename,variable1,...,variableN)\n\n" \
-                         "\tfilename\t\ta character vector of the name of the file with a .mat extension\n" \
-                         "\tvariable\t\ta character vector of the variable to extract from the file\n\n" \
-                         "Example:\n\tgetmatvar('my_workspace.mat', 'my_struct')\n"
+#define MATLAB_HELP_MESSAGE "Usage:\n " \
+					"\tgetmatvar(filename)\n" \
+					"\tvar = getmatvar(filename,'var')\n" \
+                         "\t[var1,...,varN] = getmatvar(filename,'var1',...,'varN')\n\n" \
+					"\tgetmatvar(__,'-t',n)\n" \
+					"\tgetmatvar(__,'-st')\n" \
+					"\tgetmatvar(__,'-sw')\n\n" \
+                         "\tfilename\ta character vector of the location of a 7.3+ MAT-file\n" \
+                         "\tvar\t\ta character vector of the variable to extract from the file\n" \
+					"\t'-t'\t\tspecify the number of threads to use in the next argument n\n" \
+					"\t'-st'\t\trestrict getmatvar to a single thread\n" \
+					"\t'-sw'\t\tsuppress warnings from getmatvar\n\n" \
+                         "Examples:\n\tgetmatvar('my_workspace.mat')\n" \
+					"\tmy_struct = getmatvar('my_workspace.mat', 'my_struct')\n\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
@@ -352,7 +388,7 @@ void memdump(const char type[]);
 
 ByteOrder __byte_order__;
 size_t alloc_gran;
-int64_t file_size;
+size_t file_size;
 size_t num_pages;
 bool_t error_flag;
 bool_t is_done;

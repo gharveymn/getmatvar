@@ -2,12 +2,12 @@ CC=gcc
 
 #===DIRECTORIES===#
 OBJ_DIR=src
+OBJ_DIR32=src
 SRC_DIR=src
 TST_DIR=tests
 
 
 LIBDEFLATE_INC=./src/extlib/libdeflate/x64/unix
-
 LIBDEFLATE_LIB=./src/extlib/libdeflate/x64/unix
 
 INC=$(LIBDEFLATE_INC)
@@ -59,11 +59,12 @@ utils.o
 
 OBJ = $(patsubst %,$(OBJ_DIR)/%,$(_OBJ))
 
-
 $(OBJ_DIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-CFLAGS=-g3 -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
+
+
+CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mexemulate
 
@@ -72,6 +73,8 @@ mexemulate: $(OBJ) src/extlib/libdeflate/x64/unix/libdeflate.a
 
 src/extlib/libdeflate/x64/unix/libdeflate.a:
 	cd $(OBJ_DIR)/extlib/libdeflate/x64/unix && $(MAKE)
+
+rebuild: clean mexemulate
 
 .PHONY: clean
 

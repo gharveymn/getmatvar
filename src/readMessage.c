@@ -180,7 +180,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 
 void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size)
 {
-	char name[NAME_LENGTH];
+	char name[NAME_LENGTH] = {0};
 	uint16_t name_size = (uint16_t)getBytesAsNumber(msg_pointer + 2, 2, META_DATA_BYTE_ORDER);
 	uint16_t datatype_size = (uint16_t)getBytesAsNumber(msg_pointer + 4, 2, META_DATA_BYTE_ORDER);
 	uint16_t dataspace_size = (uint16_t)getBytesAsNumber(msg_pointer + 6, 2, META_DATA_BYTE_ORDER);

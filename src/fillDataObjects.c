@@ -166,6 +166,10 @@ void fillVariable(char* variable_name)
 		} while(varname_queue->length > 0);
 		
 		fillDataTree(object);
+		if(error_flag == TRUE)
+		{
+			return;
+		}
 		
 		size_t n = top_level_objects->length;
 		uint16_t num_digits = 0;
@@ -251,14 +255,13 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:unknownDataTypeError");
 		sprintf(error_message, "Unknown data type encountered in the HDF5 file.\n\n");
-		return;
+		readMXError(error_id, error_message);
 	}
 	
 	//allocate space for data
 	if(allocateSpace(object) != 0)
 	{
-		error_flag = TRUE;
-		return;
+		readMXError(error_id, error_message);
 	}
 	
 	
@@ -278,7 +281,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			//chunked storage
 			if(getChunkedData(object) != 0)
 			{
-				return;
+				readMXError(error_id, error_message);
 			}
 			break;
 		case 3:
@@ -288,7 +291,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:unknownLayoutClassError");
 			sprintf(error_message, "Unknown layout class encountered.\n\n");
-			return;
+			readMXError(error_id, error_message);
 	}
 	
 	// we have encountered a cell array

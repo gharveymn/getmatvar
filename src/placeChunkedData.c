@@ -131,8 +131,14 @@ errno_t getChunkedData(Data* object)
 		WakeAllConditionVariable(&thread_sync);
 		LeaveCriticalSection(&thread_mtx);
 		WaitForMultipleObjects((DWORD)num_threads, chunk_threads, TRUE, INFINITE);
+		DWORD exit_code = 0;
 		for(int i = 0; i < num_threads; i++)
 		{
+			GetExitCodeThread(chunk_threads[i], &exit_code);
+			if(exit_code != 0)
+			{
+				ret = 1;
+			}
 			CloseHandle(chunk_threads[i]);
 		}
 		free(chunk_threads);
@@ -193,7 +199,6 @@ void* doInflate_(void* t)
 //	memset(chunk_pos, 0, sizeof(chunk_pos));
 	
 	const size_t max_est_decomp_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
-	size_t actual_size_out = 0;
 	
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte* decompressed_data_buffer = malloc(max_est_decomp_size);
@@ -238,15 +243,19 @@ void* doInflate_(void* t)
 		const uint64_t chunk_start_index = findArrayPosition(data_key->chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = st_navigateTo(node->children[i]->address, node->keys[i].size);
 		const byte* data_pointer = mt_navigateTo(data_node->address, 0);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->size, decompressed_data_buffer, max_est_decomp_size, &actual_size_out);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->size, decompressed_data_buffer, max_est_decomp_size, NULL);
 		//st_releasePages(node->children[i]->address, node->keys[i].size);
 		mt_releasePages(data_node->address, 0);
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
 				error_flag = TRUE;
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateBadData");
 				sprintf(error_message, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+				libdeflate_free_decompressor(ldd);
+				free(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
@@ -254,10 +263,14 @@ void* doInflate_(void* t)
 #endif
 			case LIBDEFLATE_SHORT_OUTPUT:
 				error_flag = TRUE;
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateShortOutput");
 				sprintf(error_message, "libdeflate failed failed to decompress because a NULL "
 						"'actual_out_nbytes_ret' was provided, but the data would have"
 						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+				libdeflate_free_decompressor(ldd);
+				free(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
@@ -265,8 +278,12 @@ void* doInflate_(void* t)
 #endif
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
 				error_flag = TRUE;
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
 				sprintf(error_message, "libdeflate failed because the output buffer was not large enough");
+				libdeflate_free_decompressor(ldd);
+				free(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
@@ -571,43 +588,6 @@ void memdump(const char* type)
 	
 }
 #endif
-
-
-/*
-void* garbageCollection_(void* nothing)
-{
-	
-	uint32_t num_gc = 1;
-	
-	while(is_working == TRUE)
-	{
-		for(int i = 0; i < num_pages; i++)
-		{
-			if(pthread_mutex_trylock(&page_objects[i].lock) != EBUSY && page_objects[i].is_mapped == TRUE)
-			{
-				//see if this page is probably going to be used again
-				uint32_t usage_offset = usage_iterator - page_objects[i].last_use_time_stamp;
-				if(page_objects[i].num_using == 0 && usage_offset > sum_usage_offset / num_gc)
-				{
-					if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_start) != 0)
-					{
-						readMXError("getmatvar:badMunmapError",
-								  "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
-					}
-					sum_usage_offset += usage_offset;
-				}
-				page_objects[i].is_mapped = FALSE;
-				pthread_mutex_unlock(&page_objects[i].lock);
-			}
-		}
-	}
-	
-	pthread_exit(NULL);
-	
-	return NULL;
-	
-}
-*/
 
 
 void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims)

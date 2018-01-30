@@ -6,10 +6,6 @@
 void getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
-	virtual_super_object = malloc(sizeof(Data));
-	initializeObject(virtual_super_object);
-	enqueue(object_queue, virtual_super_object);
-	
 	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
@@ -20,11 +16,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	dump = fopen("memdump.log", "w+");
 #endif
 	
-	num_avail_threads = getNumProcessors() - 1;
-	
-	//init queues
-	top_level_objects = initQueue(NULL);
-	varname_queue = initQueue(freeVarname);
+	num_avail_threads = getNumProcessors();
 	map_objects = initQueue(freeMapObject);
 	
 	//open the file descriptor
@@ -38,19 +30,30 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	}
 	
 	//get file size
-	file_size = (int64_t)_lseeki64(fd, 0, SEEK_END);
-	if(file_size < 0)
+	off_t file_size_check = (off_t)lseek(fd, 0, SEEK_END);
+	if(file_size_check < 0)
 	{
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:lseekFailureError");
-		sprintf(error_message, "lseek failed, check errno %s\n\n", strerror(errno));
+		sprintf(error_message, "lseek failed, check errno %s.\n\n", strerror(errno));
 		return;
+	}
+	else
+	{
+		if(file_size_check == 0)
+		{
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:nullFileError");
+			sprintf(error_message, "The file specified is empty.\n\n");
+			return;
+		}
+		file_size = (size_t)file_size_check;
 	}
 	default_bytes = alloc_gran < file_size? alloc_gran : file_size;
 	num_pages = file_size/alloc_gran + 1;
 	
 	//1MB
-	if(file_size < 1024000)
+	if(file_size < ONE_MB)
 	{
 		is_super_mapped = TRUE;
 		will_multithread = FALSE;
@@ -81,11 +84,23 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	//find superblock
 	s_block = getSuperblock();
 	
+	object_queue = initQueue(freeDataObject);
+	top_level_objects = initQueue(NULL);
+	varname_queue = initQueue(freeVarname);
+	
+	virtual_super_object = malloc(sizeof(Data));
+	initializeObject(virtual_super_object);
+	enqueue(object_queue, virtual_super_object);
+	
 	makeObjectTreeSkeleton();
 	
 	for(int name_index = 0; name_index < num_names; name_index++)
 	{
 		fillVariable(variable_names[name_index]);
+		if(error_flag == TRUE)
+		{
+			return;
+		}
 	}
 	
 	close(fd);

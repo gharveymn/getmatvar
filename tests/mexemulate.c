@@ -42,7 +42,6 @@ int main(int argc, char* argv[])
 
 void makeReturnStructure(const int num_elems)
 {
-	object_queue = initQueue(freeDataObject);
 	
 	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
 	if(error_flag == TRUE)
@@ -129,24 +128,6 @@ void readInput(int nrhs, char* prhs[])
 					}
 					
 					break;
-				case MT_KWARG:
-					
-					input = prhs[i];
-					if(strncmp(input, "f", 1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x30") == 0)
-					{
-						will_multithread = FALSE;
-					}
-					else if(strncmp(input, "t", 1) == 0 || strcmp(input, "on") == 0 || strcmp(input, "\x31") == 0)
-					{
-						will_multithread = TRUE;
-					}
-					else
-					{
-						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
-					}
-					break;
-				case SUPPRESS_WARN:
-					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
@@ -167,10 +148,6 @@ void readInput(int nrhs, char* prhs[])
 				if(strcmp(input, "-t") == 0 && strlen(input) == 2)
 				{
 					kwarg_expected = THREAD_KWARG;
-				}
-				else if(strcmp(input, "-m") == 0 && strlen(input) == 2)
-				{
-					kwarg_expected = MT_KWARG;
 				}
 				else if((strcmp(input, "-suppress-warnings") == 0 && strlen(input) == strlen("-suppress-warnings")) || (strcmp(input, "-sw") == 0  && strlen(input) ==3))
 				{

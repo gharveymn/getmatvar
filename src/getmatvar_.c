@@ -243,52 +243,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 					}
 					
 					break;
-				case MT_KWARG:
-					if(mxIsLogical(prhs[i]) == TRUE)
-					{
-						will_multithread = *(bool_t*)mxGetLogicals(prhs[i]);
-					}
-					else if(mxIsNumeric(prhs[i]) == TRUE)
-					{
-						will_multithread = *(bool_t*)mxGetData(prhs[i]);
-					}
-					else if(mxIsChar(prhs[i]) == TRUE)
-					{
-						input = mxArrayToString(prhs[i]);
-						if(strncmp(input, "f", 1) == 0 || strcmp(input, "off") == 0 || strcmp(input, "\x48") == 0)
-						{
-							will_multithread = FALSE;
-						}
-						else if(strncmp(input, "t", 1) == 0 || strcmp(input, "on") == 0 || strcmp(input, "\x31") == 0)
-						{
-							will_multithread = TRUE;
-						}
-						else if(strncmp(input, "max", 3) == 0)
-						{
-							//overridden by the threads setting, so if still -1 don't execute
-							if(num_threads_user_def == -1)
-							{
-								num_threads_user_def = getNumProcessors();
-							}
-						}
-						else
-						{
-							goto mt_error;
-						}
-					}
-					else
-					{
-						mt_error:
-						readMXError("getmatvar:invalidMultithreadOption", "Multithreading argument options are: true, false, 1, 0, '1', '0', 't(rue)', 'f(alse)', 'on', or 'off'.\n\n");
-					}
-					
-					if(will_multithread != FALSE && will_multithread != TRUE)
-					{
-						goto mt_error;
-					}
-					break;
-				case SUPPRESS_WARN:
-					//this should not occur so fall through for debugging purposes
 				case NOT_AN_ARGUMENT:
 				default:
 					readMXError("getmatvar:notAnArgument", "The specified keyword argument does not exist.\n\n");
@@ -314,10 +268,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 					if(strcmp(input, "-t") == 0 && strlen(input) == 2)
 					{
 						kwarg_expected = THREAD_KWARG;
-					}
-					else if(strcmp(input, "-m") == 0 && strlen(input) == 2)
-					{
-						kwarg_expected = MT_KWARG;
 					}
 					else if((strcmp(input, "-suppress-warnings") == 0 && strlen(input) == strlen("-suppress-warnings")) || (strcmp(input, "-sw") == 0  && strlen(input) ==3))
 					{
