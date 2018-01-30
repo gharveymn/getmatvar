@@ -144,13 +144,13 @@ Data* cloneData(Data* old_object)
 	new_object->chunked_info.num_chunked_elems = old_object->chunked_info.num_chunked_elems;
 	if(old_object->chunked_info.filters != NULL)
 	{
-		new_object->chunked_info.filters = malloc(new_object->chunked_info.num_filters *sizeof(Filter));
+		new_object->chunked_info.filters = malloc(new_object->chunked_info.num_filters*sizeof(Filter));
 		for(int i = 0; i < old_object->chunked_info.num_filters; i++)
 		{
 			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
 			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
 			new_object->chunked_info.filters[i].optional_flag = old_object->chunked_info.filters[i].optional_flag;
-			new_object->chunked_info.filters[i].client_data = malloc(new_object->chunked_info.filters[i].num_client_vals * sizeof(uint32_t));
+			new_object->chunked_info.filters[i].client_data = malloc(new_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
 			for(int j = 0; j < new_object->chunked_info.filters[i].num_client_vals; j++)
 			{
 				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
@@ -164,8 +164,8 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
-		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
-		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
 	{
@@ -174,8 +174,8 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
-		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
-		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems * sizeof(uint64_t));
+		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
 	{
@@ -184,14 +184,13 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->dims != NULL)
 	{
-		new_object->dims = malloc(new_object->num_dims * sizeof(uint64_t));
-		memcpy(new_object->dims, old_object->dims, new_object->num_dims * sizeof(uint64_t));
+		new_object->dims = malloc(new_object->num_dims*sizeof(uint64_t));
+		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(uint64_t));
 	}
 	else
 	{
 		new_object->dims = NULL;
 	}
-	
 	
 	
 	new_object->super_object = old_object->super_object;
@@ -216,19 +215,6 @@ Data* cloneData(Data* old_object)
 	enqueue(object_queue, new_object);
 	
 	return new_object;
-}
-
-
-uint16_t getRealNameLength(Data* object)
-{
-	uint16_t real_name_length = object->names.short_name_length;
-	Data* curr = object->super_object;
-	while(curr != NULL)
-	{
-		real_name_length += curr->names.short_name_length + 1;
-		curr = curr->super_object;
-	}
-	return real_name_length;
 }
 
 

@@ -10,7 +10,6 @@
 Data* findSubObjectByShortName(Data* object, char* name);
 Data* findSubObjectBySCIndex(Data* object, uint64_t index);
 Data* findObjectByHeaderAddress(address_t address);
-uint16_t getRealNameLength(Data* object);
 void parseCoordinates(VariableNameToken* vnt);
 uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_dims);
 void makeVarnameQueue(char* variable_name);

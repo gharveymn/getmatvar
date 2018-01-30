@@ -9,6 +9,8 @@
 //#define NO_MEX		pass this through gcc -DNO_MEX=TRUE
 
 #include <stdint.h>
+
+
 #if UINTPTR_MAX == 0xffffffff
 #define GMV_32_BIT
 #define _FILE_OFFSET_BITS 32
@@ -28,6 +30,7 @@
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
+
 
 #ifndef NO_MEX
 
@@ -56,6 +59,7 @@
 #include <io.h>
 #include "../extlib/mman-win32/mman.h"
 #include <windows.h>
+
 
 #ifdef GMV_64_BIT
 #ifdef lseek
@@ -121,19 +125,19 @@ typedef enum
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))
 
 #define MATLAB_HELP_MESSAGE "Usage:\n " \
-					"\tgetmatvar(filename)\n" \
-					"\tvar = getmatvar(filename,'var')\n" \
+                         "\tgetmatvar(filename)\n" \
+                         "\tvar = getmatvar(filename,'var')\n" \
                          "\t[var1,...,varN] = getmatvar(filename,'var1',...,'varN')\n\n" \
-					"\tgetmatvar(__,'-t',n)\n" \
-					"\tgetmatvar(__,'-st')\n" \
-					"\tgetmatvar(__,'-sw')\n\n" \
+                         "\tgetmatvar(__,'-t',n)\n" \
+                         "\tgetmatvar(__,'-st')\n" \
+                         "\tgetmatvar(__,'-sw')\n\n" \
                          "\tfilename\ta character vector of the location of a 7.3+ MAT-file\n" \
                          "\tvar\t\ta character vector of the variable to extract from the file\n" \
-					"\t'-t'\t\tspecify the number of threads to use in the next argument n\n" \
-					"\t'-st'\t\trestrict getmatvar to a single thread\n" \
-					"\t'-sw'\t\tsuppress warnings from getmatvar\n\n" \
+                         "\t'-t'\t\tspecify the number of threads to use in the next argument n\n" \
+                         "\t'-st'\t\trestrict getmatvar to a single thread\n" \
+                         "\t'-sw'\t\tsuppress warnings from getmatvar\n\n" \
                          "Examples:\n\tgetmatvar('my_workspace.mat')\n" \
-					"\tmy_struct = getmatvar('my_workspace.mat', 'my_struct')\n\n"
+                         "\tmy_struct = getmatvar('my_workspace.mat', 'my_struct')\n\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
@@ -380,7 +384,7 @@ typedef struct
 } VariableNameToken;
 
 //mapping.c
-void getDataObjects(const char* filename, char** variable_names, int num_names);
+int getDataObjects(const char* filename, char** variable_names, int num_names);
 
 #ifdef DO_MEMDUP
 void memdump(const char type[]);

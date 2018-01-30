@@ -3,7 +3,7 @@
 
 
 /*this is the entry function*/
-void getDataObjects(const char* filename, char** variable_names, const int num_names)
+int getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
 	threads_are_started = FALSE;
@@ -26,7 +26,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:fileNotFoundError");
 		sprintf(error_message, "No file found with name \'%s\'.\n\n", filename);
-		return;
+		return 1;
 	}
 	
 	//get file size
@@ -36,7 +36,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:lseekFailureError");
 		sprintf(error_message, "lseek failed, check errno %s.\n\n", strerror(errno));
-		return;
+		return 1;
 	}
 	else
 	{
@@ -45,7 +45,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:nullFileError");
 			sprintf(error_message, "The file specified is empty.\n\n");
-			return;
+			return 1;
 		}
 		file_size = (size_t)file_size_check;
 	}
@@ -77,7 +77,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 		{
 			sprintf(error_message, "The input file must be a Version 7.3+ MAT-file. This is an unknown file format.\n\n");
 		}
-		return;
+		return 1;
 	}
 	st_releasePages(head_map_obj);
 	
@@ -92,14 +92,16 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	initializeObject(virtual_super_object);
 	enqueue(object_queue, virtual_super_object);
 	
-	makeObjectTreeSkeleton();
+	if(makeObjectTreeSkeleton() != 0)
+	{
+		return 1;
+	}
 	
 	for(int name_index = 0; name_index < num_names; name_index++)
 	{
-		fillVariable(variable_names[name_index]);
-		if(error_flag == TRUE)
+		if(fillVariable(variable_names[name_index]) != 0)
 		{
-			return;
+			return 1;
 		}
 	}
 	
@@ -144,5 +146,7 @@ void getDataObjects(const char* filename, char** variable_names, const int num_n
 	pthread_mutex_destroy(&mmap_usage_update_lock);
 #endif
 #endif
+	
+	return 0;
 
 }

@@ -30,7 +30,7 @@ void freeDataObject(void* object)
 	
 	if(data_object->names.short_name_length != 0)
 	{
-		if (data_object->names.short_name != NULL)
+		if(data_object->names.short_name != NULL)
 		{
 			free(data_object->names.short_name);
 			data_object->names.short_name = NULL;
@@ -151,9 +151,10 @@ void freeDataObjectTree(Data* data_object)
 	
 	
 	free(data_object);
-	data_object = NULL;
+	//data_object = NULL;
 	
 }
+
 
 void destroyPageObjects(void)
 {
@@ -195,6 +196,7 @@ void destroyPageObjects(void)
 	
 }
 
+
 void freePageObject(size_t page_index)
 {
 	
@@ -230,6 +232,7 @@ void freePageObject(size_t page_index)
 	}
 }
 
+
 void freeMapObject(void* mo)
 {
 	mapObject* map_obj = (mapObject*)mo;
@@ -249,6 +252,7 @@ void freeMapObject(void* mo)
 		free(map_obj);
 	}
 }
+
 
 void endHooks(void)
 {

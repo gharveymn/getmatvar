@@ -1,12 +1,12 @@
 #include "headers/fillDataObjects.h"
 
 
-void fillVariable(char* variable_name)
+int fillVariable(char* variable_name)
 {
 	
 	if(is_done == TRUE)
 	{
-		return;
+		return 0;
 	}
 	
 	if(strcmp(variable_name, "\0") == 0)
@@ -41,19 +41,27 @@ void fillVariable(char* variable_name)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 						readMXError("getmatvar:variableNotFound", warn_message);
-						return;
+						return 1;
 					}
-					fillObject(object, object->this_obj_address);
+					
+					if(fillObject(object, object->this_obj_address) != 0)
+					{
+						return 1;
+					}
+					
 					if(object->data_flags.is_struct_array == TRUE)
 					{
 						sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 						readMXError("getmatvar:variableNotFound", warn_message);
-						return;
+						return 1;
 					}
 					break;
 				case VT_LOCAL_INDEX:
 					
-					fillObject(object, object->this_obj_address);
+					if(fillObject(object, object->this_obj_address) != 0)
+					{
+						return 1;
+					}
 					
 					
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
@@ -63,7 +71,7 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Selection of array elements is not supported. Could not return \'%s\'.\n", variable_name);
 							readMXError("getmatvar:arrayElementError", warn_message);
-							return;
+							return 1;
 						}
 						
 						//matlab reads struct arrays as my_struct(3).dog
@@ -74,10 +82,13 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 							readMXError("getmatvar:variableNotFound", warn_message);
-							return;
+							return 1;
 						}
 						
-						fillObject(object, object->this_obj_address);
+						if(fillObject(object, object->this_obj_address) != 0)
+						{
+							return 1;
+						}
 						
 						//does not execute if the struct is 1x1
 						if(object->data_flags.is_struct_array == TRUE)
@@ -87,7 +98,7 @@ void fillVariable(char* variable_name)
 							{
 								sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 								readMXError("getmatvar:variableNotFound", warn_message);
-								return;
+								return 1;
 							}
 						}
 						
@@ -99,14 +110,16 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 							readMXError("getmatvar:variableNotFound", warn_message);
-							return;
+							return 1;
 						}
 					}
 					break;
 				case VT_LOCAL_COORDINATES:
 					
-					fillObject(object, object->this_obj_address);
-					
+					if(fillObject(object, object->this_obj_address) != 0)
+					{
+						return 1;
+					}
 					
 					if(object->matlab_internal_type == mxSTRUCT_CLASS)
 					{
@@ -115,7 +128,7 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Selection of array elements is not supported. Could not return \'%s\'.\n", variable_name);
 							readMXError("getmatvar:arrayElementError", warn_message);
-							return;
+							return 1;
 						}
 						
 						//matlab reads struct arrays as my_struct(3).dog
@@ -127,10 +140,13 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 							readMXError("getmatvar:variableNotFound", warn_message);
-							return;
+							return 1;
 						}
 						
-						fillObject(object, object->this_obj_address);
+						if(fillObject(object, object->this_obj_address) != 0)
+						{
+							return 1;
+						}
 						
 						if(object->data_flags.is_struct_array == TRUE)
 						{
@@ -141,7 +157,7 @@ void fillVariable(char* variable_name)
 							{
 								sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 								readMXError("getmatvar:variableNotFound", warn_message);
-								return;
+								return 1;
 							}
 						}
 						
@@ -155,7 +171,7 @@ void fillVariable(char* variable_name)
 						{
 							sprintf(warn_message, "Variable \'%s\' was not found.\n", variable_name);
 							readMXError("getmatvar:variableNotFound", warn_message);
-							return;
+							return 1;
 						}
 					}
 					break;
@@ -165,10 +181,9 @@ void fillVariable(char* variable_name)
 			
 		} while(varname_queue->length > 0);
 		
-		fillDataTree(object);
-		if(error_flag == TRUE)
+		if(fillDataTree(object) != 0)
 		{
-			return;
+			return 1;
 		}
 		
 		size_t n = top_level_objects->length;
@@ -205,32 +220,42 @@ void fillVariable(char* variable_name)
 		
 	}
 	
+	return 0;
+	
 }
 
 
 /*fill this super object and all below it*/
-void fillDataTree(Data* object)
+int fillDataTree(Data* object)
 {
 	
-	fillObject(object, object->this_obj_address);
+	if(fillObject(object, object->this_obj_address) != 0)
+	{
+		return 1;
+	}
 	
 	for(int i = 0; i < object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(object->sub_objects);
-		fillDataTree(obj);
+		if(fillDataTree(obj) != 0)
+		{
+			return 1;
+		}
 	}
 	restartQueue(object->sub_objects);
 	//object->data_flags.is_finalized = TRUE;
 	
+	return 0;
+	
 }
 
 
-void fillObject(Data* object, uint64_t this_obj_address)
+int fillObject(Data* object, uint64_t this_obj_address)
 {
 	
 	if(object->data_flags.is_filled == TRUE)
 	{
-		return;
+		return 0;
 	}
 	
 	object->data_flags.is_filled = TRUE;
@@ -247,7 +272,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 	
 	if(object->matlab_internal_attributes.MATLAB_empty == TRUE)
 	{
-		return;
+		return 0;
 	}
 	
 	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
@@ -255,13 +280,13 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:unknownDataTypeError");
 		sprintf(error_message, "Unknown data type encountered in the HDF5 file.\n\n");
-		readMXError(error_id, error_message);
+		return 1;
 	}
 	
 	//allocate space for data
 	if(allocateSpace(object) != 0)
 	{
-		readMXError(error_id, error_message);
+		return 1;
 	}
 	
 	
@@ -281,7 +306,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			//chunked storage
 			if(getChunkedData(object) != 0)
 			{
-				readMXError(error_id, error_message);
+				return 1;
 			}
 			break;
 		case 3:
@@ -291,7 +316,7 @@ void fillObject(Data* object, uint64_t this_obj_address)
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:unknownLayoutClassError");
 			sprintf(error_message, "Unknown layout class encountered.\n\n");
-			readMXError(error_id, error_message);
+			return 1;
 	}
 	
 	// we have encountered a cell array
@@ -378,9 +403,12 @@ void fillObject(Data* object, uint64_t this_obj_address)
 		}
 	}
 	
+	return 0;
+	
 }
 
 
+//TODO add error checking here for corrupted data
 void collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
 	

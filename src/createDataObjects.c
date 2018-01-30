@@ -1,12 +1,11 @@
 #include "headers/createDataObjects.h"
 
-void makeObjectTreeSkeleton(void)
+int makeObjectTreeSkeleton(void)
 {
-	readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
-	
+	return readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
 }
 
-void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
+int readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
@@ -23,26 +22,43 @@ void readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	address_t key_address = node_address + 8 + 2*s_block.size_of_offsets;
 	
 	//quickly get the total number of possible subobjects first so we can allocate the subobject array
-	uint64_t* sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
+	uint64_t* sub_node_address_list = NULL;
+	if(entries_used > 0)
+	{
+		sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
+	}
+	else
+	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:invalidTree");
+		sprintf(error_message, "Tried to read from tree with no children.\n\n");
+		return 1;
+	}
+	
 	for(int i = 0; i < entries_used; i++)
 	{
 		mapObject* key_map_obj = st_navigateTo(key_address, total_size - (key_address - node_address));
 		byte* key_pointer = key_map_obj->address_ptr;
-		sub_node_address_list[i] = getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		sub_node_address_list[i] = (uint64_t)getBytesAsNumber(key_pointer + s_block.size_of_lengths, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		st_releasePages(key_map_obj);
 		key_address += s_block.size_of_lengths + s_block.size_of_offsets;
 	}
 	
 	for(int i = 0; i < entries_used; i++)
 	{
-		readSnod(object, sub_node_address_list[i], heap_address);
+		if(readSnod(object, sub_node_address_list[i], heap_address) != 0)
+		{
+			free(sub_node_address_list);
+			return 1;
+		}
 	}
 	
 	free(sub_node_address_list);
+	return 0;
 	
 }
 
-void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
+int readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	mapObject* snod_map_obj = st_navigateTo(node_address, 8);
 	byte* snod_pointer = snod_map_obj->address_ptr;
@@ -50,7 +66,7 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 	{
 		st_releasePages(snod_map_obj);
 		readTreeNode(object, node_address, heap_address);
-		return;
+		return 0;
 	}
 	uint16_t num_symbols = (uint16_t) getBytesAsNumber(snod_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	uint64_t total_snod_size = (uint64_t)8 + (num_symbols - 1) * s_block.sym_table_entry_size + 3 * s_block.size_of_offsets + 8 + s_block.size_of_offsets;
@@ -92,7 +108,10 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 			st_releasePages(snod_map_obj);
 			st_releasePages(heap_data_segment_map_obj);
 			
-			readTreeNode(sub_object, sub_tree_address, sub_heap_address);
+			if(readTreeNode(sub_object, sub_tree_address, sub_heap_address) != 0)
+			{
+				return 1;
+			}
 			
 			snod_map_obj = st_navigateTo(node_address, total_snod_size);
 			snod_pointer = snod_map_obj->address_ptr;
@@ -109,13 +128,14 @@ void readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:unexpectedCacheType");
 			sprintf(error_message, "Tried to read an unknown SNOD cache type.\n\n");
-			
+			return 1;
 		}
 		
 	}
 	
 	st_releasePages(snod_map_obj);
 	st_releasePages(heap_data_segment_map_obj);
+	return 0;
 	
 }
 

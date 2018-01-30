@@ -12,12 +12,12 @@ errno_t getChunkedData(Data* object)
 #ifdef WIN32_LEAN_AND_MEAN
 	CONDITION_VARIABLE thread_sync;
 	CRITICAL_SECTION thread_mtx;
-	HANDLE* chunk_threads;
+	HANDLE* chunk_threads = NULL;
 	DWORD ThreadID;
 #else
 	pthread_cond_t thread_sync;
 	pthread_mutex_t thread_mtx;
-	pthread_t* chunk_threads;
+	pthread_t* chunk_threads = NULL;
 #endif
 	int num_threads = 1;
 #ifndef WIN32_LEAN_AND_MEAN
@@ -423,13 +423,13 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	mapObject* tree_map_obj = st_navigateTo(node->address, 8);
 	byte* tree_pointer = tree_map_obj->address_ptr;
 	
-	if(strncmp((char*)tree_pointer, "TREE", 4) != 0)
+	if(memcmp((char*)tree_pointer, "TREE", 4*sizeof(char)) != 0)
 	{
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
 		node->node_level = -1;
-		if(strncmp((char*)tree_pointer, "SNOD", 4) == 0)
+		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
 		{
 			//(from group node)
 			node->leaf_type = SYMBOL;

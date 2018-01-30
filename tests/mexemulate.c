@@ -43,8 +43,7 @@ int main(int argc, char* argv[])
 void makeReturnStructure(const int num_elems)
 {
 	
-	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
-	if(error_flag == TRUE)
+	if(getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars) != 0)
 	{
 		readMXError(error_id, error_message);
 	}
@@ -184,46 +183,4 @@ void readInput(int nrhs, char* prhs[])
 		parameters.num_vars = 1;
 	}
 	parameters.full_variable_names[parameters.num_vars] = NULL;
-}
-
-void makeEvalArray(void)
-{
-	uint32_t total_length = 0;
-	Data* eval_obj;
-	while(eval_objects->length > 0)
-	{
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		uint16_t real_name_length = getRealNameLength(eval_obj);
-		memmove(eval_obj->names.long_name,
-			   eval_obj->names.long_name + eval_obj->names.long_name_length - real_name_length,
-			   real_name_length+1);
-		
-		eval_obj->names.long_name_length = real_name_length;
-		
-		total_length += eval_obj->names.long_name_length + 1 + eval_obj->num_elems + 1;
-	}
-	
-	char* eval_vector = malloc(total_length * sizeof(uint16_t));
-	
-	uint32_t offset = 0;
-	restartQueue(eval_objects);
-	while(eval_objects->length > 0)
-	{
-		eval_obj = dequeue(eval_objects);
-		//long_name=expression;
-		for(int i = 0; i < eval_obj->names.long_name_length; i++, offset++)
-		{
-			memcpy(&eval_vector[offset], &eval_obj->names.long_name[i], sizeof(uint8_t));
-		}
-		eval_vector[offset] = '=';
-		offset++;
-		memcpy(&eval_vector[offset], eval_obj->data_arrays.data, eval_obj->num_elems * sizeof(uint16_t));
-		offset += eval_obj->num_elems;
-		eval_vector[offset] = ';';
-		offset++;
-	}
-	
-	free(eval_vector);
-	
 }

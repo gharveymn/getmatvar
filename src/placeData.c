@@ -48,7 +48,6 @@ errno_t allocateSpace(Data* object)
 			sprintf(error_id, "getmatvar:unknownTypeError");
 			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
 			return 1;
-			break;
 		default:
 			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:thisShouldntHappen");
