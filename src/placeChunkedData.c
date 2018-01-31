@@ -468,8 +468,9 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	
 	st_releasePages(tree_map_obj);
 	uint64_t key_address = node->address + 8 + 2*s_block.size_of_offsets;
-	bytes_needed = 8 + num_chunked_dims*8 + key_size + s_block.size_of_offsets;
-	mapObject* key_map_obj = st_navigateTo(key_address, bytes_needed);
+	bytes_needed = key_size + s_block.size_of_offsets;
+	uint64_t total_bytes_needed = (node->entries_used + 1)*key_size + node->entries_used*s_block.size_of_offsets;
+	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
 	node->keys[0] = malloc(sizeof(Key));
 	node->keys[0]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
@@ -487,7 +488,10 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		
 		st_releasePages(key_map_obj);
-		fillNode(node->children[i], num_chunked_dims);
+		if(fillNode(node->children[i], num_chunked_dims) != 0)
+		{
+			return 1;
+		}
 		
 		size_t page_index = node->children[i]->address/alloc_gran;
 		if(node->children[i]->leaf_type == RAWDATA)

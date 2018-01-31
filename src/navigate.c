@@ -9,7 +9,8 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
-	while((obj = (mapObject*)traverseQueue(map_objects)) != NULL)
+	//this queue can get very long in recursive cases so set a hard limit
+	for(int i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
 	{
 		if(obj->map_start <= address && map_end <= obj->map_end && obj->is_mapped == TRUE)
 		{
@@ -35,14 +36,15 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	if(map_objects->length > max_num_map_objs)
 	{
-		obj = (mapObject*)peekQueue(map_objects, QUEUE_FRONT);
+		mapObject* obs_obj = (mapObject*)dequeue(map_objects);
 		if(obj->num_using == 0)
 		{
-			mapObject* obs_obj = (mapObject*)dequeue(map_objects);
 			if(munmap(obs_obj->map_start_ptr, obs_obj->map_end - obs_obj->map_start) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
 			}
+			obs_obj->map_start_ptr = NULL;
+			obs_obj->address_ptr = NULL;
 			obs_obj->is_mapped = FALSE;
 #ifdef NO_MEX
 			curr_mmap_usage -= obs_obj->map_end - obs_obj->map_start;
@@ -126,8 +128,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		{
 			
 			//acquire lock if we need to remap
-			//lock the if so there isn't deadlock
-			EnterCriticalSection(&if_lock);
 			if(page_objects[start_page].num_using == 0)
 			{
 				EnterCriticalSection(&page_objects[start_page].lock);
@@ -136,7 +136,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 				if(page_objects[start_page].num_using == 0)
 				{
 					page_objects[start_page].num_using++;
-					LeaveCriticalSection(&if_lock);
 					break;
 				}
 				else
@@ -144,7 +143,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 					LeaveCriticalSection(&page_objects[start_page].lock);
 				}
 			}
-			LeaveCriticalSection(&if_lock);
 		
 		}
 		
@@ -225,8 +223,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		{
 			
 			//acquire lock if we need to remap
-			//lock the if so there isn't deadlock
-			pthread_spin_lock(&if_lock);
 			if(page_objects[start_page].num_using == 0)
 			{
 			
@@ -236,7 +232,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 				if(page_objects[start_page].num_using == 0)
 				{
 					page_objects[start_page].num_using++;
-					pthread_spin_unlock(&if_lock);
 					break;
 				}
 				else
@@ -244,7 +239,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 					pthread_mutex_unlock(&page_objects[start_page].lock);
 				}
 			}
-			pthread_spin_unlock(&if_lock);
 			
 		}
 		

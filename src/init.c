@@ -116,10 +116,5 @@ void initializePageObjects(void)
 			page_objects[i].max_map_end = 0;
 			page_objects[i].total_num_mappings = 0;
 		}
-#ifdef WIN32_LEAN_AND_MEAN
-		InitializeCriticalSection(&if_lock);
-#else
-		pthread_spin_init(&if_lock, PTHREAD_PROCESS_SHARED);
-#endif
 	}
 }

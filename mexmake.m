@@ -35,12 +35,20 @@ try
 		
 		mex(mexflags{:} , sources{:})
 		
-	elseif(startsWith(mex.getCompilerConfigurations('C','Selected').ShortName, 'MSVC'))
+	elseif(~isempty(strfind(mex.getCompilerConfigurations('C','Selected').ShortName, 'MSVC')))
 		
-		sources = [sources,...
-			{'extlib/mman-win32/mman.c',...
-			'extlib/libdeflate/x64/win/libdeflate.lib'}
-			];
+		if(strcmp(computer('arch'),'win32'))
+			sources = [sources,...
+				{'extlib/mman-win32/mman.c',...
+				'extlib/libdeflate/x86/win/libdeflate.lib'}
+				];
+			mexflags = {'-g', '-v', '-compatibleArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+		else
+			sources = [sources,...
+				{'extlib/mman-win32/mman.c',...
+				'extlib/libdeflate/x64/win/libdeflate.lib'}
+				];
+		end
 		
 		mex(mexflags{:} , sources{:})
 		
@@ -48,7 +56,7 @@ try
 		
 		%sources = [sources,{['-L' fullfile(pwd,'extlib','libdeflate','x64','unix')], '-ldeflate'}];
 		sources = [sources, {fullfile(pwd,'extlib','libdeflate','x64','unix','libdeflate.a')}];
-        mex(mexflags{:} , sources{:})
+		mex(mexflags{:} , sources{:})
 		
 	end
 	

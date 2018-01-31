@@ -14,7 +14,7 @@ int main()
 	flushHeaderQueue();
 	
 	//open the file descriptor
-	fd = open(filename, O_RDWR);
+	fd = _open(filename, O_RDWR);
 	if(fd < 0)
 	{
 		fprintf(stderr, "open() unsuccessful, Check errno: %d\n", errno);

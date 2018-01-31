@@ -11,7 +11,7 @@ errno_t fillVariable(char* variable_name)
 	
 	if(strcmp(variable_name, "\0") == 0)
 	{
-		for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
+		for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
 		{
 			Data* obj = dequeue(virtual_super_object->sub_objects);
 			if(obj->names.short_name[0] != '#')
@@ -234,7 +234,7 @@ errno_t fillDataTree(Data* object)
 		return 1;
 	}
 	
-	for(int i = 0; i < object->num_sub_objs; i++)
+	for(uint32_t i = 0; i < object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(object->sub_objects);
 		if(fillDataTree(obj) != 0)

@@ -140,7 +140,7 @@ void freeDataObjectTree(Data* data_object)
 	
 	if(data_object->sub_objects != NULL)
 	{
-		for(int j = 0; j < data_object->num_sub_objs; j++)
+		for(uint32_t j = 0; j < data_object->num_sub_objs; j++)
 		{
 			Data* obj = dequeue(data_object->sub_objects);
 			freeDataObjectTree(obj);
@@ -184,11 +184,6 @@ void destroyPageObjects(void)
 #endif
 		
 		}
-#ifdef WIN32_LEAN_AND_MEAN
-		DeleteCriticalSection(&if_lock);
-#else
-		pthread_spin_destroy(&if_lock);
-#endif
 		free(page_objects);
 		page_objects = NULL;
 		

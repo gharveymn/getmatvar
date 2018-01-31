@@ -44,49 +44,50 @@
 
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
-//#pragma message ("getmatvar is compiling on WINDOWS")
-#define WIN32_LEAN_AND_MEAN
-#ifdef WINVER
-#undef WINVER
-#define WINVER 0x0A00
-#endif
-
-#ifdef _WIN32_WINNT
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0A00
-#endif
-
-#include <io.h>
-#include "../extlib/mman-win32/mman.h"
-#include <windows.h>
-
-
-#ifdef GMV_64_BIT
-#ifdef lseek
-#undef lseek
-#endif
-#define lseek _lseeki64
-
-#ifdef off_t
-#undef off_t
-#endif
-#define off_t int64_t
-#endif
+	//#pragma message ("getmatvar is compiling on WINDOWS")
+	#define WIN32_LEAN_AND_MEAN
+	#ifdef WINVER
+	#undef WINVER
+	#define WINVER 0x0A00
+	#endif
+	
+	#ifdef _WIN32_WINNT
+	#undef _WIN32_WINNT
+	#define _WIN32_WINNT 0x0A00
+	#endif
+	
+	#include <io.h>
+	#include "../extlib/mman-win32/mman.h"
+	#include <windows.h>
+	#include <synchapi.h>
+	
+	
+	#ifdef GMV_64_BIT
+	#ifdef lseek
+	#undef lseek
+	#endif
+	#define lseek _lseeki64
+	
+	#ifdef off_t
+	#undef off_t
+	#endif
+	#define off_t int64_t
+	#endif
 
 #else
-//#pragma message ("getmatvar is compiling on UNIX")
-#include <pthread.h>
-#include <endian.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <unistd.h>
-typedef int errno_t;
-
-#ifdef GMV_64_BIT
-typedef uint64_t OffsetType;
-#else
-typedef uint32 OffsetType;
-#endif
+	//#pragma message ("getmatvar is compiling on UNIX")
+	#include <pthread.h>
+	#include <endian.h>
+	#include <sys/mman.h>
+	#include <sys/types.h>
+	#include <unistd.h>
+	typedef int errno_t;
+	
+	#ifdef GMV_64_BIT
+	typedef uint64_t OffsetType;
+	#else
+	typedef uint32 OffsetType;
+	#endif
 
 #endif
 
@@ -384,7 +385,7 @@ typedef struct
 } VariableNameToken;
 
 //mapping.c
-errno_t getDataObjects(const char* filename, char** variable_names, int num_names);
+errno_t getDataObjects(const char* filename, char** variable_names, const int num_names);
 
 #ifdef DO_MEMDUP
 void memdump(const char type[]);
@@ -448,23 +449,6 @@ pthread_mutex_t mmap_usage_update_lock;
 FILE* dump;
 pthread_cond_t dump_ready;
 pthread_mutex_t dump_lock;
-#endif
-
-#ifdef WIN32_LEAN_AND_MEAN
-CRITICAL_SECTION if_lock;
-#else
-#ifdef NO_MEX
-pthread_mutex_t if_lock;
-
-#define pthread_spin_lock pthread_mutex_lock
-#define pthread_spin_unlock pthread_mutex_unlock
-#define pthread_spin_init pthread_mutex_init
-#define pthread_spin_destroy pthread_mutex_destroy
-#undef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_SHARED NULL
-#else
-pthread_spinlock_t if_lock;
-#endif
 #endif
 
 #ifndef NO_MEX
