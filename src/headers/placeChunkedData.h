@@ -15,7 +15,7 @@
 
 typedef enum
 {
-	GROUP = (uint8_t) 0, CHUNK = (uint8_t) 1, NODETYPE_UNDEFINED
+	GROUP = 0, CHUNK, NODETYPE_UNDEFINED, NODETYPE_ROOT
 } NodeType;
 
 typedef enum
@@ -64,7 +64,7 @@ typedef struct
 	TreeNode* data_node;
 } DataPair;
 
-errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims);
+errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
 errno_t decompressChunk(Data* object);
 #ifdef WIN32_LEAN_AND_MEAN
 DWORD doInflate_(void* t);

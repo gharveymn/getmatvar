@@ -5,7 +5,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
 	address_t map_start = address - (address % alloc_gran); //the start of the page
-	address_t map_end = address + bytes_needed;
+	address_t map_end = address + bytes_needed; //address of 1 byte after map end (since then map_end - map_start = real_bytes_needed)
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
@@ -22,6 +22,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	mapObject* map_obj = malloc(sizeof(mapObject));
 	map_obj->map_start = map_start;
+	//map_end = map_end < map_start + alloc_gran? MIN(map_start + alloc_gran, file_size): map_end; //if the mapping is smaller than a page just map the entire page for reuse later
 	map_obj->map_end = map_end;
 	map_obj->num_using = 1;
 	map_obj->is_mapped = FALSE;
@@ -37,7 +38,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	if(map_objects->length > max_num_map_objs)
 	{
 		mapObject* obs_obj = (mapObject*)dequeue(map_objects);
-		if(obj->num_using == 0)
+		if(obs_obj->num_using == 0)
 		{
 			if(munmap(obs_obj->map_start_ptr, obs_obj->map_end - obs_obj->map_start) != 0)
 			{
@@ -53,7 +54,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 #ifdef NO_MEX
-	curr_mmap_usage += (address + bytes_needed) - map_start;
+	curr_mmap_usage += map_end - map_start;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
 #endif
 	return map_obj;

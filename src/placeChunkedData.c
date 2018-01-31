@@ -92,6 +92,8 @@ errno_t getChunkedData(Data* object)
 	
 	TreeNode* root = malloc(sizeof(TreeNode));
 	root->address = object->data_address;
+	root->node_type = NODETYPE_ROOT;
+	root->leaf_type = LEAFTYPE_UNDEFINED;
 	
 	data_page_buckets = malloc(num_pages*sizeof(Queue));
 	for(int i = 0; i < num_pages; i++)
@@ -404,11 +406,13 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint64_t* array_di
 }
 
 
-errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
+errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 {
-	
-	node->node_type = NODETYPE_UNDEFINED;
-	node->leaf_type = LEAFTYPE_UNDEFINED;
+	bool_t is_root = FALSE;
+	if(node->node_type == NODETYPE_ROOT)
+	{
+		is_root = TRUE;
+	}
 	
 	if(node->address == UNDEF_ADDR)
 	{
@@ -450,7 +454,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	node->children = malloc(node->entries_used*sizeof(TreeNode*));
 	
 	uint64_t key_size;
-	uint64_t bytes_needed;
+	//uint64_t bytes_needed;
 	
 	if(node->node_type != CHUNK)
 	{
@@ -468,7 +472,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	
 	st_releasePages(tree_map_obj);
 	uint64_t key_address = node->address + 8 + 2*s_block.size_of_offsets;
-	bytes_needed = key_size + s_block.size_of_offsets;
+	//bytes_needed = key_size + s_block.size_of_offsets;
 	uint64_t total_bytes_needed = (node->entries_used + 1)*key_size + node->entries_used*s_block.size_of_offsets;
 	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
@@ -486,8 +490,9 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 	{
 		node->children[i] = malloc(sizeof(TreeNode));
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		node->children[i]->node_type = NODETYPE_UNDEFINED;
+		node->children[i]->leaf_type = LEAFTYPE_UNDEFINED;
 		
-		st_releasePages(key_map_obj);
 		if(fillNode(node->children[i], num_chunked_dims) != 0)
 		{
 			return 1;
@@ -505,8 +510,7 @@ errno_t fillNode(TreeNode* node, uint64_t num_chunked_dims)
 		}
 		
 		key_address += key_size + s_block.size_of_offsets;
-		key_map_obj = st_navigateTo(key_address, bytes_needed);
-		key_pointer = key_map_obj->address_ptr;
+		key_pointer += key_size + s_block.size_of_offsets;
 		
 		node->keys[i + 1] = malloc(sizeof(Key));
 		node->keys[i + 1]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
