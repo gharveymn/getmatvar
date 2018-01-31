@@ -1,7 +1,7 @@
 #include "headers/fillDataObjects.h"
 
 
-int fillVariable(char* variable_name)
+errno_t fillVariable(char* variable_name)
 {
 	
 	if(is_done == TRUE)
@@ -226,7 +226,7 @@ int fillVariable(char* variable_name)
 
 
 /*fill this super object and all below it*/
-int fillDataTree(Data* object)
+errno_t fillDataTree(Data* object)
 {
 	
 	if(fillObject(object, object->this_obj_address) != 0)
@@ -250,7 +250,7 @@ int fillDataTree(Data* object)
 }
 
 
-int fillObject(Data* object, uint64_t this_obj_address)
+errno_t fillObject(Data* object, uint64_t this_obj_address)
 {
 	
 	if(object->data_flags.is_filled == TRUE)
@@ -409,7 +409,7 @@ int fillObject(Data* object, uint64_t this_obj_address)
 
 
 //TODO add error checking here for corrupted data
-int collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
+errno_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
 	
 	int err_flag = 0;

@@ -3,7 +3,7 @@
 
 
 /*this is the entry function*/
-int getDataObjects(const char* filename, char** variable_names, const int num_names)
+errno_t getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
 	threads_are_started = FALSE;

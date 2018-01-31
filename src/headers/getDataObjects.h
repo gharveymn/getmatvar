@@ -384,7 +384,7 @@ typedef struct
 } VariableNameToken;
 
 //mapping.c
-int getDataObjects(const char* filename, char** variable_names, int num_names);
+errno_t getDataObjects(const char* filename, char** variable_names, int num_names);
 
 #ifdef DO_MEMDUP
 void memdump(const char type[]);
