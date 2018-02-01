@@ -101,7 +101,8 @@ errno_t getChunkedData(Data* object)
 	root->node_type = NODETYPE_ROOT;
 	root->leaf_type = LEAFTYPE_UNDEFINED;
 
-	errno_t ret;
+	errno_t ret = 0;
+	//is_vlarge = FALSE;
 	if(is_vlarge == TRUE)
 	{
 		mt_data_page_buckets = malloc(num_pages * sizeof(MTQueue));
@@ -127,6 +128,7 @@ errno_t getChunkedData(Data* object)
 #else
 		mt_fillNode(fn_sub_obj);
 #endif
+		free(fn_sub_obj);
 		
 		mt_mergeMTQueue(mt_data_queue, mt_data_page_buckets, num_pages);
 		for(int i = 0; i < num_pages; i++)
@@ -696,7 +698,7 @@ void* mt_fillNode(void* fno)
 #ifdef WIN32_LEAN_AND_MEAN
 			tree_threads[num_threads_used] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) mt_fillNode, (LPVOID)fn_sub_objs[i], 0, &ThreadID);
 #else
-			pthread_create(&tree_threads[num_threads_used], NULL, mt_fillNode, (void*)&fn_sub_objs[i]);
+			pthread_create(&tree_threads[num_threads_used], NULL, mt_fillNode, (void*)fn_sub_objs[i]);
 #endif
 			num_threads_used++;
 		}
@@ -777,7 +779,7 @@ void* mt_fillNode(void* fno)
 #else
 	return NULL;
 #endif
-	
+
 }
 
 
