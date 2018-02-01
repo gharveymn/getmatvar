@@ -1,4 +1,5 @@
 #include "headers/cleanup.h"
+#include "headers/getDataObjects.h"
 
 
 void freeVarname(void* vn)
@@ -165,15 +166,14 @@ void destroyPageObjects(void)
 			if(page_objects[i].is_mapped == TRUE)
 			{
 				
-				if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].map_start) != 0)
+				if(munmap(page_objects[i].pg_start_p, page_objects[i].map_end - page_objects[i].pg_start_a) != 0)
 				{
 					readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freeMap(). Check errno %s\n\n", strerror(errno));
 				}
 				
 				page_objects[i].is_mapped = FALSE;
 				page_objects[i].pg_start_p = NULL;
-				page_objects[i].map_start = UNDEF_ADDR;
-				page_objects[i].map_end = UNDEF_ADDR;
+				page_objects[i].map_end = 0;
 				
 			}
 
@@ -198,7 +198,7 @@ void freePageObject(size_t page_index)
 	if(page_objects[page_index].is_mapped == TRUE)
 	{
 		//second parameter doesnt do anything on windows
-		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].map_start) != 0)
+		if(munmap(page_objects[page_index].pg_start_p, page_objects[page_index].map_end - page_objects[page_index].pg_start_a) != 0)
 		{
 			readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in freePageObject(). Check errno %d\n\n", errno);
 		}
@@ -206,19 +206,18 @@ void freePageObject(size_t page_index)
 #ifdef NO_MEX
 #ifdef WIN32_LEAN_AND_MEAN
 		EnterCriticalSection(&mmap_usage_update_lock);
-		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_start;
+		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].pg_start_a;
 		LeaveCriticalSection(&mmap_usage_update_lock);
 #else
 		pthread_mutex_lock(&mmap_usage_update_lock);
-		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].map_start;
+		curr_mmap_usage -= page_objects[page_index].map_end - page_objects[page_index].pg_start_a;
 		pthread_mutex_unlock(&mmap_usage_update_lock);
 #endif
 #endif
 		
 		page_objects[page_index].is_mapped = FALSE;
 		page_objects[page_index].pg_start_p = NULL;
-		page_objects[page_index].map_start = UNDEF_ADDR;
-		page_objects[page_index].map_end = UNDEF_ADDR;
+		page_objects[page_index].map_end = 0;
 
 #ifdef DO_MEMDUMP
 		memdump("U");

@@ -1,7 +1,10 @@
 #include "headers/placeChunkedData.h"
 
 
-static Queue** data_page_buckets;
+Queue** data_page_buckets;
+MTQueue** mt_data_page_buckets;
+int num_threads_to_use;
+bool_t is_vlarge;
 
 errno_t getChunkedData(Data* object)
 {
@@ -19,7 +22,7 @@ errno_t getChunkedData(Data* object)
 	pthread_mutex_t thread_mtx;
 	pthread_t* chunk_threads = NULL;
 #endif
-	int num_threads = 1;
+	num_threads_to_use = -1;
 #ifndef WIN32_LEAN_AND_MEAN
 	void* status;
 #endif
@@ -36,6 +39,15 @@ errno_t getChunkedData(Data* object)
 	thread_object.object = object;
 	thread_object.err = 0;
 	thread_object.main_thread_ready = &main_thread_ready;
+	
+	if(object->num_elems > VERY_LARGE_ARRAY_THRESH)
+	{
+		is_vlarge = TRUE;
+	}
+	else
+	{
+		is_vlarge = FALSE;
+	}
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
@@ -57,35 +69,29 @@ errno_t getChunkedData(Data* object)
 		
 		if(num_threads_user_def != -1)
 		{
-			num_threads = num_threads_user_def;
+			num_threads_to_use = num_threads_user_def;
+			num_threads_to_use = MAX(num_threads_to_use, 1);
 		}
 		else
 		{
-			//num_threads = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
-			//num_threads = MIN(num_threads, num_avail_threads);
-			num_threads = num_avail_threads;
-			num_threads = MAX(num_threads, 1);
+			//num_threads_to_use = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
+			//num_threads_to_use = MIN(num_threads_to_use, num_avail_threads);
+			num_threads_to_use = num_avail_threads;
+			num_threads_to_use = MAX(num_threads_to_use, 1);
 		}
 
 #ifdef WIN32_LEAN_AND_MEAN
-		
-		chunk_threads = malloc(num_threads*sizeof(HANDLE));
-		for(int i = 0; i < num_threads; i++)
+		chunk_threads = malloc(num_threads_to_use*sizeof(HANDLE));
+		for(int i = 0; i < num_threads_to_use; i++)
 		{
 			chunk_threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) doInflate_, (LPVOID)&thread_object, 0, &ThreadID);
 		}
-
 #else
-		chunk_threads = malloc(num_threads*sizeof(pthread_t));
-		pthread_attr_t attr;
-		pthread_attr_init(&attr);
-		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-		
-		for(int i = 0; i < num_threads; i++)
+		chunk_threads = malloc(num_threads_to_use*sizeof(pthread_t));
+		for(int i = 0; i < num_threads_to_use; i++)
 		{
-			pthread_create(&chunk_threads[i], &attr, doInflate_, (void*)&thread_object);
+			pthread_create(&chunk_threads[i], NULL, doInflate_, (void*)&thread_object);
 		}
-		pthread_attr_destroy(&attr);
 #endif
 	
 	}
@@ -94,35 +100,66 @@ errno_t getChunkedData(Data* object)
 	root->address = object->data_address;
 	root->node_type = NODETYPE_ROOT;
 	root->leaf_type = LEAFTYPE_UNDEFINED;
-	
-	data_page_buckets = malloc(num_pages*sizeof(Queue));
-	for(int i = 0; i < num_pages; i++)
-	{
-		data_page_buckets[i] = initQueue(NULL);
-	}
-	
-	//fill the chunk tree
-	errno_t ret = fillNode(root, object->chunked_info.num_chunked_dims);
-	if(ret != 0)
-	{
-		error_flag = TRUE;
-		sprintf(error_id, "getmatvar:internalInvalidNodeType");
-		sprintf(error_message, "Invalid node type in fillNode()\n\n");
-		return ret;
-	}
 
-//	MTQueue* mt_data_queue = mt_initQueue(NULL);
-//	for(int i = 0; i < num_pages; i++)
-//	{
-//		mt_enqueue(mt_data_queue, data_page_buckets[i]);
-//	}
-	
-	mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
-	for(int i = 0; i < num_pages; i++)
+	errno_t ret;
+	if(is_vlarge == TRUE)
 	{
-		freeQueue(data_page_buckets[i]);
+		mt_data_page_buckets = malloc(num_pages * sizeof(MTQueue));
+		for(int i = 0; i < num_pages; i++)
+		{
+			mt_data_page_buckets[i] = mt_initQueue(NULL);
+		}
+		
+		//fill the chunk tree
+		FillNodeObj* fn_sub_obj = malloc(sizeof(FillNodeObj));
+		fn_sub_obj->node = root;
+		fn_sub_obj->num_chunked_dims = object->chunked_info.num_chunked_dims;
+
+#ifdef WIN32_LEAN_AND_MEAN
+		ret = (errno_t)mt_fillNode(fn_sub_obj);
+		if(ret != 0)
+		{
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:internalInvalidNodeType");
+			sprintf(error_message, "Invalid node type in fillNode()\n\n");
+			return ret;
+		}
+#else
+		mt_fillNode(fn_sub_obj);
+#endif
+		
+		mt_mergeMTQueue(mt_data_queue, mt_data_page_buckets, num_pages);
+		for(int i = 0; i < num_pages; i++)
+		{
+			mt_freeQueue(mt_data_page_buckets[i]);
+		}
+		free(mt_data_page_buckets);
 	}
-	free(data_page_buckets);
+	else
+	{
+		data_page_buckets = malloc(num_pages * sizeof(Queue));
+		for(int i = 0; i < num_pages; i++)
+		{
+			data_page_buckets[i] = initQueue(NULL);
+		}
+		
+		//fill the chunk tree
+		ret = fillNode(root, object->chunked_info.num_chunked_dims);
+		if(ret != 0)
+		{
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:internalInvalidNodeType");
+			sprintf(error_message, "Invalid node type in fillNode()\n\n");
+			return ret;
+		}
+		
+		mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
+		for(int i = 0; i < num_pages; i++)
+		{
+			freeQueue(data_page_buckets[i]);
+		}
+		free(data_page_buckets);
+	}
 	
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
@@ -132,9 +169,9 @@ errno_t getChunkedData(Data* object)
 		main_thread_ready = TRUE;
 		WakeAllConditionVariable(&thread_sync);
 		LeaveCriticalSection(&thread_mtx);
-		WaitForMultipleObjects((DWORD)num_threads, chunk_threads, TRUE, INFINITE);
+		WaitForMultipleObjects((DWORD)num_threads_to_use, chunk_threads, TRUE, INFINITE);
 		DWORD exit_code = 0;
-		for(int i = 0; i < num_threads; i++)
+		for(int i = 0; i < num_threads_to_use; i++)
 		{
 			GetExitCodeThread(chunk_threads[i], &exit_code);
 			if(exit_code != 0)
@@ -151,7 +188,7 @@ errno_t getChunkedData(Data* object)
 		main_thread_ready = TRUE;
 		pthread_cond_broadcast(&thread_sync);
 		pthread_mutex_unlock(&thread_mtx);
-		for(int i = 0; i < num_threads; i++)
+		for(int i = 0; i < num_threads_to_use; i++)
 		{
 			pthread_join(chunk_threads[i], &status);
 		}
@@ -408,11 +445,6 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint64_t* array_di
 
 errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 {
-	bool_t is_root = FALSE;
-	if(node->node_type == NODETYPE_ROOT)
-	{
-		is_root = TRUE;
-	}
 	
 	if(node->address == UNDEF_ADDR)
 	{
@@ -530,6 +562,224 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	
 }
 
+#ifdef WIN32_LEAN_AND_MEAN
+DWORD mt_fillNode(void* fno)
+#else
+void* mt_fillNode(void* fno)
+#endif
+{
+	TreeNode* node = ((FillNodeObj*)fno)->node;
+	uint8_t num_chunked_dims = ((FillNodeObj*)fno)->num_chunked_dims;
+	
+	bool_t is_root = FALSE;
+#ifdef WIN32_LEAN_AND_MEAN
+	HANDLE* tree_threads = NULL;
+	DWORD ThreadID;
+#else
+	pthread_t* tree_threads = NULL;
+	void* status;
+#endif
+	if(node->node_type == NODETYPE_ROOT)
+	{
+		is_root = TRUE;
+	}
+	
+	if(node->address == UNDEF_ADDR)
+	{
+		//this is an ending sentinel for the sibling linked list
+		node->entries_used = 0;
+		node->keys = NULL;
+		node->children = NULL;
+		node->node_level = -2;
+#ifdef WIN32_LEAN_AND_MEAN
+		return 0;
+#else
+		return NULL;
+#endif
+	}
+	
+	//1-4: Size of chunk in bytes
+	//4-8 Filter mask
+	//(Dimensionality+1)*8 bytes
+	uint64_t key_size = (uint64_t)4 + 4 + (num_chunked_dims + 1)*8;
+	uint64_t bytes_needed = key_size + s_block.size_of_offsets;
+	
+	//maps the header + the first key/address pair
+	byte* tree_pointer = mt_navigateTo(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
+	
+	if(memcmp((char*)tree_pointer, "TREE", 4*sizeof(char)) != 0)
+	{
+		node->entries_used = 0;
+		node->keys = NULL;
+		node->children = NULL;
+		node->node_level = -1;
+		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
+		{
+			//(from group node)
+			node->leaf_type = SYMBOL;
+		}
+		else
+		{
+			node->leaf_type = RAWDATA;
+		}
+		mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
+#ifdef WIN32_LEAN_AND_MEAN
+		return 0;
+#else
+		return NULL;
+#endif
+	}
+	
+	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
+	node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
+	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
+	
+	if(is_root == TRUE)
+	{
+#ifdef WIN32_LEAN_AND_MEAN
+		tree_threads = malloc(MIN(node->entries_used, num_threads_to_use)*sizeof(HANDLE));
+#else
+		tree_threads = malloc(MIN(node->entries_used, num_threads_to_use)*sizeof(pthread_t));
+#endif
+	}
+	
+	node->keys = malloc((node->entries_used + 1)*sizeof(Key*));
+	node->children = malloc(node->entries_used*sizeof(TreeNode*));
+	
+	if(node->node_type != CHUNK)
+	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:wrongNodeType");
+		sprintf(error_message, "A group node was found in the chunked data tree.\n\n");
+		mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
+#ifdef WIN32_LEAN_AND_MEAN
+		return 1;
+#else
+		((FillNodeObj*)fno)->err = 1;
+		return &((FillNodeObj*)fno)->err;
+#endif
+	}
+	
+	mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
+	uint64_t key_address = node->address + 8 + 2*s_block.size_of_offsets;
+	//uint64_t total_bytes_needed = (node->entries_used + 1)*key_size + node->entries_used*s_block.size_of_offsets;
+	//this should reuse the previous mapping
+	byte* key_pointer = mt_navigateTo(key_address, bytes_needed);
+	node->keys[0] = malloc(sizeof(Key));
+	node->keys[0]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+	node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+	node->keys[0]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
+	for(int j = 0; j < num_chunked_dims; j++)
+	{
+		//skip 8 byte bitfield and get the dims
+		node->keys[0]->chunk_start[num_chunked_dims - 1 - j] = (uint64_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
+	}
+	node->keys[0]->chunk_start[num_chunked_dims] = 0;
+	
+	int num_threads_used = 0;
+	FillNodeObj** fn_sub_objs = malloc(node->entries_used*sizeof(FillNodeObj*));
+	for(int i = 0; i < node->entries_used; i++)
+	{
+		node->children[i] = malloc(sizeof(TreeNode));
+		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		node->children[i]->node_type = NODETYPE_UNDEFINED;
+		node->children[i]->leaf_type = LEAFTYPE_UNDEFINED;
+		
+		mt_releasePages(key_address, bytes_needed);
+		
+		fn_sub_objs[i] = malloc(sizeof(FillNodeObj));
+		fn_sub_objs[i]->node = node->children[i];
+		fn_sub_objs[i]->num_chunked_dims = num_chunked_dims;
+		
+		if(is_root == TRUE && num_threads_used < num_threads_to_use)
+		{
+#ifdef WIN32_LEAN_AND_MEAN
+			tree_threads[num_threads_used] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) mt_fillNode, (LPVOID)fn_sub_objs[i], 0, &ThreadID);
+#else
+			pthread_create(&tree_threads[num_threads_used], NULL, mt_fillNode, (void*)&fn_sub_objs[i]);
+#endif
+			num_threads_used++;
+		}
+		else
+		{
+#ifdef WIN32_LEAN_AND_MEAN
+			if(mt_fillNode(fn_sub_objs[i]) != 0)
+			{
+				return 1;
+			}
+#else
+			mt_fillNode(fn_sub_objs[i]);
+#endif
+		}
+		
+		size_t page_index = node->children[i]->address/alloc_gran;
+		if(node->children[i]->leaf_type == RAWDATA)
+		{
+			page_objects[page_index].total_num_mappings++;
+			page_objects[page_index].max_map_end = MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i]->size);
+			DataPair* dp = malloc(sizeof(DataPair));
+			dp->data_key = node->keys[i];
+			dp->data_node = node->children[i];
+			mt_enqueue(mt_data_page_buckets[page_index], dp);
+		}
+		
+		key_address += bytes_needed;
+		key_pointer = mt_navigateTo(key_address, bytes_needed);
+		
+		node->keys[i + 1] = malloc(sizeof(Key));
+		node->keys[i + 1]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+		node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+		node->keys[i + 1]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
+		for(int j = 0; j < num_chunked_dims; j++)
+		{
+			node->keys[i + 1]->chunk_start[num_chunked_dims - j - 1] = (uint64_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
+		}
+		node->keys[i + 1]->chunk_start[num_chunked_dims] = 0;
+	}
+
+#ifdef WIN32_LEAN_AND_MEAN
+	DWORD ret = 0;
+	if(is_root == TRUE)
+	{
+		WaitForMultipleObjects((DWORD) num_threads_used, tree_threads, TRUE, INFINITE);
+		DWORD exit_code = 0;
+		for(int i = 0; i < num_threads_used; i++)
+		{
+			GetExitCodeThread(tree_threads[i], &exit_code);
+			if(exit_code != 0)
+			{
+				ret = 1;
+			}
+			CloseHandle(tree_threads[i]);
+		}
+		free(tree_threads);
+	}
+#else
+	if(is_root== TRUE)
+	{
+		for(int i = 0; i < num_threads_used; i++)
+		{
+			pthread_join(tree_threads[i], &status);
+		}
+		free(tree_threads);
+	}
+#endif
+	
+	for(int i = 0; i < node->entries_used; i++)
+	{
+		free(fn_sub_objs[i]);
+	}
+	free(fn_sub_objs);
+	
+	mt_releasePages(key_address, bytes_needed);
+#ifdef WIN32_LEAN_AND_MEAN
+	return ret;
+#else
+	return NULL;
+#endif
+	
+}
+
 
 void freeTree(void* n)
 {
@@ -613,17 +863,3 @@ void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, co
 		chunk_update[i] = du - cu - 1;
 	}
 }
-
-
-//void startThreads_(void* tso)
-//{
-//
-//	ThreadStartupObj* thread_startup_obj = tso;
-//
-//	for(int i = 0; i < num_threads; i++)
-//	{
-//		pthread_create(&chunk_threads[i], &attr, doInflate_, (void*)thread_object);
-//	}
-//	pthread_attr_destroy(&attr);
-//
-//}

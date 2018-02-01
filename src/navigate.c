@@ -81,7 +81,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	address_t start_address = page_objects[start_page].pg_start_a;
 	
 	//0 bytes_needed indicates operation done in parallel
-	address_t end_address = bytes_needed != 0 ? address + bytes_needed - 1 : page_objects[start_page].max_map_end;
+	address_t end_address = bytes_needed != 0 ? address + bytes_needed : page_objects[start_page].max_map_end;
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
@@ -104,7 +104,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
+		if(end_address <= page_objects[start_page].map_end)
 		{
 		
 #ifdef DO_MEMDUMP
@@ -113,7 +113,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 			EnterCriticalSection(&page_objects[start_page].lock);
 			//confirm
-			if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
+			if(end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
 				LeaveCriticalSection(&page_objects[start_page].lock);
@@ -151,7 +151,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	//if this page has already been mapped unmap since we can't fit
 	freePageObject(start_page);
-	
 	page_objects[start_page].pg_start_p = mmap(NULL, end_address - start_address, PROT_READ, MAP_PRIVATE, fd, start_address);
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
@@ -160,7 +159,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_start = start_address;
 	page_objects[start_page].map_end = end_address;
 
 #ifdef DO_MEMDUMP
@@ -199,7 +197,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
+		if(end_address <= page_objects[start_page].map_end)
 		{
 
 #ifdef DO_MEMDUMP
@@ -208,7 +206,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
-			if(page_objects[start_page].map_start <= start_address && end_address <= page_objects[start_page].map_end)
+			if(end_address <= page_objects[start_page].map_end)
 			{
 				page_objects[start_page].num_using++;
 				pthread_mutex_unlock(&page_objects[start_page].lock);
@@ -256,7 +254,6 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_start = start_address;
 	page_objects[start_page].map_end = end_address;
 	
 #ifdef DO_MEMDUMP

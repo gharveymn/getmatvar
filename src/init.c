@@ -104,13 +104,10 @@ void initializePageObjects(void)
 #else
 			pthread_mutex_init(&page_objects[i].lock, NULL);
 #endif
-			//page_objects[i].ready = PTHREAD_COND_INITIALIZER;//initialize these later if we need to?
-			//page_objects[i].lock = PTHREAD_MUTEX_INITIALIZER;
 			page_objects[i].is_mapped = FALSE;
 			page_objects[i].pg_start_a = alloc_gran*i;
 			page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
-			page_objects[i].map_start = UNDEF_ADDR;
-			page_objects[i].map_end = UNDEF_ADDR;
+			page_objects[i].map_end = 0;
 			page_objects[i].pg_start_p = NULL;
 			page_objects[i].num_using = 0;
 			page_objects[i].max_map_end = 0;

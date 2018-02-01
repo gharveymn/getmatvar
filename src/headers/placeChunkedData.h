@@ -64,12 +64,21 @@ typedef struct
 	TreeNode* data_node;
 } DataPair;
 
+typedef struct
+{
+	TreeNode* node;
+	uint8_t num_chunked_dims;
+	errno_t err;
+} FillNodeObj;
+
 errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
 errno_t decompressChunk(Data* object);
 #ifdef WIN32_LEAN_AND_MEAN
 DWORD doInflate_(void* t);
+DWORD mt_fillNode(void* fno);
 #else
 void* doInflate_(void* t);
+void* mt_fillNode(void* fno);
 #endif
 void freeTree(void* n);
 errno_t getChunkedData(Data* obj);

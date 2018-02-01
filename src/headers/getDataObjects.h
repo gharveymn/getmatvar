@@ -120,6 +120,7 @@ typedef enum
 #define WARNING_MESSAGE_SIZE 1000
 #define DEFAULT_MAX_NUM_MAP_OBJS 10
 #define MIN_MT_ELEMS_THRESH 100000
+#define VERY_LARGE_ARRAY_THRESH 1000000
 #define ONE_MB 1024000
 
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
@@ -346,8 +347,7 @@ typedef struct
 	bool_t is_mapped;
 	address_t pg_start_a;
 	address_t pg_end_a;
-	address_t map_start;//if already mapped by windows, the base offset of this map
-	address_t map_end; //if already mapped by windows, what offset this map extends to
+	address_t map_end; //what offset this map extends to
 	address_t max_map_end;
 	byte* pg_start_p;
 	uint8_t num_using;
