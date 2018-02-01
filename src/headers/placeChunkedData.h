@@ -25,10 +25,10 @@ typedef enum
 
 typedef struct
 {
-	uint32_t size;
-	uint32_t filter_mask;
+	uint32_t chunk_size;
+	//uint32_t filter_mask;
 	uint64_t* chunk_start;
-	uint64_t local_heap_offset;
+	//uint64_t local_heap_offset;
 } Key;
 
 typedef struct tree_node_ TreeNode;

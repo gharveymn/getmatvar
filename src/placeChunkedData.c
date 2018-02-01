@@ -236,7 +236,7 @@ void* doInflate_(void* t)
 		const uint64_t chunk_start_index = findArrayPosition(data_key->chunk_start, object->dims, object->num_dims);
 		//const byte* data_pointer = st_navigateTo(node->children[i]->address, node->keys[i].size);
 		const byte* data_pointer = mt_navigateTo(data_node->address, 0);
-		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->size, decompressed_data_buffer, max_est_decomp_size, NULL);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->chunk_size, decompressed_data_buffer, max_est_decomp_size, NULL);
 		//st_releasePages(node->children[i]->address, node->keys[i].size);
 		mt_releasePages(data_node->address, 0);
 		switch(thread_obj->err)
@@ -464,8 +464,8 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
 	node->keys[0] = malloc(sizeof(Key));
-	node->keys[0]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-	node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	node->keys[0]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
 	for(int j = 0; j < num_chunked_dims; j++)
 	{
@@ -488,7 +488,7 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		if(node->children[i]->node_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->size);
+			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->chunk_size);
 			DataPair* dp = malloc(sizeof(DataPair));
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];
@@ -499,8 +499,8 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		key_pointer += key_size + s_block.size_of_offsets;
 		
 		node->keys[i + 1] = malloc(sizeof(Key));
-		node->keys[i + 1]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-		node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 		node->keys[i + 1]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
 		for(int j = 0; j < num_chunked_dims; j++)
 		{
@@ -620,8 +620,8 @@ void* mt_fillNode(void* fno)
 	//this should reuse the previous mapping
 	byte* key_pointer = mt_navigateTo(key_address, bytes_needed);
 	node->keys[0] = malloc(sizeof(Key));
-	node->keys[0]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-	node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	node->keys[0]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
 	for(int j = 0; j < num_chunked_dims; j++)
 	{
@@ -669,7 +669,7 @@ void* mt_fillNode(void* fno)
 		if(node->children[i]->node_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->size);
+			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->chunk_size);
 			DataPair* dp = malloc(sizeof(DataPair));
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];
@@ -680,8 +680,8 @@ void* mt_fillNode(void* fno)
 		key_pointer = mt_navigateTo(key_address, bytes_needed);
 		
 		node->keys[i + 1] = malloc(sizeof(Key));
-		node->keys[i + 1]->size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-		node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 		node->keys[i + 1]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
 		for(int j = 0; j < num_chunked_dims; j++)
 		{

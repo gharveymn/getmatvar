@@ -4,12 +4,12 @@ clear;
 
 rng('shuffle')
 numtests = 1;
-numsamples = 1000;
+numsamples = 100000;
 lents = 0;
 
-maxDepth = 1;
-minelem = 50000;
-maxelem = 100000;
+maxDepth = 3;
+minelem = 5;
+maxelem = 10;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;
@@ -102,7 +102,7 @@ for j = 1:numtests
                         eval(['[similarity,gmv,ld] = compstruct(gmvret, ' names{p} ');']);
                         if(~isempty(gmv) || ~isempty(ld))
                             %diffs = find(gmv ~= ld);
-                            %mindiffind = min(find(gmv ~= ld));w
+                            %mindiffind = min(find(gmv ~= ld));
                             error(['getmatvar failed to select ' names{p} 'correctly']);
                         end
                     end
