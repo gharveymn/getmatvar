@@ -8,7 +8,7 @@ MTQueue* mt_initQueue(void (* free_function)(void*))
 	new_queue->front = NULL;
 	new_queue->back = NULL;
 	new_queue->length = 0;
-	new_queue->total_length = 0;
+	new_queue->abs_length = 0;
 	new_queue->free_function = free_function;
 #ifdef WIN32_LEAN_AND_MEAN
 	InitializeCriticalSection(&new_queue->lock);
@@ -26,7 +26,7 @@ MTQueue* mt_convertQueue(Queue* queue)
 	new_queue->front = queue->front;
 	new_queue->back = queue->back;
 	new_queue->length = queue->length;
-	new_queue->total_length = queue->total_length;
+	new_queue->abs_length = queue->abs_length;
 	return new_queue;
 }
 
@@ -40,7 +40,7 @@ void mt_enqueue(MTQueue* queue, void* data)
 #else
 	pthread_mutex_lock(&queue->lock);
 #endif
-	if(queue->total_length == 0)
+	if(queue->abs_length == 0)
 	{
 		new_node->next = NULL;
 		new_node->prev = NULL;
@@ -65,7 +65,7 @@ void mt_enqueue(MTQueue* queue, void* data)
 		}
 	}
 	queue->length++;
-	queue->total_length++;
+	queue->abs_length++;
 #ifdef WIN32_LEAN_AND_MEAN
 	LeaveCriticalSection(&queue->lock);
 #else
@@ -84,7 +84,7 @@ void mt_priorityEnqueue(MTQueue* queue, void* data)
 	pthread_mutex_lock(&queue->lock);
 #endif
 	new_node->data = data;
-	if(queue->total_length == 0)
+	if(queue->abs_length == 0)
 	{
 		new_node->next = NULL;
 		new_node->prev = NULL;
@@ -125,7 +125,7 @@ void mt_priorityEnqueue(MTQueue* queue, void* data)
 		
 	}
 	queue->length++;
-	queue->total_length++;
+	queue->abs_length++;
 #ifdef WIN32_LEAN_AND_MEAN
 	LeaveCriticalSection(&queue->lock);
 #else
@@ -158,7 +158,7 @@ void mt_restartQueue(MTQueue* queue)
 	pthread_mutex_lock(&queue->lock);
 #endif
 	queue->front = queue->abs_front;
-	queue->length = queue->total_length;
+	queue->length = queue->abs_length;
 #ifdef WIN32_LEAN_AND_MEAN
 	LeaveCriticalSection(&queue->lock);
 #else
@@ -288,7 +288,7 @@ void mt_flushQueue(MTQueue* queue)
 #else
 		pthread_mutex_lock(&queue->lock);
 #endif
-		while(queue->total_length > 0)
+		while(queue->abs_length > 0)
 		{
 			QueueNode* next = queue->abs_front->next;
 			if(queue->abs_front->data != NULL && queue->free_function != NULL)
@@ -297,7 +297,7 @@ void mt_flushQueue(MTQueue* queue)
 			}
 			free(queue->abs_front);
 			queue->abs_front = next;
-			queue->total_length--;
+			queue->abs_length--;
 		}
 		queue->abs_front = NULL;
 		queue->front = NULL;
@@ -333,7 +333,7 @@ void mt_cleanQueue(MTQueue* queue)
 			queue->abs_front->data = NULL;
 			free(queue->abs_front);
 			queue->abs_front = next;
-			queue->total_length--;
+			queue->abs_length--;
 		}
 #ifdef WIN32_LEAN_AND_MEAN
 		LeaveCriticalSection(&queue->lock);

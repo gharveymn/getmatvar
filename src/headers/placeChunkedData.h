@@ -15,13 +15,13 @@
 
 typedef enum
 {
-	GROUP = 0, CHUNK, NODETYPE_UNDEFINED, NODETYPE_ROOT
+	GROUP = 0, CHUNK, NODETYPE_UNDEFINED, NODETYPE_ROOT, RAWDATA, SYMBOL
 } NodeType;
 
-typedef enum
-{
-	LEAFTYPE_UNDEFINED, RAWDATA, SYMBOL
-} LeafType;
+//typedef enum
+//{
+//	LEAFTYPE_UNDEFINED, RAWDATA, SYMBOL
+//} LeafType;
 
 typedef struct
 {
@@ -36,8 +36,8 @@ struct tree_node_
 {
 	address_t address;
 	NodeType node_type;
-	LeafType leaf_type;
-	int16_t node_level;
+	//LeafType leaf_type;
+	//int16_t node_level;
 	uint16_t entries_used;
 	Key** keys;
 	TreeNode** children;

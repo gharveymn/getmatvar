@@ -23,7 +23,7 @@ typedef struct
 	QueueNode* traverse_front;
 	void (* free_function)(void*);
 	size_t length;
-	size_t total_length;
+	size_t abs_length;
 } Queue;
 
 
@@ -37,6 +37,9 @@ void flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
 void resetQueue(Queue* queue);
 void initTraversal(Queue* queue);
+void initAbsTraversal(Queue* queue);
+void* removeAtTraverseNode(Queue* queue);
+void* peekTraverse(Queue* queue);
 void* traverseQueue(Queue* queue);
 void restartQueue(Queue* queue);
 void cleanQueue(Queue* queue);

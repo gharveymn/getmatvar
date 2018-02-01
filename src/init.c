@@ -107,10 +107,10 @@ void initializePageObjects(void)
 			page_objects[i].is_mapped = FALSE;
 			page_objects[i].pg_start_a = alloc_gran*i;
 			page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
-			page_objects[i].map_end = 0;
+			page_objects[i].map_size = 0;
 			page_objects[i].pg_start_p = NULL;
 			page_objects[i].num_using = 0;
-			page_objects[i].max_map_end = 0;
+			page_objects[i].max_map_size = 0;
 			page_objects[i].total_num_mappings = 0;
 		}
 	}

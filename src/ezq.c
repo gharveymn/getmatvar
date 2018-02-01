@@ -9,7 +9,7 @@ Queue* initQueue(void (* free_function)(void*))
 	new_queue->back = NULL;
 	new_queue->traverse_front = NULL;
 	new_queue->length = 0;
-	new_queue->total_length = 0;
+	new_queue->abs_length = 0;
 	new_queue->free_function = free_function;
 	return new_queue;
 }
@@ -19,7 +19,7 @@ void enqueue(Queue* queue, void* data)
 {
 	QueueNode* new_node = malloc(sizeof(QueueNode));
 	new_node->data = data;
-	if(queue->total_length == 0)
+	if(queue->abs_length == 0)
 	{
 		new_node->next = NULL;
 		new_node->prev = NULL;
@@ -44,7 +44,7 @@ void enqueue(Queue* queue, void* data)
 		}
 	}
 	queue->length++;
-	queue->total_length++;
+	queue->abs_length++;
 }
 
 
@@ -52,7 +52,7 @@ void priorityEnqueue(Queue* queue, void* data)
 {
 	QueueNode* new_node = malloc(sizeof(QueueNode));
 	new_node->data = data;
-	if(queue->total_length == 0)
+	if(queue->abs_length == 0)
 	{
 		new_node->next = NULL;
 		new_node->prev = NULL;
@@ -93,7 +93,7 @@ void priorityEnqueue(Queue* queue, void* data)
 		
 	}
 	queue->length++;
-	queue->total_length++;
+	queue->abs_length++;
 }
 
 
@@ -106,7 +106,7 @@ void resetQueue(Queue* queue)
 void restartQueue(Queue* queue)
 {
 	queue->front = queue->abs_front;
-	queue->length = queue->total_length;
+	queue->length = queue->abs_length;
 }
 
 
@@ -169,7 +169,7 @@ void flushQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
-		while(queue->total_length > 0)
+		while(queue->abs_length > 0)
 		{
 			QueueNode* next = queue->abs_front->next;
 			if(queue->abs_front->data != NULL && queue->free_function != NULL)
@@ -178,7 +178,7 @@ void flushQueue(Queue* queue)
 			}
 			free(queue->abs_front);
 			queue->abs_front = next;
-			queue->total_length--;
+			queue->abs_length--;
 		}
 		queue->abs_front = NULL;
 		queue->traverse_front = NULL;
@@ -205,7 +205,7 @@ void cleanQueue(Queue* queue)
 			queue->abs_front->data = NULL;
 			free(queue->abs_front);
 			queue->abs_front = next;
-			queue->total_length--;
+			queue->abs_length--;
 		}
 	}
 }
@@ -220,8 +220,18 @@ void initTraversal(Queue* queue)
 }
 
 
+void initAbsTraversal(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		queue->traverse_front = queue->abs_front;
+	}
+}
+
+
 void* traverseQueue(Queue* queue)
 {
+	//give back the
 	if(queue != NULL)
 	{
 		if(queue->traverse_front != NULL)
@@ -230,6 +240,62 @@ void* traverseQueue(Queue* queue)
 			QueueNode* new_front = queue->traverse_front->next;
 			queue->traverse_front = new_front;
 			return to_return;
+		}
+	}
+	return NULL;
+}
+
+void* peekTraverse(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		if(queue->traverse_front != NULL)
+		{
+			return queue->traverse_front->data;
+		}
+	}
+	return NULL;
+}
+
+void* removeAtTraverseNode(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		QueueNode* tf = queue->traverse_front;
+		if(tf != NULL)
+		{
+			queue->traverse_front = tf->next;
+			if(tf->prev != NULL)
+			{
+				tf->prev->next = tf->next;
+			}
+			
+			if(tf->next != NULL)
+			{
+				tf->next->prev = tf->prev;
+			}
+			
+			if(tf == queue->front)
+			{
+				queue->front = tf->next;
+			}
+			
+			if(tf == queue->abs_front)
+			{
+				queue->abs_front = tf->next;
+			}
+			
+			queue->abs_length--;
+			if(queue->abs_length < queue->length)
+			{
+				queue->length--;
+			}
+			queue->free_function(tf->data);
+			free(tf);
+			if(queue->traverse_front != NULL)
+			{
+				return queue->traverse_front->data;
+			}
 		}
 	}
 	return NULL;

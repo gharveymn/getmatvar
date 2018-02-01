@@ -5,14 +5,14 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
 	address_t map_start = address - (address % alloc_gran); //the start of the page
-	address_t map_end = address + bytes_needed; //address of 1 byte after map end (since then map_end - map_start = real_bytes_needed)
+	address_t map_bytes_needed = (address % alloc_gran) + bytes_needed; //address of 1 byte after map end (since then map_end - map_start = real_bytes_needed)
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
 	//this queue can get very long in recursive cases so set a hard limit
 	for(int i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
 	{
-		if(obj->map_start <= address && map_end <= obj->map_end && obj->is_mapped == TRUE)
+		if(obj->map_start <= address && address + bytes_needed - 1 <= obj->map_start + obj->map_size - 1 && obj->is_mapped == TRUE)
 		{
 			obj->num_using++;
 			obj->address_ptr = obj->map_start_ptr + (address - obj->map_start);
@@ -23,10 +23,10 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	mapObject* map_obj = malloc(sizeof(mapObject));
 	map_obj->map_start = map_start;
 	//map_end = map_end < map_start + alloc_gran? MIN(map_start + alloc_gran, file_size): map_end; //if the mapping is smaller than a page just map the entire page for reuse later
-	map_obj->map_end = map_end;
+	map_obj->map_size = map_bytes_needed;
 	map_obj->num_using = 1;
 	map_obj->is_mapped = FALSE;
-	map_obj->map_start_ptr = mmap(NULL, map_end - map_start, PROT_READ, MAP_PRIVATE, fd, map_start);
+	map_obj->map_start_ptr = mmap(NULL, map_bytes_needed, PROT_READ, MAP_PRIVATE, fd, map_start);
 	if(map_obj->map_start_ptr == NULL || map_obj->map_start_ptr== MAP_FAILED)
 	{
 		readMXError("getmatvar:mmapUnsuccessfulError", "mmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
@@ -38,23 +38,45 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	if(map_objects->length > max_num_map_objs)
 	{
 		mapObject* obs_obj = (mapObject*)dequeue(map_objects);
-		if(obs_obj->num_using == 0)
+		if(obs_obj->num_using == 0 && obs_obj->is_mapped)
 		{
-			if(munmap(obs_obj->map_start_ptr, obs_obj->map_end - obs_obj->map_start) != 0)
+			if(munmap(obs_obj->map_start_ptr, obs_obj->map_size) != 0)
 			{
 				readMXError("getmatvar:badMunmapError", "munmap() unsuccessful in st_navigateTo(). Check errno %d\n\n", errno);
 			}
+#ifdef NO_MEX
+			curr_mmap_usage -= obs_obj->map_size;
+#endif
+			obs_obj->map_start = 0;
+			obs_obj->map_size = 0;
 			obs_obj->map_start_ptr = NULL;
 			obs_obj->address_ptr = NULL;
 			obs_obj->is_mapped = FALSE;
-#ifdef NO_MEX
-			curr_mmap_usage -= obs_obj->map_end - obs_obj->map_start;
-#endif
 		}
+		
+		//clean up the queue
+		if(map_objects->abs_length > 2*max_num_map_objs)
+		{
+			initAbsTraversal(map_objects);
+			size_t static_len = map_objects->abs_length;
+			for(int i = 0; i < static_len && (obs_obj = (mapObject*)peekTraverse(map_objects)) != NULL; i++)
+			{
+				if(obs_obj->num_using == 0)
+				{
+					removeAtTraverseNode(map_objects);
+				}
+				else
+				{
+					traverseQueue(map_objects);
+				}
+			}
+		}
+		
 	}
 	
+	
 #ifdef NO_MEX
-	curr_mmap_usage += map_end - map_start;
+	curr_mmap_usage += map_bytes_needed;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
 #endif
 	return map_obj;
@@ -63,7 +85,14 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 void st_releasePages(mapObject* map_obj)
 {
-	map_obj->num_using--;
+	if(map_obj->num_using == 0)
+	{
+		readMXError("getmatvar:internalError", "A page was released more than once");
+	}
+	else
+	{
+		map_obj->num_using--;
+	}
 }
 
 
@@ -81,7 +110,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	address_t start_address = page_objects[start_page].pg_start_a;
 	
 	//0 bytes_needed indicates operation done in parallel
-	address_t end_address = bytes_needed != 0 ? address + bytes_needed : page_objects[start_page].max_map_end;
+	address_t map_bytes_needed = bytes_needed != 0 ? (address % alloc_gran) + bytes_needed : page_objects[start_page].max_map_size;
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
@@ -104,7 +133,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(end_address <= page_objects[start_page].map_end)
+		if(map_bytes_needed <= page_objects[start_page].map_size)
 		{
 		
 #ifdef DO_MEMDUMP
@@ -113,7 +142,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 			EnterCriticalSection(&page_objects[start_page].lock);
 			//confirm
-			if(end_address <= page_objects[start_page].map_end)
+			if(map_bytes_needed <= page_objects[start_page].map_size)
 			{
 				page_objects[start_page].num_using++;
 				LeaveCriticalSection(&page_objects[start_page].lock);
@@ -151,7 +180,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	//if this page has already been mapped unmap since we can't fit
 	freePageObject(start_page);
-	page_objects[start_page].pg_start_p = mmap(NULL, end_address - start_address, PROT_READ, MAP_PRIVATE, fd, start_address);
+	page_objects[start_page].pg_start_p = mmap(NULL, map_bytes_needed, PROT_READ, MAP_PRIVATE, fd, start_address);
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
@@ -159,7 +188,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_end = end_address;
+	page_objects[start_page].map_size = map_bytes_needed;
 
 #ifdef DO_MEMDUMP
 	memdump("M");
@@ -168,7 +197,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 #ifdef NO_MEX
 	EnterCriticalSection(&mmap_usage_update_lock);
-	curr_mmap_usage += end_address - start_address;
+	curr_mmap_usage += map_bytes_needed;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
 	LeaveCriticalSection(&mmap_usage_update_lock);
 #endif
@@ -197,7 +226,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 		
 		
 		//check if we have continuous mapping available (if yes then return pointer)
-		if(end_address <= page_objects[start_page].map_end)
+		if(map_bytes_needed <= page_objects[start_page].map_size)
 		{
 
 #ifdef DO_MEMDUMP
@@ -206,7 +235,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
-			if(end_address <= page_objects[start_page].map_end)
+			if(map_bytes_needed <= page_objects[start_page].map_size)
 			{
 				page_objects[start_page].num_using++;
 				pthread_mutex_unlock(&page_objects[start_page].lock);
@@ -246,7 +275,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	//if this page has already been mapped unmap since we can't fit
 	freePageObject(start_page);
 	
-	page_objects[start_page].pg_start_p = mmap(NULL, end_address - start_address, PROT_READ, MAP_PRIVATE, fd, start_address);
+	page_objects[start_page].pg_start_p = mmap(NULL, map_bytes_needed, PROT_READ, MAP_PRIVATE, fd, start_address);
 	
 	if(page_objects[start_page].pg_start_p == NULL || page_objects[start_page].pg_start_p == MAP_FAILED)
 	{
@@ -254,7 +283,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	page_objects[start_page].is_mapped = TRUE;
-	page_objects[start_page].map_end = end_address;
+	page_objects[start_page].map_size = map_bytes_needed;
 	
 #ifdef DO_MEMDUMP
 	memdump("M");
@@ -262,7 +291,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 
 #ifdef NO_MEX
 	pthread_mutex_lock(&mmap_usage_update_lock);
-	curr_mmap_usage += end_address - start_address;
+	curr_mmap_usage += map_bytes_needed;
 	max_mmap_usage = MAX(curr_mmap_usage, max_mmap_usage);
 	pthread_mutex_unlock(&mmap_usage_update_lock);
 #endif

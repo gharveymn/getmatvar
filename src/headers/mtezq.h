@@ -20,7 +20,7 @@ typedef struct
 	QueueNode* back;
 	void (* free_function)(void*);
 	size_t length;
-	size_t total_length;
+	size_t abs_length;
 #ifdef WIN32_LEAN_AND_MEAN
 	CRITICAL_SECTION lock;
 #else

@@ -12,6 +12,7 @@ errno_t getChunkedData(Data* object)
 	initializePageObjects();
 	
 	MTQueue* mt_data_queue = mt_initQueue(free);
+	errno_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
 	CONDITION_VARIABLE thread_sync;
 	CRITICAL_SECTION thread_mtx;
@@ -39,15 +40,6 @@ errno_t getChunkedData(Data* object)
 	thread_object.object = object;
 	thread_object.err = 0;
 	thread_object.main_thread_ready = &main_thread_ready;
-	
-	if(object->num_elems > VERY_LARGE_ARRAY_THRESH)
-	{
-		is_vlarge = TRUE;
-	}
-	else
-	{
-		is_vlarge = FALSE;
-	}
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
@@ -99,69 +91,29 @@ errno_t getChunkedData(Data* object)
 	TreeNode* root = malloc(sizeof(TreeNode));
 	root->address = object->data_address;
 	root->node_type = NODETYPE_ROOT;
-	root->leaf_type = LEAFTYPE_UNDEFINED;
-
-	errno_t ret = 0;
-	//is_vlarge = FALSE;
-	if(is_vlarge == TRUE)
+	
+	data_page_buckets = malloc(num_pages * sizeof(Queue));
+	for(int i = 0; i < num_pages; i++)
 	{
-		mt_data_page_buckets = malloc(num_pages * sizeof(MTQueue));
-		for(int i = 0; i < num_pages; i++)
-		{
-			mt_data_page_buckets[i] = mt_initQueue(NULL);
-		}
-		
-		//fill the chunk tree
-		FillNodeObj* fn_sub_obj = malloc(sizeof(FillNodeObj));
-		fn_sub_obj->node = root;
-		fn_sub_obj->num_chunked_dims = object->chunked_info.num_chunked_dims;
-
-#ifdef WIN32_LEAN_AND_MEAN
-		ret = (errno_t)mt_fillNode(fn_sub_obj);
-		if(ret != 0)
-		{
-			error_flag = TRUE;
-			sprintf(error_id, "getmatvar:internalInvalidNodeType");
-			sprintf(error_message, "Invalid node type in fillNode()\n\n");
-			return ret;
-		}
-#else
-		mt_fillNode(fn_sub_obj);
-#endif
-		free(fn_sub_obj);
-		
-		mt_mergeMTQueue(mt_data_queue, mt_data_page_buckets, num_pages);
-		for(int i = 0; i < num_pages; i++)
-		{
-			mt_freeQueue(mt_data_page_buckets[i]);
-		}
-		free(mt_data_page_buckets);
+		data_page_buckets[i] = initQueue(NULL);
 	}
-	else
+	
+	//fill the chunk tree
+	ret = fillNode(root, object->chunked_info.num_chunked_dims);
+	if(ret != 0)
 	{
-		data_page_buckets = malloc(num_pages * sizeof(Queue));
-		for(int i = 0; i < num_pages; i++)
-		{
-			data_page_buckets[i] = initQueue(NULL);
-		}
-		
-		//fill the chunk tree
-		ret = fillNode(root, object->chunked_info.num_chunked_dims);
-		if(ret != 0)
-		{
-			error_flag = TRUE;
-			sprintf(error_id, "getmatvar:internalInvalidNodeType");
-			sprintf(error_message, "Invalid node type in fillNode()\n\n");
-			return ret;
-		}
-		
-		mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
-		for(int i = 0; i < num_pages; i++)
-		{
-			freeQueue(data_page_buckets[i]);
-		}
-		free(data_page_buckets);
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:internalInvalidNodeType");
+		sprintf(error_message, "Invalid node type in fillNode()\n\n");
+		return ret;
 	}
+	
+	mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
+	for(int i = 0; i < num_pages; i++)
+	{
+		freeQueue(data_page_buckets[i]);
+	}
+	free(data_page_buckets);
 	
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
@@ -454,10 +406,11 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		node->node_level = -2;
+		//node->node_level = -2;
 		return 0;
 	}
 	
+
 	mapObject* tree_map_obj = st_navigateTo(node->address, 8);
 	byte* tree_pointer = tree_map_obj->address_ptr;
 	
@@ -466,22 +419,22 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		node->node_level = -1;
+		//node->node_level = -1;
 		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
 		{
 			//(from group node)
-			node->leaf_type = SYMBOL;
+			node->node_type = SYMBOL;
 		}
 		else
 		{
-			node->leaf_type = RAWDATA;
+			node->node_type = RAWDATA;
 		}
 		st_releasePages(tree_map_obj);
 		return 0;
 	}
 	
 	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
-	node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
+	//node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	node->keys = malloc((node->entries_used + 1)*sizeof(Key*));
@@ -525,7 +478,6 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		node->children[i] = malloc(sizeof(TreeNode));
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		node->children[i]->node_type = NODETYPE_UNDEFINED;
-		node->children[i]->leaf_type = LEAFTYPE_UNDEFINED;
 		
 		if(fillNode(node->children[i], num_chunked_dims) != 0)
 		{
@@ -533,10 +485,10 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		}
 		
 		size_t page_index = node->children[i]->address/alloc_gran;
-		if(node->children[i]->leaf_type == RAWDATA)
+		if(node->children[i]->node_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_end = MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i]->size);
+			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->size);
 			DataPair* dp = malloc(sizeof(DataPair));
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];
@@ -592,7 +544,7 @@ void* mt_fillNode(void* fno)
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		node->node_level = -2;
+		//node->node_level = -2;
 #ifdef WIN32_LEAN_AND_MEAN
 		return 0;
 #else
@@ -614,15 +566,15 @@ void* mt_fillNode(void* fno)
 		node->entries_used = 0;
 		node->keys = NULL;
 		node->children = NULL;
-		node->node_level = -1;
+		//node->node_level = -1;
 		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
 		{
 			//(from group node)
-			node->leaf_type = SYMBOL;
+			node->node_type = SYMBOL;
 		}
 		else
 		{
-			node->leaf_type = RAWDATA;
+			node->node_type = RAWDATA;
 		}
 		mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
 #ifdef WIN32_LEAN_AND_MEAN
@@ -633,7 +585,7 @@ void* mt_fillNode(void* fno)
 	}
 	
 	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
-	node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
+	//node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	if(is_root == TRUE)
@@ -685,7 +637,6 @@ void* mt_fillNode(void* fno)
 		node->children[i] = malloc(sizeof(TreeNode));
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		node->children[i]->node_type = NODETYPE_UNDEFINED;
-		node->children[i]->leaf_type = LEAFTYPE_UNDEFINED;
 		
 		mt_releasePages(key_address, bytes_needed);
 		
@@ -715,10 +666,10 @@ void* mt_fillNode(void* fno)
 		}
 		
 		size_t page_index = node->children[i]->address/alloc_gran;
-		if(node->children[i]->leaf_type == RAWDATA)
+		if(node->children[i]->node_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_end = MAX(page_objects[page_index].max_map_end, node->children[i]->address + node->keys[i]->size);
+			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->size);
 			DataPair* dp = malloc(sizeof(DataPair));
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];

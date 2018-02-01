@@ -347,8 +347,8 @@ typedef struct
 	bool_t is_mapped;
 	address_t pg_start_a;
 	address_t pg_end_a;
-	address_t map_end; //what offset this map extends to
-	address_t max_map_end;
+	size_t map_size;
+	address_t max_map_size;
 	byte* pg_start_p;
 	uint8_t num_using;
 	uint32_t total_num_mappings;
@@ -357,7 +357,7 @@ typedef struct
 typedef struct
 {
 	address_t map_start;//if already mapped by windows, the base offset of this map
-	address_t map_end; //if already mapped by windows, what offset this map extends to
+	size_t map_size;
 	byte* map_start_ptr;
 	byte* address_ptr;
 	uint32_t num_using;
