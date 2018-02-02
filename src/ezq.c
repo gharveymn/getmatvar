@@ -4,109 +4,153 @@
 Queue* initQueue(void (* free_function)(void*))
 {
 	Queue* new_queue = malloc(sizeof(Queue));
-	new_queue->abs_front = NULL;
-	new_queue->front = NULL;
-	new_queue->back = NULL;
-	new_queue->traverse_front = NULL;
-	new_queue->length = 0;
-	new_queue->abs_length = 0;
-	new_queue->free_function = free_function;
+	if(new_queue != NULL)
+	{
+		new_queue->abs_front = NULL;
+		new_queue->front = NULL;
+		new_queue->back = NULL;
+		new_queue->traverse_front = NULL;
+		new_queue->length = 0;
+		new_queue->abs_length = 0;
+		new_queue->free_function = free_function;
+	}
 	return new_queue;
 }
 
 
-void enqueue(Queue* queue, void* data)
+errno_t enqueue(Queue* queue, void* data)
 {
-	QueueNode* new_node = malloc(sizeof(QueueNode));
-	new_node->data = data;
-	if(queue->abs_length == 0)
+	if(queue != NULL)
 	{
-		new_node->next = NULL;
-		new_node->prev = NULL;
-		queue->abs_front = new_node;
-		queue->front = new_node;
-		queue->back = queue->front;
-	}
-	else
-	{
-		new_node->prev = queue->back;
-		new_node->next = queue->back->next;
-		
-		if(queue->back->next != NULL)
+		QueueNode* new_node = malloc(sizeof(QueueNode));
+		if(new_node == NULL)
 		{
-			queue->back->next->prev = new_node;
+			return 1;
 		}
-		queue->back->next = new_node;
-		queue->back = new_node;
-		if(queue->length == 0)
+		new_node->data = data;
+		if(queue->abs_length == 0)
 		{
-			queue->front = new_node;
-		}
-	}
-	queue->length++;
-	queue->abs_length++;
-}
-
-
-void priorityEnqueue(Queue* queue, void* data)
-{
-	QueueNode* new_node = malloc(sizeof(QueueNode));
-	new_node->data = data;
-	if(queue->abs_length == 0)
-	{
-		new_node->next = NULL;
-		new_node->prev = NULL;
-		queue->abs_front = new_node;
-		queue->front = new_node;
-		queue->back = queue->front;
-	}
-	else if(queue->length == 0)
-	{
-		//means the queue is reset, so just normal queue instead so we don't confuse the total length
-		new_node->prev = queue->back;
-		new_node->next = queue->back->next;
-		if(queue->back->next != NULL)
-		{
-			queue->back->next->prev = new_node;
-		}
-		queue->back->next = new_node;
-		queue->back = new_node;
-		queue->front = new_node;
-		
-	}
-	else
-	{
-		new_node->prev = queue->front->prev;
-		new_node->next = queue->front;
-		
-		if(queue->front == queue->abs_front)
-		{
+			new_node->next = NULL;
+			new_node->prev = NULL;
 			queue->abs_front = new_node;
+			queue->front = new_node;
+			queue->back = queue->front;
 		}
 		else
 		{
-			queue->front->prev->next = new_node;
+			new_node->prev = queue->back;
+			new_node->next = queue->back->next;
+			
+			if(queue->back->next != NULL)
+			{
+				queue->back->next->prev = new_node;
+			}
+			queue->back->next = new_node;
+			queue->back = new_node;
+			if(queue->length == 0)
+			{
+				queue->front = new_node;
+			}
 		}
-		
-		queue->front->prev = new_node;
-		queue->front = new_node;
-		
+		queue->length++;
+		queue->abs_length++;
+		return 0;
 	}
-	queue->length++;
-	queue->abs_length++;
+	else
+	{
+		return 2;
+	}
 }
 
 
-void resetQueue(Queue* queue)
+errno_t priorityEnqueue(Queue* queue, void* data)
 {
-	queue->front = queue->back;
-	queue->length = 0;
+	if(queue != NULL)
+	{
+		QueueNode* new_node = malloc(sizeof(QueueNode));
+		if(new_node == NULL)
+		{
+			return 1;
+		}
+		new_node->data = data;
+		if(queue->abs_length == 0)
+		{
+			new_node->next = NULL;
+			new_node->prev = NULL;
+			queue->abs_front = new_node;
+			queue->front = new_node;
+			queue->back = queue->front;
+		}
+		else if(queue->length == 0)
+		{
+			//means the queue is reset, so just normal queue instead so we don't confuse the total length
+			new_node->prev = queue->back;
+			new_node->next = queue->back->next;
+			if(queue->back->next != NULL)
+			{
+				queue->back->next->prev = new_node;
+			}
+			queue->back->next = new_node;
+			queue->back = new_node;
+			queue->front = new_node;
+			
+		}
+		else
+		{
+			new_node->prev = queue->front->prev;
+			new_node->next = queue->front;
+			
+			if(queue->front == queue->abs_front)
+			{
+				queue->abs_front = new_node;
+			}
+			else
+			{
+				queue->front->prev->next = new_node;
+			}
+			
+			queue->front->prev = new_node;
+			queue->front = new_node;
+			
+		}
+		queue->length++;
+		queue->abs_length++;
+		return 0;
+	}
+	else
+	{
+		return 2;
+	}
 }
 
-void restartQueue(Queue* queue)
+
+errno_t resetQueue(Queue* queue)
 {
-	queue->front = queue->abs_front;
-	queue->length = queue->abs_length;
+	if(queue != NULL)
+	{
+		queue->front = queue->back;
+		queue->length = 0;
+		return 0;
+	}
+	else
+	{
+		return 2;
+	}
+}
+
+
+errno_t restartQueue(Queue* queue)
+{
+	if(queue != NULL)
+	{
+		queue->front = queue->abs_front;
+		queue->length = queue->abs_length;
+		return 0;
+	}
+	else
+	{
+		return 2;
+	}
 }
 
 
@@ -151,21 +195,29 @@ void* peekQueue(Queue* queue, int queue_location)
 }
 
 
-void mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
+errno_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
 {
-	for(int i = 0; i < num_queues; i++)
+	if(new_queue != NULL)
 	{
-		size_t q_len = queues[i]->length;
-		for(int j = 0; j < q_len; j++)
+		for(int i = 0; i < num_queues; i++)
 		{
-			enqueue(new_queue, dequeue(queues[i]));
+			size_t q_len = queues[i]->length;
+			for(int j = 0; j < q_len; j++)
+			{
+				enqueue(new_queue, dequeue(queues[i]));
+			}
+			restartQueue(queues[i]);
 		}
-		restartQueue(queues[i]);
+		return 0;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
 
-void flushQueue(Queue* queue)
+errno_t flushQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
@@ -185,11 +237,16 @@ void flushQueue(Queue* queue)
 		queue->front = NULL;
 		queue->back = NULL;
 		queue->length = 0;
+		return 0;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
 
-void cleanQueue(Queue* queue)
+errno_t cleanQueue(Queue* queue)
 {
 	//move the absolute front to the same position as front and free up the queue objects along the way
 	if(queue != NULL)
@@ -207,24 +264,39 @@ void cleanQueue(Queue* queue)
 			queue->abs_front = next;
 			queue->abs_length--;
 		}
+		return 0;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
 
-void initTraversal(Queue* queue)
+errno_t initTraversal(Queue* queue)
 {
 	if(queue != NULL)
 	{
 		queue->traverse_front = queue->front;
+		return 0;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
 
-void initAbsTraversal(Queue* queue)
+errno_t initAbsTraversal(Queue* queue)
 {
 	if(queue != NULL)
 	{
 		queue->traverse_front = queue->abs_front;
+		return 0;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
@@ -245,6 +317,7 @@ void* traverseQueue(Queue* queue)
 	return NULL;
 }
 
+
 void* peekTraverse(Queue* queue)
 {
 	if(queue != NULL)
@@ -256,6 +329,7 @@ void* peekTraverse(Queue* queue)
 	}
 	return NULL;
 }
+
 
 void* removeAtTraverseNode(Queue* queue)
 {
@@ -309,4 +383,5 @@ void freeQueue(Queue* queue)
 		flushQueue(queue);
 		free(queue);
 	}
+	//queue being NULL is not an error
 }

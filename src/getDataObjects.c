@@ -17,7 +17,12 @@ errno_t getDataObjects(const char* filename, char** variable_names, const int nu
 #endif
 	
 	num_avail_threads = getNumProcessors();
-	map_objects = initQueue(freeMapObject);
+	if((map_objects = initQueue(freeMapObject)) == NULL)
+	{
+		sprintf(error_id, "getmatvar:initQueueErr");
+		sprintf(error_message, "Could not initialize the map_objects queue");
+		return 1;
+	}
 	
 	//open the file descriptor
 	fd = open(filename, O_RDONLY);
@@ -85,12 +90,30 @@ errno_t getDataObjects(const char* filename, char** variable_names, const int nu
 	//find superblock
 	s_block = getSuperblock();
 	
-	object_queue = initQueue(freeDataObject);
-	top_level_objects = initQueue(NULL);
-	varname_queue = initQueue(freeVarname);
+	if((object_queue = initQueue(freeDataObject)) == NULL)
+	{
+		sprintf(error_id, "getmatvar:initQueueErr");
+		sprintf(error_message, "Could not initialize the object queue");
+		return 1;
+	}
+	if((top_level_objects = initQueue(NULL)) == NULL)
+	{
+		sprintf(error_id, "getmatvar:initQueueErr");
+		sprintf(error_message, "Could not initialize the top_level_objects queue");
+		return 1;
+	}
+	if((varname_queue = initQueue(freeVarname)) == NULL)
+	{
+		sprintf(error_id, "getmatvar:initQueueErr");
+		sprintf(error_message, "Could not initialize the varname queue");
+		return 1;
+	}
 	
 	virtual_super_object = malloc(sizeof(Data));
-	initializeObject(virtual_super_object);
+	if(initializeObject(virtual_super_object) != 0)
+	{
+		return 1;
+	}
 	enqueue(object_queue, virtual_super_object);
 	
 	if(makeObjectTreeSkeleton() != 0)

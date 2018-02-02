@@ -1,4 +1,5 @@
 #include "headers/utils.h"
+#include "headers/getDataObjects.h"
 
 
 /*for use on a single level*/
@@ -58,11 +59,18 @@ Data* findObjectByHeaderAddress(address_t address)
 }
 
 
-void parseCoordinates(VariableNameToken* vnt)
+errno_t parseCoordinates(VariableNameToken* vnt)
 {
 	char* delim = ",", * coord_num_str;
 	size_t vnlen = strlen(vnt->variable_local_name);
 	char* variable_name_cpy = malloc((vnlen + 1)*sizeof(char));
+	if(variable_name_cpy == NULL)
+	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:mallocErrVNCcoord");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	memcpy(variable_name_cpy, vnt->variable_local_name, vnlen*sizeof(char));
 	variable_name_cpy[vnlen] = '\0';
 	coord_num_str = strtok(variable_name_cpy, delim);
@@ -77,6 +85,7 @@ void parseCoordinates(VariableNameToken* vnt)
 		coord_num_str = strtok(NULL, delim);
 	}
 	free(variable_name_cpy);
+	return 0;
 }
 
 
@@ -97,6 +106,18 @@ Data* cloneData(Data* old_object)
 {
 	
 	Data* new_object = malloc(sizeof(Data));
+	if(new_object == NULL)
+	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:mallocErrNewObjCD");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return NULL;
+	}
+	//init so we can free cleanly if there are any errors
+	if(initializeObject(new_object) != 0)
+	{
+		return 1;
+	}
 	
 	new_object->layout_class = old_object->layout_class;               //3 by default for non-data
 	new_object->datatype_bit_field = old_object->datatype_bit_field;
@@ -122,6 +143,13 @@ Data* cloneData(Data* old_object)
 	if(old_object->data_arrays.data != NULL)
 	{
 		new_object->data_arrays.data = malloc(old_object->num_elems*old_object->elem_size);
+		if(new_object->data_arrays.data == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrDataCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		memcpy(new_object->data_arrays.data, old_object->data_arrays.data, old_object->num_elems*old_object->elem_size);
 	}
 	else
@@ -132,6 +160,13 @@ Data* cloneData(Data* old_object)
 	if(old_object->data_arrays.sub_object_header_offsets != NULL)
 	{
 		new_object->data_arrays.sub_object_header_offsets = malloc(old_object->num_elems*old_object->elem_size);
+		if(new_object->data_arrays.sub_object_header_offsets  == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrSOHOCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		memcpy(new_object->data_arrays.sub_object_header_offsets, old_object->data_arrays.sub_object_header_offsets, old_object->num_elems*old_object->elem_size);
 	}
 	else
@@ -145,12 +180,26 @@ Data* cloneData(Data* old_object)
 	if(old_object->chunked_info.filters != NULL)
 	{
 		new_object->chunked_info.filters = malloc(new_object->chunked_info.num_filters*sizeof(Filter));
+		if(new_object->chunked_info.filters  == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrCIFCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		for(int i = 0; i < old_object->chunked_info.num_filters; i++)
 		{
 			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
 			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
 			new_object->chunked_info.filters[i].optional_flag = old_object->chunked_info.filters[i].optional_flag;
 			new_object->chunked_info.filters[i].client_data = malloc(new_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
+			if(new_object->chunked_info.filters[i].client_data  == NULL)
+			{
+				sprintf(error_id, "getmatvar:mallocErrCIFCDCD");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				freeDataObject(new_object);
+				return NULL;
+			}
 			for(int j = 0; j < new_object->chunked_info.filters[i].num_client_vals; j++)
 			{
 				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
@@ -165,6 +214,13 @@ Data* cloneData(Data* old_object)
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
 		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		if(new_object->chunked_info.chunked_dims  == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrCICDCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
@@ -175,6 +231,13 @@ Data* cloneData(Data* old_object)
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
 		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		if(new_object->chunked_info.chunk_update  == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrCICUCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
@@ -185,6 +248,13 @@ Data* cloneData(Data* old_object)
 	if(old_object->dims != NULL)
 	{
 		new_object->dims = malloc(new_object->num_dims*sizeof(uint64_t));
+		if(new_object->dims  == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrDCD");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			freeDataObject(new_object);
+			return NULL;
+		}
 		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(uint64_t));
 	}
 	else
@@ -194,7 +264,6 @@ Data* cloneData(Data* old_object)
 	
 	
 	new_object->super_object = old_object->super_object;
-	new_object->sub_objects = initQueue(NULL);
 	while(old_object->sub_objects->length > 0)
 	{
 		enqueue(new_object->sub_objects, dequeue(old_object->sub_objects));
@@ -207,9 +276,23 @@ Data* cloneData(Data* old_object)
 	
 	new_object->names.long_name_length = old_object->names.long_name_length;
 	new_object->names.long_name = malloc((new_object->names.long_name_length + 1)*sizeof(char));
+	if(new_object->names.long_name  == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrNLNCD");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		freeDataObject(new_object);
+		return NULL;
+	}
 	strcpy(new_object->names.long_name, old_object->names.long_name);
 	new_object->names.short_name_length = old_object->names.short_name_length;
 	new_object->names.short_name = malloc((new_object->names.short_name_length + 1)*sizeof(char));
+	if(new_object->names.short_name  == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrNSNCD");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		freeDataObject(new_object);
+		return NULL;
+	}
 	strcpy(new_object->names.short_name, old_object->names.short_name);
 	
 	enqueue(object_queue, new_object);
@@ -218,7 +301,7 @@ Data* cloneData(Data* old_object)
 }
 
 
-void makeVarnameQueue(char* variable_name)
+errno_t makeVarnameQueue(char* variable_name)
 {
 	
 	char* delim = ".{}()", * token;
@@ -232,7 +315,23 @@ void makeVarnameQueue(char* variable_name)
 	{
 		size_t vnlen = strlen(token);
 		VariableNameToken* varname_token = malloc(sizeof(VariableNameToken));
+		if(unlikely(varname_token == NULL))
+		{
+			//very very unlikely
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:mallocErrVNT");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		varname_token->variable_local_name = malloc((vnlen + 1)*sizeof(char));
+		if(unlikely(varname_token->variable_local_name == NULL))
+		{
+			//very very unlikely
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:mallocErrVNTvln");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		strcpy(varname_token->variable_local_name, token);
 		varname_token->variable_local_index = 0;
 		varname_token->variable_name_type = VT_LOCAL_INDEX;
@@ -271,13 +370,16 @@ void makeVarnameQueue(char* variable_name)
 		VariableNameToken* vnt = dequeue(varname_queue);
 		if(vnt->variable_name_type == VT_LOCAL_COORDINATES)
 		{
-			parseCoordinates(vnt);
+			if(parseCoordinates(vnt) != 0)
+			{
+				return 1;
+			}
 		}
 	}
 	restartQueue(varname_queue);
 	
 	free(variable_name_cpy);
-	
+	return 0;
 }
 
 

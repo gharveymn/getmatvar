@@ -1,4 +1,5 @@
 #include "headers/readMessage.h"
+#include "headers/getDataObjects.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
@@ -20,9 +21,15 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 		sprintf(error_message, "Data has too many dimensions. Data may have been corrupted.\n\n");
 		*err_flag = 1;
 		return;
-		return;
 	}
 	object->dims = malloc((object->num_dims + 1)*sizeof(uint64_t));
+	if(object->dims == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrDims");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		*err_flag = 1;
+		return;
+	}
 	for(int i = 0; i < object->num_dims; i++)
 	{
 		object->dims[object->num_dims - i - 1] = (uint64_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
@@ -119,7 +126,21 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
 			object->chunked_info.chunked_dims = malloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
+			if(object->chunked_info.chunked_dims == NULL)
+			{
+				sprintf(error_id, "getmatvar:mallocErrChunkedDims");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				*err_flag = 1;
+				return;
+			}
 			object->chunked_info.chunk_update = malloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
+			if(object->chunked_info.chunk_update == NULL)
+			{
+				sprintf(error_id, "getmatvar:mallocErrChunkUpdate");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				*err_flag = 1;
+				return;
+			}
 			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
@@ -151,7 +172,17 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 {
 	
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
-	object->chunked_info.filters = malloc(object->chunked_info.num_filters*sizeof(Filter));
+	if(object->chunked_info.num_filters > 0)
+	{
+		object->chunked_info.filters = malloc(object->chunked_info.num_filters * sizeof(Filter));
+		if(object->chunked_info.filters == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrFilters");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			*err_flag = 1;
+			return;
+		}
+	}
 	byte* helper_pointer = NULL;
 	uint16_t name_size = 0;
 	
@@ -168,8 +199,14 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER) & 1);
 				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 6, 2, META_DATA_BYTE_ORDER);
 				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
+				if(object->chunked_info.filters[j].client_data == NULL)
+				{
+					sprintf(error_id, "getmatvar:mallocErrCliDat1");
+					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+					*err_flag = 1;
+					return;
+				}
 				helper_pointer += 8 + name_size;
-				
 				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
 				{
 					object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
@@ -189,8 +226,14 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER) & 1);
 				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER);
 				object->chunked_info.filters[j].client_data = malloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
+				if(object->chunked_info.filters[j].client_data == NULL)
+				{
+					sprintf(error_id, "getmatvar:mallocErrCliDat2");
+					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+					*err_flag = 1;
+					return;
+				}
 				helper_pointer += 6;
-				
 				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
 				{
 					object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
@@ -231,6 +274,13 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 	{
 		uint32_t attribute_data_size = (uint32_t)getBytesAsNumber(msg_pointer + 8 + roundUp8(name_size) + 4, 4, META_DATA_BYTE_ORDER);
 		object->matlab_class = malloc((attribute_data_size + 1)*sizeof(char));
+		if(object->matlab_class == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrMatCla");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			*err_flag = 1;
+			return;
+		}
 		memcpy(object->matlab_class, (char*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), attribute_data_size*sizeof(char));
 		object->matlab_class[attribute_data_size] = 0x0;
 		selectMatlabClass(object);
@@ -243,6 +293,13 @@ void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 			free(object->dims);
 		}
 		object->dims = malloc(2*sizeof(uint64_t));
+		if(unlikely(object->dims == NULL))
+		{
+			sprintf(error_id, "getmatvar:mallocErrSpDims");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			*err_flag = 1;
+			return;
+		}
 		memcpy(object->dims, (uint64_t*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), sizeof(uint64_t));
 		object->dims[1] = 0;
 	}

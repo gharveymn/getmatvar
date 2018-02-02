@@ -28,12 +28,6 @@ errno_t getChunkedData(Data* object)
 	void* status;
 #endif
 	bool_t main_thread_ready = FALSE;
-
-//	InflateThreadObj* thread_object = malloc(sizeof(InflateThreadObj));
-//	thread_object->mt_data_queue = mt_data_queue;
-//	thread_object->object = object;
-//	thread_object->err = 0;
-//	thread_object->main_thread_ready = &main_thread_ready;
 	
 	InflateThreadObj thread_object;
 	thread_object.mt_data_queue = mt_data_queue;
@@ -74,12 +68,24 @@ errno_t getChunkedData(Data* object)
 
 #ifdef WIN32_LEAN_AND_MEAN
 		chunk_threads = malloc(num_threads_to_use*sizeof(HANDLE));
+		if(chunk_threads == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrCTPCDWT");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		for(int i = 0; i < num_threads_to_use; i++)
 		{
 			chunk_threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) doInflate_, (LPVOID)&thread_object, 0, &ThreadID);
 		}
 #else
 		chunk_threads = malloc(num_threads_to_use*sizeof(pthread_t));
+		if(chunk_threads == NULL)
+		{
+			sprintf(error_id, "getmatvar:mallocErrCTPCDPT");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		for(int i = 0; i < num_threads_to_use; i++)
 		{
 			pthread_create(&chunk_threads[i], NULL, doInflate_, (void*)&thread_object);
@@ -89,13 +95,30 @@ errno_t getChunkedData(Data* object)
 	}
 	
 	TreeNode* root = malloc(sizeof(TreeNode));
+	if(root == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrRPCD");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	root->address = object->data_address;
 	root->node_type = NODETYPE_ROOT;
 	
 	data_page_buckets = malloc(num_pages * sizeof(Queue));
+	if(data_page_buckets == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrDPBPCD");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	for(int i = 0; i < num_pages; i++)
 	{
-		data_page_buckets[i] = initQueue(NULL);
+		if((data_page_buckets[i] = initQueue(NULL)) == NULL)
+		{
+			sprintf(error_id, "getmatvar:initQueueErr");
+			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue",i);
+			return 1;
+		}
 	}
 	
 	//fill the chunk tree
@@ -193,8 +216,21 @@ void* doInflate_(void* t)
 	
 	const size_t max_est_decomp_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	
-	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	byte* decompressed_data_buffer = malloc(max_est_decomp_size);
+	if(decompressed_data_buffer == NULL)
+	{
+		memset(error_id, 0, sizeof(error_id));
+		memset(error_message, 0, sizeof(error_id));
+		sprintf(error_id, "getmatvar:mallocErrDDBDI");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+#ifdef WIN32_LEAN_AND_MEAN
+		return 1;
+#else
+		thread_obj->err = 1;
+		return (void*)&thread_obj->err;
+#endif
+	}
+	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	//uint64_t* index_map = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	//uint64_t* db_index_sequence = malloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	
@@ -242,7 +278,6 @@ void* doInflate_(void* t)
 		switch(thread_obj->err)
 		{
 			case LIBDEFLATE_BAD_DATA:
-				error_flag = TRUE;
 				memset(error_id, 0, sizeof(error_id));
 				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateBadData");
@@ -252,10 +287,10 @@ void* doInflate_(void* t)
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
+				thread_obj->err = 1;
 				return (void*)&thread_obj->err;
 #endif
 			case LIBDEFLATE_SHORT_OUTPUT:
-				error_flag = TRUE;
 				memset(error_id, 0, sizeof(error_id));
 				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateShortOutput");
@@ -267,10 +302,10 @@ void* doInflate_(void* t)
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
+				thread_obj->err = 1;
 				return (void*)&thread_obj->err;
 #endif
 			case LIBDEFLATE_INSUFFICIENT_SPACE:
-				error_flag = TRUE;
 				memset(error_id, 0, sizeof(error_id));
 				memset(error_message, 0, sizeof(error_id));
 				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
@@ -280,6 +315,7 @@ void* doInflate_(void* t)
 #ifdef WIN32_LEAN_AND_MEAN
 				return 1;
 #else
+				thread_obj->err = 1;
 				return (void*)&thread_obj->err;
 #endif
 			default:
@@ -438,14 +474,28 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
 	node->keys = malloc((node->entries_used + 1)*sizeof(Key*));
+	if(node->keys == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrKFN");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	node->children = malloc(node->entries_used*sizeof(TreeNode*));
+	if(node->children == NULL)
+	{
+		free(node->keys);
+		sprintf(error_id, "getmatvar:mallocErrCFN");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	
 	uint64_t key_size;
 	//uint64_t bytes_needed;
 	
 	if(node->node_type != CHUNK)
 	{
-		error_flag = TRUE;
+		free(node->keys);
+		free(node->children);
 		sprintf(error_id, "getmatvar:wrongNodeType");
 		sprintf(error_message, "A group node was found in the chunked data tree.\n\n");
 		return 1;
@@ -464,6 +514,14 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
 	node->keys[0] = malloc(sizeof(Key));
+	if(node->keys[0] == NULL)
+	{
+		free(node->keys);
+		free(node->children);
+		sprintf(error_id, "getmatvar:mallocErrK0FN");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
 	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 	node->keys[0]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
@@ -476,6 +534,23 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	for(int i = 0; i < node->entries_used; i++)
 	{
 		node->children[i] = malloc(sizeof(TreeNode));
+		if(node->children[i] == NULL)
+		{
+			for(int j = 0; j < i; j++)
+			{
+				free(node->keys[j]->chunk_start);
+				free(node->keys[j]);
+			}
+			free(node->keys);
+			for(int j = 0; j < i - 1; j++)
+			{
+				freeTree(node->children[j]);
+			}
+			free(node->children);
+			sprintf(error_id, "getmatvar:mallocErrC%dFN",i);
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 		node->children[i]->node_type = NODETYPE_UNDEFINED;
 		
@@ -490,6 +565,23 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 			page_objects[page_index].total_num_mappings++;
 			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->chunk_size);
 			DataPair* dp = malloc(sizeof(DataPair));
+			if(dp == NULL)
+			{
+				for(int j = 0; j < i; j++)
+				{
+					free(node->keys[j]->chunk_start);
+					free(node->keys[j]);
+				}
+				free(node->keys);
+				for(int j = 0; j < i; j++)
+				{
+					freeTree(node->children[j]);
+				}
+				free(node->children);
+				sprintf(error_id, "getmatvar:mallocErrDPFN");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return 1;
+			}
 			dp->data_key = node->keys[i];
 			dp->data_node = node->children[i];
 			enqueue(data_page_buckets[page_index], dp);
@@ -499,9 +591,44 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		key_pointer += key_size + s_block.size_of_offsets;
 		
 		node->keys[i + 1] = malloc(sizeof(Key));
+		if(node->keys[i + 1] == NULL)
+		{
+			for(int j = 0; j < i; j++)
+			{
+				free(node->keys[j]->chunk_start);
+				free(node->keys[j]);
+			}
+			free(node->keys);
+			for(int j = 0; j < i; j++)
+			{
+				freeTree(node->children[j]);
+			}
+			free(node->children);
+			sprintf(error_id, "getmatvar:mallocErrK%dFN",i+1);
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
 		node->keys[i + 1]->chunk_start = malloc((num_chunked_dims + 1)*sizeof(uint64_t));
+		if(node->keys[i + 1]->chunk_start == NULL)
+		{
+			for(int j = 0; j < i; j++)
+			{
+				free(node->keys[j]->chunk_start);
+				free(node->keys[j]);
+			}
+			free(node->keys[i+1]);
+			free(node->keys);
+			for(int j = 0; j < i; j++)
+			{
+				freeTree(node->children[j]);
+			}
+			free(node->children);
+			sprintf(error_id, "getmatvar:mallocErrK%dFN",i+1);
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 		for(int j = 0; j < num_chunked_dims; j++)
 		{
 			node->keys[i + 1]->chunk_start[num_chunked_dims - j - 1] = (uint64_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
@@ -516,6 +643,92 @@ errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	
 }
 
+
+void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims)
+{
+	uint64_t cu, du;
+	for(int i = 0; i < num_dims; i++)
+	{
+		cu = 0;
+		du = 1;
+		for(int k = 0; k < i + 1; k++)
+		{
+			cu += (chunked_dims[k] - 1)*du;
+			du *= dims[k];
+		}
+		chunk_update[i] = du - cu - 1;
+	}
+}
+
+
+void freeTree(void* n)
+{
+	TreeNode* node = (TreeNode*)n;
+	if(node != NULL)
+	{
+		
+		if(node->keys != NULL)
+		{
+			for(int i = 0; i < node->entries_used + 1; i++)
+			{
+				free(node->keys[i]->chunk_start);
+				free(node->keys[i]);
+			}
+			free(node->keys);
+			node->keys = NULL;
+		}
+		
+		if(node->children != NULL)
+		{
+			for(int i = 0; i < node->entries_used; i++)
+			{
+				freeTree(node->children[i]);
+			}
+			free(node->children);
+			node->children = NULL;
+		}
+		
+		free(node);
+		
+	}
+}
+
+
+#ifdef DO_MEMDUMP
+void memdump(const char* type)
+{
+	
+	pthread_mutex_lock(&dump_lock);
+	
+	fprintf(dump, "%s ", type);
+	fflush(dump);
+	
+	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
+	for(int i = 0; i < num_pages; i++)
+	{
+		if(page_objects[i].is_mapped == TRUE)
+		{
+			fprintf(dump, "O");
+		}
+		else
+		{
+			fprintf(dump, "X");
+		}
+		//keep flushing so that we know where it crashed if it does
+		fflush(dump);
+	}
+	
+	fprintf(dump, "\n\n");
+	
+	fflush(dump);
+	
+	pthread_mutex_unlock(&dump_lock);
+	
+}
+#endif
+
+
+/*
 #ifdef WIN32_LEAN_AND_MEAN
 DWORD mt_fillNode(void* fno)
 #else
@@ -732,87 +945,4 @@ void* mt_fillNode(void* fno)
 #endif
 
 }
-
-
-void freeTree(void* n)
-{
-	TreeNode* node = (TreeNode*)n;
-	if(node != NULL)
-	{
-		
-		if(node->keys != NULL)
-		{
-			for(int i = 0; i < node->entries_used + 1; i++)
-			{
-				free(node->keys[i]->chunk_start);
-				free(node->keys[i]);
-			}
-			free(node->keys);
-			node->keys = NULL;
-		}
-		
-		if(node->children != NULL)
-		{
-			for(int i = 0; i < node->entries_used; i++)
-			{
-				freeTree(node->children[i]);
-			}
-			free(node->children);
-			node->children = NULL;
-		}
-		
-		free(node);
-		
-	}
-}
-
-
-#ifdef DO_MEMDUMP
-void memdump(const char* type)
-{
-	
-	pthread_mutex_lock(&dump_lock);
-	
-	fprintf(dump, "%s ", type);
-	fflush(dump);
-	
-	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
-	for(int i = 0; i < num_pages; i++)
-	{
-		if(page_objects[i].is_mapped == TRUE)
-		{
-			fprintf(dump, "O");
-		}
-		else
-		{
-			fprintf(dump, "X");
-		}
-		//keep flushing so that we know where it crashed if it does
-		fflush(dump);
-	}
-	
-	fprintf(dump, "\n\n");
-	
-	fflush(dump);
-	
-	pthread_mutex_unlock(&dump_lock);
-	
-}
-#endif
-
-
-void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims)
-{
-	uint64_t cu, du;
-	for(int i = 0; i < num_dims; i++)
-	{
-		cu = 0;
-		du = 1;
-		for(int k = 0; k < i + 1; k++)
-		{
-			cu += (chunked_dims[k] - 1)*du;
-			du *= dims[k];
-		}
-		chunk_update[i] = du - cu - 1;
-	}
-}
+*/

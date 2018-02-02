@@ -4,7 +4,7 @@
 #include "getDataObjects.h"
 
 void initialize(void);
-void initializeObject(Data* object);
-void initializePageObjects(void);
+errno_t initializeObject(Data* object);
+errno_t initializePageObjects(void);
 
 #endif //INIT_H

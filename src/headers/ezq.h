@@ -28,21 +28,20 @@ typedef struct
 
 
 Queue* initQueue(void (* free_function)(void*));
-void enqueue(Queue* queue, void* data);
-void priorityEnqueue(Queue* queue, void* data);
+errno_t enqueue(Queue* queue, void* data);
+errno_t priorityEnqueue(Queue* queue, void* data);
 void* dequeue(Queue* queue);
 void* peekQueue(Queue* queue, int queue_location);
-void mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
-void flushQueue(Queue* queue);
+errno_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
+errno_t flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
-void resetQueue(Queue* queue);
-void initTraversal(Queue* queue);
-void initAbsTraversal(Queue* queue);
+errno_t resetQueue(Queue* queue);
+errno_t initTraversal(Queue* queue);
+errno_t initAbsTraversal(Queue* queue);
 void* removeAtTraverseNode(Queue* queue);
 void* peekTraverse(Queue* queue);
 void* traverseQueue(Queue* queue);
-void restartQueue(Queue* queue);
-void cleanQueue(Queue* queue);
-void _nullFreeFunction(void*);
+errno_t restartQueue(Queue* queue);
+errno_t cleanQueue(Queue* queue);
 
 #endif //EZQ_H

@@ -24,7 +24,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		{
 			mxFree(parameters.full_variable_names[i]);
 		}
-		free(parameters.full_variable_names);
+		mxFree(parameters.full_variable_names);
 		mxFree(parameters.filename);
 
 		fprintf(stderr, "\nProgram exited successfully.\n");
@@ -35,8 +35,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 void makeReturnStructure(mxArray** super_structure, int nlhs)
 {
-	object_queue = initQueue(freeDataObject);
-	
 	mwSize ret_struct_dims[1] = {1};
 	
 	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
@@ -53,7 +51,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	
 	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	
-	free(field_names);
+	mxFree(field_names);
 	
 	while(object_queue->length > 0)
 	{
@@ -184,7 +182,11 @@ void readInput(int nrhs, const mxArray* prhs[])
 	char* input = NULL;
 	parameters.filename = mxArrayToString(prhs[0]);
 	parameters.num_vars = 0;
-	parameters.full_variable_names = malloc(nrhs*sizeof(char*));
+	parameters.full_variable_names = mxMalloc(nrhs*sizeof(char*));
+	if(parameters.full_variable_names == NULL)
+	{
+		readMXError("getmatvar:mallocErrFullVarNames","Memory allocation failed. Your system may be out of memory.\n\n");
+	}
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
 	for(int i = 1; i < nrhs; i++)
@@ -305,8 +307,8 @@ void readInput(int nrhs, const mxArray* prhs[])
 	
 	if(parameters.num_vars == 0)
 	{
-		free(parameters.full_variable_names);
-		parameters.full_variable_names = malloc(2*sizeof(char*));
+		mxFree(parameters.full_variable_names);
+		parameters.full_variable_names = mxMalloc(2*sizeof(char*));
 		parameters.full_variable_names[0] = mxMalloc(sizeof(char));
 		parameters.full_variable_names[0][0] = '\0';
 		parameters.num_vars = 1;

@@ -27,7 +27,7 @@ void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, 
 		mxSetCell(returnStructure, index, mxNumericPtr);
 	}
 	
-	free(obj_dims);
+	mxFree(obj_dims);
 }
 
 
@@ -48,7 +48,7 @@ void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mw
 		mxSetCell(returnStructure, index, mxLogicPtr);
 	}
 	
-	free(obj_dims);
+	mxFree(obj_dims);
 }
 
 
@@ -69,7 +69,7 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 		mxSetCell(returnStructure, index, mxCharPtr);
 	}
 	
-	free(obj_dims);
+	mxFree(obj_dims);
 }
 
 
@@ -117,7 +117,8 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 			mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
 		}
 		data->data_flags.is_mx_used = TRUE;
-
+		
+		
 		mwIndex* irPtr = mxMalloc(ir->num_elems*sizeof(mwIndex));
 		for (int i = 0; i < ir->num_elems; i++)
 		{
@@ -166,7 +167,7 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 		mxSetCell(returnStructure, index, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, mxCELL_CLASS));
 	}
 	
-	free(obj_dims);
+	mxFree(obj_dims);
 }
 
 
@@ -186,15 +187,15 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
 	}
 	
-	free(field_names);
-	free(obj_dims);
+	mxFree(field_names);
+	mxFree(obj_dims);
 	
 }
 
 
 char** getFieldNames(Data* object)
 {
-	char** varnames = malloc((object->num_sub_objs)*sizeof(char*));
+	char** varnames = mxMalloc((object->num_sub_objs)*sizeof(char*));
 	for(uint16_t index = 0; index < object->num_sub_objs; index++)
 	{
 		Data* obj = dequeue(object->sub_objects);
@@ -208,7 +209,7 @@ char** getFieldNames(Data* object)
 mwSize* makeObjDims(const uint64_t* dims, const mwSize num_dims)
 {
 	
-	mwSize* obj_dims = malloc(num_dims*sizeof(mwSize));
+	mwSize* obj_dims = mxMalloc(num_dims*sizeof(mwSize));
 	for(int i = 0; i < num_dims; i++)
 	{
 		obj_dims[i] = (mwSize)dims[i];

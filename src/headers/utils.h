@@ -7,12 +7,13 @@
 
 #include "getDataObjects.h"
 
+
 Data* findSubObjectByShortName(Data* object, char* name);
 Data* findSubObjectBySCIndex(Data* object, uint64_t index);
 Data* findObjectByHeaderAddress(address_t address);
-void parseCoordinates(VariableNameToken* vnt);
+errno_t parseCoordinates(VariableNameToken* vnt);
 uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_dims);
-void makeVarnameQueue(char* variable_name);
+errno_t makeVarnameQueue(char* variable_name);
 Data* cloneData(Data* old_object);
 void removeSpaces(char* source);
 void readMXError(const char error_id[], const char error_message[], ...);

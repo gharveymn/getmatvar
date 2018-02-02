@@ -40,7 +40,7 @@ void initialize(void)
 }
 
 
-void initializeObject(Data* object)
+errno_t initializeObject(Data* object)
 {
 	object->data_flags.is_struct_array = FALSE;
 	//object->data_flags.is_sparse = FALSE;
@@ -61,7 +61,12 @@ void initializeObject(Data* object)
 	object->chunked_info.chunk_update = NULL;
 	
 	object->super_object = NULL;
-	object->sub_objects = initQueue(NULL);
+	if((object->sub_objects = initQueue(NULL)) == NULL)
+	{
+		sprintf(error_id, "getmatvar:initQueueErr");
+		sprintf(error_message, "Could not initialize the object->sub_objects queue");
+		return 1;
+	}
 	
 	object->matlab_internal_attributes.MATLAB_sparse = FALSE;
 	object->matlab_internal_attributes.MATLAB_empty = FALSE;
@@ -89,14 +94,20 @@ void initializeObject(Data* object)
 	object->data_address = UNDEF_ADDR;
 	object->this_obj_address = UNDEF_ADDR;
 	
+	return 0;
+	
 }
 
 
-void initializePageObjects(void)
+errno_t initializePageObjects(void)
 {
 	if(page_objects == NULL)
 	{
 		page_objects = malloc(num_pages*sizeof(pageObject));
+		if(page_objects == NULL)
+		{
+			return 1;
+		}
 		for(int i = 0; i < num_pages; i++)
 		{
 #ifdef WIN32_LEAN_AND_MEAN
@@ -114,4 +125,5 @@ void initializePageObjects(void)
 			page_objects[i].total_num_mappings = 0;
 		}
 	}
+	return 0;
 }

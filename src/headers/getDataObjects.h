@@ -146,10 +146,17 @@ typedef enum
 #ifdef NO_MEX
 #define mxMalloc malloc
 #define mxFree free
+#define mxCalloc calloc
+#define mxRealloc realloc
 typedef enum
 {
 	mxREAL, mxCOMPLEX
 } mxComplexity;
+#else
+#define malloc mxMalloc
+#define free mxFree
+#define calloc mxCalloc
+#define realloc mxRealloc
 #endif
 
 //compiler hints

@@ -21,6 +21,12 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 	}
 	
 	mapObject* map_obj = malloc(sizeof(mapObject));
+	if(map_obj == NULL)
+	{
+		sprintf(error_id, "getmatvar:mallocErrSTNTMO");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return NULL;
+	}
 	map_obj->map_start = map_start;
 	//map_end = map_end < map_start + alloc_gran? MIN(map_start + alloc_gran, file_size): map_end; //if the mapping is smaller than a page just map the entire page for reuse later
 	map_obj->map_size = map_bytes_needed;

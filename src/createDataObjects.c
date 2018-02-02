@@ -1,11 +1,11 @@
 #include "headers/createDataObjects.h"
 
-int makeObjectTreeSkeleton(void)
+errno_t makeObjectTreeSkeleton(void)
 {
 	return readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
 }
 
-int readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
+errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
@@ -26,6 +26,13 @@ int readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	if(entries_used > 0)
 	{
 		sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
+		if(sub_node_address_list == NULL)
+		{
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:mallocErrSUNAL");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
 	}
 	else
 	{
@@ -58,7 +65,7 @@ int readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	
 }
 
-int readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
+errno_t readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	mapObject* snod_map_obj = st_navigateTo(node_address, 8);
 	byte* snod_pointer = snod_map_obj->address_ptr;
@@ -93,6 +100,10 @@ int readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 		cache_type = (uint32_t)getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + 2*s_block.size_of_offsets, 4, META_DATA_BYTE_ORDER);
 		
 		Data* sub_object = connectSubObject(object, sub_obj_address, name);
+		if(sub_object == NULL)
+		{
+			return 1;
+		}
 		enqueue(object_queue, sub_object);
 		
 		//if the variable has been found we should keep going down the tree for that variable
@@ -144,7 +155,18 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 {
 	
 	Data* sub_object = malloc(sizeof(Data));
-	initializeObject(sub_object);
+	if(sub_object == NULL)
+	{
+		error_flag = TRUE;
+		sprintf(error_id, "getmatvar:mallocErrCSO");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return NULL;
+	}
+	if(initializeObject(sub_object) != 0)
+	{
+		return NULL;
+	}
+	
 	sub_object->this_obj_address = sub_obj_address;
 	enqueue(super_object->sub_objects, sub_object);
 	super_object->num_sub_objs++;
@@ -162,6 +184,13 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
 		
 		sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1)*sizeof(char));
+		if(sub_object->names.short_name == NULL)
+		{
+			error_flag = TRUE;
+			sprintf(error_id, "getmatvar:mallocErrShNaCSO");
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return NULL;
+		}
 		strcpy(sub_object->names.short_name, sub_obj_name);
 		
 		//append the short name to the data object long name
@@ -170,6 +199,13 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 			//+1 because of the '.' delimiter
 			sub_object->names.long_name_length = super_object->names.long_name_length + (uint16_t)1 + sub_object->names.short_name_length;
 			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			if(sub_object->names.long_name == NULL)
+			{
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:mallocErrLoNaCSO1");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return NULL;
+			}
 			strcpy(sub_object->names.long_name, super_object->names.long_name);
 			sub_object->names.long_name[super_object->names.long_name_length] = '.';
 			strcpy(&sub_object->names.long_name[super_object->names.long_name_length + 1], sub_object->names.short_name);
@@ -178,6 +214,13 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		{
 			sub_object->names.long_name_length = sub_object->names.short_name_length;
 			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			if(sub_object->names.long_name == NULL)
+			{
+				error_flag = TRUE;
+				sprintf(error_id, "getmatvar:mallocErrLoNaCSO2");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return NULL;
+			}
 			strcpy(sub_object->names.long_name, sub_object->names.short_name);
 		}
 	//}
