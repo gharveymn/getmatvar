@@ -16,8 +16,8 @@ void doubleTest(Data* objects);
 int main()
 {
 	Data* objects;
-	char* variable_name = (char*) malloc(50);
-	int* num_objs = (int*) malloc(sizeof(int));
+	char* variable_name = (char*) mxMalloc(50);
+	int* num_objs = (int*) mxMalloc(sizeof(int));
 	
 	/*strcpy(variable_name, "my_struct.array");
 	objects = getDataObject("my_struct1.mat", variable_name, num_objs);
@@ -91,7 +91,7 @@ void cellTest(Data* objects)
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data != NULL);
 	assert(data.data_arrays.ui8_data == NULL);
-	char* string = (char*) malloc(5 * sizeof(char));
+	char* string = (char*) mxMalloc(5 * sizeof(char));
 	for(int i = 0; i < 4; i++)
 	{
 		string[i] = data.data_arrays.ui16_data[i];
@@ -119,7 +119,7 @@ void cellTest(Data* objects)
 	assert(data.data_arrays.udouble_data == NULL);
 	assert(data.data_arrays.ui16_data != NULL);
 	assert(data.data_arrays.ui8_data == NULL);
-	string = (char*) malloc(6 * sizeof(char));
+	string = (char*) mxMalloc(6 * sizeof(char));
 	for(int i = 0; i < 5; i++)
 	{
 		string[i] = data.data_arrays.ui16_data[i];

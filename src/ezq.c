@@ -3,7 +3,7 @@
 
 Queue* initQueue(void (* free_function)(void*))
 {
-	Queue* new_queue = malloc(sizeof(Queue));
+	Queue* new_queue = mxMalloc(sizeof(Queue));
 	if(new_queue != NULL)
 	{
 		new_queue->abs_front = NULL;
@@ -22,11 +22,14 @@ errno_t enqueue(Queue* queue, void* data)
 {
 	if(queue != NULL)
 	{
-		QueueNode* new_node = malloc(sizeof(QueueNode));
+		QueueNode* new_node = mxMalloc(sizeof(QueueNode));
+#ifdef NO_MEX
 		if(new_node == NULL)
 		{
+			
 			return 1;
 		}
+#endif
 		new_node->data = data;
 		if(queue->abs_length == 0)
 		{
@@ -67,11 +70,14 @@ errno_t priorityEnqueue(Queue* queue, void* data)
 {
 	if(queue != NULL)
 	{
-		QueueNode* new_node = malloc(sizeof(QueueNode));
+		QueueNode* new_node = mxMalloc(sizeof(QueueNode));
+#ifdef NO_MEX
 		if(new_node == NULL)
 		{
+			
 			return 1;
 		}
+#endif
 		new_node->data = data;
 		if(queue->abs_length == 0)
 		{
@@ -228,7 +234,7 @@ errno_t flushQueue(Queue* queue)
 			{
 				queue->free_function(queue->abs_front->data);
 			}
-			free(queue->abs_front);
+			mxFree(queue->abs_front);
 			queue->abs_front = next;
 			queue->abs_length--;
 		}
@@ -248,7 +254,7 @@ errno_t flushQueue(Queue* queue)
 
 errno_t cleanQueue(Queue* queue)
 {
-	//move the absolute front to the same position as front and free up the queue objects along the way
+	//move the absolute front to the same position as front and mxFree up the queue objects along the way
 	if(queue != NULL)
 	{
 		while(queue->abs_front != queue->front)
@@ -260,7 +266,7 @@ errno_t cleanQueue(Queue* queue)
 			}
 			queue->abs_front->prev = NULL;
 			queue->abs_front->data = NULL;
-			free(queue->abs_front);
+			mxFree(queue->abs_front);
 			queue->abs_front = next;
 			queue->abs_length--;
 		}
@@ -365,7 +371,7 @@ void* removeAtTraverseNode(Queue* queue)
 				queue->length--;
 			}
 			queue->free_function(tf->data);
-			free(tf);
+			mxFree(tf);
 			if(queue->traverse_front != NULL)
 			{
 				return queue->traverse_front->data;
@@ -381,7 +387,7 @@ void freeQueue(Queue* queue)
 	if(queue != NULL)
 	{
 		flushQueue(queue);
-		free(queue);
+		mxFree(queue);
 	}
 	//queue being NULL is not an error
 }

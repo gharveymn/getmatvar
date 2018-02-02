@@ -25,7 +25,8 @@ errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	uint64_t* sub_node_address_list = NULL;
 	if(entries_used > 0)
 	{
-		sub_node_address_list = malloc(entries_used * sizeof(uint64_t));
+		sub_node_address_list = mxMalloc(entries_used * sizeof(uint64_t));
+#ifdef NO_MEX
 		if(sub_node_address_list == NULL)
 		{
 			error_flag = TRUE;
@@ -33,6 +34,7 @@ errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 	}
 	else
 	{
@@ -55,12 +57,12 @@ errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	{
 		if(readSnod(object, sub_node_address_list[i], heap_address) != 0)
 		{
-			free(sub_node_address_list);
+			mxFree(sub_node_address_list);
 			return 1;
 		}
 	}
 	
-	free(sub_node_address_list);
+	mxFree(sub_node_address_list);
 	return 0;
 	
 }
@@ -154,7 +156,8 @@ errno_t readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_obj_name)
 {
 	
-	Data* sub_object = malloc(sizeof(Data));
+	Data* sub_object = mxMalloc(sizeof(Data));
+#ifdef NO_MEX
 	if(sub_object == NULL)
 	{
 		error_flag = TRUE;
@@ -162,6 +165,7 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return NULL;
 	}
+#endif
 	if(initializeObject(sub_object) != 0)
 	{
 		return NULL;
@@ -183,7 +187,8 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		//very expensive for some reason---change
 		sub_object->names.short_name_length = (uint16_t)strlen(sub_obj_name);
 		
-		sub_object->names.short_name = malloc((sub_object->names.short_name_length + 1)*sizeof(char));
+		sub_object->names.short_name = mxMalloc((sub_object->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 		if(sub_object->names.short_name == NULL)
 		{
 			error_flag = TRUE;
@@ -191,6 +196,7 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return NULL;
 		}
+#endif
 		strcpy(sub_object->names.short_name, sub_obj_name);
 		
 		//append the short name to the data object long name
@@ -198,7 +204,8 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		{
 			//+1 because of the '.' delimiter
 			sub_object->names.long_name_length = super_object->names.long_name_length + (uint16_t)1 + sub_object->names.short_name_length;
-			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			sub_object->names.long_name = mxMalloc((sub_object->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 			if(sub_object->names.long_name == NULL)
 			{
 				error_flag = TRUE;
@@ -206,6 +213,7 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return NULL;
 			}
+#endif
 			strcpy(sub_object->names.long_name, super_object->names.long_name);
 			sub_object->names.long_name[super_object->names.long_name_length] = '.';
 			strcpy(&sub_object->names.long_name[super_object->names.long_name_length + 1], sub_object->names.short_name);
@@ -213,7 +221,8 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 		else
 		{
 			sub_object->names.long_name_length = sub_object->names.short_name_length;
-			sub_object->names.long_name = malloc((sub_object->names.long_name_length + 1)*sizeof(char));
+			sub_object->names.long_name = mxMalloc((sub_object->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 			if(sub_object->names.long_name == NULL)
 			{
 				error_flag = TRUE;
@@ -221,6 +230,7 @@ Data* connectSubObject(Data* super_object, uint64_t sub_obj_address, char* sub_o
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return NULL;
 			}
+#endif
 			strcpy(sub_object->names.long_name, sub_object->names.short_name);
 		}
 	//}

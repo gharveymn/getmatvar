@@ -31,17 +31,22 @@
 #include <assert.h>
 #include <errno.h>
 
-
-#ifndef NO_MEX
-
+#ifdef NO_MEX
+#define mxMalloc malloc
+#define mxFree free
+#define mxCalloc calloc
+#define mxRealloc realloc
+typedef enum
+{
+	mxREAL, mxCOMPLEX
+} mxComplexity;
+#else
 #include <mex.h>
-
-
+#define malloc mxMalloc
+#define free mxFree
+#define calloc mxCalloc
+#define realloc mxRealloc
 #endif
-
-#include <stdarg.h>
-#include "ezq.h"
-
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 	//#pragma message ("getmatvar is compiling on WINDOWS")
@@ -90,6 +95,9 @@
 	#endif
 
 #endif
+
+#include <stdarg.h>
+#include "ezq.h"
 
 #ifdef TRUE
 #undef TRUE
@@ -142,22 +150,6 @@ typedef enum
                          "\tmy_struct = getmatvar('my_workspace.mat', 'my_struct')\n\n"
 
 #define MATLAB_WARN_MESSAGE ""
-
-#ifdef NO_MEX
-#define mxMalloc malloc
-#define mxFree free
-#define mxCalloc calloc
-#define mxRealloc realloc
-typedef enum
-{
-	mxREAL, mxCOMPLEX
-} mxComplexity;
-#else
-#define malloc mxMalloc
-#define free mxFree
-#define calloc mxCalloc
-#define realloc mxRealloc
-#endif
 
 //compiler hints
 

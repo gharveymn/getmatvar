@@ -197,20 +197,21 @@ errno_t fillVariable(char* variable_name)
 		
 		if(object->names.short_name_length != 0)
 		{
-			free(object->names.short_name);
+			mxFree(object->names.short_name);
 			object->names.short_name = NULL;
 			object->names.short_name_length = 0;
 		}
 		
 		if(object->names.long_name_length != 0)
 		{
-			free(object->names.long_name);
+			mxFree(object->names.long_name);
 			object->names.long_name = NULL;
 			object->names.long_name_length = 0;
 		}
 		
 		object->names.short_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
-		object->names.short_name = malloc((object->names.short_name_length + 1)*sizeof(char));
+		object->names.short_name = mxMalloc((object->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 		if(object->names.short_name == NULL)
 		{
 			error_flag = TRUE;
@@ -218,10 +219,12 @@ errno_t fillVariable(char* variable_name)
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 		sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
 		
 		object->names.long_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
-		object->names.long_name = malloc((object->names.long_name_length + 1)*sizeof(char));
+		object->names.long_name = mxMalloc((object->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 		if(object->names.long_name == NULL)
 		{
 			error_flag = TRUE;
@@ -229,6 +232,7 @@ errno_t fillVariable(char* variable_name)
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 		sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
 		
 		enqueue(top_level_objects, object);
@@ -368,14 +372,14 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 			
 			if(ref->names.short_name_length != 0)
 			{
-				free(ref->names.short_name);
+				mxFree(ref->names.short_name);
 				ref->names.short_name = NULL;
 				ref->names.short_name_length = 0;
 			}
 			
 			if(ref->names.long_name_length != 0)
 			{
-				free(ref->names.long_name);
+				mxFree(ref->names.long_name);
 				ref->names.long_name = NULL;
 				ref->names.long_name_length = 0;
 			}
@@ -384,24 +388,28 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 			{
 				//make names for cells, ie. blah{k}
 				ref->names.short_name_length = (uint16_t)(num_digits + 1);
-				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+				ref->names.short_name = mxMalloc((ref->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 				if(ref->names.short_name == NULL)
 				{
 					sprintf(error_id, "getmatvar:mallocErrShNaRefFO");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
 				}
+#endif
 				sprintf(ref->names.short_name, "%d}", (int)i + 1);
 				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
 				ref->names.long_name_length = (uint16_t)(object->names.long_name_length + 1 + num_digits + 1);
-				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
+				ref->names.long_name = mxMalloc((ref->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 				if(ref->names.long_name == NULL)
 				{
 					sprintf(error_id, "getmatvar:mallocErrLoNaRefFO");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
 				}
+#endif
 				sprintf(ref->names.long_name, "%s{%d}", object->names.long_name, (int)i + 1);
 				ref->names.long_name[ref->names.long_name_length] = '\0';
 			}
@@ -409,14 +417,15 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 			{
 				//make names for struct array, ie. blah(k).bleh
 				//make names for cells, ie. blah{k}
-//				free(ref->names.short_name);
+//				mxFree(ref->names.short_name);
 //				ref->names.short_name_length = (uint16_t)(num_digits + 1 + 1 + object->names.short_name_length);
-//				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+//				ref->names.short_name = mxMalloc((ref->names.short_name_length + 1)*sizeof(char));
 //				sprintf(ref->names.short_name, "%d).%s", i + 1, object->names.short_name);
 //				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
 				ref->names.short_name_length = (uint16_t)(object->names.short_name_length);
-				ref->names.short_name = malloc((ref->names.short_name_length + 1)*sizeof(char));
+				ref->names.short_name = mxMalloc((ref->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 				if(object->names.short_name == NULL)
 				{
 					error_flag = TRUE;
@@ -424,11 +433,13 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
 				}
+#endif
 				sprintf(ref->names.short_name, "%s", object->names.short_name);
 				ref->names.short_name[ref->names.short_name_length] = '\0';
 				
 				ref->names.long_name_length = (uint16_t)(object->super_object->names.long_name_length + 1 + num_digits + 1 + 1 + object->names.short_name_length);
-				ref->names.long_name = malloc((ref->names.long_name_length + 1)*sizeof(char));
+				ref->names.long_name = mxMalloc((ref->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 				if(object->names.long_name == NULL)
 				{
 					error_flag = TRUE;
@@ -436,6 +447,7 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
 				}
+#endif
 				sprintf(ref->names.long_name, "%s(%d).%s", object->super_object->names.long_name, (int)i + 1, object->names.short_name);
 				ref->names.long_name[ref->names.long_name_length] = '\0';
 			}
@@ -466,15 +478,17 @@ errno_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs
 		object->num_elems = 0;
 		if(object->dims != NULL)
 		{
-			free(object->dims);
+			mxFree(object->dims);
 		}
-		object->dims = malloc(2*sizeof(uint64_t));
+		object->dims = mxMalloc(2*sizeof(uint64_t));
+#ifdef NO_MEX
 		if(object->dims == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrODCMD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 		object->dims[0] = 0;
 		object->num_dims = 0;
 		return 0;
@@ -488,15 +502,17 @@ errno_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs
 		object->super_object->num_dims = object->num_dims;
 		if(object->super_object->dims != NULL)
 		{
-			free(object->super_object->dims);
+			mxFree(object->super_object->dims);
 		}
-		object->super_object->dims = malloc((object->num_dims + 1)*sizeof(uint64_t));
+		object->super_object->dims = mxMalloc((object->num_dims + 1)*sizeof(uint64_t));
+#ifdef NO_MEX
 		if(object->super_object->dims == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrSODCMD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint64_t));
 		object->super_object->dims[object->num_dims] = 0;
 	}

@@ -63,7 +63,8 @@ errno_t parseCoordinates(VariableNameToken* vnt)
 {
 	char* delim = ",", * coord_num_str;
 	size_t vnlen = strlen(vnt->variable_local_name);
-	char* variable_name_cpy = malloc((vnlen + 1)*sizeof(char));
+	char* variable_name_cpy = mxMalloc((vnlen + 1)*sizeof(char));
+#ifdef NO_MEX
 	if(variable_name_cpy == NULL)
 	{
 		error_flag = TRUE;
@@ -71,6 +72,7 @@ errno_t parseCoordinates(VariableNameToken* vnt)
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return 1;
 	}
+#endif
 	memcpy(variable_name_cpy, vnt->variable_local_name, vnlen*sizeof(char));
 	variable_name_cpy[vnlen] = '\0';
 	coord_num_str = strtok(variable_name_cpy, delim);
@@ -84,7 +86,7 @@ errno_t parseCoordinates(VariableNameToken* vnt)
 		}
 		coord_num_str = strtok(NULL, delim);
 	}
-	free(variable_name_cpy);
+	mxFree(variable_name_cpy);
 	return 0;
 }
 
@@ -105,7 +107,8 @@ uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_di
 Data* cloneData(Data* old_object)
 {
 	
-	Data* new_object = malloc(sizeof(Data));
+	Data* new_object = mxMalloc(sizeof(Data));
+#ifdef NO_MEX
 	if(new_object == NULL)
 	{
 		error_flag = TRUE;
@@ -113,10 +116,11 @@ Data* cloneData(Data* old_object)
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return NULL;
 	}
+#endif
 	//init so we can free cleanly if there are any errors
 	if(initializeObject(new_object) != 0)
 	{
-		return 1;
+		return NULL;
 	}
 	
 	new_object->layout_class = old_object->layout_class;               //3 by default for non-data
@@ -142,14 +146,17 @@ Data* cloneData(Data* old_object)
 	new_object->data_flags.is_mx_used = old_object->data_flags.is_mx_used;
 	if(old_object->data_arrays.data != NULL)
 	{
-		new_object->data_arrays.data = malloc(old_object->num_elems*old_object->elem_size);
+		new_object->data_arrays.data = mxMalloc(old_object->num_elems*old_object->elem_size);
+#ifdef NO_MEX
 		if(new_object->data_arrays.data == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrDataCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		memcpy(new_object->data_arrays.data, old_object->data_arrays.data, old_object->num_elems*old_object->elem_size);
 	}
 	else
@@ -159,14 +166,17 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		new_object->data_arrays.sub_object_header_offsets = malloc(old_object->num_elems*old_object->elem_size);
+		new_object->data_arrays.sub_object_header_offsets = mxMalloc(old_object->num_elems*old_object->elem_size);
+#ifdef NO_MEX
 		if(new_object->data_arrays.sub_object_header_offsets  == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrSOHOCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		memcpy(new_object->data_arrays.sub_object_header_offsets, old_object->data_arrays.sub_object_header_offsets, old_object->num_elems*old_object->elem_size);
 	}
 	else
@@ -179,27 +189,33 @@ Data* cloneData(Data* old_object)
 	new_object->chunked_info.num_chunked_elems = old_object->chunked_info.num_chunked_elems;
 	if(old_object->chunked_info.filters != NULL)
 	{
-		new_object->chunked_info.filters = malloc(new_object->chunked_info.num_filters*sizeof(Filter));
+		new_object->chunked_info.filters = mxMalloc(new_object->chunked_info.num_filters*sizeof(Filter));
+#ifdef NO_MEX
 		if(new_object->chunked_info.filters  == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrCIFCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		for(int i = 0; i < old_object->chunked_info.num_filters; i++)
 		{
 			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
 			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
 			new_object->chunked_info.filters[i].optional_flag = old_object->chunked_info.filters[i].optional_flag;
-			new_object->chunked_info.filters[i].client_data = malloc(new_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
+			new_object->chunked_info.filters[i].client_data = mxMalloc(new_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
+#ifdef NO_MEX
 			if(new_object->chunked_info.filters[i].client_data  == NULL)
 			{
 				sprintf(error_id, "getmatvar:mallocErrCIFCDCD");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				freeDataObject(new_object);
+				freeDataObject(new_object);
 				return NULL;
 			}
+#endif
 			for(int j = 0; j < new_object->chunked_info.filters[i].num_client_vals; j++)
 			{
 				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
@@ -213,14 +229,17 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
-		new_object->chunked_info.chunked_dims = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		new_object->chunked_info.chunked_dims = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+#ifdef NO_MEX
 		if(new_object->chunked_info.chunked_dims  == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrCICDCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
@@ -230,14 +249,17 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
-		new_object->chunked_info.chunk_update = malloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		new_object->chunked_info.chunk_update = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+#ifdef NO_MEX
 		if(new_object->chunked_info.chunk_update  == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrCICUCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	}
 	else
@@ -247,14 +269,17 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->dims != NULL)
 	{
-		new_object->dims = malloc(new_object->num_dims*sizeof(uint64_t));
+		new_object->dims = mxMalloc(new_object->num_dims*sizeof(uint64_t));
+#ifdef NO_MEX
 		if(new_object->dims  == NULL)
 		{
 			sprintf(error_id, "getmatvar:mallocErrDCD");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			freeDataObject(new_object);
+			freeDataObject(new_object);
 			return NULL;
 		}
+#endif
 		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(uint64_t));
 	}
 	else
@@ -275,24 +300,30 @@ Data* cloneData(Data* old_object)
 	new_object->matlab_internal_attributes.MATLAB_object_decode = old_object->matlab_internal_attributes.MATLAB_object_decode;
 	
 	new_object->names.long_name_length = old_object->names.long_name_length;
-	new_object->names.long_name = malloc((new_object->names.long_name_length + 1)*sizeof(char));
+	new_object->names.long_name = mxMalloc((new_object->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 	if(new_object->names.long_name  == NULL)
 	{
 		sprintf(error_id, "getmatvar:mallocErrNLNCD");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		freeDataObject(new_object);
+		freeDataObject(new_object);
 		return NULL;
 	}
+#endif
 	strcpy(new_object->names.long_name, old_object->names.long_name);
 	new_object->names.short_name_length = old_object->names.short_name_length;
-	new_object->names.short_name = malloc((new_object->names.short_name_length + 1)*sizeof(char));
+	new_object->names.short_name = mxMalloc((new_object->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
 	if(new_object->names.short_name  == NULL)
 	{
 		sprintf(error_id, "getmatvar:mallocErrNSNCD");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		freeDataObject(new_object);
+		freeDataObject(new_object);
 		return NULL;
 	}
+#endif
 	strcpy(new_object->names.short_name, old_object->names.short_name);
 	
 	enqueue(object_queue, new_object);
@@ -307,14 +338,15 @@ errno_t makeVarnameQueue(char* variable_name)
 	char* delim = ".{}()", * token;
 	flushQueue(varname_queue);
 	
-	char* variable_name_cpy = malloc((strlen(variable_name) + 1)*sizeof(char));
+	char* variable_name_cpy = mxMalloc((strlen(variable_name) + 1)*sizeof(char));
 	strcpy(variable_name_cpy, variable_name);
 	removeSpaces(variable_name_cpy);
 	token = strtok(variable_name_cpy, delim);
 	while(token != NULL)
 	{
 		size_t vnlen = strlen(token);
-		VariableNameToken* varname_token = malloc(sizeof(VariableNameToken));
+		VariableNameToken* varname_token = mxMalloc(sizeof(VariableNameToken));
+#ifdef NO_MEX
 		if(unlikely(varname_token == NULL))
 		{
 			//very very unlikely
@@ -323,7 +355,9 @@ errno_t makeVarnameQueue(char* variable_name)
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
-		varname_token->variable_local_name = malloc((vnlen + 1)*sizeof(char));
+#endif
+		varname_token->variable_local_name = mxMalloc((vnlen + 1)*sizeof(char));
+#ifdef NO_MEX
 		if(unlikely(varname_token->variable_local_name == NULL))
 		{
 			//very very unlikely
@@ -332,6 +366,7 @@ errno_t makeVarnameQueue(char* variable_name)
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
 		}
+#endif
 		strcpy(varname_token->variable_local_name, token);
 		varname_token->variable_local_index = 0;
 		varname_token->variable_name_type = VT_LOCAL_INDEX;
@@ -378,7 +413,7 @@ errno_t makeVarnameQueue(char* variable_name)
 	}
 	restartQueue(varname_queue);
 	
-	free(variable_name_cpy);
+	mxFree(variable_name_cpy);
 	return 0;
 }
 

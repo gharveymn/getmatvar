@@ -11,8 +11,8 @@ void stringTest(Data* objects);
 int main()
 {
 	Data* objects;
-	char* variable_name = (char*) malloc(50);
-	int* num_objs = (int*) malloc(sizeof(int));
+	char* variable_name = (char*) mxMalloc(50);
+	int* num_objs = (int*) mxMalloc(sizeof(int));
 	
 	strcpy(variable_name, "string");
 	objects = getDataObject("my_struct.mat", variable_name, num_objs);
@@ -130,7 +130,7 @@ int main()
 		}
 		else if(strcmp(objects[i].name, "cell") == 0 && objects[i].type == REF)
 		{
-			cell_objects = (Data*) malloc(4 * sizeof(Data));
+			cell_objects = (Data*) mxMalloc(4 * sizeof(Data));
 			cell_objects[num_cell] = objects[i];
 			num_cell++;
 		}

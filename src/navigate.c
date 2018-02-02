@@ -5,7 +5,7 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 {
 	
 	address_t map_start = address - (address % alloc_gran); //the start of the page
-	address_t map_bytes_needed = (address % alloc_gran) + bytes_needed; //address of 1 byte after map end (since then map_end - map_start = real_bytes_needed)
+	address_t map_bytes_needed = (address % alloc_gran) + bytes_needed;
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
@@ -20,13 +20,15 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 		}
 	}
 	
-	mapObject* map_obj = malloc(sizeof(mapObject));
+	mapObject* map_obj = mxMalloc(sizeof(mapObject));
+#ifdef NO_MEX
 	if(map_obj == NULL)
 	{
 		sprintf(error_id, "getmatvar:mallocErrSTNTMO");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return NULL;
 	}
+#endif
 	map_obj->map_start = map_start;
 	//map_end = map_end < map_start + alloc_gran? MIN(map_start + alloc_gran, file_size): map_end; //if the mapping is smaller than a page just map the entire page for reuse later
 	map_obj->map_size = map_bytes_needed;

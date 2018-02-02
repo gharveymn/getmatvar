@@ -7,6 +7,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef NO_MEX
+#define mxMalloc malloc
+#define mxFree free
+#define mxCalloc calloc
+#define mxRealloc realloc
+#else
+#include <mex.h>
+#define malloc mxMalloc
+#define free mxFree
+#define calloc mxCalloc
+#define realloc mxRealloc
+#endif
+
+typedef int errno_t;
+
 typedef struct QueueNode_ QueueNode;
 struct QueueNode_
 {

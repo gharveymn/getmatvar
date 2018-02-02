@@ -14,9 +14,9 @@ int main(int argc, char* argv[])
 	
 	//char* filename = "res/hxdcopies/optData_ESTrade.mat";
 	char* filename = argv[1];
-	char** variable_name = malloc(sizeof(char*));
+	char** variable_name = mxMalloc(sizeof(char*));
 	variable_name[0] = "";
-	//variable_name[0] = malloc(30*sizeof(char));
+	//variable_name[0] = mxMalloc(30*sizeof(char));
 	//strcpy(variable_name[0], "");
 	Queue* objects = getDataObjects(filename, variable_name, 1);
 	Data* front_object = peekQueue(objects, QUEUE_FRONT);
@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
 	}
 	
 	
-	Data** super_objects = malloc((objects->length)*sizeof(Data*));
-	char** varnames = malloc((objects->length)*sizeof(char*));
+	Data** super_objects = mxMalloc((objects->length)*sizeof(Data*));
+	char** varnames = mxMalloc((objects->length)*sizeof(char*));
 	
 	int num_objs = 0;
 	for (;objects->length  > 0; num_objs++)
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			varnames[num_objs] = malloc(NAME_LENGTH*sizeof(char));
+			varnames[num_objs] = mxMalloc(NAME_LENGTH*sizeof(char));
 			strcpy(varnames[num_objs], super_objects[num_objs]->name);
 		}
 	}

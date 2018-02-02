@@ -21,6 +21,7 @@ errno_t allocateSpace(Data* object)
 		case mxCHAR_CLASS:
 			//use to ensure avx alignment
 			object->data_arrays.data = mxMalloc(object->num_elems*object->elem_size);
+#ifdef NO_MEX
 			if(object->data_arrays.data == NULL)
 			{
 				error_flag = TRUE;
@@ -28,10 +29,12 @@ errno_t allocateSpace(Data* object)
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
 			}
+#endif
 			break;
 		case mxCELL_CLASS:
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.sub_object_header_offsets = malloc(object->num_elems*object->elem_size);
+			object->data_arrays.sub_object_header_offsets = mxMalloc(object->num_elems*object->elem_size);
+#ifdef NO_MEX
 			if(object->data_arrays.sub_object_header_offsets == NULL)
 			{
 				error_flag = TRUE;
@@ -39,6 +42,7 @@ errno_t allocateSpace(Data* object)
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
 			}
+#endif
 			break;
 		case mxSTRUCT_CLASS:
 		case mxFUNCTION_CLASS:
@@ -47,9 +51,10 @@ errno_t allocateSpace(Data* object)
 			object->num_dims = 2;
 			if(object->dims != NULL)
 			{
-				free(object->dims);
+				mxFree(object->dims);
 			}
-			object->dims = malloc(3*sizeof(uint64_t));
+			object->dims = mxMalloc(3*sizeof(uint64_t));
+#ifdef NO_MEX
 			if(unlikely(object->data_arrays.data == NULL))
 			{
 				//very very unlikely
@@ -58,6 +63,7 @@ errno_t allocateSpace(Data* object)
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
 			}
+#endif
 			object->dims[0] = 1;
 			object->dims[1] = 1;
 			object->dims[2] = 0;

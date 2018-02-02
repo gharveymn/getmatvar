@@ -9,9 +9,9 @@ void freeVarname(void* vn)
 	{
 		if(varname_token->variable_local_name != NULL && strcmp(varname_token->variable_local_name, "\0") != 0)
 		{
-			free(varname_token->variable_local_name);
+			mxFree(varname_token->variable_local_name);
 		}
-		free(varname_token);
+		mxFree(varname_token);
 	}
 }
 
@@ -33,7 +33,7 @@ void freeDataObject(void* object)
 	{
 		if(data_object->names.short_name != NULL)
 		{
-			free(data_object->names.short_name);
+			mxFree(data_object->names.short_name);
 			data_object->names.short_name = NULL;
 		}
 		data_object->names.short_name_length = 0;
@@ -43,7 +43,7 @@ void freeDataObject(void* object)
 	{
 		if(data_object->names.long_name != NULL)
 		{
-			free(data_object->names.long_name);
+			mxFree(data_object->names.long_name);
 			data_object->names.long_name = NULL;
 		}
 		data_object->names.short_name_length = 0;
@@ -51,7 +51,7 @@ void freeDataObject(void* object)
 	
 	if(data_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		free(data_object->data_arrays.sub_object_header_offsets);
+		mxFree(data_object->data_arrays.sub_object_header_offsets);
 		data_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
@@ -59,34 +59,34 @@ void freeDataObject(void* object)
 	{
 		for(int j = 0; j < data_object->chunked_info.num_filters; j++)
 		{
-			free(data_object->chunked_info.filters[j].client_data);
+			mxFree(data_object->chunked_info.filters[j].client_data);
 			data_object->chunked_info.filters[j].client_data = NULL;
 		}
-		free(data_object->chunked_info.filters);
+		mxFree(data_object->chunked_info.filters);
 		data_object->chunked_info.filters = NULL;
 	}
 	
 	if(data_object->dims != NULL)
 	{
-		free(data_object->dims);
+		mxFree(data_object->dims);
 		data_object->dims = NULL;
 	}
 	
 	if(data_object->chunked_info.chunked_dims != NULL)
 	{
-		free(data_object->chunked_info.chunked_dims);
+		mxFree(data_object->chunked_info.chunked_dims);
 		data_object->chunked_info.chunked_dims = NULL;
 	}
 	
 	if(data_object->chunked_info.chunk_update != NULL)
 	{
-		free(data_object->chunked_info.chunk_update);
+		mxFree(data_object->chunked_info.chunk_update);
 		data_object->chunked_info.chunk_update = NULL;
 	}
 	
 	if(data_object->matlab_class != NULL)
 	{
-		free(data_object->matlab_class);
+		mxFree(data_object->matlab_class);
 		data_object->matlab_class = NULL;
 	}
 	
@@ -96,7 +96,7 @@ void freeDataObject(void* object)
 		data_object->sub_objects = NULL;
 	}
 	
-	free(data_object);
+	mxFree(data_object);
 	
 }
 
@@ -108,34 +108,34 @@ void freeDataObjectTree(Data* data_object)
 	{
 		if(data_object->data_arrays.data != NULL)
 		{
-			free(data_object->data_arrays.data);
+			mxFree(data_object->data_arrays.data);
 			data_object->data_arrays.data = NULL;
 		}
 	}
 	
 	if(data_object->names.short_name_length != 0)
 	{
-		free(data_object->names.short_name);
+		mxFree(data_object->names.short_name);
 		data_object->names.short_name = NULL;
 		data_object->names.short_name_length = 0;
 	}
 	
 	if(data_object->names.long_name_length != 0)
 	{
-		free(data_object->names.long_name);
+		mxFree(data_object->names.long_name);
 		data_object->names.long_name = NULL;
 		data_object->names.short_name_length = 0;
 	}
 	
 	if(data_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		free(data_object->data_arrays.sub_object_header_offsets);
+		mxFree(data_object->data_arrays.sub_object_header_offsets);
 		data_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
 	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
 	{
-		free(data_object->chunked_info.filters[j].client_data);
+		mxFree(data_object->chunked_info.filters[j].client_data);
 		data_object->chunked_info.filters[j].client_data = NULL;
 	}
 	
@@ -151,7 +151,7 @@ void freeDataObjectTree(Data* data_object)
 	}
 	
 	
-	free(data_object);
+	mxFree(data_object);
 	//data_object = NULL;
 	
 }
@@ -184,7 +184,7 @@ void destroyPageObjects(void)
 #endif
 		
 		}
-		free(page_objects);
+		mxFree(page_objects);
 		page_objects = NULL;
 		
 	}
@@ -247,7 +247,7 @@ void freeMapObject(void* mo)
 			map_obj->address_ptr = NULL;
 			map_obj->is_mapped = FALSE;
 		}
-		free(map_obj);
+		mxFree(map_obj);
 	}
 }
 
@@ -266,7 +266,7 @@ void endHooks(void)
 		{
 			mxFree(parameters.full_variable_names[i]);
 		}
-		free(parameters.full_variable_names);
+		mxFree(parameters.full_variable_names);
 	}
 	mxFree(parameters.filename);
 	

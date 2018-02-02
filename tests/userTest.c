@@ -88,7 +88,7 @@ void printShort(Data* object)
 		i++;
 	}
 	
-	char* string = (char*) malloc(num_elems + 1);
+	char* string = (char*) mxMalloc(num_elems + 1);
 	
 	for(i = 0; i < num_elems; i++)
 	{

@@ -27,10 +27,10 @@ int main(int argc, char* argv[])
 			makeReturnStructure(parameters.num_vars);
 			for(int i = 0; i < parameters.num_vars; i++)
 			{
-				free(parameters.full_variable_names[i]);
+				mxFree(parameters.full_variable_names[i]);
 			}
-			free(parameters.full_variable_names);
-			free(parameters.filename);
+			mxFree(parameters.full_variable_names);
+			mxFree(parameters.filename);
 //		}
 
 		fprintf(stderr, "\nProgram exited successfully.\n\n");
@@ -47,20 +47,20 @@ void makeReturnStructure(const int num_elems)
 	{
 		readMXError(error_id, error_message);
 	}
-	char** varnames = malloc((virtual_super_object->num_sub_objs)*sizeof(char*));
+	char** varnames = mxMalloc((virtual_super_object->num_sub_objs)*sizeof(char*));
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(virtual_super_object->sub_objects);
-		varnames[i] = malloc((obj->names.short_name_length + 1)*sizeof(char));
+		varnames[i] = mxMalloc((obj->names.short_name_length + 1)*sizeof(char));
 		strcpy(varnames[i], obj->names.short_name);
 	}
 	restartQueue(virtual_super_object->sub_objects);
 	
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
-		free(varnames[i]);
+		mxFree(varnames[i]);
 	}
-	free(varnames);
+	mxFree(varnames);
 	
 	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
 	//makeEvalArray();
@@ -80,10 +80,10 @@ void readInput(int nrhs, char* prhs[])
 {
 	
 	char* input;
-	parameters.filename = malloc((strlen(prhs[0]) + 1)*sizeof(char));
+	parameters.filename = mxMalloc((strlen(prhs[0]) + 1)*sizeof(char));
 	strcpy(parameters.filename, prhs[0]);
 	parameters.num_vars = 0;
-	parameters.full_variable_names = malloc(((nrhs - 1) + 1)*sizeof(char*));
+	parameters.full_variable_names = mxMalloc(((nrhs - 1) + 1)*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
 	for(int i = 1; i < nrhs; i++)
@@ -166,7 +166,7 @@ void readInput(int nrhs, char* prhs[])
 			else
 			{
 				kwarg_expected = NOT_AN_ARGUMENT;
-				parameters.full_variable_names[parameters.num_vars] = malloc((strlen(input) + 1)*sizeof(char));
+				parameters.full_variable_names[parameters.num_vars] = mxMalloc((strlen(input) + 1)*sizeof(char));
 				strcpy(parameters.full_variable_names[parameters.num_vars], input);
 				parameters.num_vars++;
 			}
@@ -176,9 +176,9 @@ void readInput(int nrhs, char* prhs[])
 	
 	if(parameters.num_vars == 0)
 	{
-		free(parameters.full_variable_names);
-		parameters.full_variable_names = malloc(2*sizeof(char*));
-		parameters.full_variable_names[0] = malloc(sizeof(char));
+		mxFree(parameters.full_variable_names);
+		parameters.full_variable_names = mxMalloc(2*sizeof(char*));
+		parameters.full_variable_names[0] = mxMalloc(sizeof(char));
 		parameters.full_variable_names[0][0] = '\0';
 		parameters.num_vars = 1;
 	}

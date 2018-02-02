@@ -103,11 +103,13 @@ errno_t initializePageObjects(void)
 {
 	if(page_objects == NULL)
 	{
-		page_objects = malloc(num_pages*sizeof(pageObject));
+		page_objects = mxMalloc(num_pages*sizeof(pageObject));
+#ifdef NO_MEX
 		if(page_objects == NULL)
 		{
 			return 1;
 		}
+#endif
 		for(int i = 0; i < num_pages; i++)
 		{
 #ifdef WIN32_LEAN_AND_MEAN
