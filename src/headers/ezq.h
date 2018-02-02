@@ -20,7 +20,7 @@
 #define realloc mxRealloc
 #endif
 
-typedef int errno_t;
+typedef int error_t;
 
 typedef struct QueueNode_ QueueNode;
 struct QueueNode_
@@ -43,20 +43,20 @@ typedef struct
 
 
 Queue* initQueue(void (* free_function)(void*));
-errno_t enqueue(Queue* queue, void* data);
-errno_t priorityEnqueue(Queue* queue, void* data);
+error_t enqueue(Queue* queue, void* data);
+error_t priorityEnqueue(Queue* queue, void* data);
 void* dequeue(Queue* queue);
 void* peekQueue(Queue* queue, int queue_location);
-errno_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
-errno_t flushQueue(Queue* queue);
+error_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues);
+error_t flushQueue(Queue* queue);
 void freeQueue(Queue* queue);
-errno_t resetQueue(Queue* queue);
-errno_t initTraversal(Queue* queue);
-errno_t initAbsTraversal(Queue* queue);
+error_t resetQueue(Queue* queue);
+error_t initTraversal(Queue* queue);
+error_t initAbsTraversal(Queue* queue);
 void* removeAtTraverseNode(Queue* queue);
 void* peekTraverse(Queue* queue);
 void* traverseQueue(Queue* queue);
-errno_t restartQueue(Queue* queue);
-errno_t cleanQueue(Queue* queue);
+error_t restartQueue(Queue* queue);
+error_t cleanQueue(Queue* queue);
 
 #endif //EZQ_H

@@ -2,7 +2,7 @@
 #include "headers/getDataObjects.h"
 
 
-void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
+void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
@@ -51,7 +51,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 }
 
 
-void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
+void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	//assume version 1
 	if((*(msg_pointer) >> 4) != 1)
@@ -104,7 +104,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 }
 
 
-void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
+void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	//assume version 3
 	if(*msg_pointer != 3)
@@ -177,7 +177,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 }
 
 
-void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
@@ -271,7 +271,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 }
 
 
-void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, errno_t* err_flag)
+void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	//assume version 1

@@ -30,16 +30,16 @@ typedef struct
 
 
 MTQueue* mt_initQueue(void (* free_function)(void*));
-errno_t mt_enqueue(MTQueue* queue, void* data);
-errno_t mt_priorityEnqueue(MTQueue* queue, void* data);
+error_t mt_enqueue(MTQueue* queue, void* data);
+error_t mt_priorityEnqueue(MTQueue* queue, void* data);
 void* mt_dequeue(MTQueue* queue);
 void* mt_peekQueue(MTQueue* queue, int queue_location);
-errno_t mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues);
-errno_t mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues);
-errno_t mt_flushQueue(MTQueue* queue);
+error_t mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues);
+error_t mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues);
+error_t mt_flushQueue(MTQueue* queue);
 void mt_freeQueue(MTQueue* queue);
-errno_t mt_resetQueue(MTQueue* queue);
-errno_t mt_restartQueue(MTQueue* queue);
-errno_t mt_cleanQueue(MTQueue* queue);
+error_t mt_resetQueue(MTQueue* queue);
+error_t mt_restartQueue(MTQueue* queue);
+error_t mt_cleanQueue(MTQueue* queue);
 
 #endif //MTEZQ_H

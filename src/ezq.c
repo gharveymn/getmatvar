@@ -18,7 +18,7 @@ Queue* initQueue(void (* free_function)(void*))
 }
 
 
-errno_t enqueue(Queue* queue, void* data)
+error_t enqueue(Queue* queue, void* data)
 {
 	if(queue != NULL)
 	{
@@ -66,7 +66,7 @@ errno_t enqueue(Queue* queue, void* data)
 }
 
 
-errno_t priorityEnqueue(Queue* queue, void* data)
+error_t priorityEnqueue(Queue* queue, void* data)
 {
 	if(queue != NULL)
 	{
@@ -130,7 +130,7 @@ errno_t priorityEnqueue(Queue* queue, void* data)
 }
 
 
-errno_t resetQueue(Queue* queue)
+error_t resetQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
@@ -145,7 +145,7 @@ errno_t resetQueue(Queue* queue)
 }
 
 
-errno_t restartQueue(Queue* queue)
+error_t restartQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
@@ -201,7 +201,7 @@ void* peekQueue(Queue* queue, int queue_location)
 }
 
 
-errno_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
+error_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
 {
 	if(new_queue != NULL)
 	{
@@ -223,7 +223,7 @@ errno_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
 }
 
 
-errno_t flushQueue(Queue* queue)
+error_t flushQueue(Queue* queue)
 {
 	if(queue != NULL)
 	{
@@ -252,7 +252,7 @@ errno_t flushQueue(Queue* queue)
 }
 
 
-errno_t cleanQueue(Queue* queue)
+error_t cleanQueue(Queue* queue)
 {
 	//move the absolute front to the same position as front and mxFree up the queue objects along the way
 	if(queue != NULL)
@@ -279,7 +279,7 @@ errno_t cleanQueue(Queue* queue)
 }
 
 
-errno_t initTraversal(Queue* queue)
+error_t initTraversal(Queue* queue)
 {
 	if(queue != NULL)
 	{
@@ -293,7 +293,7 @@ errno_t initTraversal(Queue* queue)
 }
 
 
-errno_t initAbsTraversal(Queue* queue)
+error_t initAbsTraversal(Queue* queue)
 {
 	if(queue != NULL)
 	{

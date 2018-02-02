@@ -86,7 +86,6 @@ typedef enum
 	#include <sys/mman.h>
 	#include <sys/types.h>
 	#include <unistd.h>
-	typedef int errno_t;
 	
 	#ifdef GMV_64_BIT
 	typedef uint64_t OffsetType;
@@ -384,7 +383,7 @@ typedef struct
 } VariableNameToken;
 
 //mapping.c
-errno_t getDataObjects(const char* filename, char** variable_names, const int num_names);
+error_t getDataObjects(const char* filename, char** variable_names, const int num_names);
 
 #ifdef DO_MEMDUP
 void memdump(const char type[]);

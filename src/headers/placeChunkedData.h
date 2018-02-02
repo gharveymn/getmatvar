@@ -55,7 +55,7 @@ typedef struct
 	pthread_mutex_t* thread_mtx;
 #endif
 	bool_t* main_thread_ready;
-	errno_t err;
+	error_t err;
 } InflateThreadObj;
 
 typedef struct
@@ -68,11 +68,11 @@ typedef struct
 {
 	TreeNode* node;
 	uint8_t num_chunked_dims;
-	errno_t err;
+	error_t err;
 } FillNodeObj;
 
-errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
-errno_t decompressChunk(Data* object);
+error_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
+error_t decompressChunk(Data* object);
 #ifdef WIN32_LEAN_AND_MEAN
 DWORD doInflate_(void* t);
 DWORD mt_fillNode(void* fno);
@@ -81,7 +81,7 @@ void* doInflate_(void* t);
 void* mt_fillNode(void* fno);
 #endif
 void freeTree(void* n);
-errno_t getChunkedData(Data* obj);
+error_t getChunkedData(Data* obj);
 uint64_t findArrayPosition(const uint64_t* chunk_start, const uint64_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
 void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims);

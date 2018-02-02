@@ -2,7 +2,7 @@
 #include "headers/getDataObjects.h"
 
 
-errno_t allocateSpace(Data* object)
+error_t allocateSpace(Data* object)
 {
 	
 	switch(object->matlab_internal_type)

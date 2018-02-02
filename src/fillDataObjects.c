@@ -1,8 +1,7 @@
 #include "headers/fillDataObjects.h"
-#include "headers/getDataObjects.h"
 
 
-errno_t fillVariable(char* variable_name)
+error_t fillVariable(char* variable_name)
 {
 	
 	if(is_done == TRUE)
@@ -17,7 +16,10 @@ errno_t fillVariable(char* variable_name)
 			Data* obj = dequeue(virtual_super_object->sub_objects);
 			if(obj->names.short_name[0] != '#')
 			{
-				fillDataTree(obj);
+				if(fillDataTree(obj) != 0)
+				{
+					return 1;
+				}
 				enqueue(top_level_objects, obj);
 			}
 		}
@@ -245,7 +247,7 @@ errno_t fillVariable(char* variable_name)
 
 
 /*fill this super object and all below it*/
-errno_t fillDataTree(Data* object)
+error_t fillDataTree(Data* object)
 {
 	
 	if(fillObject(object, object->this_obj_address) != 0)
@@ -269,7 +271,7 @@ errno_t fillDataTree(Data* object)
 }
 
 
-errno_t fillObject(Data* object, uint64_t this_obj_address)
+error_t fillObject(Data* object, uint64_t this_obj_address)
 {
 	
 	if(object->data_flags.is_filled == TRUE)
@@ -462,7 +464,7 @@ errno_t fillObject(Data* object, uint64_t this_obj_address)
 }
 
 
-errno_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
+error_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
 	
 	int err_flag = 0;

@@ -37,7 +37,7 @@ MTQueue* mt_convertQueue(Queue* queue)
 }
 
 
-errno_t mt_enqueue(MTQueue* queue, void* data)
+error_t mt_enqueue(MTQueue* queue, void* data)
 {
 	if(queue != NULL)
 	{
@@ -95,7 +95,7 @@ errno_t mt_enqueue(MTQueue* queue, void* data)
 }
 
 
-errno_t mt_priorityEnqueue(MTQueue* queue, void* data)
+error_t mt_priorityEnqueue(MTQueue* queue, void* data)
 {
 	if(queue != NULL)
 	{
@@ -168,7 +168,7 @@ errno_t mt_priorityEnqueue(MTQueue* queue, void* data)
 }
 
 
-errno_t mt_resetQueue(MTQueue* queue)
+error_t mt_resetQueue(MTQueue* queue)
 {
 	if(queue != NULL)
 	{
@@ -194,7 +194,7 @@ errno_t mt_resetQueue(MTQueue* queue)
 }
 
 
-errno_t mt_restartQueue(MTQueue* queue)
+error_t mt_restartQueue(MTQueue* queue)
 {
 	if(queue != NULL)
 	{
@@ -303,7 +303,7 @@ void* mt_peekQueue(MTQueue* queue, int queue_location)
 }
 
 
-errno_t mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues)
+error_t mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues)
 {
 	if(new_queue != NULL)
 	{
@@ -325,7 +325,7 @@ errno_t mt_mergeQueue(MTQueue* new_queue, Queue** queues, size_t num_queues)
 }
 
 
-errno_t mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues)
+error_t mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues)
 {
 	if(new_queue != NULL)
 	{
@@ -348,7 +348,7 @@ errno_t mt_mergeMTQueue(MTQueue* new_queue, MTQueue** queues, size_t num_queues)
 }
 
 
-errno_t mt_flushQueue(MTQueue* queue)
+error_t mt_flushQueue(MTQueue* queue)
 {
 	if(queue != NULL)
 	{
@@ -386,7 +386,7 @@ errno_t mt_flushQueue(MTQueue* queue)
 }
 
 
-errno_t mt_cleanQueue(MTQueue* queue)
+error_t mt_cleanQueue(MTQueue* queue)
 {
 	//move the absolute front to the same position as front and mxFree up the queue objects along the way
 	if(queue != NULL)

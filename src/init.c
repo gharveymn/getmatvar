@@ -40,7 +40,7 @@ void initialize(void)
 }
 
 
-errno_t initializeObject(Data* object)
+error_t initializeObject(Data* object)
 {
 	object->data_flags.is_struct_array = FALSE;
 	//object->data_flags.is_sparse = FALSE;
@@ -99,7 +99,7 @@ errno_t initializeObject(Data* object)
 }
 
 
-errno_t initializePageObjects(void)
+error_t initializePageObjects(void)
 {
 	if(page_objects == NULL)
 	{

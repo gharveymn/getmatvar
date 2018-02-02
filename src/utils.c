@@ -59,7 +59,7 @@ Data* findObjectByHeaderAddress(address_t address)
 }
 
 
-errno_t parseCoordinates(VariableNameToken* vnt)
+error_t parseCoordinates(VariableNameToken* vnt)
 {
 	char* delim = ",", * coord_num_str;
 	size_t vnlen = strlen(vnt->variable_local_name);
@@ -332,7 +332,7 @@ Data* cloneData(Data* old_object)
 }
 
 
-errno_t makeVarnameQueue(char* variable_name)
+error_t makeVarnameQueue(char* variable_name)
 {
 	
 	char* delim = ".{}()", * token;

@@ -6,13 +6,13 @@ Queue** data_page_buckets;
 int num_threads_to_use;
 //bool_t is_vlarge;
 
-errno_t getChunkedData(Data* object)
+error_t getChunkedData(Data* object)
 {
 	
 	initializePageObjects();
 	
 	MTQueue* mt_data_queue = mt_initQueue((void*)freeQueue);
-	errno_t ret = 0;
+	error_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
 	CONDITION_VARIABLE thread_sync;
 	CRITICAL_SECTION thread_mtx;
@@ -23,10 +23,8 @@ errno_t getChunkedData(Data* object)
 	pthread_mutex_t thread_mtx;
 	pthread_t* chunk_threads = NULL;
 #endif
+	
 	num_threads_to_use = -1;
-#ifndef WIN32_LEAN_AND_MEAN
-	void* status;
-#endif
 	bool_t main_thread_ready = FALSE;
 	
 	InflateThreadObj thread_object;
@@ -179,9 +177,14 @@ errno_t getChunkedData(Data* object)
 		main_thread_ready = TRUE;
 		pthread_cond_broadcast(&thread_sync);
 		pthread_mutex_unlock(&thread_mtx);
+		void* exit_code;
 		for(int i = 0; i < num_threads_to_use; i++)
 		{
-			pthread_join(chunk_threads[i], &status);
+			pthread_join(chunk_threads[i], &exit_code);
+			if(*((error_t*)exit_code) != 0)
+			{
+				ret = 1;
+			}
 		}
 		mxFree(chunk_threads);
 		pthread_mutex_destroy(&thread_mtx);
@@ -190,7 +193,17 @@ errno_t getChunkedData(Data* object)
 	}
 	else
 	{
-		doInflate_((void*)&thread_object);
+#ifdef WIN32_LEAN_AND_MEAN
+		if(doInflate_((void*)&thread_object) != 0)
+		{
+			ret = 1;
+		}
+#else
+		if(*((error_t*)doInflate_((void*)&thread_object)) != 0)
+		{
+			ret = 1;
+		}
+#endif
 	}
 	
 	mt_freeQueue(mt_data_queue);
@@ -231,6 +244,7 @@ void* doInflate_(void* t)
 	const size_t max_est_decomp_size = object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
 	
 	byte* decompressed_data_buffer = mxMalloc(max_est_decomp_size);
+#ifdef NO_MEX
 	if(decompressed_data_buffer == NULL)
 	{
 		memset(error_id, 0, sizeof(error_id));
@@ -244,6 +258,7 @@ void* doInflate_(void* t)
 		return (void*)&thread_obj->err;
 #endif
 	}
+#endif
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
 	//uint64_t* index_map = mxMalloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	//uint64_t* db_index_sequence = mxMalloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
@@ -307,7 +322,7 @@ void* doInflate_(void* t)
 					memset(error_id, 0, sizeof(error_id));
 					memset(error_message, 0, sizeof(error_id));
 					sprintf(error_id, "getmatvar:libdeflateBadData");
-					sprintf(error_message, "libdeflate failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+					sprintf(error_message, "Failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 					libdeflate_free_decompressor(ldd);
 					mxFree(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
@@ -320,7 +335,7 @@ void* doInflate_(void* t)
 					memset(error_id, 0, sizeof(error_id));
 					memset(error_message, 0, sizeof(error_id));
 					sprintf(error_id, "getmatvar:libdeflateShortOutput");
-					sprintf(error_message, "libdeflate failed failed to decompress because a NULL "
+					sprintf(error_message, "Failed to decompress because a NULL "
 							"'actual_out_nbytes_ret' was provided, but the data would have"
 							" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
 					libdeflate_free_decompressor(ldd);
@@ -335,7 +350,7 @@ void* doInflate_(void* t)
 					memset(error_id, 0, sizeof(error_id));
 					memset(error_message, 0, sizeof(error_id));
 					sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
-					sprintf(error_message, "libdeflate failed because the output buffer was not large enough");
+					sprintf(error_message, "Decompression failed because the output buffer was not large enough");
 					libdeflate_free_decompressor(ldd);
 					mxFree(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
@@ -461,7 +476,7 @@ uint64_t findArrayPosition(const uint64_t* coordinates, const uint64_t* array_di
 }
 
 
-errno_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
+error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 {
 	
 	if(node->address == UNDEF_ADDR)

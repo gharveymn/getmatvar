@@ -48,10 +48,25 @@ void makeReturnStructure(const int num_elems)
 		readMXError(error_id, error_message);
 	}
 	char** varnames = mxMalloc((virtual_super_object->num_sub_objs)*sizeof(char*));
+	if(varnames == NULL)
+	{
+		readMXError("getmatvar:mallocErrMRSME","Memory allocation failed. Your system may be out of memory.\n\n");
+		exit(1);
+	}
 	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(virtual_super_object->sub_objects);
 		varnames[i] = mxMalloc((obj->names.short_name_length + 1)*sizeof(char));
+		if(varnames[i] == NULL)
+		{
+			for(int j = 0; j < i - 1; j++)
+			{
+				mxFree(varnames[i]);
+			}
+			mxFree(varnames);
+			readMXError("getmatvar:mallocErrMRSVNI","Memory allocation failed. Your system may be out of memory.\n\n");
+			exit(1);
+		}
 		strcpy(varnames[i], obj->names.short_name);
 	}
 	restartQueue(virtual_super_object->sub_objects);

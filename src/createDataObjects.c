@@ -1,11 +1,11 @@
 #include "headers/createDataObjects.h"
 
-errno_t makeObjectTreeSkeleton(void)
+error_t makeObjectTreeSkeleton(void)
 {
 	return readTreeNode(virtual_super_object, s_block.root_tree_address, s_block.root_heap_address);
 }
 
-errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
+error_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	
 	uint16_t entries_used = 0;
@@ -67,7 +67,7 @@ errno_t readTreeNode(Data* object, uint64_t node_address, uint64_t heap_address)
 	
 }
 
-errno_t readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
+error_t readSnod(Data* object, uint64_t node_address, uint64_t heap_address)
 {
 	mapObject* snod_map_obj = st_navigateTo(node_address, 8);
 	byte* snod_pointer = snod_map_obj->address_ptr;

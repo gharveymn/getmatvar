@@ -3,7 +3,7 @@
 
 
 /*this is the entry function*/
-errno_t getDataObjects(const char* filename, char** variable_names, const int num_names)
+error_t getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
 	threads_are_started = FALSE;
@@ -109,13 +109,15 @@ errno_t getDataObjects(const char* filename, char** variable_names, const int nu
 		return 1;
 	}
 	
-	virtual_super_object = malloc(sizeof(Data));
+	virtual_super_object = mxMalloc(sizeof(Data));
+#ifdef NO_MEX
 	if(virtual_super_object == NULL)
 	{
 		sprintf(error_id, "getmatvar:mallocErrRPCD");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return 1;
 	}
+#endif
 	if(initializeObject(virtual_super_object) != 0)
 	{
 		return 1;
