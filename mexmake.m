@@ -4,7 +4,9 @@ cd src
 
 try
 	
-	mexflags = {'-g', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', '-largeArrayDims', 'CFLAGS="$CFLAGS -Wall -std=c99"', '-outdir', output_path};
+    libdeflate_dir = fullfile(pwd,'extlib','libdeflate','x64');
+    
 	
 	sources = {'getmatvar_.c',...
 		'mexSet.c',...
@@ -27,8 +29,8 @@ try
 	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))
 		
 		sources = [sources,...
-			{'extlib/mman-win32/mman.c',...
-			'extlib/libdeflate/x64/win/libdeflate.lib'}
+			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
+			fullfile(libdeflate_dir,'win','libdeflate.lib')}
 			];
 		
 		mex(mexflags{:} , sources{:})
@@ -36,23 +38,33 @@ try
 	elseif(~isempty(strfind(mex.getCompilerConfigurations('C','Selected').ShortName, 'MSVC')))
 		
 		sources = [sources,...
-			{'extlib/mman-win32/mman.c',...
-			'extlib/libdeflate/x64/win/libdeflate.lib'}
+			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
+			fullfile(libdeflate_dir,'win','libdeflate.lib')}
 			];
 		
 		mex(mexflags{:} , sources{:})
 		
 	elseif(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'gcc'))
 		
-		libdeflate_dir = fullfile(pwd,'extlib','libdeflate','x64','unix');
-		system('cd libdeflate_dir : make');
+		libdeflate_dir = fullfile(libdeflate_dir,'unix');
+        terminal_cmd = ['cd ' libdeflate_dir ' ; '...
+            'cd programs ; '...
+            'chmod +x detect.sh ; '...
+            'cd .. ; '...
+            'make -e DECOMPRESSION_ONLY=TRUE libdeflate.a'];
+		[makestatus, cmdout] = system(terminal_cmd);
+        clear terminal_cmd
+        if(makestatus ~= 0)
+            error(cmdout);
+        end
+        disp(cmdout)
 		sources = [sources, {fullfile(libdeflate_dir,'libdeflate.a')}];
 		mex(mexflags{:} , sources{:})
 		
 	end
 	
 	cd ..
-	clear mexflags sources libdeflate_path_lib pthreadsw32_path_lib pthreadsw32_path_include output_path
+	clear mexflags sources libdeflate_dir output_path
 	
 catch ME
 	

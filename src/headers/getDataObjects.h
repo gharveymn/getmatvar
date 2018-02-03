@@ -12,13 +12,12 @@
 
 
 #if UINTPTR_MAX == 0xffffffff
-#define GMV_32_BIT
-#define _FILE_OFFSET_BITS 32
+#error getmatvar does not support 32-bit systems at this time.
 #elif UINTPTR_MAX == 0xffffffffffffffff
 #define GMV_64_BIT
 #define _FILE_OFFSET_BITS 64
 #else
-#error architecture is weird
+#error Your architecture is weird
 #endif
 
 #include <stdio.h>

@@ -44,10 +44,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 	}
 	char** field_names = getFieldNames(virtual_super_object);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
-	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, virtual_super_object->num_sub_objs, field_names);
-#pragma GCC diagnostic pop
+	super_structure[0] = mxCreateStructArray(1, ret_struct_dims, virtual_super_object->num_sub_objs, (const char**)field_names);
 	
 	makeSubstructure(super_structure[0], virtual_super_object->num_sub_objs, virtual_super_object->sub_objects, mxSTRUCT_CLASS);
 	

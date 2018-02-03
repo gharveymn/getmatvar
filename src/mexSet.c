@@ -176,7 +176,7 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
 	int num_fields = object->num_sub_objs;
 	char** field_names = getFieldNames(object);
-	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, field_names);
+	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, (const char**)field_names);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
