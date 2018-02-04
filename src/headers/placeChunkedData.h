@@ -4,11 +4,7 @@
 
 #include "getDataObjects.h"
 #include "mtezq.h"
-#ifdef GMV_64_BIT
-#include "../extlib/libdeflate/x64/libdeflate.h"
-#else
-#include "../extlib/libdeflate/x86/libdeflate.h"
-#endif
+#include "../extlib/libdeflate/libdeflate.h"
 
 
 typedef enum

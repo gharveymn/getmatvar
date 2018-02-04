@@ -8,14 +8,7 @@ try
 	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -Wall -std=c99"', '-outdir', output_path};
 	
 	[comp,maxsz,endi] = computer;
-	
-	if(maxsz > 2^31-1)
-		libdeflate_dir = fullfile(pwd,'extlib','libdeflate','x64');
-		mexflags = [mexflags {'-largeArrayDims'}];
-	else
-		libdeflate_dir = fullfile(pwd,'extlib','libdeflate','x86');
-		mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
-	end
+	libdeflate_dir = fullfile(pwd,'extlib','libdeflate')
 	
 	sources = {'getmatvar_.c',...
 		'mexSet.c',...
@@ -37,9 +30,17 @@ try
 	
 	if(ispc)
 		
+		if(maxsz > 2^31-1)
+			libdeflate_dir = fullfile(pwd,'extlib','libdeflate','win','x64');
+			mexflags = [mexflags {'-largeArrayDims'}];
+		else
+			libdeflate_dir = fullfile(pwd,'extlib','libdeflate','win','x86');
+			mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
+		end
+		
 		sources = [sources,...
 			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
-			fullfile(libdeflate_dir,'win','libdeflate.lib')}
+			fullfile(libdeflate_dir,'libdeflate.lib')}
 			];
 		
 	elseif(isunix || ismac)
@@ -47,6 +48,12 @@ try
 		warning('off','MATLAB:mex:GccVersion_link');
 		
 		libdeflate_dir = fullfile(libdeflate_dir,'unix');
+		if(maxsz > 2^31-1)
+			mexflags = [mexflags {'-largeArrayDims'}];
+		else
+			mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
+		end
+		
 		terminal_cmd = ['cd ' libdeflate_dir ' ; '...
 			'cd programs ; '...
 			'chmod +x detect.sh ; '...
