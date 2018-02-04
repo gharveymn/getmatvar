@@ -16,7 +16,6 @@ void initialize(void)
 	will_multithread = TRUE;
 	will_suppress_warnings = FALSE;
 	max_depth = 0;
-	error_flag = FALSE;
 	virtual_super_object = NULL;
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
@@ -110,7 +109,7 @@ error_t initializePageObjects(void)
 			return 1;
 		}
 #endif
-		for(int i = 0; i < num_pages; i++)
+		for(size_t i = 0; i < num_pages; i++)
 		{
 #ifdef WIN32_LEAN_AND_MEAN
 			InitializeCriticalSection(&page_objects[i].lock);

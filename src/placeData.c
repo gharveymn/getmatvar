@@ -1,5 +1,4 @@
 #include "headers/placeData.h"
-#include "headers/getDataObjects.h"
 
 
 error_t allocateSpace(Data* object)
@@ -19,12 +18,17 @@ error_t allocateSpace(Data* object)
 		case mxDOUBLE_CLASS:
 		case mxLOGICAL_CLASS:
 		case mxCHAR_CLASS:
-			//use to ensure avx alignment
-			object->data_arrays.data = mxMalloc(object->num_elems*object->elem_size);
+			if(object->elem_size > 16)
+			{
+				sprintf(error_id, "getmatvar:unexpectedSizeError");
+				sprintf(error_message, "A variable had a datatype of unexpected size.\n\n");
+				return 1;
+			}
+			//note that we need AVX alignment for matlab
+			object->data_arrays.data = mxMalloc((size_t)object->num_elems*object->elem_size);
 #ifdef NO_MEX
 			if(object->data_arrays.data == NULL)
 			{
-				error_flag = TRUE;
 				sprintf(error_id, "getmatvar:mallocErrData");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
@@ -32,12 +36,17 @@ error_t allocateSpace(Data* object)
 #endif
 			break;
 		case mxCELL_CLASS:
+			if(object->elem_size > 16)
+			{
+				sprintf(error_id, "getmatvar:unexpectedSizeError");
+				sprintf(error_message, "A variable had a datatype of unexpected size.\n\n");
+				return 1;
+			}
 			//STORE ADDRESSES IN THE UDOUBLE_DATA ARRAY; THESE ARE NOT ACTUAL ELEMENTS
-			object->data_arrays.sub_object_header_offsets = mxMalloc(object->num_elems*object->elem_size);
+			object->data_arrays.sub_object_header_offsets = mxMalloc(object->num_elems*sizeof(address_t));
 #ifdef NO_MEX
 			if(object->data_arrays.sub_object_header_offsets == NULL)
 			{
-				error_flag = TRUE;
 				sprintf(error_id, "getmatvar:mallocErrSOHO");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
@@ -53,12 +62,11 @@ error_t allocateSpace(Data* object)
 			{
 				mxFree(object->dims);
 			}
-			object->dims = mxMalloc(3*sizeof(uint64_t));
+			object->dims = mxMalloc(3*sizeof(index_t));
 #ifdef NO_MEX
-			if(unlikely(object->data_arrays.data == NULL))
+			if(unlikely(object->dims == NULL))
 			{
 				//very very unlikely
-				error_flag = TRUE;
 				sprintf(error_id, "getmatvar:mallocErrDataSt");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
@@ -74,13 +82,8 @@ error_t allocateSpace(Data* object)
 			//do nothing
 			break;
 		case mxUNKNOWN_CLASS:
-			error_flag = TRUE;
-			sprintf(error_id, "getmatvar:unknownTypeError");
-			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
-			return 1;
 		default:
-			error_flag = TRUE;
-			sprintf(error_id, "getmatvar:thisShouldntHappen");
+			sprintf(error_id, "getmatvar:unknownTypeError");
 			sprintf(error_message, "Tried to allocate space for an unknown type.\n\n");
 			return 1;
 		
@@ -91,13 +94,13 @@ error_t allocateSpace(Data* object)
 }
 
 
-void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_ind, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order)
+void placeData(Data* object, byte* data_pointer, index_t dst_ind, index_t src_ind, index_t num_elems, size_t elem_size, ByteOrder data_byte_order)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__byte_order__ != data_byte_order)
 	{
-		for(uint64_t j = 0; j < num_elems; j += elem_size)
+		for(index_t j = 0; j < num_elems; j += elem_size)
 		{
 			reverseBytes(data_pointer + j, elem_size);
 		}
@@ -120,7 +123,10 @@ void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_
 			memcpy(object->data_arrays.data + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
 			break;
 		case mxCELL_CLASS:
-			memcpy(object->data_arrays.sub_object_header_offsets + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
+			for(index_t i = 0; i < num_elems; i++)
+			{
+				memcpy(object->data_arrays.sub_object_header_offsets + (dst_ind + i), data_pointer + (src_ind + i)*elem_size, sizeof(address_t));
+			}
 			break;
 		case mxSTRUCT_CLASS:
 		case mxFUNCTION_CLASS:
@@ -131,7 +137,10 @@ void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_
 		case mxUNKNOWN_CLASS:
 			if(object->data_flags.is_struct_array == TRUE)
 			{
-				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
+				for(index_t i = 0; i < num_elems; i++)
+				{
+					memcpy(object->data_arrays.sub_object_header_offsets + (dst_ind + i), data_pointer + (src_ind + i)*elem_size, sizeof(address_t));
+				}
 			}
 			break;
 		default:
@@ -143,15 +152,15 @@ void placeData(Data* object, byte* data_pointer, uint64_t dst_ind, uint64_t src_
 }
 
 
-void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems, size_t elem_size, ByteOrder data_byte_order, const uint64_t* index_map, const uint64_t* index_sequence)
+void placeDataWithIndexMap(Data* object, byte* data_pointer, index_t num_elems, index_t elem_size, ByteOrder data_byte_order, const index_t* index_map, const index_t* index_sequence)
 {
 	
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__byte_order__ != data_byte_order)
 	{
-		for(uint64_t j = 0; j < num_elems; j += elem_size)
+		for(index_t j = 0; j < num_elems; j += elem_size)
 		{
-			reverseBytes(data_pointer + j, elem_size);
+			reverseBytes(data_pointer + j, (size_t)elem_size);
 		}
 	}
 	
@@ -170,15 +179,15 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, uint64_t num_elems,
 		case mxDOUBLE_CLASS:
 		case mxLOGICAL_CLASS:
 		case mxCHAR_CLASS:
-			for(uint64_t j = 0; j < num_elems; j++)
+			for(index_t j = 0; j < num_elems; j++)
 			{
-				memcpy(object->data_arrays.data + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, elem_size);
+				memcpy(object->data_arrays.data + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, (size_t)elem_size);
 			}
 			break;
 		case mxCELL_CLASS:
-			for(uint64_t j = 0; j < num_elems; j++)
+			for(index_t j = 0; j < num_elems; j++)
 			{
-				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, elem_size);
+				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, (size_t)elem_size);
 			}
 			break;
 		case mxSTRUCT_CLASS:

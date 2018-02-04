@@ -1,16 +1,16 @@
 #include "headers/getDataObjects.h"
 
 
-mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
+mapObject* st_navigateTo(address_t address, size_t bytes_needed)
 {
 	
 	address_t map_start = address - (address % alloc_gran); //the start of the page
-	address_t map_bytes_needed = (address % alloc_gran) + bytes_needed;
+	size_t map_bytes_needed = (address % alloc_gran) + bytes_needed;
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
 	//this queue can get very long in recursive cases so set a hard limit
-	for(int i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
+	for(uint8_t i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
 	{
 		if(obj->map_start <= address && address + bytes_needed - 1 <= obj->map_start + obj->map_size - 1 && obj->is_mapped == TRUE)
 		{
@@ -62,12 +62,12 @@ mapObject* st_navigateTo(uint64_t address, uint64_t bytes_needed)
 			obs_obj->is_mapped = FALSE;
 		}
 		
-		//clean up the queue
-		if(map_objects->abs_length > 2*max_num_map_objs)
+		//clean up the queue if there are too many nodes
+		if(map_objects->abs_length > (size_t)2*max_num_map_objs)
 		{
 			initAbsTraversal(map_objects);
 			size_t static_len = map_objects->abs_length;
-			for(int i = 0; i < static_len && (obs_obj = (mapObject*)peekTraverse(map_objects)) != NULL; i++)
+			for(size_t i = 0; i < static_len && (obs_obj = (mapObject*)peekTraverse(map_objects)) != NULL; i++)
 			{
 				if(obs_obj->num_using == 0)
 				{
@@ -103,9 +103,11 @@ void st_releasePages(mapObject* map_obj)
 	}
 }
 
-
-byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
+//TODO improve this system so that we split the pages between the threads evenly rather than incurring memory overhead ie. lockless parallelization
+byte* mt_navigateTo(address_t address, size_t bytes_needed)
 {
+	
+	//If done in parallel while placing chunked data the map size is predetermined while parsing the tree
 	
 	if(is_super_mapped == TRUE)
 	{
@@ -117,14 +119,14 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 	
 	address_t start_address = page_objects[start_page].pg_start_a;
 	
-	//0 bytes_needed indicates operation done in parallel
-	address_t map_bytes_needed = bytes_needed != 0 ? (address % alloc_gran) + bytes_needed : page_objects[start_page].max_map_size;
+	//0 bytes_needed indicates operation done in parallel, kinda hacky
+	size_t map_bytes_needed = bytes_needed != 0 ? (address % alloc_gran) + bytes_needed : page_objects[start_page].max_map_size;
 	
 	
 	/*-----------------------------------------WINDOWS-----------------------------------------*/
 #ifdef WIN32_LEAN_AND_MEAN
 	
-	//in Windows the .is_mapped becomes a flag for if the mapping originally came from this object
+	//in Windows is_mapped becomes a flag for if the mapping originally came from this object
 	//if there is a map available the map_start and map_end addresses indicate where the start and end are
 	//if the object is not associated to a map at all the map_start and map_end addresses will be UNDEF_ADDR
 	
@@ -313,7 +315,7 @@ byte* mt_navigateTo(uint64_t address, uint64_t bytes_needed)
 }
 
 
-void mt_releasePages(uint64_t address, uint64_t bytes_needed)
+void mt_releasePages(address_t address, size_t bytes_needed)
 {
 	
 	if(is_super_mapped == TRUE)

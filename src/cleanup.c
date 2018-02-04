@@ -161,7 +161,7 @@ void destroyPageObjects(void)
 {
 	if(page_objects != NULL)
 	{
-		for(int i = 0; i < num_pages; ++i)
+		for(size_t i = 0; i < num_pages; ++i)
 		{
 			if(page_objects[i].is_mapped == TRUE)
 			{
@@ -274,7 +274,7 @@ void endHooks(void)
 	
 	if(fd >= 0)
 	{
-		close(fd);
+		_close(fd);
 	}
 	
 }

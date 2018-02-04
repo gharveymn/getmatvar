@@ -2,7 +2,7 @@
 #include "headers/getDataObjects.h"
 
 
-void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
+void readDataSpaceMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	//assume version 1 and ignore max dims and permutation indices (never implemented in hdf5 library)
@@ -35,7 +35,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 #endif
 	for(int i = 0; i < object->num_dims; i++)
 	{
-		object->dims[object->num_dims - i - 1] = (uint64_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
+		object->dims[object->num_dims - i - 1] = (size_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	}
 	object->dims[object->num_dims] = 0;
 	
@@ -51,7 +51,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, uint64_t msg_address,
 }
 
 
-void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
+void readDataTypeMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	//assume version 1
 	if((*(msg_pointer) >> 4) != 1)
@@ -104,7 +104,7 @@ void readDataTypeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, 
 }
 
 
-void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
+void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	//assume version 3
 	if(*msg_pointer != 3)
@@ -123,7 +123,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 			//object->data_pointer = msg_pointer + 4;
 			break;
 		case 1:
-			object->data_address = getBytesAsNumber(msg_pointer + 2, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+			object->data_address = (address_t)getBytesAsNumber(msg_pointer + 2, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			break;
 		case 2:
@@ -150,12 +150,12 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 				return;
 			}
 #endif
-			object->data_address = getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+			object->data_address = (address_t)getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
 			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
 			{
 				//chunked storage dims are 4 bytes wide
-				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (uint64_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
+				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (size_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
 																										META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
@@ -177,7 +177,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, uint64_t msg_address
 }
 
 
-void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
+void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	object->chunked_info.num_filters = (uint8_t)*(msg_pointer + 1);
@@ -271,7 +271,7 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, uint64_t ms
 }
 
 
-void readAttributeMessage(Data* object, byte* msg_pointer, uint64_t msg_address, uint16_t msg_size, error_t* err_flag)
+void readAttributeMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
 {
 	
 	//assume version 1

@@ -1,7 +1,6 @@
 #include "headers/getDataObjects.h"
 //#pragma message ("getmatvar is compiling on WINDOWS")
 
-
 /*this is the entry function*/
 error_t getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
@@ -25,33 +24,30 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	}
 	
 	//open the file descriptor
-	fd = open(filename, O_RDONLY);
+	fd = _open(filename, O_RDONLY);
 	if(fd < 0)
 	{
-		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:fileNotFoundError");
 		sprintf(error_message, "No file found with name \'%s\'.\n\n", filename);
 		return 1;
 	}
 	
 	//get file size
-	off_t file_size_check = (off_t)lseek(fd, 0, SEEK_END);
+	off_t file_size_check = (off_t)_lseek(fd, 0, SEEK_END);
 	if(file_size_check < 0)
 	{
-		error_flag = TRUE;
-		sprintf(error_id, "getmatvar:lseekFailureError");
-		sprintf(error_message, "lseek failed, check errno %s.\n\n", strerror(errno));
+		sprintf(error_id, "getmatvar:_lseekFailureError");
+		sprintf(error_message, "_lseek failed, check errno %s.\n\n", strerror(errno));
+		return 1;
+	}
+	else if(file_size_check == 0)
+	{
+		sprintf(error_id, "getmatvar:nullFileError");
+		sprintf(error_message, "The file specified is empty.\n\n");
 		return 1;
 	}
 	else
 	{
-		if(file_size_check == 0)
-		{
-			error_flag = TRUE;
-			sprintf(error_id, "getmatvar:nullFileError");
-			sprintf(error_message, "The file specified is empty.\n\n");
-			return 1;
-		}
 		file_size = (size_t)file_size_check;
 	}
 	default_bytes = alloc_gran < file_size? alloc_gran : file_size;
@@ -72,7 +68,6 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	{
 		char filetype[MATFILE_SIG_LEN] = {0};
 		memcpy(filetype, head_pointer, MATFILE_SIG_LEN);
-		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:wrongFormatError");
 		if(memcmp(filetype, "MATLAB", 6) == 0)
 		{
@@ -137,7 +132,7 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 		}
 	}
 	
-	close(fd);
+	_close(fd);
 	fd = -1;
 	
 	freeQueue(varname_queue);

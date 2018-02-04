@@ -20,7 +20,7 @@ Superblock getSuperblock(void)
 mapObject* findSuperblock(void)
 {
 	
-	for(uint64_t chunk_address = 0; chunk_address < file_size; chunk_address += 512)
+	for(address_t chunk_address = 0; (size_t)chunk_address < file_size; chunk_address += 512)
 	{
 		mapObject* chunk_start_map_obj = st_navigateTo(chunk_address, SUPERBLOCK_INTERVAL);
 		byte* chunk_start = chunk_start_map_obj->address_ptr;
@@ -46,12 +46,12 @@ Superblock fillSuperblock(byte* superblock_pointer)
 	s_block.size_of_lengths = (uint8_t)getBytesAsNumber(superblock_pointer + 14, 1, META_DATA_BYTE_ORDER);
 	s_block.leaf_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 16, 2, META_DATA_BYTE_ORDER);
 	s_block.internal_node_k = (uint16_t)getBytesAsNumber(superblock_pointer + 18, 2, META_DATA_BYTE_ORDER);
-	s_block.base_address = getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
+	s_block.base_address = (address_t)getBytesAsNumber(superblock_pointer + 24, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 	
 	//read scratchpad space
 	byte* sps_start = superblock_pointer + 80;
-	s_block.root_tree_address = getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-	s_block.root_heap_address = getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	s_block.root_tree_address = (address_t)getBytesAsNumber(sps_start, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+	s_block.root_heap_address = (address_t)getBytesAsNumber(sps_start + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 	
 	s_block.sym_table_entry_size = (uint16_t)(2*s_block.size_of_offsets + 4 + 4 + 16);
 	

@@ -118,9 +118,8 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 		}
 		data->data_flags.is_mx_used = TRUE;
 		
-		
 		mwIndex* irPtr = mxMalloc(ir->num_elems*sizeof(mwIndex));
-		for (int i = 0; i < ir->num_elems; i++)
+		for (index_t i = 0; i < ir->num_elems; i++)
 		{
 			irPtr[i] = ((mwIndex*)ir->data_arrays.data)[i];
 		}
@@ -133,7 +132,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	//sparse matrices always have two dimensions
 	
 	mwIndex* jcPtr = mxGetJc(mxSpsPtr);
-	for(int i = 0; i < jc->num_elems; i++)
+	for(index_t i = 0; i < jc->num_elems; i++)
 	{
 		jcPtr[i] = ((mwIndex*)jc->data_arrays.data)[i];
 	}
@@ -206,7 +205,7 @@ char** getFieldNames(Data* object)
 }
 
 
-mwSize* makeObjDims(const uint64_t* dims, const mwSize num_dims)
+mwSize* makeObjDims(const index_t* dims, const mwSize num_dims)
 {
 	
 	mwSize* obj_dims = mxMalloc(num_dims*sizeof(mwSize));
@@ -237,13 +236,13 @@ DataArrays rearrangeImaginaryData(Data* object)
 		case mxUINT64_CLASS:
 		case mxSINGLE_CLASS:
 		case mxDOUBLE_CLASS:
-			imag_data.data = mxMalloc(object->num_elems*object->elem_size/2);
+			imag_data.data = mxMalloc((size_t)object->num_elems*object->elem_size/2);
 			for(uint32_t i = 0; i < object->num_elems; i++)
 			{
-				memcpy(imag_data.data + i*object->elem_size/2, object->data_arrays.data + (2*i + 1)*object->elem_size/2, object->elem_size/2);
-				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + i*object->elem_size, object->elem_size/2);
+				memcpy(imag_data.data + i*object->elem_size/2, object->data_arrays.data + (2*i + 1)*object->elem_size/2, (size_t)object->elem_size/2);
+				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + i*object->elem_size, (size_t)object->elem_size/2);
 			}
-			mxRealloc(object->data_arrays.data, object->num_elems*object->elem_size/2);
+			mxRealloc(object->data_arrays.data, (size_t)object->num_elems*object->elem_size/2);
 			break;
 		default:
 			//this shouldn't happen

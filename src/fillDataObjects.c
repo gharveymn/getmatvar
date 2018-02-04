@@ -216,7 +216,6 @@ error_t fillVariable(char* variable_name)
 #ifdef NO_MEX
 		if(object->names.short_name == NULL)
 		{
-			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:mallocErrShNa");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
@@ -229,7 +228,6 @@ error_t fillVariable(char* variable_name)
 #ifdef NO_MEX
 		if(object->names.long_name == NULL)
 		{
-			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:mallocErrLoNa");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
@@ -271,7 +269,7 @@ error_t fillDataTree(Data* object)
 }
 
 
-error_t fillObject(Data* object, uint64_t this_obj_address)
+error_t fillObject(Data* object, address_t this_obj_address)
 {
 	
 	if(object->data_flags.is_filled == TRUE)
@@ -298,7 +296,6 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 	
 	if(object->hdf5_internal_type == HDF5_UNKNOWN && object->matlab_internal_type == mxUNKNOWN_CLASS)
 	{
-		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:unknownDataTypeError");
 		sprintf(error_message, "Unknown data type encountered in the HDF5 file.\n\n");
 		return 1;
@@ -319,7 +316,7 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 		case 1:
 			//compact storage or contiguous storage
 			//placeData will just segfault if it has an error, ie. if this encounters an error something is very wrong
-			data_map_obj = st_navigateTo(object->data_address, object->num_elems * object->elem_size);
+			data_map_obj = st_navigateTo(object->data_address, (size_t)object->num_elems * object->elem_size);
 			placeData(object, data_map_obj->address_ptr, 0, 0, object->num_elems, object->elem_size, object->byte_order);
 			st_releasePages(data_map_obj);
 			break;
@@ -334,7 +331,6 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 			//don't do anything in the case of structs, functions, etc.
 			break;
 		default:
-			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:unknownLayoutClassError");
 			sprintf(error_message, "Unknown layout class encountered.\n\n");
 			return 1;
@@ -345,18 +341,27 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 	{
 		flushQueue(object->sub_objects);
 		object->num_sub_objs = (uint32_t)object->num_elems;
-		for(uint64_t i = 0; i < object->num_elems; i++)
+		for(index_t i = 0; i < object->num_elems; i++)
 		{
-			address_t new_obj_address = object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
+			address_t new_obj_address = (address_t)object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			//search from virtual_super_object since the reference might be in #refs#
 			Data* ref = findObjectByHeaderAddress(new_obj_address);
+			if(ref == NULL)
+			{
+				sprintf(error_id, "getmatvar:internalError");
+				sprintf(error_message, "Could not find an object by its header address. The file may be corrupted.\n\n");
+				return 1;
+			}
 			while(object->sub_objects->length > 0)
 			{
 				Data* obj = dequeue(object->sub_objects);
 				if(obj == ref)
 				{
 					//maybe should have mxArray indices pointing to the same object instead
-					ref = cloneData(obj);
+					if((ref = cloneData(obj)) == NULL)
+					{
+						return 1;
+					}
 				}
 			}
 			restartQueue(object->sub_objects);
@@ -430,7 +435,6 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 #ifdef NO_MEX
 				if(object->names.short_name == NULL)
 				{
-					error_flag = TRUE;
 					sprintf(error_id, "getmatvar:mallocErrShNaFO");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
@@ -444,7 +448,6 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 #ifdef NO_MEX
 				if(object->names.long_name == NULL)
 				{
-					error_flag = TRUE;
 					sprintf(error_id, "getmatvar:mallocErrLoNaFO");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 					return 1;
@@ -464,7 +467,7 @@ error_t fillObject(Data* object, uint64_t this_obj_address)
 }
 
 
-error_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs, uint32_t header_length)
+error_t collectMetaData(Data* object, address_t header_address, uint16_t num_msgs, uint32_t header_length)
 {
 	
 	int err_flag = 0;
@@ -534,18 +537,18 @@ error_t collectMetaData(Data* object, uint64_t header_address, uint16_t num_msgs
 }
 
 
-uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker, int* err_flag)
+uint16_t interpretMessages(Data* object, address_t msgs_start_address, uint32_t msgs_length, uint16_t message_num, uint16_t num_msgs, uint16_t repeat_tracker, int* err_flag)
 {
 	
 	mapObject* msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
 	byte* msgs_start_pointer = msgs_start_map_obj->address_ptr;
 	
-	uint64_t cont_header_address = UNDEF_ADDR;
+	address_t cont_header_address = UNDEF_ADDR;
 	uint32_t cont_header_length = 0;
 	
 	uint16_t msg_type = 0;
 	uint16_t msg_size = 0;
-	uint64_t msg_address = 0;
+	address_t msg_address = 0;
 	byte* msg_pointer = NULL;
 	uint32_t bytes_read = 0;
 	uint8_t msg_sub_header_size = 8;
@@ -610,7 +613,7 @@ uint16_t interpretMessages(Data* object, uint64_t msgs_start_address, uint32_t m
 					break;
 				}
 				
-				cont_header_address = getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+				cont_header_address = (address_t)getBytesAsNumber(msg_pointer, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 				cont_header_length = (uint32_t)getBytesAsNumber(msg_pointer + s_block.size_of_offsets, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 				message_num++;
 				

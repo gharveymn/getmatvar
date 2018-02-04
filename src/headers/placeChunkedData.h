@@ -4,7 +4,11 @@
 
 #include "getDataObjects.h"
 #include "mtezq.h"
+#ifdef GMV_64_BIT
 #include "../extlib/libdeflate/x64/libdeflate.h"
+#else
+#include "../extlib/libdeflate/x86/libdeflate.h"
+#endif
 
 
 typedef enum
@@ -21,8 +25,8 @@ typedef struct
 {
 	uint32_t chunk_size;
 	//uint32_t filter_mask;
-	uint64_t* chunk_start;
-	//uint64_t local_heap_offset;
+	index_t* chunk_start;
+	//address_t local_heap_offset;
 } Key;
 
 typedef struct tree_node_ TreeNode;
@@ -76,9 +80,9 @@ void* mt_fillNode(void* fno);
 #endif
 void freeTree(void* n);
 error_t getChunkedData(Data* obj);
-uint64_t findArrayPosition(const uint64_t* chunk_start, const uint64_t* array_dims, uint8_t num_chunked_dims);
+index_t findArrayPosition(const index_t* chunk_start, const index_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
-void makeChunkedUpdates(uint64_t* chunk_update, const uint64_t* chunked_dims, const uint64_t* dims, uint8_t num_dims);
+void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, const index_t* dims, uint8_t num_dims);
 void* garbageCollection_(void* nothing);
 void startThreads_(void* thread_startup_obj);
 

@@ -8,16 +8,73 @@
 //#define DO_MEMDUMP
 //#define NO_MEX		pass this through gcc -DNO_MEX=TRUE
 
+#ifdef NO_MEX
 #include <stdint.h>
+#define mxMalloc malloc
+#define mxFree free
+#define mxCalloc calloc
+#define mxRealloc realloc
+typedef enum
+{
+	mxREAL, mxCOMPLEX
+} mxComplexity;
 
-
-#if UINTPTR_MAX == 0xffffffff
-#error getmatvar does not support 32-bit systems at this time.
-#elif UINTPTR_MAX == 0xffffffffffffffff
+#if UINTPTR_MAX == 0xffffffffffffffff
 #define GMV_64_BIT
 #define _FILE_OFFSET_BITS 64
+#define UNDEF_ADDR 0xffffffffffffffff
+typedef int64_t address_t;
+typedef int64_t index_t;
+#elif UINTPTR_MAX == 0xffffffff
+//#error getmatvar does not support 32-bit systems at this time.
+#define GMV_32_BIT
+#define _FILE_OFFSET_BITS 32
+#define uint64_t uint32_t
+#define int64_t int32_t
+#define UNDEF_ADDR 0xffffffff
+typedef uint32_t address_t;
+typedef uint32_t index_t;
 #else
 #error Your architecture is weird
+#endif
+
+#else
+
+#include <mex.h>
+
+# define uint8_t uint8_T
+# define int8_t int8_T
+# define uint16_t uint16_T
+# define int16_t int16_T
+# define uint32_t uint32_T
+# define int32_t int32_T
+# define uint64_t uint64_T
+# define int64_t int64_T
+
+# ifndef MATLAB_32BIT
+//#error getmatvar does not support 32-bit systems at this time.
+#  define GMV_64_BIT
+#  define _FILE_OFFSET_BITS 64
+typedef int64_T index_t;
+# else
+#  define GMV_32_BIT
+#  define _FILE_OFFSET_BITS 32
+typedef uint32_T index_t;
+# endif
+
+#ifdef INT_TYPE_64_IS_SUPPORTED
+typedef int64_T address_t;
+#define UNDEF_ADDR 0xffffffffffffffff
+#else
+typedef uint32_T address_t;
+#define UNDEF_ADDR 0xffffffff
+#endif
+
+#define malloc mxMalloc
+#define free mxFree
+#define calloc mxCalloc
+#define realloc mxRealloc
+
 #endif
 
 #include <stdio.h>
@@ -29,36 +86,23 @@
 #include <math.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdarg.h>
 
-#ifdef NO_MEX
-#define mxMalloc malloc
-#define mxFree free
-#define mxCalloc calloc
-#define mxRealloc realloc
-typedef enum
-{
-	mxREAL, mxCOMPLEX
-} mxComplexity;
-#else
-#include <mex.h>
-#define malloc mxMalloc
-#define free mxFree
-#define calloc mxCalloc
-#define realloc mxRealloc
-#endif
+#define xstr(s) str(s)
+#define str(s) #s
 
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 	//#pragma message ("getmatvar is compiling on WINDOWS")
 	#define WIN32_LEAN_AND_MEAN
 	#ifdef WINVER
 	#undef WINVER
-	#define WINVER 0x0A00
 	#endif
+	#define WINVER 0x0A00
 	
 	#ifdef _WIN32_WINNT
 	#undef _WIN32_WINNT
-	#define _WIN32_WINNT 0x0A00
 	#endif
+	#define _WIN32_WINNT 0x0A00
 	
 	#include <io.h>
 	#include "../extlib/mman-win32/mman.h"
@@ -67,15 +111,20 @@ typedef enum
 	
 	
 	#ifdef GMV_64_BIT
-	#ifdef lseek
-	#undef lseek
-	#endif
-	#define lseek _lseeki64
+		#ifdef _lseek
+		#undef _lseek
+		#endif
+		#define _lseek _lseeki64
 	
-	#ifdef off_t
-	#undef off_t
-	#endif
-	#define off_t int64_t
+		#ifdef off_t
+		#undef off_t
+		#endif
+		#define off_t int64_t
+	#else
+		#ifdef off_t
+		#undef off_t
+		#endif
+		#define off_t int32_t
 	#endif
 
 #else
@@ -86,29 +135,25 @@ typedef enum
 	#include <sys/types.h>
 	#include <unistd.h>
 	
-	#ifdef GMV_64_BIT
-	typedef uint64_t OffsetType;
-	#else
-	typedef uint32 OffsetType;
-	#endif
+	#define _open open
+	#define _close close
+	#define _lseek lseek
 
 #endif
 
-#include <stdarg.h>
 #include "ezq.h"
 
 #ifdef TRUE
 #undef TRUE
 #endif
-
 #ifdef FALSE
 #undef FALSE
 #endif
-
 typedef enum
 {
 	FALSE = 0, TRUE = 1
 } bool_t;
+
 #define FORMAT_SIG "\211HDF\r\n\032\n"
 #define MATFILE_7_3_SIG "\x4D\x41\x54\x4C\x41\x42\x20\x37\x2E\x33\x20\x4D\x41\x54\x2D\x66\x69\x6C\x65"
 #define MATFILE_SIG_LEN 19
@@ -116,7 +161,6 @@ typedef enum
 #define RETURN_STRUCT_NAME_LEN 24
 #define SELECTION_SIG "R2VuZSBIYXJ2ZXkgOik"
 #define SELECTION_SIG_LEN 19
-#define UNDEF_ADDR 0xffffffffffffffff
 #define NAME_LENGTH 200
 #define MAX_NUM_FILTERS 32 /*see spec IV.A.2.1*/
 #define HDF5_MAX_DIMS 32 /*see the "Chunking in HDF5" in documentation*/
@@ -164,7 +208,6 @@ typedef enum
 //typedefs
 
 typedef unsigned char byte;  /* ensure an unambiguous, readable 8 bits */
-typedef uint64_t address_t;
 
 typedef struct
 {
@@ -182,7 +225,7 @@ typedef struct
 {
 	byte* map_start;
 	uint64_t bytes_mapped;
-	OffsetType offset;
+	address_t offset;
 	int used;
 } MemMap;
 
@@ -259,15 +302,15 @@ typedef struct
 	uint8_t num_filters;
 	Filter* filters;
 	uint8_t num_chunked_dims;
-	uint64_t num_chunked_elems;
-	uint64_t* chunked_dims;
-	uint64_t* chunk_update;
+	index_t num_chunked_elems;
+	index_t* chunked_dims;
+	index_t* chunk_update;
 } ChunkedInfo;
 
 typedef struct
 {
 	byte* data;
-	uint64_t* sub_object_header_offsets;
+	address_t* sub_object_header_offsets;
 } DataArrays;
 
 typedef struct
@@ -315,12 +358,12 @@ struct data_
 	char* matlab_class;
 	ChunkedInfo chunked_info;
 	
-	uint64_t* dims;
+	index_t* dims;
 	uint8_t num_dims;
-	uint64_t num_elems;
-	size_t elem_size;
+	index_t num_elems;
+	uint32_t elem_size;
 	
-	uint64_t s_c_array_index;
+	index_t s_c_array_index;
 	
 	uint8_t layout_class;
 	address_t data_address;
@@ -345,7 +388,7 @@ typedef struct
 	address_t pg_start_a;
 	address_t pg_end_a;
 	size_t map_size;
-	address_t max_map_size;
+	size_t max_map_size;
 	byte* pg_start_p;
 	uint8_t num_using;
 	uint32_t total_num_mappings;
@@ -376,8 +419,8 @@ typedef enum
 typedef struct
 {
 	VariableNameType variable_name_type;
-	uint64_t variable_local_index;
-	uint64_t variable_local_coordinates[HDF5_MAX_DIMS];
+	index_t variable_local_index;
+	index_t variable_local_coordinates[HDF5_MAX_DIMS];
 	char* variable_local_name;
 } VariableNameToken;
 
@@ -392,7 +435,6 @@ ByteOrder __byte_order__;
 size_t alloc_gran;
 size_t file_size;
 size_t num_pages;
-bool_t error_flag;
 bool_t is_done;
 char error_id[ERROR_BUFFER_SIZE];
 char error_message[ERROR_BUFFER_SIZE];
@@ -410,7 +452,7 @@ int fd;
 Superblock s_block;
 uint64_t default_bytes;
 
-size_t max_num_map_objs;
+uint8_t max_num_map_objs;
 
 Queue* inflate_thread_obj_queue;
 int num_avail_threads;          //number of processors - 1

@@ -29,7 +29,7 @@ int main()
 	s_block = getSuperblock(fd, file_size);
 	
 	fillChunkTree(&root, 3);
-	close(fd);
+	_close(fd);
 	freeTree(&root);
 	fprintf(stderr, "Complete\n");
 	

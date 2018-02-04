@@ -37,8 +37,7 @@ void makeReturnStructure(mxArray** super_structure, int nlhs)
 {
 	mwSize ret_struct_dims[1] = {1};
 	
-	getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars);
-	if(error_flag == TRUE)
+	if(getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars) != 0)
 	{
 		readMXError(error_id, error_message);
 	}
@@ -212,7 +211,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 						input = mxArrayToString(prhs[i]);
 						
 						//verify all chars are numeric
-						for(int k = 0; k < mxGetNumberOfElements(prhs[i]); k++)
+						for(size_t k = 0; k < mxGetNumberOfElements(prhs[i]); k++)
 						{
 							if((input[k] - '0') > 9 || (input[k] - '0') < 0)
 							{

@@ -21,7 +21,7 @@ Data* findSubObjectByShortName(Data* object, char* name)
 
 
 /*for use on a single level*/
-Data* findSubObjectBySCIndex(Data* object, uint64_t index)
+Data* findSubObjectBySCIndex(Data* object, index_t index)
 {
 	restartQueue(object->sub_objects);
 	while(object->sub_objects->length > 0)
@@ -39,14 +39,14 @@ Data* findSubObjectBySCIndex(Data* object, uint64_t index)
 
 
 /*searches entire tree*/
-Data* findObjectByHeaderAddress(address_t address)
+Data* findObjectByHeaderAddress(address_t obj_address)
 {
 	
 	restartQueue(object_queue);
 	while(object_queue->length > 0)
 	{
 		Data* obj = dequeue(object_queue);
-		if(obj->this_obj_address == address)
+		if(obj->this_obj_address == obj_address)
 		{
 			restartQueue(object_queue);
 			return obj;
@@ -67,7 +67,6 @@ error_t parseCoordinates(VariableNameToken* vnt)
 #ifdef NO_MEX
 	if(variable_name_cpy == NULL)
 	{
-		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:mallocErrVNCcoord");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return 1;
@@ -80,7 +79,7 @@ error_t parseCoordinates(VariableNameToken* vnt)
 	{
 		size_t coord_num_str_len = strlen(coord_num_str);
 		vnt->variable_local_coordinates[i] = 0;
-		for(int j = 0; j < coord_num_str_len; j++)
+		for(uint8_t j = 0; j < coord_num_str_len; j++)
 		{
 			vnt->variable_local_coordinates[i] = vnt->variable_local_coordinates[i]*10 + (coord_num_str[j] - '0');
 		}
@@ -91,10 +90,10 @@ error_t parseCoordinates(VariableNameToken* vnt)
 }
 
 
-uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_dims)
+index_t coordToInd(const index_t* coords, const index_t* dims, uint8_t num_dims)
 {
-	uint64_t ret = 0;
-	uint64_t mult = 1;
+	index_t ret = 0;
+	index_t mult = 1;
 	for(int i = 0; i < num_dims; i++)
 	{
 		ret += (coords[i] - 1)*mult;
@@ -111,7 +110,6 @@ Data* cloneData(Data* old_object)
 #ifdef NO_MEX
 	if(new_object == NULL)
 	{
-		error_flag = TRUE;
 		sprintf(error_id, "getmatvar:mallocErrNewObjCD");
 		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 		return NULL;
@@ -146,7 +144,7 @@ Data* cloneData(Data* old_object)
 	new_object->data_flags.is_mx_used = old_object->data_flags.is_mx_used;
 	if(old_object->data_arrays.data != NULL)
 	{
-		new_object->data_arrays.data = mxMalloc(old_object->num_elems*old_object->elem_size);
+		new_object->data_arrays.data = mxMalloc((size_t)old_object->num_elems*old_object->elem_size);
 #ifdef NO_MEX
 		if(new_object->data_arrays.data == NULL)
 		{
@@ -157,7 +155,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->data_arrays.data, old_object->data_arrays.data, old_object->num_elems*old_object->elem_size);
+		memcpy(new_object->data_arrays.data, old_object->data_arrays.data, (size_t)old_object->num_elems*old_object->elem_size);
 	}
 	else
 	{
@@ -166,7 +164,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->data_arrays.sub_object_header_offsets != NULL)
 	{
-		new_object->data_arrays.sub_object_header_offsets = mxMalloc(old_object->num_elems*old_object->elem_size);
+		new_object->data_arrays.sub_object_header_offsets = mxMalloc((size_t)old_object->num_elems*old_object->elem_size);
 #ifdef NO_MEX
 		if(new_object->data_arrays.sub_object_header_offsets  == NULL)
 		{
@@ -177,7 +175,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->data_arrays.sub_object_header_offsets, old_object->data_arrays.sub_object_header_offsets, old_object->num_elems*old_object->elem_size);
+		memcpy(new_object->data_arrays.sub_object_header_offsets, old_object->data_arrays.sub_object_header_offsets, (size_t)old_object->num_elems*old_object->elem_size);
 	}
 	else
 	{
@@ -350,7 +348,6 @@ error_t makeVarnameQueue(char* variable_name)
 		if(unlikely(varname_token == NULL))
 		{
 			//very very unlikely
-			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:mallocErrVNT");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
@@ -361,7 +358,6 @@ error_t makeVarnameQueue(char* variable_name)
 		if(unlikely(varname_token->variable_local_name == NULL))
 		{
 			//very very unlikely
-			error_flag = TRUE;
 			sprintf(error_id, "getmatvar:mallocErrVNTvln");
 			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 			return 1;
@@ -370,7 +366,7 @@ error_t makeVarnameQueue(char* variable_name)
 		strcpy(varname_token->variable_local_name, token);
 		varname_token->variable_local_index = 0;
 		varname_token->variable_name_type = VT_LOCAL_INDEX;
-		for(int i = 0; i < vnlen; i++)
+		for(uint8_t i = 0; i < vnlen; i++)
 		{
 			if(varname_token->variable_local_name[i] < '0' || varname_token->variable_local_name[i] > '9')
 			{

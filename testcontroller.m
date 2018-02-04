@@ -88,7 +88,7 @@ for j = 1:numtests
 				[similarity,gmv,ld] = compstruct(gmvtest_struct2, test_struct2);
 				if(~isempty(gmv) || ~isempty(ld))
 					%diffs = find(gmv ~= ld);
-					%mindiffind = min(find(gmv ~= ld));
+					%mindiffind = min(find(gmv ~= ld)); ds
 					error('getmatvar failed to load test_struct2 correctly')
 				end
 				clear('gmvtest_struct2');

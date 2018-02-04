@@ -205,10 +205,10 @@ error_t mergeQueue(Queue* new_queue, Queue** queues, size_t num_queues)
 {
 	if(new_queue != NULL)
 	{
-		for(int i = 0; i < num_queues; i++)
+		for(size_t i = 0; i < num_queues; i++)
 		{
 			size_t q_len = queues[i]->length;
-			for(int j = 0; j < q_len; j++)
+			for(size_t j = 0; j < q_len; j++)
 			{
 				enqueue(new_queue, dequeue(queues[i]));
 			}

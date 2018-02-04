@@ -9,10 +9,10 @@
 
 
 Data* findSubObjectByShortName(Data* object, char* name);
-Data* findSubObjectBySCIndex(Data* object, uint64_t index);
-Data* findObjectByHeaderAddress(address_t address);
+Data* findSubObjectBySCIndex(Data* object, index_t index);
+Data* findObjectByHeaderAddress(address_t obj_address);
 error_t parseCoordinates(VariableNameToken* vnt);
-uint64_t coordToInd(const uint64_t* coords, const uint64_t* dims, uint8_t num_dims);
+index_t coordToInd(const index_t* coords, const index_t* dims, uint8_t num_dims);
 error_t makeVarnameQueue(char* variable_name);
 Data* cloneData(Data* old_object);
 void removeSpaces(char* source);
