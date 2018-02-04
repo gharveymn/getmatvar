@@ -66,7 +66,7 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	byte* head_pointer = head_map_obj->address_ptr;
 	if(memcmp(head_pointer, MATFILE_7_3_SIG, MATFILE_SIG_LEN) != 0)
 	{
-		char filetype[MATFILE_SIG_LEN] = {0};
+		char filetype[MATFILE_SIG_LEN + 1] = {0};
 		memcpy(filetype, head_pointer, MATFILE_SIG_LEN);
 		sprintf(error_id, "getmatvar:wrongFormatError");
 		if(memcmp(filetype, "MATLAB", 6) == 0)

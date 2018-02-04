@@ -14,7 +14,7 @@ try
 		mexflags = [mexflags {'-largeArrayDims'}];
 	else
 		libdeflate_dir = fullfile(pwd,'extlib','libdeflate','x86');
-        mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
+		mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
 	end
 	
 	sources = {'getmatvar_.c',...
@@ -35,21 +35,14 @@ try
 		'superblock.c',...
 		'utils.c'};
 	
-	if(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'mingw64'))
+	if(ispc)
 		
 		sources = [sources,...
 			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
 			fullfile(libdeflate_dir,'win','libdeflate.lib')}
 			];
 		
-	elseif(~isempty(strfind(mex.getCompilerConfigurations('C','Selected').ShortName, 'MSVC')))
-		
-		sources = [sources,...
-			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
-			fullfile(libdeflate_dir,'win','libdeflate.lib')}
-			];
-		
-	elseif(strcmp(mex.getCompilerConfigurations('C','Selected').ShortName, 'gcc'))
+	elseif(isunix || ismac)
 		
 		warning('off','MATLAB:mex:GccVersion_link');
 		
@@ -78,7 +71,7 @@ try
 	
 	cd ..
 	rmpath('src');
-    addpath('bin');
+	addpath('bin');
 	clear mexflags sources libdeflate_dir output_path
 	
 catch ME
