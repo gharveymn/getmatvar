@@ -222,7 +222,7 @@ void* doInflate_(void* t)
 //	memset(chunk_pos, 0, sizeof(chunk_pos));
 	
 	const size_t max_est_decomp_size = (size_t)object->chunked_info.num_chunked_elems*object->elem_size;
-	byte* decompressed_data_buffer = mxMalloc(max_est_decomp_size);
+	byte* decompressed_data_buffer = malloc(max_est_decomp_size);
 #ifdef NO_MEX
 	if(decompressed_data_buffer == NULL)
 	{
@@ -372,7 +372,7 @@ void* doInflate_(void* t)
 			
 			for(int j = 0; j < object->num_dims; j++)
 			{
-				if(unlikely(these_chunked_dims[j] != object->chunked_info.chunked_dims[j]))
+				if(these_chunked_dims[j] != object->chunked_info.chunked_dims[j])
 				{
 					makeChunkedUpdates(these_index_updates, these_chunked_dims, object->dims, object->num_dims);
 					makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->chunked_info.chunked_dims, object->num_dims);
@@ -414,7 +414,7 @@ void* doInflate_(void* t)
 	}
 	
 	libdeflate_free_decompressor(ldd);
-	mxFree(decompressed_data_buffer);
+	free(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 	return 0;
 #else

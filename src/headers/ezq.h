@@ -14,10 +14,6 @@
 #define mxRealloc realloc
 #else
 #include <mex.h>
-#define malloc mxMalloc
-#define free mxFree
-#define calloc mxCalloc
-#define realloc mxRealloc
 #endif
 
 typedef int error_t;
