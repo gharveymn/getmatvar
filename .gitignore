@@ -18,6 +18,8 @@ res/*
 *.so
 *mapping
 mexemulate
+*mexopts.sh
+*detect.sh
 
 *.vspx
 *ipch/

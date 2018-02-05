@@ -21,14 +21,11 @@ typedef enum
 
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define GMV_64_BIT
-#define _FILE_OFFSET_BITS 64
 #define UNDEF_ADDR 0xffffffffffffffff
 typedef int64_t address_t;
 typedef int64_t index_t;
 #elif UINTPTR_MAX == 0xffffffff
-//#error getmatvar does not support 32-bit systems at this time.
 #define GMV_32_BIT
-#define _FILE_OFFSET_BITS 32
 #define uint64_t uint32_t
 #define int64_t int32_t
 #define UNDEF_ADDR 0xffffffff
@@ -52,12 +49,17 @@ typedef uint32_t index_t;
 # define int64_t int64_T
 
 # ifndef MATLAB_32BIT
-//#error getmatvar does not support 32-bit systems at this time.
 #  define GMV_64_BIT
+#  ifdef _FILE_OFFSET_BITS
+#   undef _FILE_OFFSET_BITS
+#  endif
 #  define _FILE_OFFSET_BITS 64
 typedef int64_T index_t;
 # else
 #  define GMV_32_BIT
+#  ifdef _FILE_OFFSET_BITS
+#   undef _FILE_OFFSET_BITS
+#  endif
 #  define _FILE_OFFSET_BITS 32
 typedef uint32_T index_t;
 # endif

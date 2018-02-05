@@ -201,7 +201,7 @@ void readInput(int nrhs, const mxArray* prhs[])
 					
 					//this overrides the max setting
 					
-					if(mxIsNumeric(prhs[i]) && mxIsScalar(prhs[i]))
+					if(mxIsNumeric(prhs[i]) && (mxGetNumberOfElements(prhs[i]) == 1))
 					{
 						num_threads_user_def = (int)mxGetScalar(prhs[i]);
 					}

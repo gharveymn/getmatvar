@@ -5,10 +5,10 @@ cd src
 try
 	
 	%mexflags = {'-O', '-silent', 'CFLAGS="$CFLAGS -Wall -std=c99"', '-outdir', output_path};
-	mexflags = {'-g', '-v', 'CFLAGS="$CFLAGS -Wall -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', '-outdir', output_path};
 	
 	[comp,maxsz,endi] = computer;
-	libdeflate_dir = fullfile(pwd,'extlib','libdeflate')
+	libdeflate_dir = fullfile(pwd,'extlib','libdeflate');
 	
 	sources = {'getmatvar_.c',...
 		'mexSet.c',...
@@ -46,6 +46,20 @@ try
 	elseif(isunix || ismac)
 		
 		warning('off','MATLAB:mex:GccVersion_link');
+		
+		mex_setup_cmd = ['cp ' fullfile(prefdir,'mexopts.sh') ' ' fullfile(pwd,'mexopts.sh') ' ; '...
+			'sed -i "s/-ansi/-Wall -std=c99/g" mexopts.sh'];
+		
+		fprintf('-Setting up the mex compiler...')
+		[makestatus, cmdout] = system(mex_setup_cmd);
+		clear mex_setup_cmd
+		if(makestatus ~= 0)
+			fprintf(' failed!\n')
+			error(cmdout);
+		end
+		fprintf(' successful.\n')
+		
+		mexflags = [mexflags, {'-f', fullfile(pwd,'mexopts.sh')}];
 		
 		libdeflate_dir = fullfile(libdeflate_dir,'unix');
 		if(maxsz > 2^31-1)
