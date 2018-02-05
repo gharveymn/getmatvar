@@ -7,7 +7,7 @@ addpath('bin')
 %file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 file = 'res/t.mat';
-vars = {'-st'};
+vars = {};
 domemory = false;
 compare = false;
 numtests = 10000;

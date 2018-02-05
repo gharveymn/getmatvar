@@ -42,6 +42,13 @@ typedef struct
 	Data* object;
 	MTQueue* mt_data_queue;
 	error_t err;
+#ifdef WIN32_LEAN_AND_MEAN
+	HANDLE* thread_sync;
+#else
+	pthread_cond_t* thread_sync;
+	pthread_mutex_t* thread_mtx;
+#endif
+	bool_t* main_thread_ready;
 } InflateThreadObj;
 
 typedef struct

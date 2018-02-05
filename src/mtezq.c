@@ -271,32 +271,17 @@ void* mt_peekQueue(MTQueue* queue, int queue_location)
 		if(queue_location == QUEUE_FRONT)
 		{
 			ret = queue->front->data;
-#ifdef WIN32_LEAN_AND_MEAN
-			LeaveCriticalSection(&queue->lock);
-#else
-			pthread_mutex_unlock(&queue->lock);
-#endif
-			return ret;
 		}
 		else if(queue_location == QUEUE_BACK)
 		{
 			ret = queue->back->data;
-#ifdef WIN32_LEAN_AND_MEAN
-			LeaveCriticalSection(&queue->lock);
-#else
-			pthread_mutex_unlock(&queue->lock);
-#endif
-			return ret;
 		}
-		else
-		{
 #ifdef WIN32_LEAN_AND_MEAN
-			LeaveCriticalSection(&queue->lock);
+		LeaveCriticalSection(&queue->lock);
 #else
-			pthread_mutex_unlock(&queue->lock);
+		pthread_mutex_unlock(&queue->lock);
 #endif
-			return ret;
-		}
+		return ret;
 	}
 	else
 	{

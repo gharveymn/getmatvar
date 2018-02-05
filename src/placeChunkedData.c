@@ -4,14 +4,6 @@
 Queue** data_page_buckets;
 //MTQueue** mt_data_page_buckets;
 int num_threads_to_use;
-bool_t main_thread_ready;
-
-#ifdef WIN32_LEAN_AND_MEAN
-HANDLE thread_sync;
-#else
-	pthread_cond_t thread_sync;
-	pthread_mutex_t thread_mtx;
-#endif
 
 
 error_t getChunkedData(Data* object)
@@ -23,27 +15,35 @@ error_t getChunkedData(Data* object)
 	error_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
 	HANDLE* chunk_threads = NULL;
+	HANDLE thread_sync;
 	DWORD ThreadID;
 #else
 	pthread_t* chunk_threads = NULL;
+	pthread_cond_t thread_sync;
+	pthread_mutex_t thread_mtx;
 #endif
 	
 	num_threads_to_use = -1;
-	main_thread_ready = FALSE;
+	bool_t main_thread_ready = FALSE;
 	
-	InflateThreadObj thread_object;
-	thread_object.mt_data_queue = mt_data_queue;
-	thread_object.object = object;
-	thread_object.err = 0;
+	InflateThreadObj* thread_object = mxMalloc(sizeof(InflateThreadObj));
+	thread_object->mt_data_queue = mt_data_queue;
+	thread_object->object = object;
+	thread_object->err = 0;
+	thread_object->main_thread_ready = &main_thread_ready;
 	
 	if(((will_multithread == TRUE) & (object->num_elems > MIN_MT_ELEMS_THRESH)) == TRUE)
 	{
 
 #ifdef WIN32_LEAN_AND_MEAN
 		thread_sync = CreateEvent(NULL, TRUE, FALSE, "thread_sync");
+		thread_object->thread_sync = &thread_sync;
 #else
 		pthread_mutex_init(&thread_mtx, NULL);
 		pthread_cond_init(&thread_sync, NULL);
+		
+		thread_object->thread_sync = &thread_sync;
+		thread_object->thread_mtx = &thread_mtx;
 		
 #endif
 		
@@ -69,7 +69,7 @@ error_t getChunkedData(Data* object)
 #endif
 		for(int i = 0; i < num_threads_to_use; i++)
 		{
-			chunk_threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) doInflate_, (LPVOID)&thread_object, 0, &ThreadID);
+			chunk_threads[i] = CreateThread(NULL, 0, doInflate_, thread_object, 0, &ThreadID);
 		}
 #else
 		chunk_threads = mxMalloc(num_threads_to_use*sizeof(pthread_t));
@@ -194,6 +194,7 @@ error_t getChunkedData(Data* object)
 #endif
 	}
 	
+	mxFree(thread_object);
 	mt_freeQueue(mt_data_queue);
 	freeTree(root);
 	
@@ -210,6 +211,13 @@ void* doInflate_(void* t)
 	InflateThreadObj* thread_obj = (InflateThreadObj*)t;
 	Data* object = thread_obj->object;
 	MTQueue* mt_data_queue = thread_obj->mt_data_queue;
+#ifdef WIN32_LEAN_AND_MEAN
+	HANDLE* thread_sync = thread_obj->thread_sync;
+#else
+	pthread_cond_t* thread_sync = thread_object->thread_sync;
+	pthread_mutex_t* thread_mtx = thread_object->thread_mtx;
+#endif
+	bool_t* main_thread_ready = thread_obj->main_thread_ready;
 	
 	index_t these_num_chunked_elems = 0;
 	index_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
@@ -247,9 +255,9 @@ void* doInflate_(void* t)
 	{
 #ifdef WIN32_LEAN_AND_MEAN
 		//this condition isn't strictly necessary on Windows
-		while(main_thread_ready != TRUE)
+		while(*main_thread_ready != TRUE)
 		{
-			DWORD ret = WaitForSingleObject(thread_sync, INFINITE);
+			DWORD ret = WaitForSingleObject(*thread_sync, INFINITE);
 			if(ret != WAIT_OBJECT_0)
 			{
 				memset(error_id, 0, sizeof(error_id));
@@ -260,13 +268,13 @@ void* doInflate_(void* t)
 			}
 		}
 #else
-		pthread_mutex_lock(&thread_mtx);
+		pthread_mutex_lock(thread_mtx);
 		//make sure that the main thread didn't finish parsing the chunk tree before waiting
 		while(main_thread_ready != TRUE)
 		{
-			pthread_cond_wait(&thread_sync, &thread_mtx);
+			pthread_cond_wait(thread_sync, thread_mtx);
 		}
-		pthread_mutex_unlock(&thread_mtx);
+		pthread_mutex_unlock(thread_mtx);
 #endif
 	}
 	
@@ -391,7 +399,7 @@ void* doInflate_(void* t)
 			index_t db_pos = 0, num_used = 0;
 			for(index_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
 			{
-				placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], object->elem_size, object->byte_order);
+				placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], (size_t)object->elem_size, object->byte_order);
 				db_pos += these_chunked_dims[0];
 				index += these_chunked_dims[0];
 				
