@@ -7,8 +7,7 @@ typedef enum
 } kwarg;
 
 void readInput(int nrhs, char* prhs[]);
-void makeReturnStructure(int num_elems);
-void makeEvalArray(void);
+void makeReturnStructure(void);
 
 int main(int argc, char* argv[])
 {
@@ -24,7 +23,7 @@ int main(int argc, char* argv[])
 //		{
 			initialize();
 			readInput(argc - 1, argv + 1);
-			makeReturnStructure(parameters.num_vars);
+			makeReturnStructure();
 			for(int i = 0; i < parameters.num_vars; i++)
 			{
 				mxFree(parameters.full_variable_names[i]);
@@ -40,7 +39,7 @@ int main(int argc, char* argv[])
 }
 
 
-void makeReturnStructure(const int num_elems)
+void makeReturnStructure(void)
 {
 	
 	if(getDataObjects(parameters.filename, parameters.full_variable_names, parameters.num_vars) != 0)
@@ -53,13 +52,13 @@ void makeReturnStructure(const int num_elems)
 		readMXError("getmatvar:mallocErrMRSME","Memory allocation failed. Your system may be out of memory.\n\n");
 		exit(1);
 	}
-	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
+	for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(virtual_super_object->sub_objects);
 		varnames[i] = mxMalloc((obj->names.short_name_length + 1)*sizeof(char));
 		if(varnames[i] == NULL)
 		{
-			for(int j = 0; j < i - 1; j++)
+			for(uint32_t j = 0; j < i - 1; j++)
 			{
 				mxFree(varnames[i]);
 			}
@@ -71,7 +70,7 @@ void makeReturnStructure(const int num_elems)
 	}
 	restartQueue(virtual_super_object->sub_objects);
 	
-	for(int i = 0; i < virtual_super_object->num_sub_objs; i++)
+	for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		mxFree(varnames[i]);
 	}

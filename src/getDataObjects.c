@@ -5,7 +5,6 @@
 error_t getDataObjects(const char* filename, char** variable_names, const int num_names)
 {
 	
-	threads_are_started = FALSE;
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
 	
@@ -50,7 +49,6 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	{
 		file_size = (size_t)file_size_check;
 	}
-	default_bytes = alloc_gran < file_size? alloc_gran : file_size;
 	num_pages = file_size/alloc_gran + 1;
 	
 	//1MB

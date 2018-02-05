@@ -4,8 +4,15 @@
 Queue** data_page_buckets;
 //MTQueue** mt_data_page_buckets;
 int num_threads_to_use;
-//bool_t is_vlarge;
-bool_t is_multithreading;
+bool_t main_thread_ready;
+
+#ifdef WIN32_LEAN_AND_MEAN
+HANDLE thread_sync;
+#else
+	pthread_cond_t thread_sync;
+	pthread_mutex_t thread_mtx;
+#endif
+
 
 error_t getChunkedData(Data* object)
 {
@@ -15,55 +22,40 @@ error_t getChunkedData(Data* object)
 	MTQueue* mt_data_queue = mt_initQueue((void*)freeQueue);
 	error_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
-	CONDITION_VARIABLE thread_sync;
-	CRITICAL_SECTION thread_mtx;
 	HANDLE* chunk_threads = NULL;
 	DWORD ThreadID;
 #else
-	pthread_cond_t thread_sync;
-	pthread_mutex_t thread_mtx;
 	pthread_t* chunk_threads = NULL;
 #endif
 	
 	num_threads_to_use = -1;
-	bool_t main_thread_ready = FALSE;
+	main_thread_ready = FALSE;
 	
 	InflateThreadObj thread_object;
 	thread_object.mt_data_queue = mt_data_queue;
 	thread_object.object = object;
 	thread_object.err = 0;
-	thread_object.main_thread_ready = &main_thread_ready;
 	
-	if((is_multithreading = ((will_multithread == TRUE) & (object->num_elems > MIN_MT_ELEMS_THRESH))) == TRUE)
+	if(((will_multithread == TRUE) & (object->num_elems > MIN_MT_ELEMS_THRESH)) == TRUE)
 	{
 
 #ifdef WIN32_LEAN_AND_MEAN
-		InitializeCriticalSection(&thread_mtx);
-		InitializeConditionVariable(&thread_sync);
-		
-		thread_object.thread_sync = &thread_sync;
-		thread_object.thread_mtx = &thread_mtx;
-		
+		thread_sync = CreateEvent(NULL, TRUE, FALSE, "thread_sync");
 #else
 		pthread_mutex_init(&thread_mtx, NULL);
 		pthread_cond_init(&thread_sync, NULL);
 		
-		thread_object.thread_sync = &thread_sync;
-		thread_object.thread_mtx = &thread_mtx;
 #endif
 		
 		if(num_threads_user_def != -1)
 		{
 			num_threads_to_use = num_threads_user_def;
-			num_threads_to_use = MAX(num_threads_to_use, 1);
 		}
 		else
 		{
-			//num_threads_to_use = (int)(-5.69E4*pow(object->num_elems, -0.7056) + 7.502);
-			//num_threads_to_use = MIN(num_threads_to_use, num_avail_threads);
 			num_threads_to_use = num_avail_threads;
-			num_threads_to_use = MAX(num_threads_to_use, 1);
 		}
+		num_threads_to_use = MAX(num_threads_to_use, 1);
 
 #ifdef WIN32_LEAN_AND_MEAN
 		chunk_threads = mxMalloc(num_threads_to_use*sizeof(HANDLE));
@@ -120,7 +112,7 @@ error_t getChunkedData(Data* object)
 #endif
 	for(size_t i = 0; i < num_pages; i++)
 	{
-		if((data_page_buckets[i] = initQueue(free)) == NULL)
+		if((data_page_buckets[i] = initQueue(mxFree)) == NULL)
 		{
 			sprintf(error_id, "getmatvar:initQueueErr");
 			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue",(int)i);
@@ -137,13 +129,6 @@ error_t getChunkedData(Data* object)
 		return ret;
 	}
 	
-	/*
-	mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
-	for(int i = 0; i < num_pages; i++)
-	{
-		freeQueue(data_page_buckets[i]);
-	}
-	 */
 	for(size_t i = 0; i < num_pages; i++)
 	{
 		mt_enqueue(mt_data_queue, data_page_buckets[i]);
@@ -154,10 +139,13 @@ error_t getChunkedData(Data* object)
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
 #ifdef WIN32_LEAN_AND_MEAN
-		EnterCriticalSection(&thread_mtx);
 		main_thread_ready = TRUE;
-		WakeAllConditionVariable(&thread_sync);
-		LeaveCriticalSection(&thread_mtx);
+		if(SetEvent(thread_sync) == 0)
+		{
+			sprintf(error_id, "getmatvar:internalError");
+			sprintf(error_message, "Critical error: failed to set the thread_sync event.\n\n");
+			return 1;
+		}
 		WaitForMultipleObjects((DWORD)num_threads_to_use, chunk_threads, TRUE, INFINITE);
 		DWORD exit_code = 0;
 		for(int i = 0; i < num_threads_to_use; i++)
@@ -170,7 +158,7 @@ error_t getChunkedData(Data* object)
 			CloseHandle(chunk_threads[i]);
 		}
 		mxFree(chunk_threads);
-		DeleteCriticalSection(&thread_mtx);
+		CloseHandle(thread_sync);
 		
 #else
 		pthread_mutex_lock(&thread_mtx);
@@ -222,14 +210,6 @@ void* doInflate_(void* t)
 	InflateThreadObj* thread_obj = (InflateThreadObj*)t;
 	Data* object = thread_obj->object;
 	MTQueue* mt_data_queue = thread_obj->mt_data_queue;
-#ifdef WIN32_LEAN_AND_MEAN
-	CRITICAL_SECTION* thread_mtx = thread_obj->thread_mtx;
-	CONDITION_VARIABLE* thread_sync = thread_obj->thread_sync;
-#else
-	pthread_mutex_t* thread_mtx = thread_obj->thread_mtx;
-	pthread_cond_t* thread_sync = thread_obj->thread_sync;
-#endif
-	bool_t* main_thread_ready = thread_obj->main_thread_ready;
 	
 	index_t these_num_chunked_elems = 0;
 	index_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
@@ -241,8 +221,7 @@ void* doInflate_(void* t)
 //	memset(these_chunked_updates, 0, sizeof(these_chunked_updates));
 //	memset(chunk_pos, 0, sizeof(chunk_pos));
 	
-	const size_t max_est_decomp_size = (size_t)object->chunked_info.num_chunked_elems*object->elem_size; /* make sure this is non-null */
-	
+	const size_t max_est_decomp_size = (size_t)object->chunked_info.num_chunked_elems*object->elem_size;
 	byte* decompressed_data_buffer = mxMalloc(max_est_decomp_size);
 #ifdef NO_MEX
 	if(decompressed_data_buffer == NULL)
@@ -260,8 +239,6 @@ void* doInflate_(void* t)
 	}
 #endif
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
-	//uint64_t* index_map = mxMalloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
-	//uint64_t* db_index_sequence = mxMalloc(object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 	
 	Key* data_key;
 	TreeNode* data_node;
@@ -269,19 +246,27 @@ void* doInflate_(void* t)
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
 #ifdef WIN32_LEAN_AND_MEAN
-		EnterCriticalSection(thread_mtx);
-		while(*main_thread_ready != TRUE)
+		//this condition isn't strictly necessary on Windows
+		while(main_thread_ready != TRUE)
 		{
-			SleepConditionVariableCS (thread_sync, thread_mtx, INFINITE);
+			DWORD ret = WaitForSingleObject(thread_sync, INFINITE);
+			if(ret != WAIT_OBJECT_0)
+			{
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_message));
+				sprintf(error_id, "getmatvar:internalError");
+				sprintf(error_message, "The thread wait returned unexpectedly.\n\n");
+				return 1;
+			}
 		}
-		LeaveCriticalSection(thread_mtx);
 #else
-		pthread_mutex_lock(thread_mtx);
-		while(*main_thread_ready != TRUE)
+		pthread_mutex_lock(&thread_mtx);
+		//make sure that the main thread didn't finish parsing the chunk tree before waiting
+		while(main_thread_ready != TRUE)
 		{
-			pthread_cond_wait(thread_sync, thread_mtx);
+			pthread_cond_wait(&thread_sync, &thread_mtx);
 		}
-		pthread_mutex_unlock(thread_mtx);
+		pthread_mutex_unlock(&thread_mtx);
 #endif
 	}
 	
@@ -301,26 +286,19 @@ void* doInflate_(void* t)
 		{
 			DataPair* dp = (DataPair*)dequeue(data_page_bucket);
 
-//		if(dp == NULL)
-//		{
-//			//in case it gets dequeued after the loop check but before the lock
-//			break;
-//		}
 			
 			data_key = dp->data_key;
 			data_node = dp->data_node;
 			
 			const index_t chunk_start_index = findArrayPosition(data_key->chunk_start, object->dims, object->num_dims);
-			//const byte* data_pointer = st_navigateTo(node->children[i]->address, node->keys[i].size);
 			const byte* data_pointer = mt_navigateTo(data_node->address, 0);
 			thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->chunk_size, decompressed_data_buffer, max_est_decomp_size, NULL);
-			//st_releasePages(node->children[i]->address, node->keys[i].size);
 			mt_releasePages(data_node->address, 0);
 			switch(thread_obj->err)
 			{
 				case LIBDEFLATE_BAD_DATA:
 					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_id));
+					memset(error_message, 0, sizeof(error_message));
 					sprintf(error_id, "getmatvar:libdeflateBadData");
 					sprintf(error_message, "Failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
 					libdeflate_free_decompressor(ldd);
@@ -333,7 +311,7 @@ void* doInflate_(void* t)
 #endif
 				case LIBDEFLATE_SHORT_OUTPUT:
 					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_id));
+					memset(error_message, 0, sizeof(error_message));
 					sprintf(error_id, "getmatvar:libdeflateShortOutput");
 					sprintf(error_message, "Failed to decompress because a NULL "
 							"'actual_out_nbytes_ret' was provided, but the data would have"
@@ -348,7 +326,7 @@ void* doInflate_(void* t)
 #endif
 				case LIBDEFLATE_INSUFFICIENT_SPACE:
 					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_id));
+					memset(error_message, 0, sizeof(error_message));
 					sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
 					sprintf(error_message, "Decompression failed because the output buffer was not large enough");
 					libdeflate_free_decompressor(ldd);
@@ -384,7 +362,6 @@ void* doInflate_(void* t)
 			for(int j = 0; j < object->num_dims; j++)
 			{
 				//if the chunk collides with the edge, make sure the dimensions of the chunk respect that
-				//these_chunked_dims[j] = object->chunked_info.chunked_dims[j] - MAX((uint64_t)(data_key->chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]), 0);
 				these_chunked_dims[j] = object->chunked_info.chunked_dims[j]
 								    - (data_key->chunk_start[j] + object->chunked_info.chunked_dims[j] > object->dims[j]? data_key->chunk_start[j] + object->chunked_info.chunked_dims[j]
 																										- object->dims[j] : 0
@@ -409,17 +386,11 @@ void* doInflate_(void* t)
 			}
 			
 			//copy over data
-			//memset(index_map, 0xFF, object->chunked_info.num_chunked_elems*sizeof(uint64_t));
 			memset(chunk_pos, 0, sizeof(chunk_pos));
 			uint8_t curr_max_dim = 2;
 			index_t db_pos = 0, num_used = 0;
 			for(index_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
 			{
-//			for(; index < object->num_elems && db_pos < anchor + these_chunked_dims[0]; db_pos++, index++, num_used++)
-//			{
-//				index_map[db_pos] = index;
-//				db_index_sequence[num_used] = db_pos;
-//			}
 				placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], object->elem_size, object->byte_order);
 				db_pos += these_chunked_dims[0];
 				index += these_chunked_dims[0];
@@ -439,15 +410,11 @@ void* doInflate_(void* t)
 				index += these_index_updates[use_update];
 				db_pos += these_chunked_updates[use_update];
 			}
-			
-			//placeDataWithIndexMap(object, decompressed_data_buffer, num_used, object->elem_size, object->byte_order, index_map, db_index_sequence);
 		}
 	}
 	
 	libdeflate_free_decompressor(ldd);
 	mxFree(decompressed_data_buffer);
-	//mxFree(index_map);
-	//mxFree(db_index_sequence);
 #ifdef WIN32_LEAN_AND_MEAN
 	return 0;
 #else
@@ -538,7 +505,7 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 #endif
 	
 	size_t key_size;
-	//uint64_t bytes_needed;
+	//size_t bytes_needed;
 	
 	if(node->node_type != CHUNK)
 	{
@@ -574,7 +541,18 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 #endif
 	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-	node->keys[0]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(uint64_t));
+	node->keys[0]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
+#ifdef NO_MEX
+	if(node->keys[0]->chunk_start == NULL)
+	{
+		mxFree(node->keys[0]);
+		mxFree(node->keys);
+		mxFree(node->children);
+		sprintf(error_id, "getmatvar:mallocErrK0FNCS");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
+#endif
 	for(int j = 0; j < num_chunked_dims; j++)
 	{
 		node->keys[0]->chunk_start[num_chunked_dims - 1 - j] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
@@ -611,7 +589,7 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 			return 1;
 		}
 		
-		size_t page_index = node->children[i]->address/alloc_gran;
+		size_t page_index = (size_t)node->children[i]->address/alloc_gran;
 		if(node->children[i]->node_type == RAWDATA)
 		{
 			page_objects[page_index].total_num_mappings++;
@@ -666,7 +644,7 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 #endif
 		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-		node->keys[i + 1]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(uint64_t));
+		node->keys[i + 1]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 		if(node->keys[i + 1]->chunk_start == NULL)
 		{
@@ -784,223 +762,3 @@ void memdump(const char* type)
 	
 }
 #endif
-
-
-/*
-#ifdef WIN32_LEAN_AND_MEAN
-DWORD mt_fillNode(void* fno)
-#else
-void* mt_fillNode(void* fno)
-#endif
-{
-	TreeNode* node = ((FillNodeObj*)fno)->node;
-	uint8_t num_chunked_dims = ((FillNodeObj*)fno)->num_chunked_dims;
-	
-	bool_t is_root = FALSE;
-#ifdef WIN32_LEAN_AND_MEAN
-	HANDLE* tree_threads = NULL;
-	DWORD ThreadID;
-#else
-	pthread_t* tree_threads = NULL;
-	void* status;
-#endif
-	if(node->node_type == NODETYPE_ROOT)
-	{
-		is_root = TRUE;
-	}
-	
-	if(node->address == UNDEF_ADDR)
-	{
-		//this is an ending sentinel for the sibling linked list
-		node->entries_used = 0;
-		node->keys = NULL;
-		node->children = NULL;
-		//node->node_level = -2;
-#ifdef WIN32_LEAN_AND_MEAN
-		return 0;
-#else
-		return NULL;
-#endif
-	}
-	
-	//1-4: Size of chunk in bytes
-	//4-8 Filter mask
-	//(Dimensionality+1)*8 bytes
-	uint64_t key_size = (uint64_t)4 + 4 + (num_chunked_dims + 1)*8;
-	uint64_t bytes_needed = key_size + s_block.size_of_offsets;
-	
-	//maps the header + the first key/address pair
-	byte* tree_pointer = mt_navigateTo(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
-	
-	if(memcmp((char*)tree_pointer, "TREE", 4*sizeof(char)) != 0)
-	{
-		node->entries_used = 0;
-		node->keys = NULL;
-		node->children = NULL;
-		//node->node_level = -1;
-		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
-		{
-			//(from group node)
-			node->node_type = SYMBOL;
-		}
-		else
-		{
-			node->node_type = RAWDATA;
-		}
-		mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
-#ifdef WIN32_LEAN_AND_MEAN
-		return 0;
-#else
-		return NULL;
-#endif
-	}
-	
-	node->node_type = (NodeType)getBytesAsNumber(tree_pointer + 4, 1, META_DATA_BYTE_ORDER);
-	//node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
-	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
-	
-	if(is_root == TRUE)
-	{
-#ifdef WIN32_LEAN_AND_MEAN
-		tree_threads = mxMalloc(MIN(node->entries_used, num_threads_to_use)*sizeof(HANDLE));
-#else
-		tree_threads = mxMalloc(MIN(node->entries_used, num_threads_to_use)*sizeof(pthread_t));
-#endif
-	}
-	
-	node->keys = mxMalloc((node->entries_used + 1)*sizeof(Key*));
-	node->children = mxMalloc(node->entries_used*sizeof(TreeNode*));
-	
-	if(node->node_type != CHUNK)
-	{
-		 = TRUE;
-		sprintf(error_id, "getmatvar:wrongNodeType");
-		sprintf(error_message, "A group node was found in the chunked data tree.\n\n");
-		mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
-#ifdef WIN32_LEAN_AND_MEAN
-		return 1;
-#else
-		((FillNodeObj*)fno)->err = 1;
-		return &((FillNodeObj*)fno)->err;
-#endif
-	}
-	
-	mt_releasePages(node->address, 8 + 2*s_block.size_of_offsets + bytes_needed);
-	uint64_t key_address = node->address + 8 + 2*s_block.size_of_offsets;
-	//uint64_t total_bytes_needed = (node->entries_used + 1)*key_size + node->entries_used*s_block.size_of_offsets;
-	//this should reuse the previous mapping
-	byte* key_pointer = mt_navigateTo(key_address, bytes_needed);
-	node->keys[0] = mxMalloc(sizeof(Key));
-	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-	node->keys[0]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(uint64_t));
-	for(int j = 0; j < num_chunked_dims; j++)
-	{
-		//skip 8 byte bitfield and get the dims
-		node->keys[0]->chunk_start[num_chunked_dims - 1 - j] = (uint64_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-	}
-	node->keys[0]->chunk_start[num_chunked_dims] = 0;
-	
-	int num_threads_used = 0;
-	FillNodeObj** fn_sub_objs = mxMalloc(node->entries_used*sizeof(FillNodeObj*));
-	for(int i = 0; i < node->entries_used; i++)
-	{
-		node->children[i] = mxMalloc(sizeof(TreeNode));
-		node->children[i]->address = getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		node->children[i]->node_type = NODETYPE_UNDEFINED;
-		
-		mt_releasePages(key_address, bytes_needed);
-		
-		fn_sub_objs[i] = mxMalloc(sizeof(FillNodeObj));
-		fn_sub_objs[i]->node = node->children[i];
-		fn_sub_objs[i]->num_chunked_dims = num_chunked_dims;
-		
-		if(is_root == TRUE && num_threads_used < num_threads_to_use)
-		{
-#ifdef WIN32_LEAN_AND_MEAN
-			tree_threads[num_threads_used] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) mt_fillNode, (LPVOID)fn_sub_objs[i], 0, &ThreadID);
-#else
-			pthread_create(&tree_threads[num_threads_used], NULL, mt_fillNode, (void*)fn_sub_objs[i]);
-#endif
-			num_threads_used++;
-		}
-		else
-		{
-#ifdef WIN32_LEAN_AND_MEAN
-			if(mt_fillNode(fn_sub_objs[i]) != 0)
-			{
-				return 1;
-			}
-#else
-			mt_fillNode(fn_sub_objs[i]);
-#endif
-		}
-		
-		size_t page_index = node->children[i]->address/alloc_gran;
-		if(node->children[i]->node_type == RAWDATA)
-		{
-			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->chunk_size);
-			DataPair* dp = mxMalloc(sizeof(DataPair));
-			dp->data_key = node->keys[i];
-			dp->data_node = node->children[i];
-			mt_enqueue(mt_data_page_buckets[page_index], dp);
-		}
-		
-		key_address += bytes_needed;
-		key_pointer = mt_navigateTo(key_address, bytes_needed);
-		
-		node->keys[i + 1] = mxMalloc(sizeof(Key));
-		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-		node->keys[i + 1]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(uint64_t));
-		for(int j = 0; j < num_chunked_dims; j++)
-		{
-			node->keys[i + 1]->chunk_start[num_chunked_dims - j - 1] = (uint64_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-		}
-		node->keys[i + 1]->chunk_start[num_chunked_dims] = 0;
-	}
-
-#ifdef WIN32_LEAN_AND_MEAN
-	DWORD ret = 0;
-	if(is_root == TRUE)
-	{
-		WaitForMultipleObjects((DWORD) num_threads_used, tree_threads, TRUE, INFINITE);
-		DWORD exit_code = 0;
-		for(int i = 0; i < num_threads_used; i++)
-		{
-			GetExitCodeThread(tree_threads[i], &exit_code);
-			if(exit_code != 0)
-			{
-				ret = 1;
-			}
-			CloseHandle(tree_threads[i]);
-		}
-		mxFree(tree_threads);
-	}
-#else
-	if(is_root== TRUE)
-	{
-		for(int i = 0; i < num_threads_used; i++)
-		{
-			pthread_join(tree_threads[i], &status);
-		}
-		mxFree(tree_threads);
-	}
-#endif
-	
-	for(int i = 0; i < node->entries_used; i++)
-	{
-		mxFree(fn_sub_objs[i]);
-	}
-	mxFree(fn_sub_objs);
-	
-	mt_releasePages(key_address, bytes_needed);
-#ifdef WIN32_LEAN_AND_MEAN
-	return ret;
-#else
-	return NULL;
-#endif
-
-}
-*/

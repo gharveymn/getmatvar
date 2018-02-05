@@ -15,9 +15,9 @@ void reverseBytes(byte* data_pointer, size_t num_elems)
 }
 
 
-uint64_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endianness)
+size_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endianness)
 {
-	uint64_t ret = 0;
+	size_t ret = 0;
 	memcpy(&ret, data_pointer, num_bytes);
 	if(__byte_order__ != endianness)
 	{

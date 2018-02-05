@@ -485,7 +485,7 @@ error_t collectMetaData(Data* object, address_t header_address, uint16_t num_msg
 		{
 			mxFree(object->dims);
 		}
-		object->dims = mxMalloc(2*sizeof(uint64_t));
+		object->dims = mxMalloc(2*sizeof(index_t));
 #ifdef NO_MEX
 		if(object->dims == NULL)
 		{
@@ -509,7 +509,7 @@ error_t collectMetaData(Data* object, address_t header_address, uint16_t num_msg
 		{
 			mxFree(object->super_object->dims);
 		}
-		object->super_object->dims = mxMalloc((object->num_dims + 1)*sizeof(uint64_t));
+		object->super_object->dims = mxMalloc((object->num_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 		if(object->super_object->dims == NULL)
 		{
@@ -518,7 +518,7 @@ error_t collectMetaData(Data* object, address_t header_address, uint16_t num_msg
 			return 1;
 		}
 #endif
-		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(uint64_t));
+		memcpy(object->super_object->dims, object->dims, object->num_dims *sizeof(index_t));
 		object->super_object->dims[object->num_dims] = 0;
 	}
 	
@@ -543,7 +543,7 @@ uint16_t interpretMessages(Data* object, address_t msgs_start_address, uint32_t 
 	mapObject* msgs_start_map_obj = st_navigateTo(msgs_start_address, msgs_length);
 	byte* msgs_start_pointer = msgs_start_map_obj->address_ptr;
 	
-	address_t cont_header_address = UNDEF_ADDR;
+	address_t cont_header_address;
 	uint32_t cont_header_length = 0;
 	
 	uint16_t msg_type = 0;

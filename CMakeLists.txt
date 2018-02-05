@@ -17,19 +17,17 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -DNO_MEX")
 	ENDIF(MSVC OR (DEFINED USE_MSVC))
 
-	SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
-
 	# 32-bit or 64-bit mex
 	IF(WIN32)
 		IF((CMAKE_SIZEOF_VOID_P EQUAL 4) OR ("${BUILD_ENV}" STREQUAL "32BIT"))
 			MESSAGE(STATUS "Compiling on 32 bit Windows")
-			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
-			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
+			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x86)
+			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x86/libdeflate.lib)
 
 		ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 8)
 			MESSAGE(STATUS "Compiling on 64 bit Windows")
-			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
-			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
+			SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x64)
+			SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x64/libdeflate.lib)
 		ENDIF()
 	ELSE(WIN32)
 		IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -39,10 +37,10 @@ IF("${CMAKE_BUILD_TYPE}" STREQUAL "NO_MEX")
 		ENDIF()
 	ENDIF(WIN32)
 
-	INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR} ${PTHREADS_INCLUDE_DIR})
+	INCLUDE_DIRECTORIES(${LIB_DEFLATE_INCLUDE_DIR})
 
 	SET(SOURCE_FILES
-			src/extlib/libdeflate/x64/win/libdeflate.h
+			src/extlib/libdeflate/libdeflate.h
 			src/extlib/mman-win32/mman.c
 			src/extlib/mman-win32/mman.h
 			src/placeChunkedData.c

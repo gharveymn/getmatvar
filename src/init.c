@@ -15,7 +15,6 @@ void initialize(void)
 	num_threads_user_def = -1;
 	will_multithread = TRUE;
 	will_suppress_warnings = FALSE;
-	max_depth = 0;
 	virtual_super_object = NULL;
 	parameters.full_variable_names = NULL;
 	parameters.filename = NULL;
@@ -120,9 +119,9 @@ error_t initializePageObjects(void)
 			page_objects[i].pg_start_a = alloc_gran*i;
 			page_objects[i].pg_end_a = MIN(alloc_gran*(i + 1), file_size);
 			page_objects[i].map_size = 0;
+			page_objects[i].max_map_size = 0;
 			page_objects[i].pg_start_p = NULL;
 			page_objects[i].num_using = 0;
-			page_objects[i].max_map_size = 0;
 			page_objects[i].total_num_mappings = 0;
 		}
 	}

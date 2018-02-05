@@ -3,7 +3,7 @@
 
 void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
 	mxArray* mxNumericPtr = mxCreateNumericArray(0, NULL, object->matlab_internal_type, object->complexity_flag);
 	if(object->complexity_flag == mxCOMPLEX)
 	{
@@ -33,7 +33,7 @@ void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, 
 
 void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
 	mxArray* mxLogicPtr = mxCreateLogicalArray(0, NULL);
 	mxSetData(mxLogicPtr, (void*)object->data_arrays.data);
 	mxSetDimensions(mxLogicPtr, obj_dims, object->num_dims);
@@ -54,7 +54,7 @@ void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mw
 
 void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
 	mxArray* mxCharPtr = mxCreateCharArray(0, NULL);
 	mxSetData(mxCharPtr, (void*)object->data_arrays.data);
 	mxSetDimensions(mxCharPtr, obj_dims, object->num_dims);
@@ -153,7 +153,7 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 
 void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
 	int num_fields = object->num_sub_objs;
 	mxArray* mxCellPtr = mxCreateCellArray(object->num_dims, obj_dims);
 	
@@ -172,7 +172,7 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 
 void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
 	int num_fields = object->num_sub_objs;
 	char** field_names = getFieldNames(object);
 	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, (const char**)field_names);

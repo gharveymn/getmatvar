@@ -41,14 +41,6 @@ typedef struct
 {
 	Data* object;
 	MTQueue* mt_data_queue;
-#ifdef WIN32_LEAN_AND_MEAN
-	CONDITION_VARIABLE* thread_sync;
-	CRITICAL_SECTION* thread_mtx;
-#else
-	pthread_cond_t* thread_sync;
-	pthread_mutex_t* thread_mtx;
-#endif
-	bool_t* main_thread_ready;
 	error_t err;
 } InflateThreadObj;
 
@@ -58,15 +50,7 @@ typedef struct
 	TreeNode* data_node;
 } DataPair;
 
-typedef struct
-{
-	TreeNode* node;
-	uint8_t num_chunked_dims;
-	error_t err;
-} FillNodeObj;
-
 error_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
-error_t decompressChunk(Data* object);
 #ifdef WIN32_LEAN_AND_MEAN
 DWORD doInflate_(void* t);
 DWORD mt_fillNode(void* fno);
@@ -79,11 +63,5 @@ error_t getChunkedData(Data* obj);
 index_t findArrayPosition(const index_t* chunk_start, const index_t* array_dims, uint8_t num_chunked_dims);
 void memdump(const char type[]);
 void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, const index_t* dims, uint8_t num_dims);
-void* garbageCollection_(void* nothing);
-void startThreads_(void* thread_startup_obj);
-
-//pthread_t gc;
-//pthread_attr_t attr;
-bool_t is_working;
 
 #endif //PLACE_CHUNKED_DATA_H

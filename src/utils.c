@@ -1,5 +1,4 @@
 #include "headers/utils.h"
-#include "headers/getDataObjects.h"
 
 
 /*for use on a single level*/
@@ -227,7 +226,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
-		new_object->chunked_info.chunked_dims = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		new_object->chunked_info.chunked_dims = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->chunked_info.chunked_dims  == NULL)
 		{
@@ -238,7 +237,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(index_t));
 	}
 	else
 	{
@@ -247,7 +246,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
-		new_object->chunked_info.chunk_update = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		new_object->chunked_info.chunk_update = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->chunked_info.chunk_update  == NULL)
 		{
@@ -258,7 +257,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(uint64_t));
+		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(index_t));
 	}
 	else
 	{
@@ -267,7 +266,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->dims != NULL)
 	{
-		new_object->dims = mxMalloc(new_object->num_dims*sizeof(uint64_t));
+		new_object->dims = mxMalloc(new_object->num_dims*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->dims  == NULL)
 		{
@@ -278,7 +277,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(uint64_t));
+		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(index_t));
 	}
 	else
 	{

@@ -221,31 +221,38 @@ error_t mt_restartQueue(MTQueue* queue)
 
 void* mt_dequeue(MTQueue* queue)
 {
-#ifdef WIN32_LEAN_AND_MEAN
-	EnterCriticalSection(&queue->lock);
-#else
-	pthread_mutex_lock(&queue->lock);
-#endif
-	if(queue->front != NULL && queue->length > 0)
+	if(queue != NULL)
 	{
-		void* to_return = queue->front->data;
-		QueueNode* new_front = queue->front->next;
-		queue->front = new_front;
-		queue->length--;
 #ifdef WIN32_LEAN_AND_MEAN
-		LeaveCriticalSection(&queue->lock);
+		EnterCriticalSection(&queue->lock);
 #else
-		pthread_mutex_unlock(&queue->lock);
+		pthread_mutex_lock(&queue->lock);
 #endif
-		return to_return;
+		if(queue->front != NULL && queue->length > 0)
+		{
+			void* to_return = queue->front->data;
+			QueueNode* new_front = queue->front->next;
+			queue->front = new_front;
+			queue->length--;
+#ifdef WIN32_LEAN_AND_MEAN
+			LeaveCriticalSection(&queue->lock);
+#else
+			pthread_mutex_unlock(&queue->lock);
+#endif
+			return to_return;
+		}
+		else
+		{
+#ifdef WIN32_LEAN_AND_MEAN
+			LeaveCriticalSection(&queue->lock);
+#else
+			pthread_mutex_unlock(&queue->lock);
+#endif
+			return NULL;
+		}
 	}
 	else
 	{
-#ifdef WIN32_LEAN_AND_MEAN
-		LeaveCriticalSection(&queue->lock);
-#else
-		pthread_mutex_unlock(&queue->lock);
-#endif
 		return NULL;
 	}
 }

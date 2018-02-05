@@ -19,7 +19,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	else
 	{
 		readInput(nrhs, prhs);
-		makeReturnStructure(plhs, nlhs);
+		makeReturnStructure(plhs);
 		for(int i = 0; i < parameters.num_vars; i++)
 		{
 			mxFree(parameters.full_variable_names[i]);
@@ -33,7 +33,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 }
 
 
-void makeReturnStructure(mxArray** super_structure, int nlhs)
+void makeReturnStructure(mxArray** super_structure)
 {
 	mwSize ret_struct_dims[1] = {1};
 	
@@ -257,7 +257,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 				if(*input == 0)
 				{
 					mxFree(input);
-					input = NULL;
 					readMXError("getmatvar:invalidArgument", "Variable names and keyword identifiers must have non-zero length.\n\n");
 				}
 				else if(*input == '-')
@@ -283,7 +282,6 @@ void readInput(int nrhs, const mxArray* prhs[])
 					}
 					
 					mxFree(input);
-					input = NULL;
 				}
 				else
 				{

@@ -11,7 +11,7 @@ typedef enum
 
 //getmatvar.c
 void readInput(int nrhs, const mxArray* prhs[]);
-void makeReturnStructure(mxArray** super_structure, int nlhs);
+void makeReturnStructure(mxArray** super_structure);
 mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* objects, mxClassID super_structure_type);
 void makeEvalArray(mxArray** super_structure);
 

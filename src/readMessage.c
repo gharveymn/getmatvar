@@ -1,5 +1,4 @@
 #include "headers/readMessage.h"
-#include "headers/getDataObjects.h"
 
 
 void readDataSpaceMessage(Data* object, byte* msg_pointer, address_t msg_address, uint16_t msg_size, error_t* err_flag)
@@ -22,7 +21,7 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, address_t msg_address
 		*err_flag = 1;
 		return;
 	}
-	object->dims = mxMalloc((object->num_dims + 1)*sizeof(uint64_t));
+	object->dims = mxMalloc((object->num_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 	if(object->dims == NULL)
 	{
@@ -128,7 +127,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_addres
 			break;
 		case 2:
 			object->chunked_info.num_chunked_dims = (uint8_t)(*(msg_pointer + 2) - 1); //??
-			object->chunked_info.chunked_dims = mxMalloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
+			object->chunked_info.chunked_dims = mxMalloc((object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 			if(object->chunked_info.chunked_dims == NULL)
 			{
@@ -139,7 +138,7 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_addres
 				return;
 			}
 #endif
-			object->chunked_info.chunk_update = mxMalloc((object->chunked_info.num_chunked_dims + 1)*sizeof(uint64_t));
+			object->chunked_info.chunk_update = mxMalloc((object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 			if(object->chunked_info.chunk_update == NULL)
 			{
@@ -313,7 +312,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, address_t msg_address
 		{
 			mxFree(object->dims);
 		}
-		object->dims = mxMalloc(2*sizeof(uint64_t));
+		object->dims = mxMalloc(2*sizeof(index_t));
 #ifdef NO_MEX
 		if(unlikely(object->dims == NULL))
 		{
@@ -324,7 +323,7 @@ void readAttributeMessage(Data* object, byte* msg_pointer, address_t msg_address
 			return;
 		}
 #endif
-		memcpy(object->dims, (uint64_t*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), sizeof(uint64_t));
+		memcpy(object->dims, (index_t*)(msg_pointer + 8 + roundUp8(name_size) + roundUp8(datatype_size) + roundUp8(dataspace_size)), sizeof(index_t));
 		object->dims[1] = 0;
 	}
 	else if(strcmp(name, "MATLAB_empty") == 0)

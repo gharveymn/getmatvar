@@ -68,11 +68,11 @@ CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mexemulate
 
-mexemulate: $(OBJ) src/extlib/libdeflate/x64/unix/libdeflate.a
+mexemulate: $(OBJ) src/extlib/libdeflate/unix/libdeflate.a
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
 src/extlib/libdeflate/x64/unix/libdeflate.a:
-	cd $(OBJ_DIR)/extlib/libdeflate/x64/unix && $(MAKE)
+	cd $(OBJ_DIR)/extlib/libdeflate/unix && $(MAKE)
 
 rebuild: clean mexemulate
 

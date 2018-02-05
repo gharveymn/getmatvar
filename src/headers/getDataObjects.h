@@ -21,23 +21,21 @@ typedef enum
 
 #if UINTPTR_MAX == 0xffffffffffffffff
 #define GMV_64_BIT
-#define UNDEF_ADDR 0xffffffffffffffff
 typedef int64_t address_t;
 typedef int64_t index_t;
+#define UNDEF_ADDR (address_t)0xffffffffffffffff
 #elif UINTPTR_MAX == 0xffffffff
 #define GMV_32_BIT
-#define uint64_t uint32_t
-#define int64_t int32_t
-#define UNDEF_ADDR 0xffffffff
 typedef uint32_t address_t;
 typedef uint32_t index_t;
+#define UNDEF_ADDR (address_t)0xffffffff
 #else
 #error Your architecture is weird
 #endif
 
 #else
 
-#include <mex.h>
+# include <mex.h>
 
 # define uint8_t uint8_T
 # define int8_t int8_T
@@ -54,22 +52,22 @@ typedef uint32_t index_t;
 #   undef _FILE_OFFSET_BITS
 #  endif
 #  define _FILE_OFFSET_BITS 64
-typedef int64_T index_t;
+   typedef int64_T index_t;
 # else
 #  define GMV_32_BIT
 #  ifdef _FILE_OFFSET_BITS
 #   undef _FILE_OFFSET_BITS
 #  endif
 #  define _FILE_OFFSET_BITS 32
-typedef uint32_T index_t;
+   typedef uint32_T index_t;
 # endif
 
 #ifdef INT_TYPE_64_IS_SUPPORTED
 typedef int64_T address_t;
-#define UNDEF_ADDR 0xffffffffffffffff
+#define UNDEF_ADDR (address_t)0xffffffffffffffff
 #else
 typedef uint32_T address_t;
-#define UNDEF_ADDR 0xffffffff
+#define UNDEF_ADDR (address_t)0xffffffff
 #endif
 
 #define malloc mxMalloc
@@ -96,16 +94,6 @@ typedef uint32_T address_t;
 #if (defined(_WIN32) || defined(WIN32) || defined(_WIN64)) && !defined __CYGWIN__
 	//#pragma message ("getmatvar is compiling on WINDOWS")
 	#define WIN32_LEAN_AND_MEAN
-	#ifdef WINVER
-	#undef WINVER
-	#endif
-	#define WINVER 0x0A00
-	
-	#ifdef _WIN32_WINNT
-	#undef _WIN32_WINNT
-	#endif
-	#define _WIN32_WINNT 0x0A00
-	
 	#include <io.h>
 	#include "../extlib/mman-win32/mman.h"
 	#include <windows.h>
@@ -222,14 +210,6 @@ typedef struct
 	address_t root_tree_address;
 	address_t root_heap_address;
 } Superblock;
-
-typedef struct
-{
-	byte* map_start;
-	uint64_t bytes_mapped;
-	address_t offset;
-	int used;
-} MemMap;
 
 typedef enum
 {
@@ -447,16 +427,13 @@ ParamStruct parameters;
 Queue* top_level_objects;
 Queue* varname_queue;
 Queue* object_queue;
-Queue* eval_objects;
 Queue* map_objects;
 
 int fd;
 Superblock s_block;
-uint64_t default_bytes;
 
 uint8_t max_num_map_objs;
 
-Queue* inflate_thread_obj_queue;
 int num_avail_threads;          //number of processors - 1
 int num_threads_user_def;          //user specifies number of threads
 bool_t will_multithread;
@@ -465,7 +442,6 @@ bool_t will_suppress_warnings;
 bool_t is_super_mapped;
 byte* super_pointer;
 
-bool_t threads_are_started; //only start the thread pool once
 #ifdef WIN32_LEAN_AND_MEAN
 CRITICAL_SECTION thread_acquisition_lock;
 #else
@@ -475,7 +451,6 @@ pageObject* page_objects;
 
 Data* virtual_super_object;
 
-int max_depth;
 #ifdef NO_MEX
 size_t curr_mmap_usage;
 size_t max_mmap_usage;

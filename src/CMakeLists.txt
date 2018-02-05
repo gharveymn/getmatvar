@@ -10,7 +10,7 @@ SET(SOURCE_FILES
 		${MATLAB_INCLUDE_DIR}/mex.h
 		extlib/mman-win32/mman.c
 		extlib/mman-win32/mman.h
-		extlib/libdeflate/x64/win/libdeflate.h
+		extlib/libdeflate/libdeflate.h
 		navigate.c
 		getSystemInfo.c
 		getDataObjects.c
@@ -50,26 +50,26 @@ SET(PTHREADS_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/pthreads-win32/include)
 IF(WIN32)
 	IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		MESSAGE(STATUS "Compiling on 64 bit Windows")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/win/libdeflate.lib)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x64)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x64/libdeflate.lib)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw64 PREFIX "")
 
 	ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		MESSAGE(STATUS "Compiling on 32 bit Windows")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/win/libdeflate.lib)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x86)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/win/x86/libdeflate.lib)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexw32 PREFIX "")
 	ENDIF()
 ELSE(WIN32)
 	IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		MESSAGE(STATUS "Compiling on 64 bit Linux")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/unix)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x64/unix/libdeflate.a)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/unix)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/unix/libdeflate.a)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexa64 PREFIX "")
 	ELSEIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		MESSAGE(STATUS "Compiling on 32 bit Linux")
-		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/unix)
-		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/x86/unix/libdeflate.a)
+		SET(LIB_DEFLATE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/unix)
+		SET(LIB_DEFLATE_LIBRARY ${CMAKE_SOURCE_DIR}/src/extlib/libdeflate/unix/libdeflate.a)
 		SET_TARGET_PROPERTIES(${MEX_FILE_NAME} PROPERTIES SUFFIX .mexglx PREFIX "")
 	ENDIF()
 ENDIF(WIN32)
