@@ -7,7 +7,8 @@
     "xmemory0": "c",
     "signal.h": "c",
     "pthread.h": "c",
-    "utils.h": "c"
+    "utils.h": "c",
+    "placedata.h": "c"
   },
   "terminal.integrated.shell.windows": "C:\\WINDOWS\\System32\\bash.exe"
 }

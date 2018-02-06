@@ -146,9 +146,6 @@ byte* mt_navigateTo(address_t address, size_t bytes_needed)
 		if(map_bytes_needed <= page_objects[start_page].map_size)
 		{
 		
-#ifdef DO_MEMDUMP
-			memdump("R");
-#endif
 
 			EnterCriticalSection(&page_objects[start_page].lock);
 			//confirm
@@ -200,10 +197,6 @@ byte* mt_navigateTo(address_t address, size_t bytes_needed)
 	page_objects[start_page].is_mapped = TRUE;
 	page_objects[start_page].map_size = map_bytes_needed;
 
-#ifdef DO_MEMDUMP
-	memdump("M");
-#endif
-
 
 #ifdef NO_MEX
 	EnterCriticalSection(&mmap_usage_update_lock);
@@ -238,10 +231,6 @@ byte* mt_navigateTo(address_t address, size_t bytes_needed)
 		//check if we have continuous mapping available (if yes then return pointer)
 		if(map_bytes_needed <= page_objects[start_page].map_size)
 		{
-
-#ifdef DO_MEMDUMP
-			memdump("R");
-#endif
 			
 			pthread_mutex_lock(&page_objects[start_page].lock);
 			//confirm
@@ -294,10 +283,6 @@ byte* mt_navigateTo(address_t address, size_t bytes_needed)
 	
 	page_objects[start_page].is_mapped = TRUE;
 	page_objects[start_page].map_size = map_bytes_needed;
-	
-#ifdef DO_MEMDUMP
-	memdump("M");
-#endif
 
 #ifdef NO_MEX
 	pthread_mutex_lock(&mmap_usage_update_lock);

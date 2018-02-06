@@ -42,8 +42,9 @@ HARD_LINKS        := 1
 # Compiling for Windows with MinGW?
 ifneq ($(findstring -mingw,$(shell $(CC) -dumpmachine 2>/dev/null)),)
     STATIC_LIB_SUFFIX := .lib
+    STATIC_LIB_CFLAGS := -fPIC
     SHARED_LIB_SUFFIX := .dll
-    SHARED_LIB_CFLAGS :=
+    SHARED_LIB_CFLAGS := -fPIC
     PROG_SUFFIX       := .exe
     PROG_CFLAGS       := -static -municode
     HARD_LINKS        :=

@@ -5,7 +5,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-//#define DO_MEMDUMP
 //#define NO_MEX		pass this through gcc -DNO_MEX=TRUE
 
 #ifdef NO_MEX
@@ -92,7 +91,6 @@ typedef uint32_T address_t;
 	#include <io.h>
 	#include "../extlib/mman-win32/mman.h"
 	#include <windows.h>
-	#include <synchapi.h>
 	
 	
 	#ifdef GMV_64_BIT
@@ -454,12 +452,6 @@ CRITICAL_SECTION mmap_usage_update_lock;
 #else
 pthread_mutex_t mmap_usage_update_lock;
 #endif
-#endif
-
-#ifdef DO_MEMDUMP
-FILE* dump;
-pthread_cond_t dump_ready;
-pthread_mutex_t dump_lock;
 #endif
 
 #ifndef NO_MEX

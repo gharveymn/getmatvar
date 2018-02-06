@@ -4,8 +4,8 @@ cd src
 
 try
 	
-	mexflags = {'-O', '-silent', '-outdir', output_path};
-	%mexflags = {'-g', '-v', '-outdir', output_path};
+	%mexflags = {'-O', '-silent', 'CFLAGS="$CFLAGS -Wall -std=c99"', '-outdir', output_path};
+	mexflags = {'-g', '-v', '-outdir', output_path};
 	
 	[comp,maxsz,endi] = computer;
 	libdeflate_dir = fullfile(pwd,'extlib','libdeflate');
@@ -30,7 +30,7 @@ try
 	
 	if(ispc)
 		
-		if(verLessThan('matlab','8.3'))
+		if(verLessThan('matlab','2014a'))
 			fprintf('-Setting up the mex compiler...')
 			try
 				copyfile(fullfile(prefdir,'mexopts.bat'),fullfile(pwd,'mexopts.bat'));
@@ -38,13 +38,13 @@ try
 				mexopts_fid = fopen('mexopts.bat','w');
 				fprintf(mexopts_fid, '%s', mexopts_cont);
 				fclose(mexopts_fid);
-				clear mexopts_cont mexopts_fid
+				clear mexopts_cont
 			catch ME2
 				fprintf(' failed!\n')
 				rethrow(ME2);
 			end
 			fprintf(' successful.\n')
-			mexflags = [mexflags, {'-f', fullfile(pwd,'mexopts.bat')}];
+			mexflags = [mexflags, {'-f', fullfile(pwd,'mexopts.sh')}];
 		else
 			mexflags = [mexflags {'CFLAGS="$CFLAGS -std=c99"'}];
 		end
@@ -66,18 +66,15 @@ try
 		
 		warning('off','MATLAB:mex:GccVersion_link');
 		
-		if(verLessThan('matlab','8.3'))
+		if(verLessThan('matlab','2014a'))
+			copyfile(fullfile(prefdir,'mexopts.sh'),fullfile(pwd,'mexopts.sh'));
+			mex_setup_cmd = 'sed -i "s/-ansi/-Wall -std=c99/g" mexopts.sh';
 			fprintf('-Setting up the mex compiler...')
-			try
-				copyfile(fullfile(prefdir,'mexopts.sh'),fullfile(pwd,'mexopts.sh'));
-				mexopts_cont = strrep(fileread('mexopts.sh'),'-ansi','-std=c99');
-				mexopts_fid = fopen('mexopts.sh','w');
-				fprintf(mexopts_fid, '%s', mexopts_cont);
-				fclose(mexopts_fid);
-				clear mexopts_cont mexopts_fid
-			catch ME2
+			[makestatus, cmdout] = system(mex_setup_cmd);
+			clear mex_setup_cmd
+			if(makestatus ~= 0)
 				fprintf(' failed!\n')
-				rethrow(ME2);
+				error(cmdout);
 			end
 			fprintf(' successful.\n')
 			mexflags = [mexflags, {'-f', fullfile(pwd,'mexopts.sh')}];
@@ -112,12 +109,12 @@ try
 	
 	fprintf('-Compiling getmatvar...')
 	mex(mexflags{:} , sources{:})
-	fprintf('%s.\n',[' successful. The function is located in ' fullfile(pwd,'bin')])
+	fprintf(' successful.\n')
 	
 	cd ..
 	rmpath('src');
 	addpath('bin');
-	clear mexflags sources libdeflate_dir output_path comp endi maxsz
+	clear mexflags sources libdeflate_dir output_path
 	
 catch ME
 	

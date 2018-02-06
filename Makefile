@@ -1,4 +1,4 @@
-CC=clang
+CC=gcc
 
 #===DIRECTORIES===#
 OBJ_DIR=src
@@ -64,7 +64,7 @@ $(OBJ_DIR)/%.o: %.c $(DEPS)
 
 
 
-CFLAGS=-g -fsanitize=undefined --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
+CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mexemulate
 

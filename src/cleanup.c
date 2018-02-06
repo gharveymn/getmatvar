@@ -218,9 +218,6 @@ void freePageObject(size_t page_index)
 		page_objects[page_index].pg_start_p = NULL;
 		page_objects[page_index].map_size = 0;
 
-#ifdef DO_MEMDUMP
-		memdump("U");
-#endif
 	
 	}
 }

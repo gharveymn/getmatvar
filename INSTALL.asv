@@ -2,7 +2,7 @@
 % The output is written to the 'bin' folder. 
 %
 % This program is written in the c99 standard, and so lcc is not
-% supported.
+% supported. Please d
 %
 % To use getmatvar globally, navigate to the 'HOME' tab
 % on the MATLAB browser, click on 'Set Path' (underneath 'Preferences')

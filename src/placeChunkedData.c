@@ -2,9 +2,22 @@
 
 
 Queue** data_page_buckets;
-//MTQueue** mt_data_page_buckets;
 int num_threads_to_use;
+bool_t main_thread_ready;
+#ifdef WIN32_LEAN_AND_MEAN
+HANDLE thread_sync;
+#else
+pthread_cond_t thread_sync;
+pthread_mutex_t thread_mtx;
+#endif
 
+// In case matlab encounters an error and needs to close
+// but touching the libdeflate decompressors with mxMalloc
+// seems to crash matlab, so leave this out for now
+MTQueue* data_buffers;
+MTQueue* libdeflate_decomps;
+//static void freeThreadBuffers(void);
+//static void nothingFunc(void);
 
 error_t getChunkedData(Data* object)
 {
@@ -15,36 +28,32 @@ error_t getChunkedData(Data* object)
 	error_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
 	HANDLE* chunk_threads = NULL;
-	HANDLE thread_sync;
 	DWORD ThreadID;
 #else
 	pthread_t* chunk_threads = NULL;
-	pthread_cond_t thread_sync;
-	pthread_mutex_t thread_mtx;
 #endif
+	//data_buffers = mt_initQueue(free);
+	//libdeflate_decomps = mt_initQueue(libdeflate_free_decompressor);
+//#ifndef NO_MEX
+	//mexAtExit(freeThreadBuffers);
+//#endif
 	
 	num_threads_to_use = -1;
-	bool_t main_thread_ready = FALSE;
+	main_thread_ready = FALSE;
 	
-	InflateThreadObj* thread_object = mxMalloc(sizeof(InflateThreadObj));
-	thread_object->mt_data_queue = mt_data_queue;
-	thread_object->object = object;
-	thread_object->err = 0;
-	thread_object->main_thread_ready = &main_thread_ready;
+	InflateThreadObj thread_object;
+	thread_object.mt_data_queue = mt_data_queue;
+	thread_object.object = object;
+	thread_object.err = 0;
 	
 	if(((will_multithread == TRUE) & (object->num_elems > MIN_MT_ELEMS_THRESH)) == TRUE)
 	{
 
 #ifdef WIN32_LEAN_AND_MEAN
-		thread_sync = CreateEvent(NULL, TRUE, FALSE, "thread_sync");
-		thread_object->thread_sync = &thread_sync;
+		thread_sync = CreateEvent(NULL, TRUE, FALSE, NULL);
 #else
-		pthread_mutex_init(&thread_mtx, NULL);
 		pthread_cond_init(&thread_sync, NULL);
-		
-		thread_object->thread_sync = &thread_sync;
-		thread_object->thread_mtx = &thread_mtx;
-		
+		pthread_mutex_init(&thread_mtx, NULL);
 #endif
 		
 		if(num_threads_user_def != -1)
@@ -69,7 +78,7 @@ error_t getChunkedData(Data* object)
 #endif
 		for(int i = 0; i < num_threads_to_use; i++)
 		{
-			chunk_threads[i] = CreateThread(NULL, 0, doInflate_, thread_object, 0, &ThreadID);
+			chunk_threads[i] = CreateThread(NULL, 0, doInflate_, &thread_object, 0, &ThreadID);
 		}
 #else
 		chunk_threads = mxMalloc(num_threads_to_use*sizeof(pthread_t));
@@ -161,8 +170,8 @@ error_t getChunkedData(Data* object)
 		CloseHandle(thread_sync);
 		
 #else
-		pthread_mutex_lock(&thread_mtx);
 		main_thread_ready = TRUE;
+		pthread_mutex_lock(&thread_mtx);
 		pthread_cond_broadcast(&thread_sync);
 		pthread_mutex_unlock(&thread_mtx);
 		error_t* exit_code;
@@ -193,8 +202,11 @@ error_t getChunkedData(Data* object)
 		}
 #endif
 	}
-	
-	mxFree(thread_object);
+
+//#ifndef NO_MEX
+//	mexAtExit(nothingFunc);
+//#endif
+//	freeThreadBuffers();
 	mt_freeQueue(mt_data_queue);
 	freeTree(root);
 	
@@ -211,13 +223,6 @@ void* doInflate_(void* t)
 	InflateThreadObj* thread_obj = (InflateThreadObj*)t;
 	Data* object = thread_obj->object;
 	MTQueue* mt_data_queue = thread_obj->mt_data_queue;
-#ifdef WIN32_LEAN_AND_MEAN
-	HANDLE* thread_sync = thread_obj->thread_sync;
-#else
-	pthread_cond_t* thread_sync = thread_object->thread_sync;
-	pthread_mutex_t* thread_mtx = thread_object->thread_mtx;
-#endif
-	bool_t* main_thread_ready = thread_obj->main_thread_ready;
 	
 	index_t these_num_chunked_elems = 0;
 	index_t these_chunked_dims[HDF5_MAX_DIMS + 1] = {0};
@@ -231,7 +236,6 @@ void* doInflate_(void* t)
 	
 	const size_t max_est_decomp_size = (size_t)object->chunked_info.num_chunked_elems*object->elem_size;
 	byte* decompressed_data_buffer = malloc(max_est_decomp_size);
-#ifdef NO_MEX
 	if(decompressed_data_buffer == NULL)
 	{
 		memset(error_id, 0, sizeof(error_id));
@@ -245,8 +249,9 @@ void* doInflate_(void* t)
 		return (void*)&thread_obj->err;
 #endif
 	}
-#endif
 	struct libdeflate_decompressor* ldd = libdeflate_alloc_decompressor();
+//	mt_enqueue(data_buffers, decompressed_data_buffer);
+//	mt_enqueue(libdeflate_decomps, ldd);
 	
 	Key* data_key;
 	TreeNode* data_node;
@@ -255,26 +260,28 @@ void* doInflate_(void* t)
 	{
 #ifdef WIN32_LEAN_AND_MEAN
 		//this condition isn't strictly necessary on Windows
-		while(*main_thread_ready != TRUE)
+		while(main_thread_ready != TRUE)
 		{
-			DWORD ret = WaitForSingleObject(*thread_sync, INFINITE);
+			DWORD ret = WaitForSingleObject(thread_sync, INFINITE);
 			if(ret != WAIT_OBJECT_0)
 			{
 				memset(error_id, 0, sizeof(error_id));
 				memset(error_message, 0, sizeof(error_message));
 				sprintf(error_id, "getmatvar:internalError");
 				sprintf(error_message, "The thread wait returned unexpectedly.\n\n");
+				free(decompressed_data_buffer);
+				libdeflate_free_decompressor(ldd);
 				return 1;
 			}
 		}
 #else
-		pthread_mutex_lock(thread_mtx);
+		pthread_mutex_lock(&thread_mtx);
 		//make sure that the main thread didn't finish parsing the chunk tree before waiting
 		while(main_thread_ready != TRUE)
 		{
-			pthread_cond_wait(thread_sync, thread_mtx);
+			pthread_cond_wait(&thread_sync, &thread_mtx);
 		}
-		pthread_mutex_unlock(thread_mtx);
+		pthread_mutex_unlock(&thread_mtx);
 #endif
 	}
 	
@@ -309,8 +316,8 @@ void* doInflate_(void* t)
 					memset(error_message, 0, sizeof(error_message));
 					sprintf(error_id, "getmatvar:libdeflateBadData");
 					sprintf(error_message, "Failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+					free(decompressed_data_buffer);
 					libdeflate_free_decompressor(ldd);
-					mxFree(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 					return 1;
 #else
@@ -324,8 +331,8 @@ void* doInflate_(void* t)
 					sprintf(error_message, "Failed to decompress because a NULL "
 							"'actual_out_nbytes_ret' was provided, but the data would have"
 							" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+					free(decompressed_data_buffer);
 					libdeflate_free_decompressor(ldd);
-					mxFree(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 					return 1;
 #else
@@ -337,8 +344,8 @@ void* doInflate_(void* t)
 					memset(error_message, 0, sizeof(error_message));
 					sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
 					sprintf(error_message, "Decompression failed because the output buffer was not large enough");
+					free(decompressed_data_buffer);
 					libdeflate_free_decompressor(ldd);
-					mxFree(decompressed_data_buffer);
 #ifdef WIN32_LEAN_AND_MEAN
 					return 1;
 #else
@@ -421,8 +428,9 @@ void* doInflate_(void* t)
 		}
 	}
 	
-	libdeflate_free_decompressor(ldd);
 	free(decompressed_data_buffer);
+	libdeflate_free_decompressor(ldd);
+
 #ifdef WIN32_LEAN_AND_MEAN
 	return 0;
 #else
@@ -738,35 +746,15 @@ void freeTree(void* n)
 }
 
 
-#ifdef DO_MEMDUMP
-void memdump(const char* type)
-{
-	
-	pthread_mutex_lock(&dump_lock);
-	
-	fprintf(dump, "%s ", type);
-	fflush(dump);
-	
-	//XXXXXXXXXXXXXXXXXXXXXOOOOOOOOOOOXOXXOXX
-	for(int i = 0; i < num_pages; i++)
-	{
-		if(page_objects[i].is_mapped == TRUE)
-		{
-			fprintf(dump, "O");
-		}
-		else
-		{
-			fprintf(dump, "X");
-		}
-		//keep flushing so that we know where it crashed if it does
-		fflush(dump);
-	}
-	
-	fprintf(dump, "\n\n");
-	
-	fflush(dump);
-	
-	pthread_mutex_unlock(&dump_lock);
-	
-}
-#endif
+//static void freeThreadBuffers(void)
+//{
+//	mt_freeQueue(data_buffers);
+//	mt_freeQueue(libdeflate_decomps);
+//	data_buffers = NULL;
+//	libdeflate_decomps = NULL;
+//}
+//
+//static void nothingFunc(void)
+//{
+//	;//nothing
+//}

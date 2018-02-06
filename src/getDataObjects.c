@@ -8,12 +8,6 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	__byte_order__ = getByteOrder();
 	alloc_gran = getAllocGran();
 	
-#ifdef DO_MEMDUMP
-	pthread_cond_init(&dump_ready, NULL);
-	pthread_mutex_init(&dump_lock, NULL);
-	dump = fopen("memdump.log", "w+");
-#endif
-	
 	num_avail_threads = getNumProcessors();
 	if((map_objects = initQueue(freeMapObject)) == NULL)
 	{
@@ -136,11 +130,6 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	freeQueue(varname_queue);
 	varname_queue = NULL;
 	destroyPageObjects();
-
-#ifdef DO_MEMDUMP
-	pthread_cond_destroy(&dump_ready);
-	pthread_mutex_destroy(&dump_lock);
-#endif
 	
 	virtual_super_object->num_sub_objs = (uint32_t)top_level_objects->length;
 	
