@@ -33,8 +33,6 @@ struct tree_node_
 	//LeafType leaf_type;
 	//int16_t node_level;
 	uint16_t entries_used;
-	Key** keys;
-	TreeNode** children;
 };
 
 typedef struct
@@ -46,8 +44,9 @@ typedef struct
 
 typedef struct
 {
-	Key* data_key;
-	TreeNode* data_node;
+	address_t address;
+	uint32_t chunk_size;
+	index_t* chunk_start;
 } DataPair;
 
 error_t fillNode(TreeNode* node, uint8_t num_chunked_dims);
@@ -58,7 +57,7 @@ DWORD mt_fillNode(void* fno);
 void* doInflate_(void* t);
 void* mt_fillNode(void* fno);
 #endif
-void freeTree(void* n);
+void freeDP(void* dat);
 error_t getChunkedData(Data* obj);
 index_t findArrayPosition(const index_t* chunk_start, const index_t* array_dims, uint8_t num_chunked_dims);
 void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, const index_t* dims, uint8_t num_dims);

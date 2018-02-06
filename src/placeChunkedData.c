@@ -14,8 +14,8 @@ pthread_mutex_t thread_mtx;
 // In case matlab encounters an error and needs to close
 // but touching the libdeflate decompressors with mxMalloc
 // seems to crash matlab, so leave this out for now
-MTQueue* data_buffers;
-MTQueue* libdeflate_decomps;
+//MTQueue* data_buffers;
+//MTQueue* libdeflate_decomps;
 //static void freeThreadBuffers(void);
 //static void nothingFunc(void);
 
@@ -24,7 +24,7 @@ error_t getChunkedData(Data* object)
 	
 	initializePageObjects();
 	
-	MTQueue* mt_data_queue = mt_initQueue((void*)freeQueue);
+	MTQueue* mt_data_queue = mt_initQueue(freeDP);
 	error_t ret = 0;
 #ifdef WIN32_LEAN_AND_MEAN
 	HANDLE* chunk_threads = NULL;
@@ -98,19 +98,11 @@ error_t getChunkedData(Data* object)
 	
 	}
 	
-	TreeNode* root = mxMalloc(sizeof(TreeNode));
-#ifdef NO_MEX
-	if(root == NULL)
-	{
-		sprintf(error_id, "getmatvar:mallocErrRPCD");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-	root->address = object->data_address;
-	root->node_type = NODETYPE_ROOT;
+	TreeNode root;
+	root.address = object->data_address;
+	root.node_type = NODETYPE_ROOT;
 	
-	data_page_buckets = mxMalloc(num_pages * sizeof(Queue));
+	data_page_buckets = mxMalloc(num_pages*sizeof(Queue));
 #ifdef NO_MEX
 	if(data_page_buckets == NULL)
 	{
@@ -121,16 +113,16 @@ error_t getChunkedData(Data* object)
 #endif
 	for(size_t i = 0; i < num_pages; i++)
 	{
-		if((data_page_buckets[i] = initQueue(mxFree)) == NULL)
+		if((data_page_buckets[i] = initQueue(NULL)) == NULL)
 		{
 			sprintf(error_id, "getmatvar:initQueueErr");
-			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue",(int)i);
+			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue", (int)i);
 			return 1;
 		}
 	}
 	
 	//fill the chunk tree
-	ret = fillNode(root, object->chunked_info.num_chunked_dims);
+	ret = fillNode(&root, object->chunked_info.num_chunked_dims);
 	if(ret != 0)
 	{
 		sprintf(error_id, "getmatvar:internalInvalidNodeType");
@@ -138,9 +130,10 @@ error_t getChunkedData(Data* object)
 		return ret;
 	}
 	
-	for(size_t i = 0; i < num_pages; i++)
+	mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
+	for(int i = 0; i < num_pages; i++)
 	{
-		mt_enqueue(mt_data_queue, data_page_buckets[i]);
+		freeQueue(data_page_buckets[i]);
 	}
 	mxFree(data_page_buckets);
 	
@@ -168,7 +161,7 @@ error_t getChunkedData(Data* object)
 		}
 		mxFree(chunk_threads);
 		CloseHandle(thread_sync);
-		
+
 #else
 		main_thread_ready = TRUE;
 		pthread_mutex_lock(&thread_mtx);
@@ -208,12 +201,14 @@ error_t getChunkedData(Data* object)
 //#endif
 //	freeThreadBuffers();
 	mt_freeQueue(mt_data_queue);
-	freeTree(root);
 	
 	return ret;
 }
 
+
 #ifdef WIN32_LEAN_AND_MEAN
+
+
 DWORD doInflate_(void* t)
 #else
 void* doInflate_(void* t)
@@ -253,8 +248,9 @@ void* doInflate_(void* t)
 //	mt_enqueue(data_buffers, decompressed_data_buffer);
 //	mt_enqueue(libdeflate_decomps, ldd);
 	
-	Key* data_key;
-	TreeNode* data_node;
+	address_t data_address;
+	uint32_t chunk_size;
+	index_t* chunk_start;
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
@@ -288,145 +284,139 @@ void* doInflate_(void* t)
 	while(mt_data_queue->length > 0)
 	{
 		
-		//each thread gets its own page to work on, so the only contentions possible are here
-		Queue* data_page_bucket = (Queue*)mt_dequeue(mt_data_queue);
+		DataPair* dp = (DataPair*)mt_dequeue(mt_data_queue);
 		
-		if(data_page_bucket == NULL)
+		if(dp == NULL)
 		{
 			//in case it gets dequeued after the loop check but before the lock
 			break;
 		}
 		
-		while(data_page_bucket->length > 0)
+		data_address = dp->address;
+		chunk_size = dp->chunk_size;
+		chunk_start = dp->chunk_start;
+		
+		const index_t chunk_start_index = findArrayPosition(chunk_start, object->dims, object->num_dims);
+		const byte* data_pointer = mt_navigateTo(data_address, 0);
+		thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, chunk_size, decompressed_data_buffer, max_est_decomp_size, NULL);
+		mt_releasePages(data_address, 0);
+		switch(thread_obj->err)
 		{
-			DataPair* dp = (DataPair*)dequeue(data_page_bucket);
-
-			
-			data_key = dp->data_key;
-			data_node = dp->data_node;
-			
-			const index_t chunk_start_index = findArrayPosition(data_key->chunk_start, object->dims, object->num_dims);
-			const byte* data_pointer = mt_navigateTo(data_node->address, 0);
-			thread_obj->err = libdeflate_zlib_decompress(ldd, data_pointer, data_key->chunk_size, decompressed_data_buffer, max_est_decomp_size, NULL);
-			mt_releasePages(data_node->address, 0);
-			switch(thread_obj->err)
-			{
-				case LIBDEFLATE_BAD_DATA:
-					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_message));
-					sprintf(error_id, "getmatvar:libdeflateBadData");
-					sprintf(error_message, "Failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
-					free(decompressed_data_buffer);
-					libdeflate_free_decompressor(ldd);
+			case LIBDEFLATE_BAD_DATA:
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_message));
+				sprintf(error_id, "getmatvar:libdeflateBadData");
+				sprintf(error_message, "Failed to decompress data which was either invalid, corrupt or otherwise unsupported.\n\n");
+				free(decompressed_data_buffer);
+				libdeflate_free_decompressor(ldd);
 #ifdef WIN32_LEAN_AND_MEAN
-					return 1;
+				return 1;
 #else
-					thread_obj->err = 1;
-					return (void*)&thread_obj->err;
+			thread_obj->err = 1;
+			return (void*)&thread_obj->err;
 #endif
-				case LIBDEFLATE_SHORT_OUTPUT:
-					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_message));
-					sprintf(error_id, "getmatvar:libdeflateShortOutput");
-					sprintf(error_message, "Failed to decompress because a NULL "
-							"'actual_out_nbytes_ret' was provided, but the data would have"
-							" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
-					free(decompressed_data_buffer);
-					libdeflate_free_decompressor(ldd);
+			case LIBDEFLATE_SHORT_OUTPUT:
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_message));
+				sprintf(error_id, "getmatvar:libdeflateShortOutput");
+				sprintf(error_message, "Failed to decompress because a NULL "
+						"'actual_out_nbytes_ret' was provided, but the data would have"
+						" decompressed to fewer than 'out_nbytes_avail' bytes.\n\n");
+				free(decompressed_data_buffer);
+				libdeflate_free_decompressor(ldd);
 #ifdef WIN32_LEAN_AND_MEAN
-					return 1;
+				return 1;
 #else
-					thread_obj->err = 1;
-					return (void*)&thread_obj->err;
+			thread_obj->err = 1;
+			return (void*)&thread_obj->err;
 #endif
-				case LIBDEFLATE_INSUFFICIENT_SPACE:
-					memset(error_id, 0, sizeof(error_id));
-					memset(error_message, 0, sizeof(error_message));
-					sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
-					sprintf(error_message, "Decompression failed because the output buffer was not large enough");
-					free(decompressed_data_buffer);
-					libdeflate_free_decompressor(ldd);
+			case LIBDEFLATE_INSUFFICIENT_SPACE:
+				memset(error_id, 0, sizeof(error_id));
+				memset(error_message, 0, sizeof(error_message));
+				sprintf(error_id, "getmatvar:libdeflateInsufficientSpace");
+				sprintf(error_message, "Decompression failed because the output buffer was not large enough");
+				free(decompressed_data_buffer);
+				libdeflate_free_decompressor(ldd);
 #ifdef WIN32_LEAN_AND_MEAN
-					return 1;
+				return 1;
 #else
-					thread_obj->err = 1;
-					return (void*)&thread_obj->err;
+			thread_obj->err = 1;
+			return (void*)&thread_obj->err;
 #endif
-				default:
-					//do nothing
-					break;
-			}
-			
-			/* resize chunked dims if the chunk collides with the edge
-			 *  ie
-			 *   ==================================================
-			 *  ||                     |                          ||
-			 *  ||      (chunk)        |                          ||
-			 *  ||                     |                          ||
-			 *  ||---------------------|                          ||
-			 *  ||                     |                          ||
-			 *  ||      (chunk)        |                          ||
-			 *  ||                     |                          ||
-			 *  ||---------------------|                          ||
-			 *  ||                     |                          ||
-			 *  ||  chunk (collides)   |                          ||
-			 *   ==================================================
-			 */
-			
-			these_num_chunked_elems = object->chunked_info.num_chunked_elems;
-			for(int j = 0; j < object->num_dims; j++)
+			default:
+				//do nothing
+				break;
+		}
+		
+		/* resize chunked dims if the chunk collides with the edge
+		 *  ie
+		 *   ==================================================
+		 *  ||                     |                          ||
+		 *  ||      (chunk)        |                          ||
+		 *  ||                     |                          ||
+		 *  ||---------------------|                          ||
+		 *  ||                     |                          ||
+		 *  ||      (chunk)        |                          ||
+		 *  ||                     |                          ||
+		 *  ||---------------------|                          ||
+		 *  ||                     |                          ||
+		 *  ||  chunk (collides)   |                          ||
+		 *   ==================================================
+		 */
+		
+		these_num_chunked_elems = object->chunked_info.num_chunked_elems;
+		for(int j = 0; j < object->num_dims; j++)
+		{
+			//if the chunk collides with the edge, make sure the dimensions of the chunk respect that
+			these_chunked_dims[j] = object->chunked_info.chunked_dims[j]
+							    - (chunk_start[j] + object->chunked_info.chunked_dims[j] > object->dims[j]? chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j] : 0
+							    );
+			these_index_updates[j] = object->chunked_info.chunk_update[j];
+			these_chunked_updates[j] = 0;
+		}
+		
+		for(int j = 0; j < object->num_dims; j++)
+		{
+			if(these_chunked_dims[j] != object->chunked_info.chunked_dims[j])
 			{
-				//if the chunk collides with the edge, make sure the dimensions of the chunk respect that
-				these_chunked_dims[j] = object->chunked_info.chunked_dims[j]
-								    - (data_key->chunk_start[j] + object->chunked_info.chunked_dims[j] > object->dims[j]? data_key->chunk_start[j] + object->chunked_info.chunked_dims[j]
-																										- object->dims[j] : 0
-								    );
-				these_index_updates[j] = object->chunked_info.chunk_update[j];
-				these_chunked_updates[j] = 0;
-			}
-			
-			for(int j = 0; j < object->num_dims; j++)
-			{
-				if(these_chunked_dims[j] != object->chunked_info.chunked_dims[j])
+				makeChunkedUpdates(these_index_updates, these_chunked_dims, object->dims, object->num_dims);
+				makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->chunked_info.chunked_dims, object->num_dims);
+				these_num_chunked_elems = 1;
+				for(int k = 0; k < object->chunked_info.num_chunked_dims; k++)
 				{
-					makeChunkedUpdates(these_index_updates, these_chunked_dims, object->dims, object->num_dims);
-					makeChunkedUpdates(these_chunked_updates, these_chunked_dims, object->chunked_info.chunked_dims, object->num_dims);
-					these_num_chunked_elems = 1;
-					for(int k = 0; k < object->chunked_info.num_chunked_dims; k++)
-					{
-						these_num_chunked_elems *= these_chunked_dims[k];
-					}
-					break;
+					these_num_chunked_elems *= these_chunked_dims[k];
 				}
-			}
-			
-			//copy over data
-			memset(chunk_pos, 0, sizeof(chunk_pos));
-			uint8_t curr_max_dim = 2;
-			index_t db_pos = 0, num_used = 0;
-			for(index_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
-			{
-				placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], (size_t)object->elem_size, object->byte_order);
-				db_pos += these_chunked_dims[0];
-				index += these_chunked_dims[0];
-				
-				chunk_pos[1]++;
-				uint8_t use_update = 0;
-				for(uint8_t j = 1; j < curr_max_dim; j++)
-				{
-					if(chunk_pos[j] == these_chunked_dims[j])
-					{
-						chunk_pos[j] = 0;
-						chunk_pos[j + 1]++;
-						curr_max_dim = curr_max_dim <= j + 1? curr_max_dim + (uint8_t)1 : curr_max_dim;
-						use_update++;
-					}
-				}
-				index += these_index_updates[use_update];
-				db_pos += these_chunked_updates[use_update];
+				break;
 			}
 		}
+		
+		//copy over data
+		memset(chunk_pos, 0, sizeof(chunk_pos));
+		uint8_t curr_max_dim = 2;
+		index_t db_pos = 0, num_used = 0;
+		for(index_t index = chunk_start_index, anchor = 0; index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
+		{
+			placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0], (size_t)object->elem_size, object->byte_order);
+			db_pos += these_chunked_dims[0];
+			index += these_chunked_dims[0];
+			
+			chunk_pos[1]++;
+			uint8_t use_update = 0;
+			for(uint8_t j = 1; j < curr_max_dim; j++)
+			{
+				if(chunk_pos[j] == these_chunked_dims[j])
+				{
+					chunk_pos[j] = 0;
+					chunk_pos[j + 1]++;
+					curr_max_dim = curr_max_dim <= j + 1? curr_max_dim + (uint8_t)1 : curr_max_dim;
+					use_update++;
+				}
+			}
+			index += these_index_updates[use_update];
+			db_pos += these_chunked_updates[use_update];
+		}
 	}
+	
 	
 	free(decompressed_data_buffer);
 	libdeflate_free_decompressor(ldd);
@@ -467,21 +457,17 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	{
 		//this is an ending sentinel for the sibling linked list
 		node->entries_used = 0;
-		node->keys = NULL;
-		node->children = NULL;
 		//node->node_level = -2;
 		return 0;
 	}
 	
-
-	mapObject* tree_map_obj = st_navigateTo(node->address, 8);
+	
+	mapObject* tree_map_obj = st_navigateTo(node->address, alloc_gran);
 	byte* tree_pointer = tree_map_obj->address_ptr;
 	
 	if(memcmp((char*)tree_pointer, "TREE", 4*sizeof(char)) != 0)
 	{
 		node->entries_used = 0;
-		node->keys = NULL;
-		node->children = NULL;
 		//node->node_level = -1;
 		if(memcmp((char*)tree_pointer, "SNOD", 4*sizeof(char)) == 0)
 		{
@@ -500,33 +486,12 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	//node->node_level = (uint16_t)getBytesAsNumber(tree_pointer + 5, 1, META_DATA_BYTE_ORDER);
 	node->entries_used = (uint16_t)getBytesAsNumber(tree_pointer + 6, 2, META_DATA_BYTE_ORDER);
 	
-	node->keys = mxMalloc((node->entries_used + 1)*sizeof(Key*));
-#ifdef NO_MEX
-	if(node->keys == NULL)
-	{
-		sprintf(error_id, "getmatvar:mallocErrKFN");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-	node->children = mxMalloc(node->entries_used*sizeof(TreeNode*));
-#ifdef NO_MEX
-	if(node->children == NULL)
-	{
-		mxFree(node->keys);
-		sprintf(error_id, "getmatvar:mallocErrCFN");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
 	
 	size_t key_size;
 	//size_t bytes_needed;
 	
 	if(node->node_type != CHUNK)
 	{
-		mxFree(node->keys);
-		mxFree(node->children);
 		sprintf(error_id, "getmatvar:wrongNodeType");
 		sprintf(error_message, "A group node was found in the chunked data tree.\n\n");
 		return 1;
@@ -547,92 +512,49 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
-		node->children[i] = mxMalloc(sizeof(TreeNode));
-#ifdef NO_MEX
-		if(node->children[i] == NULL)
-		{
-			for(int j = 0; j < i; j++)
-			{
-				mxFree(node->keys[j]->chunk_start);
-				mxFree(node->keys[j]);
-			}
-			mxFree(node->keys);
-			for(int j = 0; j < i - 1; j++)
-			{
-				freeTree(node->children[j]);
-			}
-			mxFree(node->children);
-			sprintf(error_id, "getmatvar:mallocErrC%dFN",i);
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-		node->children[i]->address = (address_t)getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
-		node->children[i]->node_type = NODETYPE_UNDEFINED;
+		TreeNode sub_node;
+		sub_node.address = (address_t)getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
+		sub_node.node_type = NODETYPE_UNDEFINED;
 		
-		if(fillNode(node->children[i], num_chunked_dims) != 0)
+		if(fillNode(&sub_node, num_chunked_dims) != 0)
 		{
 			return 1;
 		}
 		
-		node->keys[i] = mxMalloc(sizeof(Key));
-#ifdef NO_MEX
-		if(node->keys[i] == NULL)
-	{
-		mxFree(node->keys);
-		mxFree(node->children);
-		sprintf(error_id, "getmatvar:mallocErrK0FN");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-		node->keys[i]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-		//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-		node->keys[i]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
-#ifdef NO_MEX
-		if(node->keys[i]->chunk_start == NULL)
-	{
-		mxFree(node->keys[i]);
-		mxFree(node->keys);
-		mxFree(node->children);
-		sprintf(error_id, "getmatvar:mallocErrK0FNCS");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-		for(int j = 0; j < num_chunked_dims; j++)
+		if(sub_node.node_type == RAWDATA)
 		{
-			node->keys[i]->chunk_start[num_chunked_dims - 1 - j] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-		}
-		node->keys[i]->chunk_start[num_chunked_dims] = 0;
-		
-		size_t page_index = (size_t)node->children[i]->address/alloc_gran;
-		if(node->children[i]->node_type == RAWDATA)
-		{
-			page_objects[page_index].total_num_mappings++;
-			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (node->children[i]->address % alloc_gran) + node->keys[i]->chunk_size);
+			
 			DataPair* dp = mxMalloc(sizeof(DataPair));
 #ifdef NO_MEX
 			if(dp == NULL)
 			{
-				for(int j = 0; j < i; j++)
-				{
-					mxFree(node->keys[j]->chunk_start);
-					mxFree(node->keys[j]);
-				}
-				mxFree(node->keys);
-				for(int j = 0; j < i; j++)
-				{
-					freeTree(node->children[j]);
-				}
-				mxFree(node->children);
-				sprintf(error_id, "getmatvar:mallocErrDPFN");
+				sprintf(error_id, "getmatvar:mallocErrK0FN");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
 			}
 #endif
-			dp->data_key = node->keys[i];
-			dp->data_node = node->children[i];
+			dp->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+			//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+			dp->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
+#ifdef NO_MEX
+			if(dp->chunk_start == NULL)
+			{
+				mxFree(dp);
+				sprintf(error_id, "getmatvar:mallocErrK0FNCS");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return 1;
+			}
+#endif
+			for(int j = 0; j < num_chunked_dims; j++)
+			{
+				dp->chunk_start[num_chunked_dims - 1 - j] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
+			}
+			dp->chunk_start[num_chunked_dims] = 0;
+			
+			size_t page_index = (size_t)sub_node.address/alloc_gran;
+			page_objects[page_index].total_num_mappings++;
+			page_objects[page_index].max_map_size = MAX(page_objects[page_index].max_map_size, (sub_node.address%alloc_gran) + dp->chunk_size);
+			dp->address = sub_node.address;
 			enqueue(data_page_buckets[page_index], dp);
 		}
 		
@@ -641,58 +563,17 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		
 	}
 	
-	node->keys[node->entries_used] = mxMalloc(sizeof(Key));
-#ifdef NO_MEX
-	if(node->keys[node->entries_used] == NULL)
-		{
-			for(int j = 0; j < node->entries_used-1; j++)
-			{
-				mxFree(node->keys[j]->chunk_start);
-				mxFree(node->keys[j]);
-			}
-			mxFree(node->keys);
-			for(int j = 0; j < node->entries_used-1; j++)
-			{
-				freeTree(node->children[j]);
-			}
-			mxFree(node->children);
-			sprintf(error_id, "getmatvar:mallocErrK%dFN",node->entries_used);
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-	node->keys[node->entries_used]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-	//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-	node->keys[node->entries_used]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
-#ifdef NO_MEX
-	if(node->keys[node->entries_used]->chunk_start == NULL)
-		{
-			for(int j = 0; j < node->entries_used-1; j++)
-			{
-				mxFree(node->keys[j]->chunk_start);
-				mxFree(node->keys[j]);
-			}
-			mxFree(node->keys[node->entries_used]);
-			mxFree(node->keys);
-			for(int j = 0; j < node->entries_used-1; j++)
-			{
-				freeTree(node->children[j]);
-			}
-			mxFree(node->children);
-			sprintf(error_id, "getmatvar:mallocErrK%dFN",node->entries_used);
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-	for(int j = 0; j < num_chunked_dims; j++)
-	{
-		node->keys[node->entries_used]->chunk_start[num_chunked_dims - j - 1] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-	}
-	node->keys[node->entries_used]->chunk_start[num_chunked_dims] = 0;
-	
 	st_releasePages(key_map_obj);
 	return 0;
 	
+}
+
+
+void freeDP(void* dat)
+{
+	DataPair* dp = (DataPair*)dat;
+	mxFree(dp->chunk_start);
+	mxFree(dp);
 }
 
 
@@ -711,40 +592,6 @@ void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, cons
 		chunk_update[i] = du - cu - 1;
 	}
 }
-
-
-void freeTree(void* n)
-{
-	TreeNode* node = (TreeNode*)n;
-	if(node != NULL)
-	{
-		
-		if(node->keys != NULL)
-		{
-			for(int i = 0; i < node->entries_used + 1; i++)
-			{
-				mxFree(node->keys[i]->chunk_start);
-				mxFree(node->keys[i]);
-			}
-			mxFree(node->keys);
-			node->keys = NULL;
-		}
-		
-		if(node->children != NULL)
-		{
-			for(int i = 0; i < node->entries_used; i++)
-			{
-				freeTree(node->children[i]);
-			}
-			mxFree(node->children);
-			node->children = NULL;
-		}
-		
-		mxFree(node);
-		
-	}
-}
-
 
 //static void freeThreadBuffers(void)
 //{

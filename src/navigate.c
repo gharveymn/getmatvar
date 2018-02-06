@@ -6,6 +6,7 @@ mapObject* st_navigateTo(address_t address, size_t bytes_needed)
 	
 	address_t map_start = address - (address % alloc_gran); //the start of the page
 	size_t map_bytes_needed = (address % alloc_gran) + bytes_needed;
+	map_bytes_needed = MIN(map_bytes_needed, file_size - map_start);
 	
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
@@ -63,7 +64,7 @@ mapObject* st_navigateTo(address_t address, size_t bytes_needed)
 		}
 		
 		//clean up the queue if there are too many nodes
-		if(map_objects->abs_length > (size_t)2*max_num_map_objs)
+		if(map_objects->abs_length > (size_t)4*max_num_map_objs)
 		{
 			initAbsTraversal(map_objects);
 			size_t static_len = map_objects->abs_length;
