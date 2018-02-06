@@ -7,7 +7,7 @@ try
 	if(exist('doINSTALL','var'))
 		mexflags = {'-O', '-silent', '-outdir', output_path};
 	else
-		mexflags = {'-g', '-v', '-outdir', output_path};
+		mexflags = {'-O', '-v', '-outdir', output_path};
 	end
 	
 	[comp,maxsz,endi] = computer;

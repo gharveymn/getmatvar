@@ -12,16 +12,16 @@ void makeReturnStructure(void);
 int main(int argc, char* argv[])
 {
 	
+	initialize();
+	
 	if(argc < 2)
 	{
-		initialize();
 		readMXError("getmatvar:invalidNumInputs", "At least one input argument is required.\n\n");
 	}
 	else
 	{
 //		for(int j = 0; j < 1000; j++)
 //		{
-			initialize();
 			readInput(argc - 1, argv + 1);
 			makeReturnStructure();
 			for(int i = 0; i < parameters.num_vars; i++)

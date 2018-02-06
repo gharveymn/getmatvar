@@ -18,84 +18,87 @@ void freeVarname(void* vn)
 void freeDataObject(void* object)
 {
 	Data* data_object = (Data*)object;
-	
-	if(data_object->data_flags.is_mx_used != TRUE)
+	if(object != NULL)
 	{
-		if(data_object->data_arrays.data != NULL)
+		
+		if(data_object->data_flags.is_mx_used != TRUE)
 		{
-			mxFree(data_object->data_arrays.data);
-			data_object->data_arrays.data = NULL;
+			if(data_object->data_arrays.data != NULL)
+			{
+				mxFree(data_object->data_arrays.data);
+				data_object->data_arrays.data = NULL;
+			}
 		}
-	}
-	
-	if(data_object->names.short_name_length != 0)
-	{
-		if(data_object->names.short_name != NULL)
+		
+		if(data_object->names.short_name_length != 0)
 		{
-			mxFree(data_object->names.short_name);
-			data_object->names.short_name = NULL;
+			if(data_object->names.short_name != NULL)
+			{
+				mxFree(data_object->names.short_name);
+				data_object->names.short_name = NULL;
+			}
+			data_object->names.short_name_length = 0;
 		}
-		data_object->names.short_name_length = 0;
-	}
-	
-	if(data_object->names.long_name_length != 0)
-	{
-		if(data_object->names.long_name != NULL)
+		
+		if(data_object->names.long_name_length != 0)
 		{
-			mxFree(data_object->names.long_name);
-			data_object->names.long_name = NULL;
+			if(data_object->names.long_name != NULL)
+			{
+				mxFree(data_object->names.long_name);
+				data_object->names.long_name = NULL;
+			}
+			data_object->names.short_name_length = 0;
 		}
-		data_object->names.short_name_length = 0;
-	}
-	
-	if(data_object->data_arrays.sub_object_header_offsets != NULL)
-	{
-		mxFree(data_object->data_arrays.sub_object_header_offsets);
-		data_object->data_arrays.sub_object_header_offsets = NULL;
-	}
-	
-	if(data_object->chunked_info.filters != NULL)
-	{
-		for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+		
+		if(data_object->data_arrays.sub_object_header_offsets != NULL)
 		{
-			mxFree(data_object->chunked_info.filters[j].client_data);
-			data_object->chunked_info.filters[j].client_data = NULL;
+			mxFree(data_object->data_arrays.sub_object_header_offsets);
+			data_object->data_arrays.sub_object_header_offsets = NULL;
 		}
-		mxFree(data_object->chunked_info.filters);
-		data_object->chunked_info.filters = NULL;
+		
+		if(data_object->chunked_info.filters != NULL)
+		{
+			for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+			{
+				mxFree(data_object->chunked_info.filters[j].client_data);
+				data_object->chunked_info.filters[j].client_data = NULL;
+			}
+			mxFree(data_object->chunked_info.filters);
+			data_object->chunked_info.filters = NULL;
+		}
+		
+		if(data_object->dims != NULL)
+		{
+			mxFree(data_object->dims);
+			data_object->dims = NULL;
+		}
+		
+		if(data_object->chunked_info.chunked_dims != NULL)
+		{
+			mxFree(data_object->chunked_info.chunked_dims);
+			data_object->chunked_info.chunked_dims = NULL;
+		}
+		
+		if(data_object->chunked_info.chunk_update != NULL)
+		{
+			mxFree(data_object->chunked_info.chunk_update);
+			data_object->chunked_info.chunk_update = NULL;
+		}
+		
+		if(data_object->matlab_class != NULL)
+		{
+			mxFree(data_object->matlab_class);
+			data_object->matlab_class = NULL;
+		}
+		
+		if(data_object->sub_objects != NULL)
+		{
+			freeQueue(data_object->sub_objects);
+			data_object->sub_objects = NULL;
+		}
+		
+		mxFree(data_object);
 	}
-	
-	if(data_object->dims != NULL)
-	{
-		mxFree(data_object->dims);
-		data_object->dims = NULL;
-	}
-	
-	if(data_object->chunked_info.chunked_dims != NULL)
-	{
-		mxFree(data_object->chunked_info.chunked_dims);
-		data_object->chunked_info.chunked_dims = NULL;
-	}
-	
-	if(data_object->chunked_info.chunk_update != NULL)
-	{
-		mxFree(data_object->chunked_info.chunk_update);
-		data_object->chunked_info.chunk_update = NULL;
-	}
-	
-	if(data_object->matlab_class != NULL)
-	{
-		mxFree(data_object->matlab_class);
-		data_object->matlab_class = NULL;
-	}
-	
-	if(data_object->sub_objects != NULL)
-	{
-		freeQueue(data_object->sub_objects);
-		data_object->sub_objects = NULL;
-	}
-	
-	mxFree(data_object);
 	
 }
 
@@ -255,6 +258,23 @@ void endHooks(void)
 	freeQueue(object_queue);
 	freeQueue(top_level_objects);
 	freeQueue(map_objects);
+	mt_freeQueue(mt_data_queue);
+	mt_freeQueue(data_buffers);
+	mt_freeQueue(libdeflate_decomps);
+	
+	varname_queue = NULL;
+	object_queue = NULL;
+	top_level_objects = NULL;
+	map_objects = NULL;
+	mt_data_queue = NULL;
+	data_buffers = NULL;
+	libdeflate_decomps = NULL;
+	
+	if(data_page_buckets != NULL)
+	{
+		free(data_page_buckets);
+		data_page_buckets = NULL;
+	}
 	
 	if(parameters.full_variable_names != NULL)
 	{
@@ -263,14 +283,20 @@ void endHooks(void)
 			mxFree(parameters.full_variable_names[i]);
 		}
 		mxFree(parameters.full_variable_names);
+		parameters.full_variable_names = NULL;
 	}
-	mxFree(parameters.filename);
+	if(parameters.filename != NULL)
+	{
+		mxFree(parameters.filename);
+		parameters.filename = NULL;
+	}
 	
 	destroyPageObjects();
 	
 	if(fd >= 0)
 	{
 		_close(fd);
+		fd = -1;
 	}
 	
 }

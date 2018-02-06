@@ -66,3 +66,4 @@ bld/
 [Oo]bj/
 [Ll]og/
 !res/my_struct1.mat
+/.vscode/.cmaketools.json

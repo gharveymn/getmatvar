@@ -10,6 +10,10 @@ void initialize(void)
 	object_queue = NULL;
 	map_objects = NULL;
 	page_objects = NULL;
+	data_page_buckets = NULL;
+	mt_data_queue = NULL;
+	data_buffers = NULL;
+	libdeflate_decomps = NULL;
 	is_done = FALSE;
 	fd = -1;
 	num_threads_user_def = -1;
@@ -22,6 +26,9 @@ void initialize(void)
 	max_num_map_objs = DEFAULT_MAX_NUM_MAP_OBJS;
 	is_super_mapped = FALSE;
 	super_pointer = NULL;
+#ifndef NO_MEX
+	mexAtExit(endHooks);
+#endif
 	memset(error_id, 0, sizeof(error_id));
 	memset(error_message, 0, sizeof(error_message));
 	memset(warn_id, 0, sizeof(warn_id));

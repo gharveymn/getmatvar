@@ -50,11 +50,9 @@ Example:
 There are several ways of building the library as a MEX function as well as a standalone debug build.
 
 ### MATLAB Native
-
-Running `mexmake.m` will build the MEX function with the MATLAB internal compiler. This is only set up for MinGW and MSVC on Windows, and GCC on Unix, so it may require some changes if using a different compiler. You may also need to set up paths to shared object files if compiling on Unix.
+Running `INSTALL.m` will build the MEX function with the MATLAB internal compiler. This is only set up for MinGW and MSVC on Windows, and GCC on Unix, so it may require some changes if using a different compiler. You may also need to set up paths to shared object files if compiling on Unix.
 
 ### CMake
-
 The batch scripts named `build_with_msvc.bat` and `build_with_mingw.bat` will build the MEX function with their titular compilers (given you have all the prerequisite executables). If compiling with MSVC you'll have to open up the solution and build the `INSTALL` module (As well as all the others. It just isn't selected at first.) to output to `bin`. You won't have to do anything else for the MinGW build. I haven't tested this with 32-bit Windows since I don't have a copy, however systems are in place to deal with that matter, so it should follow the same procedure.
 
 ### Make

@@ -452,8 +452,8 @@ void readMXError(const char error_id[], const char error_message[], ...)
 	va_start(va, error_message);
 	sprintf(message_buffer, error_message, va_arg(va, const char*));
 	strcat(message_buffer, MATLAB_HELP_MESSAGE);
-	endHooks();
 	va_end(va);
+	endHooks();
 
 #ifdef NO_MEX
 #pragma GCC diagnostic push

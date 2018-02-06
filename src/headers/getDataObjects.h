@@ -125,6 +125,7 @@ typedef uint32_T address_t;
 #endif
 
 #include "ezq.h"
+#include "mtezq.h"
 
 #ifdef TRUE
 #undef TRUE
@@ -421,6 +422,10 @@ Queue* top_level_objects;
 Queue* varname_queue;
 Queue* object_queue;
 Queue* map_objects;
+Queue** data_page_buckets;
+MTQueue* mt_data_queue;
+MTQueue* data_buffers;
+MTQueue* libdeflate_decomps;
 
 int fd;
 Superblock s_block;
