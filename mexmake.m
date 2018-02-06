@@ -112,7 +112,7 @@ try
 	
 	fprintf('-Compiling getmatvar...')
 	mex(mexflags{:} , sources{:})
-	fprintf('%s.\n',[' successful. The function is located in ' fullfile(pwd,'bin')])
+	fprintf(' successful.\n%s\n',['-The function is located in ' fullfile(pwd,'bin') '.'])
 	
 	cd ..
 	rmpath('src');
