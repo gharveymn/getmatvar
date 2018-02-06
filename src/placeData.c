@@ -64,7 +64,7 @@ error_t allocateSpace(Data* object)
 			}
 			object->dims = mxMalloc(3*sizeof(index_t));
 #ifdef NO_MEX
-			if(unlikely(object->dims == NULL))
+			if(object->dims == NULL)
 			{
 				//very very unlikely
 				sprintf(error_id, "getmatvar:mallocErrDataSt");

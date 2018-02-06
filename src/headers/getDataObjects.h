@@ -70,11 +70,6 @@ typedef uint32_T address_t;
 #define UNDEF_ADDR (address_t)0xffffffff
 #endif
 
-#define malloc mxMalloc
-#define free mxFree
-#define calloc mxCalloc
-#define realloc mxRealloc
-
 #endif
 
 #include <stdio.h>

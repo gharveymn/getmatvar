@@ -1,4 +1,4 @@
-CC=gcc
+CC=clang
 
 #===DIRECTORIES===#
 OBJ_DIR=src
@@ -7,8 +7,8 @@ SRC_DIR=src
 TST_DIR=tests
 
 
-LIBDEFLATE_INC=./src/extlib/libdeflate/x64/unix
-LIBDEFLATE_LIB=./src/extlib/libdeflate/x64/unix
+LIBDEFLATE_INC=./src/extlib/libdeflate
+LIBDEFLATE_LIB=./src/extlib/libdeflate/unix
 
 INC=$(LIBDEFLATE_INC)
 INC_PARAMS=$(foreach d, $(INC), -I$d)
@@ -37,7 +37,7 @@ readMessage.h \
 superblock.h \
 utils.h \
 getDataObjects.h \
-../extlib/libdeflate/x64/libdeflate.h
+../extlib/libdeflate/libdeflate.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = ../$(TST_DIR)/mexemulate.o \
@@ -64,14 +64,14 @@ $(OBJ_DIR)/%.o: %.c $(DEPS)
 
 
 
-CFLAGS=-g -Wall --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
+CFLAGS=-g -fsanitize=undefined --std=c99 -DNO_MEX $(INC_PARAMS) $(LIB_PARAMS)
 
 all: mexemulate
 
 mexemulate: $(OBJ) src/extlib/libdeflate/unix/libdeflate.a
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-src/extlib/libdeflate/x64/unix/libdeflate.a:
+src/extlib/libdeflate/unix/libdeflate.a:
 	cd $(OBJ_DIR)/extlib/libdeflate/unix && $(MAKE)
 
 rebuild: clean mexemulate
