@@ -11,6 +11,7 @@ error_t fillVariable(char* variable_name)
 	
 	if(strcmp(variable_name, "\0") == 0)
 	{
+		is_getting_everything = TRUE;
 		for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
 		{
 			Data* obj = dequeue(virtual_super_object->sub_objects);
@@ -28,7 +29,7 @@ error_t fillVariable(char* variable_name)
 	}
 	else
 	{
-		
+		is_getting_everything = FALSE;
 		makeVarnameQueue(variable_name);
 		
 		Data* object = virtual_super_object;
@@ -189,52 +190,16 @@ error_t fillVariable(char* variable_name)
 			return 1;
 		}
 		
-		size_t n = top_level_objects->length;
-		uint16_t num_digits = 0;
-		do
+		initTraversal(top_level_objects);
+		while(top_level_objects->traverse_length > 0)
 		{
-			n /= 10;
-			num_digits++;
-		} while(n != 0);
-		
-		if(object->names.short_name_length != 0)
-		{
-			mxFree(object->names.short_name);
-			object->names.short_name = NULL;
-			object->names.short_name_length = 0;
+			Data* cmp_obj = traverseQueue(top_level_objects);
+			if(checkTree(cmp_obj, object) == TRUE)
+			{
+				object = cloneData(object);
+				break;
+			}
 		}
-		
-		if(object->names.long_name_length != 0)
-		{
-			mxFree(object->names.long_name);
-			object->names.long_name = NULL;
-			object->names.long_name_length = 0;
-		}
-		
-		object->names.short_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
-		object->names.short_name = mxMalloc((object->names.short_name_length + 1)*sizeof(char));
-#ifdef NO_MEX
-		if(object->names.short_name == NULL)
-		{
-			sprintf(error_id, "getmatvar:mallocErrShNa");
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-		sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
-		
-		object->names.long_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
-		object->names.long_name = mxMalloc((object->names.long_name_length + 1)*sizeof(char));
-#ifdef NO_MEX
-		if(object->names.long_name == NULL)
-		{
-			sprintf(error_id, "getmatvar:mallocErrLoNa");
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-		sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)top_level_objects->length);
-		
 		enqueue(top_level_objects, object);
 		
 	}
@@ -252,16 +217,15 @@ error_t fillDataTree(Data* object)
 	{
 		return 1;
 	}
-	
+	initTraversal(object->sub_objects);
 	for(uint32_t i = 0; i < object->num_sub_objs; i++)
 	{
-		Data* obj = dequeue(object->sub_objects);
+		Data* obj = traverseQueue(object->sub_objects);
 		if(fillDataTree(obj) != 0)
 		{
 			return 1;
 		}
 	}
-	restartQueue(object->sub_objects);
 	//object->data_flags.is_finalized = TRUE;
 	
 	return 0;

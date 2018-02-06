@@ -14,6 +14,7 @@ Data* findObjectByHeaderAddress(address_t obj_address);
 error_t parseCoordinates(VariableNameToken* vnt);
 index_t coordToInd(const index_t* coords, const index_t* dims, uint8_t num_dims);
 error_t makeVarnameQueue(char* variable_name);
+bool_t checkTree(Data* cmp_obj, Data* obj);
 Data* cloneData(Data* old_object);
 void removeSpaces(char* source);
 void readMXError(const char error_id[], const char error_message[], ...);

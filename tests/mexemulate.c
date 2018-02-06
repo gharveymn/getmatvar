@@ -79,12 +79,6 @@ void makeReturnStructure(void)
 	//enqueue(eval_objects, virtual_super_object->sub_objects[0]);
 	//makeEvalArray();
 	
-	while(object_queue->length > 0)
-	{
-		Data* obj = dequeue(object_queue);
-		freeQueue(obj->sub_objects);
-		obj->sub_objects = NULL;
-	}
 	freeQueue(object_queue);
 	
 }

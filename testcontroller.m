@@ -3,13 +3,13 @@ addpath('bin');
 clear;
 
 rng('shuffle')
-numtests = 1;
+numtests = 10;
 numsamples = 100000;
 lents = 0;
 
-maxDepth = 1;
-minelem = 5;
-maxelem = 10;
+maxDepth = 3;
+minelem = 5000;
+maxelem = 1000000;
 maxElementsv = round(linspace(minelem,maxelem,numtests));
 ignoreUnusables = true;
 stride = numsamples;

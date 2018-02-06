@@ -431,6 +431,7 @@ int num_avail_threads;          //number of processors - 1
 int num_threads_user_def;          //user specifies number of threads
 bool_t will_multithread;
 bool_t will_suppress_warnings;
+bool_t is_getting_everything;
 
 bool_t is_super_mapped;
 byte* super_pointer;

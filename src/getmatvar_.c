@@ -49,14 +49,7 @@ void makeReturnStructure(mxArray** super_structure)
 	
 	mxFree(field_names);
 	
-	while(object_queue->length > 0)
-	{
-		Data* obj = dequeue(object_queue);
-		freeQueue(obj->sub_objects);
-		obj->sub_objects = NULL;
-	}
 	freeQueue(object_queue);
-	object_queue = NULL;
 	
 }
 
@@ -69,22 +62,23 @@ mxArray* makeSubstructure(mxArray* returnStructure, const int num_elems, Queue* 
 		return NULL;
 	}
 	
-	if(((Data*)peekQueue(objects, QUEUE_FRONT))->data_flags.is_struct_array == TRUE)
+	initTraversal(objects);
+	if(((Data*)peekTraverse(objects))->data_flags.is_struct_array == TRUE)
 	{
 		//struct arrays are spoofed as cell arrays in getmatvar
-		while(objects->length > 0)
+		while(objects->traverse_length > 0)
 		{
-			Data* obj = dequeue(objects);
+			Data* obj = traverseQueue(objects);
 			makeSubstructure(returnStructure, obj->num_sub_objs, obj->sub_objects, mxSTRUCT_CLASS);
 		}
 	}
 	else
 	{
 		
-		while(objects->length > 0)
+		while(objects->traverse_length > 0)
 		{
 			
-			Data* obj = dequeue(objects);
+			Data* obj = traverseQueue(objects);
 			
 			obj->data_flags.is_mx_used = TRUE;
 			

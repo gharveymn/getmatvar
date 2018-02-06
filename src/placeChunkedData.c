@@ -544,36 +544,6 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	size_t total_bytes_needed = (node->entries_used + 1)*key_size + node->entries_used*s_block.size_of_offsets;
 	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
-	node->keys[0] = mxMalloc(sizeof(Key));
-#ifdef NO_MEX
-	if(node->keys[0] == NULL)
-	{
-		mxFree(node->keys);
-		mxFree(node->children);
-		sprintf(error_id, "getmatvar:mallocErrK0FN");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-	node->keys[0]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-	//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-	node->keys[0]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
-#ifdef NO_MEX
-	if(node->keys[0]->chunk_start == NULL)
-	{
-		mxFree(node->keys[0]);
-		mxFree(node->keys);
-		mxFree(node->children);
-		sprintf(error_id, "getmatvar:mallocErrK0FNCS");
-		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-		return 1;
-	}
-#endif
-	for(int j = 0; j < num_chunked_dims; j++)
-	{
-		node->keys[0]->chunk_start[num_chunked_dims - 1 - j] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-	}
-	node->keys[0]->chunk_start[num_chunked_dims] = 0;
 	
 	for(int i = 0; i < node->entries_used; i++)
 	{
@@ -604,6 +574,37 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		{
 			return 1;
 		}
+		
+		node->keys[i] = mxMalloc(sizeof(Key));
+#ifdef NO_MEX
+		if(node->keys[i] == NULL)
+	{
+		mxFree(node->keys);
+		mxFree(node->children);
+		sprintf(error_id, "getmatvar:mallocErrK0FN");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
+#endif
+		node->keys[i]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+		//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+		node->keys[i]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
+#ifdef NO_MEX
+		if(node->keys[i]->chunk_start == NULL)
+	{
+		mxFree(node->keys[i]);
+		mxFree(node->keys);
+		mxFree(node->children);
+		sprintf(error_id, "getmatvar:mallocErrK0FNCS");
+		sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+		return 1;
+	}
+#endif
+		for(int j = 0; j < num_chunked_dims; j++)
+		{
+			node->keys[i]->chunk_start[num_chunked_dims - 1 - j] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
+		}
+		node->keys[i]->chunk_start[num_chunked_dims] = 0;
 		
 		size_t page_index = (size_t)node->children[i]->address/alloc_gran;
 		if(node->children[i]->node_type == RAWDATA)
@@ -638,57 +639,56 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		key_address += key_size + s_block.size_of_offsets;
 		key_pointer += key_size + s_block.size_of_offsets;
 		
-		node->keys[i + 1] = mxMalloc(sizeof(Key));
-#ifdef NO_MEX
-		if(node->keys[i + 1] == NULL)
-		{
-			for(int j = 0; j < i; j++)
-			{
-				mxFree(node->keys[j]->chunk_start);
-				mxFree(node->keys[j]);
-			}
-			mxFree(node->keys);
-			for(int j = 0; j < i; j++)
-			{
-				freeTree(node->children[j]);
-			}
-			mxFree(node->children);
-			sprintf(error_id, "getmatvar:mallocErrK%dFN",i+1);
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-		node->keys[i + 1]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
-		//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-		node->keys[i + 1]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
-#ifdef NO_MEX
-		if(node->keys[i + 1]->chunk_start == NULL)
-		{
-			for(int j = 0; j < i; j++)
-			{
-				mxFree(node->keys[j]->chunk_start);
-				mxFree(node->keys[j]);
-			}
-			mxFree(node->keys[i+1]);
-			mxFree(node->keys);
-			for(int j = 0; j < i; j++)
-			{
-				freeTree(node->children[j]);
-			}
-			mxFree(node->children);
-			sprintf(error_id, "getmatvar:mallocErrK%dFN",i+1);
-			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
-			return 1;
-		}
-#endif
-		for(int j = 0; j < num_chunked_dims; j++)
-		{
-			node->keys[i + 1]->chunk_start[num_chunked_dims - j - 1] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
-		}
-		node->keys[i + 1]->chunk_start[num_chunked_dims] = 0;
-		
-		
 	}
+	
+	node->keys[node->entries_used] = mxMalloc(sizeof(Key));
+#ifdef NO_MEX
+	if(node->keys[node->entries_used] == NULL)
+		{
+			for(int j = 0; j < node->entries_used-1; j++)
+			{
+				mxFree(node->keys[j]->chunk_start);
+				mxFree(node->keys[j]);
+			}
+			mxFree(node->keys);
+			for(int j = 0; j < node->entries_used-1; j++)
+			{
+				freeTree(node->children[j]);
+			}
+			mxFree(node->children);
+			sprintf(error_id, "getmatvar:mallocErrK%dFN",node->entries_used);
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
+#endif
+	node->keys[node->entries_used]->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
+	//node->keys[i + 1]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
+	node->keys[node->entries_used]->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
+#ifdef NO_MEX
+	if(node->keys[node->entries_used]->chunk_start == NULL)
+		{
+			for(int j = 0; j < node->entries_used-1; j++)
+			{
+				mxFree(node->keys[j]->chunk_start);
+				mxFree(node->keys[j]);
+			}
+			mxFree(node->keys[node->entries_used]);
+			mxFree(node->keys);
+			for(int j = 0; j < node->entries_used-1; j++)
+			{
+				freeTree(node->children[j]);
+			}
+			mxFree(node->children);
+			sprintf(error_id, "getmatvar:mallocErrK%dFN",node->entries_used);
+			sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+			return 1;
+		}
+#endif
+	for(int j = 0; j < num_chunked_dims; j++)
+	{
+		node->keys[node->entries_used]->chunk_start[num_chunked_dims - j - 1] = (index_t)getBytesAsNumber(key_pointer + 8 + j*8, 8, META_DATA_BYTE_ORDER);
+	}
+	node->keys[node->entries_used]->chunk_start[num_chunked_dims] = 0;
 	
 	st_releasePages(key_map_obj);
 	return 0;

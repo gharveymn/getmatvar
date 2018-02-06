@@ -34,6 +34,7 @@ typedef struct
 	QueueNode* traverse_front;
 	void (* free_function)(void*);
 	size_t length;
+	size_t traverse_length;
 	size_t abs_length;
 } Queue;
 

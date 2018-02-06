@@ -1,7 +1,7 @@
 addpath('res')
 addpath('bin')
-file = 'res/vvlargevar.mat';
-vars = {};
+file = 'res/my_struct1.mat';
+vars = {'my_struct'};
 %file = 'D:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
 %vars = {'extPar'};
 
@@ -16,7 +16,7 @@ toc
 
 % using load function
 tic
-load(file);
+load(file, vars{:});
 toc
 
 %disp(sum(a(:) ~= t(:)))

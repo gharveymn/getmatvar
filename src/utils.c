@@ -4,17 +4,15 @@
 /*for use on a single level*/
 Data* findSubObjectByShortName(Data* object, char* name)
 {
-	restartQueue(object->sub_objects);
-	while(object->sub_objects->length > 0)
+	initTraversal(object->sub_objects);
+	while(object->sub_objects->traverse_length > 0)
 	{
-		Data* obj = dequeue(object->sub_objects);
+		Data* obj = traverseQueue(object->sub_objects);
 		if(strcmp(obj->names.short_name, name) == 0)
 		{
-			restartQueue(object->sub_objects);
 			return obj;
 		}
 	}
-	restartQueue(object->sub_objects);
 	return NULL;
 }
 
@@ -22,17 +20,15 @@ Data* findSubObjectByShortName(Data* object, char* name)
 /*for use on a single level*/
 Data* findSubObjectBySCIndex(Data* object, index_t index)
 {
-	restartQueue(object->sub_objects);
-	while(object->sub_objects->length > 0)
+	initTraversal(object->sub_objects);
+	while(object->sub_objects->traverse_length > 0)
 	{
-		Data* obj = dequeue(object->sub_objects);
+		Data* obj = traverseQueue(object->sub_objects);
 		if(obj->s_c_array_index == index)
 		{
-			restartQueue(object->sub_objects);
 			return obj;
 		}
 	}
-	restartQueue(object->sub_objects);
 	return NULL;
 }
 
@@ -41,17 +37,15 @@ Data* findSubObjectBySCIndex(Data* object, index_t index)
 Data* findObjectByHeaderAddress(address_t obj_address)
 {
 	
-	restartQueue(object_queue);
-	while(object_queue->length > 0)
+	initTraversal(object_queue);
+	while(object_queue->traverse_length > 0)
 	{
-		Data* obj = dequeue(object_queue);
+		Data* obj = traverseQueue(object_queue);
 		if(obj->this_obj_address == obj_address)
 		{
-			restartQueue(object_queue);
 			return obj;
 		}
 	}
-	restartQueue(object_queue);
 	
 	return NULL;
 	
@@ -99,6 +93,25 @@ index_t coordToInd(const index_t* coords, const index_t* dims, uint8_t num_dims)
 		mult *= dims[i];
 	}
 	return ret;
+}
+
+
+bool_t checkTree(Data* cmp_obj, Data* obj)
+{
+	
+	if(cmp_obj->num_sub_objs != 0)
+	{
+		initTraversal(cmp_obj->sub_objects);
+		while(cmp_obj->sub_objects->traverse_length > 0)
+		{
+			Data* cmp_sub_obj = traverseQueue(cmp_obj->sub_objects);
+			if(checkTree(cmp_sub_obj, obj) == TRUE)
+			{
+				return TRUE;
+			}
+		}
+	}
+	return (bool_t)(cmp_obj == obj);
 }
 
 
@@ -202,7 +215,7 @@ Data* cloneData(Data* old_object)
 			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
 			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
 			new_object->chunked_info.filters[i].optional_flag = old_object->chunked_info.filters[i].optional_flag;
-			new_object->chunked_info.filters[i].client_data = mxMalloc(new_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
+			new_object->chunked_info.filters[i].client_data = mxMalloc(old_object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
 #ifdef NO_MEX
 			if(new_object->chunked_info.filters[i].client_data  == NULL)
 			{
@@ -213,7 +226,7 @@ Data* cloneData(Data* old_object)
 				return NULL;
 			}
 #endif
-			for(int j = 0; j < new_object->chunked_info.filters[i].num_client_vals; j++)
+			for(int j = 0; j < old_object->chunked_info.filters[i].num_client_vals; j++)
 			{
 				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
 			}
@@ -226,7 +239,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunked_dims != NULL)
 	{
-		new_object->chunked_info.chunked_dims = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(index_t));
+		new_object->chunked_info.chunked_dims = mxMalloc((old_object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->chunked_info.chunked_dims  == NULL)
 		{
@@ -237,7 +250,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, new_object->chunked_info.num_chunked_elems*sizeof(index_t));
+		memcpy(new_object->chunked_info.chunked_dims, old_object->chunked_info.chunked_dims, (old_object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 	}
 	else
 	{
@@ -246,7 +259,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->chunked_info.chunk_update != NULL)
 	{
-		new_object->chunked_info.chunk_update = mxMalloc(new_object->chunked_info.num_chunked_elems*sizeof(index_t));
+		new_object->chunked_info.chunk_update = mxMalloc((old_object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->chunked_info.chunk_update  == NULL)
 		{
@@ -257,7 +270,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, new_object->chunked_info.num_chunked_elems*sizeof(index_t));
+		memcpy(new_object->chunked_info.chunk_update, old_object->chunked_info.chunk_update, (old_object->chunked_info.num_chunked_dims + 1)*sizeof(index_t));
 	}
 	else
 	{
@@ -266,7 +279,7 @@ Data* cloneData(Data* old_object)
 	
 	if(old_object->dims != NULL)
 	{
-		new_object->dims = mxMalloc(new_object->num_dims*sizeof(index_t));
+		new_object->dims = mxMalloc((old_object->num_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 		if(new_object->dims  == NULL)
 		{
@@ -277,7 +290,7 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		memcpy(new_object->dims, old_object->dims, new_object->num_dims*sizeof(index_t));
+		memcpy(new_object->dims, old_object->dims, (old_object->num_dims + 1)*sizeof(index_t));
 	}
 	else
 	{
@@ -286,11 +299,12 @@ Data* cloneData(Data* old_object)
 	
 	
 	new_object->super_object = old_object->super_object;
-	while(old_object->sub_objects->length > 0)
+	initTraversal(old_object->sub_objects);
+	while(old_object->sub_objects->traverse_length > 0)
 	{
-		enqueue(new_object->sub_objects, dequeue(old_object->sub_objects));
+		Data* old_sub_obj = traverseQueue(old_object->sub_objects);
+		enqueue(new_object->sub_objects, cloneData(old_sub_obj));
 	}
-	restartQueue(old_object->sub_objects);
 	
 	new_object->matlab_internal_attributes.MATLAB_sparse = old_object->matlab_internal_attributes.MATLAB_sparse;
 	new_object->matlab_internal_attributes.MATLAB_empty = old_object->matlab_internal_attributes.MATLAB_empty;

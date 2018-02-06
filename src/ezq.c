@@ -284,6 +284,7 @@ error_t initTraversal(Queue* queue)
 	if(queue != NULL)
 	{
 		queue->traverse_front = queue->front;
+		queue->traverse_length = queue->length;
 		return 0;
 	}
 	else
@@ -298,6 +299,7 @@ error_t initAbsTraversal(Queue* queue)
 	if(queue != NULL)
 	{
 		queue->traverse_front = queue->abs_front;
+		queue->traverse_length = queue->abs_length;
 		return 0;
 	}
 	else
@@ -309,7 +311,6 @@ error_t initAbsTraversal(Queue* queue)
 
 void* traverseQueue(Queue* queue)
 {
-	//give back the
 	if(queue != NULL)
 	{
 		if(queue->traverse_front != NULL)
@@ -317,6 +318,7 @@ void* traverseQueue(Queue* queue)
 			void* to_return = queue->traverse_front->data;
 			QueueNode* new_front = queue->traverse_front->next;
 			queue->traverse_front = new_front;
+			queue->traverse_length--;
 			return to_return;
 		}
 	}

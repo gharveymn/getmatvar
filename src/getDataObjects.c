@@ -131,20 +131,73 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	varname_queue = NULL;
 	destroyPageObjects();
 	
+	if(is_getting_everything == FALSE)
+	{
+		initTraversal(top_level_objects);
+		for(size_t i = 0; i < top_level_objects->length; i++)
+		{
+			Data* object = traverseQueue(top_level_objects);
+			size_t n = i;
+			uint16_t num_digits = 0;
+			do
+			{
+				n /= 10;
+				num_digits++;
+			} while(n != 0);
+			
+			if(object->names.short_name_length != 0)
+			{
+				mxFree(object->names.short_name);
+				object->names.short_name = NULL;
+				object->names.short_name_length = 0;
+			}
+			
+			if(object->names.long_name_length != 0)
+			{
+				mxFree(object->names.long_name);
+				object->names.long_name = NULL;
+				object->names.long_name_length = 0;
+			}
+			
+			object->names.short_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
+			object->names.short_name = mxMalloc((object->names.short_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
+			if(object->names.short_name == NULL)
+			{
+				sprintf(error_id, "getmatvar:mallocErrShNa");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return 1;
+			}
+#endif
+			sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)i);
+			
+			object->names.long_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
+			object->names.long_name = mxMalloc((object->names.long_name_length + 1)*sizeof(char));
+#ifdef NO_MEX
+			if(object->names.long_name == NULL)
+			{
+				sprintf(error_id, "getmatvar:mallocErrLoNa");
+				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
+				return 1;
+			}
+#endif
+			sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)i);
+		}
+	}
+	
 	virtual_super_object->num_sub_objs = (uint32_t)top_level_objects->length;
 	
 	if(virtual_super_object->num_sub_objs > 0)
 	{
 		flushQueue(virtual_super_object->sub_objects);
-		restartQueue(top_level_objects);
-		while(top_level_objects->length > 0)
+		initTraversal(top_level_objects);
+		while(top_level_objects->traverse_length > 0)
 		{
-			Data* obj = dequeue(top_level_objects);
+			Data* obj = traverseQueue(top_level_objects);
 			enqueue(virtual_super_object->sub_objects, obj);
 			obj->super_object = NULL;
 			obj->s_c_array_index = 0;
 		}
-		restartQueue(top_level_objects);
 	}
 	
 	freeQueue(top_level_objects);

@@ -4,8 +4,11 @@ cd src
 
 try
 	
-	mexflags = {'-O', '-silent', '-outdir', output_path};
-	%mexflags = {'-g', '-v', '-outdir', output_path};
+	if(exist('doINSTALL','var'))
+		mexflags = {'-O', '-silent', '-outdir', output_path};
+	else
+		mexflags = {'-g', '-v', '-outdir', output_path};
+	end
 	
 	[comp,maxsz,endi] = computer;
 	libdeflate_dir = fullfile(pwd,'extlib','libdeflate');
@@ -117,7 +120,7 @@ try
 	cd ..
 	rmpath('src');
 	addpath('bin');
-	clear mexflags sources libdeflate_dir output_path comp endi maxsz
+	clear mexflags sources libdeflate_dir output_path comp endi maxsz doINSTALL
 	
 catch ME
 	

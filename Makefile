@@ -72,7 +72,7 @@ mexemulate: $(OBJ) src/extlib/libdeflate/unix/libdeflate.a
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 src/extlib/libdeflate/unix/libdeflate.a:
-	cd $(OBJ_DIR)/extlib/libdeflate/unix && $(MAKE)
+	cd $(OBJ_DIR)/extlib/libdeflate/unix && $(MAKE) MAKEFLAGS=-e DECOMPRESSION_ONLY=TRUE libdeflate.a
 
 rebuild: clean mexemulate
 
