@@ -3,7 +3,7 @@
 
 MTQueue* mt_initQueue(void (* free_function)(void*))
 {
-	MTQueue* new_queue = mxMalloc(sizeof(MTQueue));
+	MTQueue* new_queue = malloc(sizeof(MTQueue));
 	if(new_queue != NULL)
 	{
 		new_queue->abs_front = NULL;
@@ -41,7 +41,7 @@ error_t mt_enqueue(MTQueue* queue, void* data)
 {
 	if(queue != NULL)
 	{
-		QueueNode* new_node = mxMalloc(sizeof(QueueNode));
+		QueueNode* new_node = malloc(sizeof(QueueNode));
 #ifdef NO_MEX
 		if(new_node == NULL)
 		{
@@ -99,7 +99,7 @@ error_t mt_priorityEnqueue(MTQueue* queue, void* data)
 {
 	if(queue != NULL)
 	{
-		QueueNode* new_node = mxMalloc(sizeof(QueueNode));
+		QueueNode* new_node = malloc(sizeof(QueueNode));
 #ifdef NO_MEX
 		if(new_node == NULL)
 		{
@@ -356,7 +356,7 @@ error_t mt_flushQueue(MTQueue* queue)
 			{
 				queue->free_function(queue->abs_front->data);
 			}
-			mxFree(queue->abs_front);
+			free(queue->abs_front);
 			queue->abs_front = next;
 			queue->abs_length--;
 		}
@@ -380,7 +380,7 @@ error_t mt_flushQueue(MTQueue* queue)
 
 error_t mt_cleanQueue(MTQueue* queue)
 {
-	//move the absolute front to the same position as front and mxFree up the queue objects along the way
+	//move the absolute front to the same position as front and free up the queue objects along the way
 	if(queue != NULL)
 	{
 #ifdef WIN32_LEAN_AND_MEAN
@@ -397,7 +397,7 @@ error_t mt_cleanQueue(MTQueue* queue)
 			}
 			queue->abs_front->prev = NULL;
 			queue->abs_front->data = NULL;
-			mxFree(queue->abs_front);
+			free(queue->abs_front);
 			queue->abs_front = next;
 			queue->abs_length--;
 		}
@@ -425,7 +425,7 @@ void mt_freeQueue(MTQueue* queue)
 #else
 		pthread_mutex_destroy(&queue->lock);
 #endif
-		mxFree(queue);
+		free(queue);
 	}
 	//mt_queue being NULL is not an error
 }

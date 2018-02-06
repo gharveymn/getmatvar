@@ -102,7 +102,7 @@ error_t getChunkedData(Data* object)
 	root.address = object->data_address;
 	root.node_type = NODETYPE_ROOT;
 	
-	data_page_buckets = mxMalloc(num_pages*sizeof(Queue));
+	data_page_buckets = malloc(num_pages*sizeof(Queue));
 #ifdef NO_MEX
 	if(data_page_buckets == NULL)
 	{
@@ -135,7 +135,7 @@ error_t getChunkedData(Data* object)
 	{
 		freeQueue(data_page_buckets[i]);
 	}
-	mxFree(data_page_buckets);
+	free(data_page_buckets);
 	
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
@@ -524,7 +524,7 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 		if(sub_node.node_type == RAWDATA)
 		{
 			
-			DataPair* dp = mxMalloc(sizeof(DataPair));
+			DataPair* dp = malloc(sizeof(DataPair));
 #ifdef NO_MEX
 			if(dp == NULL)
 			{
@@ -535,11 +535,11 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 #endif
 			dp->chunk_size = (uint32_t)getBytesAsNumber(key_pointer, 4, META_DATA_BYTE_ORDER);
 			//node->keys[0]->filter_mask = (uint32_t)getBytesAsNumber(key_pointer + 4, 4, META_DATA_BYTE_ORDER);
-			dp->chunk_start = mxMalloc((num_chunked_dims + 1)*sizeof(index_t));
+			dp->chunk_start = malloc((num_chunked_dims + 1)*sizeof(index_t));
 #ifdef NO_MEX
 			if(dp->chunk_start == NULL)
 			{
-				mxFree(dp);
+				free(dp);
 				sprintf(error_id, "getmatvar:mallocErrK0FNCS");
 				sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
 				return 1;
@@ -572,8 +572,8 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 void freeDP(void* dat)
 {
 	DataPair* dp = (DataPair*)dat;
-	mxFree(dp->chunk_start);
-	mxFree(dp);
+	free(dp->chunk_start);
+	free(dp);
 }
 
 
