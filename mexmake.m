@@ -74,16 +74,14 @@ try
 		
 		if(verLessThan('matlab','8.3'))
 			fprintf('-Setting up the mex compiler...')
-			try
-				copyfile(fullfile(prefdir,'mexopts.sh'),fullfile(pwd,'mexopts.sh'),'f');
-				mexopts_cont = strrep(fileread('mexopts.sh'),'-ansi','-std=c99');
-				mexopts_fid = fopen(fullfile(pwd,'mexopts.sh'),'w');
-				fprintf(mexopts_fid, '%s', mexopts_cont);
-				fclose(mexopts_fid);
-				clear mexopts_cont mexopts_fid
-			catch ME2
+			mex_setup_cmd = ['cp ' fullfile(prefdir,'mexopts.sh') ' ' fullfile(pwd,'mexopts.sh') ' ; sed -i "s/-ansi/-Wall -std=c99/g" mexopts.sh'];
+		
+			fprintf('-Setting up the mex compiler...')
+			[makestatus, cmdout] = system(mex_setup_cmd);
+			clear mex_setup_cmd
+			if(makestatus ~= 0)
 				fprintf(' failed!\n')
-				rethrow(ME2);
+				error(cmdout);
 			end
 			fprintf(' successful.\n')
 			mexflags = [mexflags, {'-f', fullfile(pwd,'mexopts.sh')}];
@@ -98,11 +96,7 @@ try
 			mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
 		end
 		
-		terminal_cmd = ['cd ' libdeflate_dir ' ; '...
-			'cd programs ; '...
-			'chmod +x detect.sh ; '...
-			'cd .. ; '...
-			'make -e DECOMPRESSION_ONLY=TRUE libdeflate.a'];
+		terminal_cmd = ['cd ' libdeflate_dir ' ; cd programs ; chmod +x detect.sh ; cd .. ; make -e DECOMPRESSION_ONLY=TRUE libdeflate.a'];
 		fprintf('-Compiling external libraries...')
 		[makestatus, cmdout] = system(terminal_cmd);
 		clear terminal_cmd
