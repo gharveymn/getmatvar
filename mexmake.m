@@ -1,6 +1,5 @@
 addpath('src')
-output_path = [pwd '/bin'];
-cd src
+output_path = fullfile(pwd,'bin');
 
 try
 	
@@ -11,7 +10,7 @@ try
 	end
 	
 	[comp,maxsz,endi] = computer;
-	libdeflate_dir = fullfile(pwd,'extlib','libdeflate');
+	libdeflate_dir = fullfile(pwd,'src','extlib','libdeflate');
 	
 	sources = {'getmatvar_.c',...
 		'mexSet.c',...
@@ -30,6 +29,10 @@ try
 		'readMessage.c',...
 		'superblock.c',...
 		'utils.c'};
+	
+	for i = 1:numel(sources)
+		sources{i} = fullfile(pwd,'src',sources{i});
+	end
 	
 	if(ispc)
 		
@@ -53,15 +56,15 @@ try
 		end
 		
 		if(maxsz > 2^31-1)
-			libdeflate_dir = fullfile(pwd,'extlib','libdeflate','win','x64');
+			libdeflate_dir = fullfile(libdeflate_dir,'win','x64');
 			mexflags = [mexflags {'-largeArrayDims'}];
 		else
-			libdeflate_dir = fullfile(pwd,'extlib','libdeflate','win','x86');
+			libdeflate_dir = fullfile(libdeflate_dir,'win','x86');
 			mexflags = [mexflags {'-compatibleArrayDims', '-DMATLAB_32BIT'}];
 		end
 		
 		sources = [sources,...
-			{fullfile(pwd,'extlib','mman-win32','mman.c'),...
+			{fullfile(pwd,'src','extlib','mman-win32','mman.c'),...
 			fullfile(libdeflate_dir,'libdeflate.lib')}
 			];
 		
@@ -117,14 +120,12 @@ try
 	mex(mexflags{:} , sources{:})
 	fprintf(' successful.\n%s\n',['-The function is located in ' fullfile(pwd,'bin') '.'])
 	
-	cd ..
 	rmpath('src');
 	addpath('bin');
 	clear mexflags sources libdeflate_dir output_path comp endi maxsz doINSTALL
 	
 catch ME
 	
-	cd ..
 	rethrow(ME)
 	
 end
