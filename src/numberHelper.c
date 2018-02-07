@@ -18,10 +18,25 @@ void reverseBytes(byte* data_pointer, size_t num_elems)
 size_t getBytesAsNumber(byte* data_pointer, size_t num_bytes, ByteOrder endianness)
 {
 	size_t ret = 0;
-	memcpy(&ret, data_pointer, num_bytes);
-	if(__byte_order__ != endianness)
+	if(sizeof(size_t) < num_bytes)
 	{
-		reverseBytes((byte*)&ret, num_bytes);
+		if(__byte_order__ != endianness)
+		{
+			memcpy(&ret, data_pointer + (num_bytes - sizeof(size_t)), sizeof(size_t));
+			reverseBytes((byte*)&ret, num_bytes);
+		}
+		else
+		{
+			memcpy(&ret, data_pointer, sizeof(size_t));
+		}
+	}
+	else
+	{
+		memcpy(&ret, data_pointer, num_bytes);
+		if(__byte_order__ != endianness)
+		{
+			reverseBytes((byte*)&ret, num_bytes);
+		}
 	}
 	return ret;
 }

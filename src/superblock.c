@@ -20,7 +20,7 @@ Superblock getSuperblock(void)
 mapObject* findSuperblock(void)
 {
 	
-	for(address_t chunk_address = 0; (size_t)chunk_address < file_size; chunk_address += 512)
+	for(address_t chunk_address = 0; (size_t)chunk_address < file_size; chunk_address += SUPERBLOCK_INTERVAL)
 	{
 		mapObject* chunk_start_map_obj = st_navigateTo(chunk_address, SUPERBLOCK_INTERVAL);
 		byte* chunk_start = chunk_start_map_obj->address_ptr;
