@@ -68,3 +68,5 @@ bld/
 !res/my_struct1.mat
 /.vscode/.cmaketools.json
 *.asv
+*mexopts.bat
+*mexopts.sh

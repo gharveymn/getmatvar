@@ -7,7 +7,7 @@ try
 	if(exist('doINSTALL','var'))
 		mexflags = {'-O', '-silent', '-outdir', output_path};
 	else
-		mexflags = {'-O', '-v', '-outdir', output_path};
+		mexflags = {'-g', '-v', '-outdir', output_path};
 	end
 	
 	[comp,maxsz,endi] = computer;
@@ -36,9 +36,9 @@ try
 		if(verLessThan('matlab','8.3'))
 			fprintf('-Setting up the mex compiler...')
 			try
-				copyfile(fullfile(prefdir,'mexopts.bat'),fullfile(pwd,'mexopts.bat'));
+				copyfile(fullfile(prefdir,'mexopts.bat'),fullfile(pwd,'mexopts.bat'),'f');
 				mexopts_cont = strrep(fileread('mexopts.bat'),'set COMPFLAGS=','set COMPFLAGS=-std=c99 ');
-				mexopts_fid = fopen('mexopts.bat','w');
+				mexopts_fid = fopen(fullfile(pwd,'mexopts.bat'),'w');
 				fprintf(mexopts_fid, '%s', mexopts_cont);
 				fclose(mexopts_fid);
 				clear mexopts_cont mexopts_fid
@@ -72,9 +72,9 @@ try
 		if(verLessThan('matlab','8.3'))
 			fprintf('-Setting up the mex compiler...')
 			try
-				copyfile(fullfile(prefdir,'mexopts.sh'),fullfile(pwd,'mexopts.sh'));
+				copyfile(fullfile(prefdir,'mexopts.sh'),fullfile(pwd,'mexopts.sh'),'f');
 				mexopts_cont = strrep(fileread('mexopts.sh'),'-ansi','-std=c99');
-				mexopts_fid = fopen('mexopts.sh','w');
+				mexopts_fid = fopen(fullfile(pwd,'mexopts.sh'),'w');
 				fprintf(mexopts_fid, '%s', mexopts_cont);
 				fclose(mexopts_fid);
 				clear mexopts_cont mexopts_fid

@@ -1,6 +1,6 @@
 # getmatvar
 
-This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format MAT-files with support for all MATLAB fundamental types except for function handles, tables, and class objects. These will be implemented in the near future.
+This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format MAT-files with support for all MATLAB fundamental types except for function handles, tables, and class objects.
 
 Eventually there will be prebuilt binaries, but for now you'll have to build it yourself. Running `mexmake.m` will build it for you and output to the `bin` folder if you have all the needed dependencies. You might need to set some paths for the shared object libraries on Unix.
 
