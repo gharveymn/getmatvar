@@ -29,7 +29,9 @@ int main(int argc, char* argv[])
 				mxFree(parameters.full_variable_names[i]);
 			}
 			mxFree(parameters.full_variable_names);
+			parameters.full_variable_names = NULL;
 			mxFree(parameters.filename);
+			parameters.filename = NULL;
 //		}
 
 		fprintf(stderr, "\nProgram exited successfully.\n\n");
@@ -80,6 +82,7 @@ void makeReturnStructure(void)
 	//makeEvalArray();
 	
 	freeQueue(object_queue);
+	object_queue = NULL;
 	
 }
 

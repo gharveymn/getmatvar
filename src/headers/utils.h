@@ -19,6 +19,7 @@ Data* cloneData(Data* old_object);
 void removeSpaces(char* source);
 void readMXError(const char error_id[], const char error_message[], ...);
 void readMXWarn(const char warn_id[], const char warn_message[], ...);
+void nullFunction(void);
 
 
 #endif //UTILS_H

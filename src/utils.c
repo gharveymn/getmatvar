@@ -493,3 +493,8 @@ void readMXWarn(const char warn_id[], const char warn_message[], ...)
 	}
 	
 }
+
+void nullFunction(void)
+{
+	;//avoid undefined behavior when resetting mexAtExit
+}

@@ -70,3 +70,4 @@ bld/
 *.asv
 *mexopts.bat
 *mexopts.sh
+/releases

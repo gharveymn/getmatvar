@@ -160,20 +160,17 @@ typedef enum
 #define MIN(X, Y) (((X) < (Y))? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y))? (X) : (Y))
 
-#define MATLAB_HELP_MESSAGE "Usage:\n " \
-                         "\tgetmatvar(filename)\n" \
-                         "\tvar = getmatvar(filename,'var')\n" \
-                         "\t[var1,...,varN] = getmatvar(filename,'var1',...,'varN')\n\n" \
-                         "\tgetmatvar(__,'-t',n)\n" \
-                         "\tgetmatvar(__,'-st')\n" \
-                         "\tgetmatvar(__,'-sw')\n\n" \
-                         "\tfilename\ta character vector of the location of a 7.3+ MAT-file\n" \
-                         "\tvar\t\ta character vector of the variable to extract from the file\n" \
-                         "\t'-t'\t\tspecify the number of threads to use in the next argument n\n" \
-                         "\t'-st'\t\trestrict getmatvar to a single thread\n" \
-                         "\t'-sw'\t\tsuppress warnings from getmatvar\n\n" \
-                         "Examples:\n\tgetmatvar('my_workspace.mat')\n" \
-                         "\tmy_struct = getmatvar('my_workspace.mat', 'my_struct')\n\n"
+#define MATLAB_HELP_MESSAGE "Usage:\n" \
+                         "     getmatvar(filename)                                      loads an entire MAT-file.\n" \
+                         "     var = getmatvar(filename,'var')                          loads a variable from a MAT-file.\n" \
+                         "     [var1,...,varN] = getmatvar(filename,'var1',...,'varN')  loads multiple variables from a MAT-file.\n\n" \
+                         "     getmatvar(__,'-t',n) specifies the number of threads to use \n" \
+					"     with the next argument n.\n" \
+                         "     getmatvar(__,'-st') restricts getmatvar to a single thread.\n" \
+                         "     getmatvar(__,'-sw') suppresses warnings from getmatvar.\n\n" \
+                         "Examples:\n" \
+					"     getmatvar('my_workspace.mat')                           %% All variables\n" \
+                         "     my_struct = getmatvar('my_workspace.mat', 'my_struct')  %% Only variable my_struct\n\n"
 
 #define MATLAB_WARN_MESSAGE ""
 
@@ -441,11 +438,6 @@ bool_t is_getting_everything;
 bool_t is_super_mapped;
 byte* super_pointer;
 
-#ifdef WIN32_LEAN_AND_MEAN
-CRITICAL_SECTION thread_acquisition_lock;
-#else
-pthread_mutex_t thread_acquisition_lock;
-#endif
 pageObject* page_objects;
 
 Data* virtual_super_object;

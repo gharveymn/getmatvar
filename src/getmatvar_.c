@@ -5,6 +5,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 {
 	
 	initialize();
+	mexAtExit(endHooks);
 	warnedObjectVar = FALSE;
 	warnedUnknownVar = FALSE;
 	
@@ -25,8 +26,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 			mxFree(parameters.full_variable_names[i]);
 		}
 		mxFree(parameters.full_variable_names);
+		parameters.full_variable_names = NULL;
 		mxFree(parameters.filename);
-
+		parameters.filename = NULL;
+		
+		mexAtExit(nullFunction);
 		fprintf(stderr, "\nProgram exited successfully.\n");
 	}
 	
@@ -50,6 +54,7 @@ void makeReturnStructure(mxArray** super_structure)
 	mxFree(field_names);
 	
 	freeQueue(object_queue);
+	object_queue = NULL;
 	
 }
 

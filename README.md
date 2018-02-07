@@ -1,70 +1,64 @@
 # getmatvar
 
-This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format MAT-files with support for all MATLAB fundamental types except for function handles, tables, and class objects.
+This is a multithreaded C-based MEX function for fast extraction of variables from MATLAB 7.3+ HDF5 format MAT-files with support for all MATLAB fundamental types except for function handles, tables, and class objects. The function aims to extend the functionality of `load` and improve overall performance.
 
-Eventually there will be prebuilt binaries, but for now you'll have to build it yourself. Running `mexmake.m` will build it for you and output to the `bin` folder if you have all the needed dependencies. You might need to set some paths for the shared object libraries on Unix.
+There is a prebuilt binary available for Windows, and a tar of the sources in [Releases](https://github.com/gharveymn/getmatvar/releases). If building sources, running `INSTALL.m` will build it for you and output to the `bin` folder.
 
-There are also some test functions and MAT-files to experiment with if you want to do some benchmarking.
+Be aware that I have not tested everything, so please do not use this for sensitive applications. If you do find a bug, feel free to open an issue or email me at [gharveymn@gmail.com](mailto:gharveymn@gmail.com).
 
 ## General Usage
 The MEX function is run with a MATLAB function as an entry-point for easy extraction of variables directly into the workspace in the style of `load` (the core function `getmatvar_.c` returns a single struct).
 
 ```matlab
 Usage:  
-	getmatvar(filename,variable)
-	getmatvar(filename,variable1,...,variableN)
-	getmatvar(filename,variable1,...,variableN,option1,oparg1,...,optionM,opargM)
+	getmatvar(filename)
+	var = getmatvar(filename,'var')
+	[var1,...,varN] = getmatvar(filename,'var1',...,'varN')
 		
-	filename	a character vector of the name of the file with a .mat extension
-	variable	a character vector of the variable to extract from the 
-	option		an option flag
-	oparg		an option argument
-
-
-	options:
-		'-t(hreads)'			specify the number of threads to use, requires an integer oparg
-		'-m(ultithread)'		specify whether to multithread, requires a boolean oparg
-		'-suppress-warnings'/'-sw'	suppress warnings from the function, no oparg
+	getmatvar(__,'-t',n) specifies the number of threads to use
+	with the next argument n.
+	getmatvar(__,'-st') restricts getmatvar to a single thread.
+	getmatvar(__,'-sw') suppresses warnings from getmatvar.
 
 Example:
-	>> getmatvar('my_workspace.mat', 'my_struct');
+	>> getmatvar('my_workspace.mat'); 			  % All variables
+	>> my_struct = getmatvar('my_workspace.mat', 'my_struct') % Only variable my_struct
 ```
 
-If you find it more convenient, you can also invoke the MEX function directly. In this case there is an output of a single struct.
+While the normal `load` function can extract individual variables, it cannot handle nested variables---`getmatvar` allows this functionality. This is convenient if one needs to check only one sub-variable of a large struct.
 
 ```matlab
 Example:
-	>> my_array = rand(100,101,102);
-	>> save('my_workspace.mat','my_array');
-	>> [s,~] = getmatvar_('my_workspace.mat', 'my_array');
-	>> s
-	s = 
-  	  struct with fields:
-
-	    my_array: [100×101×102 double]
+	>> my_struct.my_array = rand(100,101,102);
+	>> my_struct.my_substruct.flags = {true,false,false};
+	>> my_struct.my_substruct.data = magic(100);
+	>> save('my_workspace.mat','my_struct');
+	>> flag = getmatvar('my_workspace.mat','my_struct.my_substruct.flags{3}');
+	>> flag
+	flag =
+  	  logical
+	   0
 
 ```
 
 ## Build
-
-There are several ways of building the library as a MEX function as well as a standalone debug build.
+In addition to the standard MEX build, there are also several ways to compile the standalone debug build.
 
 ### MATLAB Native
-Running `INSTALL.m` will build the MEX function with the MATLAB internal compiler. This is only set up for MinGW and MSVC on Windows, and GCC on Unix, so it may require some changes if using a different compiler. You may also need to set up paths to shared object files if compiling on Unix.
+Running `INSTALL.m` will build the MEX function with the default MATLAB MEX compiler. This function is written for the C99 standard, so it will not compile on older distributions of MSVC or LCC.
 
 ### CMake
-The batch scripts named `build_with_msvc.bat` and `build_with_mingw.bat` will build the MEX function with their titular compilers (given you have all the prerequisite executables). If compiling with MSVC you'll have to open up the solution and build the `INSTALL` module (As well as all the others. It just isn't selected at first.) to output to `bin`. You won't have to do anything else for the MinGW build. I haven't tested this with 32-bit Windows since I don't have a copy, however systems are in place to deal with that matter, so it should follow the same procedure.
+There are `CMakeLists` files configured for the non-MEX debug build and for a pseudo-build which will not build `mex`, but do set up the proper paths for symbol indexing.
 
 ### Make
+The Make file is set up to compile the debug build on Unix systems.
 
-The Make file is set up to compile the debug build on Unix systems only at the moment.
+## Known Issues
 
-### Known Issues
+- MATLAB objects are not supported. This may be implemented at some time in the future, but it is not a high priority.
+- A smaller amount of testing has been done on Linux than on Windows. There has been no testing done on 32-bit Windows, and very little done on 32-bit Linux. No testing has been done on MacOS, but it should be covered by Linux testing.
+- Variable selection does not support individual indices of arrays (yet).
 
-Indeed this is Windows native, but compilation on Unix shouldn't require too much troubleshooting --- I've tried to make the source as system-friendly as possible. Try using running `mexmake.m` to compile with `mex` before changing anything.
+## Acknowledgements
 
-This library does not support MATLAB objects other than function handles as of yet. I have managed to reverse engineer their system, but I'm quite busy now, so that may be implemented by around December.
-
-### Acknowledgements
-
-Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, and Johan Hanssen Seferidis for `threadpool`. Also a big thanks to Courtney Bonner for providing much of the framework/foundation for the project and for her general assistance.
+Credit to the original author(s) of `mman-win32` for their Windows implementation of `mman`, Eric Biggers for `libdeflate`, and to Courtney Bonner for providing much of the original framework/foundation for the project and for her general assistance.

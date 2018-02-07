@@ -10,11 +10,7 @@ pthread_cond_t thread_sync;
 pthread_mutex_t thread_mtx;
 #endif
 
-// In case matlab encounters an error and needs to close
-// but touching the libdeflate decompressors with mxMalloc
-// seems to crash matlab, so leave this out for now
-static void freeThreadBuffers(void);
-//static void nothingFunc(void);
+void freeThreadBuffers(void);
 
 error_t getChunkedData(Data* object)
 {
@@ -142,7 +138,7 @@ error_t getChunkedData(Data* object)
 //		mt_enqueue(mt_data_queue, data_page_buckets[i]);
 //	}
 //	free(data_page_buckets);
-	
+//	data_page_buckets = NULL;
 	
 	if(will_multithread == TRUE && object->num_elems > MIN_MT_ELEMS_THRESH)
 	{
@@ -306,10 +302,10 @@ void* doInflate_(void* t)
 //		{
 //			break;
 //		}
-		
+
 //		while(data_page->length > 0)
 //		{
-			
+
 //			DataPair* dp = (DataPair*) dequeue(data_page);
 			
 			data_address = dp->address;
@@ -446,8 +442,8 @@ void* doInflate_(void* t)
 			}
 		}
 //	}
-	
-	
+
+
 //	free(decompressed_data_buffer);
 //	libdeflate_free_decompressor(ldd);
 
@@ -626,15 +622,10 @@ void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, cons
 	}
 }
 
-static void freeThreadBuffers(void)
+void freeThreadBuffers(void)
 {
 	mt_freeQueue(data_buffers);
-	mt_freeQueue(libdeflate_decomps);
 	data_buffers = NULL;
+	mt_freeQueue(libdeflate_decomps);
 	libdeflate_decomps = NULL;
 }
-//
-//static void nothingFunc(void)
-//{
-//	;//nothing
-//}
