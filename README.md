@@ -4,7 +4,7 @@ This is a multithreaded C-based MEX function for fast extraction of variables fr
 
 There is a prebuilt binary available for Windows, and a tar of the sources in [Releases](https://github.com/gharveymn/getmatvar/releases). If building sources, running `INSTALL.m` will build it for you and output to the `bin` folder.
 
-Be aware that I have not tested everything, so please do not use this for sensitive applications. If you do find a bug, feel free to open an issue or email me at [gharveymn@gmail.com](mailto:gharveymn@gmail.com).
+Be aware that I have not tested every possible usage scenario, so please do not use this for sensitive applications. If you do find a bug, feel free to open an issue or email me at [gharveymn@gmail.com](mailto:gharveymn@gmail.com).
 
 ## General Usage
 The MEX function is run with a MATLAB function as an entry-point for easy extraction of variables directly into the workspace in the style of `load` (the core function `getmatvar_.c` returns a single struct).
