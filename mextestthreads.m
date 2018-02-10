@@ -15,8 +15,7 @@ numdims = zeros(numtests,1);
 lents = 0;
 
 
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmem)
 for j = 1:numtests
 	rne = 0;
 	while(rne < lo || rne > hi)
@@ -24,7 +23,7 @@ for j = 1:numtests
 		numelems = randi(hi-lo) + lo;
 		avg = floor(nthroot(numelems,numdims(j)));
 		dims = zeros(1,numdims(j));
-		for k = 1:numdims(k)
+		for k = 1:numdims(j)
 			dims(k) = max(avg + randi(6)-3,1);
 		end
 		rne = prod(dims);
@@ -37,7 +36,7 @@ for j = 1:numtests
 		avgtimes(i) = 0;
 		for k = 1:numsubtests
 			tic
-			getmatvar('res/r.mat','-threads',i);
+			getmatvar('res/t.mat','-t',i);
 			avgtimes(i) = avgtimes(i) + toc/numsubtests;
 		end
 	end
@@ -49,8 +48,7 @@ for j = 1:numtests
 end
 fprintf('\n');
 clear r
-userview = memory;
-disp(userview.MemUsedMATLAB)
+disp(getmem)
 
 figure(1)
 hold on
@@ -63,5 +61,5 @@ scatter3(realnumelems,numdims,besttimes, [], [besttimes/maxthreads, zeros(numtes
 hold off
 
 %tic
-%getmatvar(file,'-threads',3);
+%getmatvar(file,'-t',3);
 %toc

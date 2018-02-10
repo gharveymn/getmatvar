@@ -1,11 +1,9 @@
-disp(getmemstr)
+disp(getmem)
 
 addpath('res')
 addpath('bin')
 %file = 'res/my_struct.mat';
 %vars = {'my_struct','my_struct.array', 'my_struct.cell', 'cell', 'string'};
-%file = 'C:\workspace\matlab\RonZ\data\optData_ESTrade.mat';
-%vars = {'extPar'};
 file = 'res/t.mat';
 vars = {};
 domemory = false;
@@ -18,8 +16,7 @@ mvgavgtimeload = zeros(strideload,1);
 memvals = rand(numtests+1,1);
 lents = 0;
 if(domemory)
-	userview = memory;
-	memvals(1) = userview.MemUsedMATLAB;
+	memvals(1) = getmem;
 	for i = 1:numtests
 
 		getmatvar(file, vars{:}, '-sw');
@@ -27,8 +24,7 @@ if(domemory)
 		timestr = sprintf('%d/%d',i,numtests);
 		fprintf([repmat('\b',1,lents) timestr]);
 		lents = numel(timestr);
-		userview = memory;
-		memvals(i+1) = userview.MemUsedMATLAB;
+		memvals(i+1) = getmem;
 	end
 	fprintf('\n');
 	plot(memvals);
@@ -55,4 +51,4 @@ else
 	end
 	fprintf('\n');
 end
-disp(getmemstr)
+disp(getmem)
