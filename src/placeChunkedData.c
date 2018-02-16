@@ -70,9 +70,10 @@ error_t getChunkedData(Data* object)
 			return 1;
 		}
 #endif
-		for(int i = 0; i < num_threads_to_use; i++)
+		int th_num;
+		for(th_num = 0; th_num < num_threads_to_use; th_num++)
 		{
-			chunk_threads[i] = CreateThread(NULL, 0, doInflate_, &thread_object, 0, &ThreadID);
+			chunk_threads[th_num] = CreateThread(NULL, 0, doInflate_, &thread_object, 0, &ThreadID);
 		}
 #else
 		chunk_threads = mxMalloc(num_threads_to_use*sizeof(pthread_t));
@@ -105,13 +106,15 @@ error_t getChunkedData(Data* object)
 		return 1;
 	}
 #endif
-	for(size_t i = 0; i < num_pages; i++)
+	
+	size_t dpb_num;
+	for(dpb_num = 0; dpb_num < num_pages; dpb_num++)
 	{
-		if((data_page_buckets[i] = initQueue(NULL)) == NULL)
-//		if((data_page_buckets[i] = initQueue(freeDP)) == NULL)
+		if((data_page_buckets[dpb_num] = initQueue(NULL)) == NULL)
+//		if((data_page_buckets[dpb_num] = initQueue(freeDP)) == NULL)
 		{
 			sprintf(error_id, "getmatvar:initQueueErr");
-			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue", (int) i);
+			sprintf(error_message, "Could not initialize the data_page_buckets[%d] queue", (int) dpb_num);
 			return 1;
 		}
 	}
@@ -126,9 +129,9 @@ error_t getChunkedData(Data* object)
 	}
 
 	mt_mergeQueue(mt_data_queue, data_page_buckets, num_pages);
-	for(int i = 0; i < num_pages; i++)
+	for(dpb_num = 0; dpb_num < num_pages; dpb_num++)
 	{
-		freeQueue(data_page_buckets[i]);
+		freeQueue(data_page_buckets[dpb_num]);
 	}
 	free(data_page_buckets);
 	data_page_buckets = NULL;
@@ -152,14 +155,15 @@ error_t getChunkedData(Data* object)
 		}
 		WaitForMultipleObjects((DWORD) num_threads_to_use, chunk_threads, TRUE, INFINITE);
 		DWORD exit_code = 0;
-		for(int i = 0; i < num_threads_to_use; i++)
+		int th_num;
+		for(th_num = 0; th_num < num_threads_to_use; th_num++)
 		{
-			GetExitCodeThread(chunk_threads[i], &exit_code);
+			GetExitCodeThread(chunk_threads[th_num], &exit_code);
 			if(exit_code != 0)
 			{
 				ret = 1;
 			}
-			CloseHandle(chunk_threads[i]);
+			CloseHandle(chunk_threads[th_num]);
 		}
 		mxFree(chunk_threads);
 		CloseHandle(thread_sync);
@@ -383,30 +387,32 @@ void* doInflate_(void* t)
 			 */
 			
 			these_num_chunked_elems = object->chunked_info.num_chunked_elems;
-			for(int j = 0; j < object->num_dims; j++)
+			int dim_num;
+			for(dim_num = 0; dim_num < object->num_dims; dim_num++)
 			{
 				//if the chunk collides with the edge, make sure the dimensions of the chunk respect that
-				these_chunked_dims[j] = object->chunked_info.chunked_dims[j]
-								    - (chunk_start[j] + object->chunked_info.chunked_dims[j] > object->dims[j] ?
-									  chunk_start[j] + object->chunked_info.chunked_dims[j] - object->dims[j]
+				these_chunked_dims[dim_num] = object->chunked_info.chunked_dims[dim_num]
+								    - (chunk_start[dim_num] + object->chunked_info.chunked_dims[dim_num] > object->dims[dim_num] ?
+									  chunk_start[dim_num] + object->chunked_info.chunked_dims[dim_num] - object->dims[dim_num]
 																							    : 0
 								    );
-				these_index_updates[j] = object->chunked_info.chunk_update[j];
-				these_chunked_updates[j] = 0;
+				these_index_updates[dim_num] = object->chunked_info.chunk_update[dim_num];
+				these_chunked_updates[dim_num] = 0;
 			}
 			
-			for(int j = 0; j < object->num_dims; j++)
+			for(dim_num = 0; dim_num < object->num_dims; dim_num++)
 			{
-				if(these_chunked_dims[j] != object->chunked_info.chunked_dims[j])
+				if(these_chunked_dims[dim_num] != object->chunked_info.chunked_dims[dim_num])
 				{
 					makeChunkedUpdates(these_index_updates, these_chunked_dims, object->dims, object->num_dims);
 					makeChunkedUpdates(these_chunked_updates, these_chunked_dims,
 								    object->chunked_info.chunked_dims,
 								    object->num_dims);
 					these_num_chunked_elems = 1;
-					for(int k = 0; k < object->chunked_info.num_chunked_dims; k++)
+					int ch_dim_num;
+					for(ch_dim_num = 0; ch_dim_num < object->chunked_info.num_chunked_dims; ch_dim_num++)
 					{
-						these_num_chunked_elems *= these_chunked_dims[k];
+						these_num_chunked_elems *= these_chunked_dims[ch_dim_num];
 					}
 					break;
 				}
@@ -416,8 +422,8 @@ void* doInflate_(void* t)
 			//copy over data
 			memset(chunk_pos, 0, sizeof(chunk_pos));
 			uint8_t curr_max_dim = 2;
-			index_t db_pos = 0, num_used = 0;
-			for(index_t index = chunk_start_index, anchor = 0;
+			index_t db_pos = 0, num_used = 0, index, anchor;
+			for(index = chunk_start_index, anchor = 0;
 			    index < object->num_elems && num_used < these_num_chunked_elems; anchor = db_pos)
 			{
 				placeData(object, decompressed_data_buffer, index, anchor, these_chunked_dims[0],
@@ -427,13 +433,14 @@ void* doInflate_(void* t)
 				
 				chunk_pos[1]++;
 				uint8_t use_update = 0;
-				for(uint8_t j = 1; j < curr_max_dim; j++)
+				uint8_t cp_dim_num;
+				for(cp_dim_num = 1; cp_dim_num < curr_max_dim; cp_dim_num++)
 				{
-					if(chunk_pos[j] == these_chunked_dims[j])
+					if(chunk_pos[cp_dim_num] == these_chunked_dims[cp_dim_num])
 					{
-						chunk_pos[j] = 0;
-						chunk_pos[j + 1]++;
-						curr_max_dim = curr_max_dim <= j + 1 ? curr_max_dim + (uint8_t) 1 : curr_max_dim;
+						chunk_pos[cp_dim_num] = 0;
+						chunk_pos[cp_dim_num + 1]++;
+						curr_max_dim = curr_max_dim <= cp_dim_num + 1 ? curr_max_dim + (uint8_t) 1 : curr_max_dim;
 						use_update++;
 					}
 				}
@@ -460,15 +467,17 @@ void* doInflate_(void* t)
 index_t findArrayPosition(const index_t* coordinates, const index_t* array_dims, uint8_t num_chunked_dims)
 {
 	index_t array_pos = 0;
-	for(int i = 0; i < num_chunked_dims; i++)
+	int dim_num;
+	for(dim_num = 0; dim_num < num_chunked_dims; dim_num++)
 	{
 		//[18,4] in array size [200,100]
 		//3*200 + 17
 		
-		index_t temp = coordinates[i];
-		for(int j = i - 1; j >= 0; j--)
+		index_t temp = coordinates[dim_num];
+		int dim_iter;
+		for(dim_iter = dim_num - 1; dim_iter >= 0; dim_iter--)
 		{
-			temp *= array_dims[j];
+			temp *= array_dims[dim_iter];
 		}
 		array_pos += temp;
 	}
@@ -536,7 +545,8 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 	mapObject* key_map_obj = st_navigateTo(key_address, total_bytes_needed);
 	byte* key_pointer = key_map_obj->address_ptr;
 	
-	for(int i = 0; i < node->entries_used; i++)
+	int i,j;
+	for(i = 0; i < node->entries_used; i++)
 	{
 		TreeNode sub_node;
 		sub_node.address = (address_t) getBytesAsNumber(key_pointer + key_size, s_block.size_of_offsets,
@@ -572,7 +582,8 @@ error_t fillNode(TreeNode* node, uint8_t num_chunked_dims)
 				return 1;
 			}
 #endif
-			for(int j = 0; j < num_chunked_dims; j++)
+			
+			for(j = 0; j < num_chunked_dims; j++)
 			{
 				dp->chunk_start[num_chunked_dims - 1 - j] = (index_t) getBytesAsNumber(key_pointer + 8 + j * 8, 8,
 																		 META_DATA_BYTE_ORDER);
@@ -609,16 +620,18 @@ void freeDP(void* dat)
 void makeChunkedUpdates(index_t* chunk_update, const index_t* chunked_dims, const index_t* dims, uint8_t num_dims)
 {
 	index_t cu, du;
-	for(int i = 0; i < num_dims; i++)
+	int dim_num;
+	for(dim_num = 0; dim_num < num_dims; dim_num++)
 	{
 		cu = 0;
 		du = 1;
-		for(int k = 0; k < i + 1; k++)
+		int dim_iter;
+		for(dim_iter = 0; dim_iter < dim_num + 1; dim_iter++)
 		{
-			cu += (chunked_dims[k] - 1) * du;
-			du *= dims[k];
+			cu += (chunked_dims[dim_iter] - 1) * du;
+			du *= dims[dim_iter];
 		}
-		chunk_update[i] = du - cu - 1;
+		chunk_update[dim_num] = du - cu - 1;
 	}
 }
 

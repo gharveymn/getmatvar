@@ -116,7 +116,8 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 		return 1;
 	}
 	
-	for(int name_index = 0; name_index < num_names; name_index++)
+	int name_index;
+	for(name_index = 0; name_index < num_names; name_index++)
 	{
 		if(fillVariable(variable_names[name_index]) != 0)
 		{
@@ -134,10 +135,11 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 	if(is_getting_everything == FALSE)
 	{
 		initTraversal(top_level_objects);
-		for(size_t i = 0; i < top_level_objects->length; i++)
+		size_t obj_num;
+		for(obj_num = 0; obj_num < top_level_objects->length; obj_num++)
 		{
 			Data* object = traverseQueue(top_level_objects);
-			size_t n = i;
+			size_t n = obj_num;
 			uint16_t num_digits = 0;
 			do
 			{
@@ -169,7 +171,7 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 				return 1;
 			}
 #endif
-			sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)i);
+			sprintf(object->names.short_name, "%s%d", SELECTION_SIG, (int)obj_num);
 			
 			object->names.long_name_length = (uint16_t)SELECTION_SIG_LEN + num_digits;
 			object->names.long_name = mxMalloc((object->names.long_name_length + 1)*sizeof(char));
@@ -181,7 +183,7 @@ error_t getDataObjects(const char* filename, char** variable_names, const int nu
 				return 1;
 			}
 #endif
-			sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)i);
+			sprintf(object->names.long_name, "%s%d", SELECTION_SIG, (int)obj_num);
 		}
 	}
 	

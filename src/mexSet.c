@@ -1,19 +1,20 @@
 #include "headers/getDataObjects.h"
 
 
-void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			    mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize) object->num_dims);
 	mxArray* mxNumericPtr = mxCreateNumericArray(0, NULL, object->matlab_internal_type, object->complexity_flag);
 	if(object->complexity_flag == mxCOMPLEX)
 	{
 		DataArrays imag_data = rearrangeImaginaryData(object);
-		mxSetData(mxNumericPtr, (void*)object->data_arrays.data);
-		mxSetImagData(mxNumericPtr, (void*)imag_data.data);
+		mxSetData(mxNumericPtr, (void*) object->data_arrays.data);
+		mxSetImagData(mxNumericPtr, (void*) imag_data.data);
 	}
 	else
 	{
-		mxSetData(mxNumericPtr, (void*)object->data_arrays.data);
+		mxSetData(mxNumericPtr, (void*) object->data_arrays.data);
 	}
 	mxSetDimensions(mxNumericPtr, obj_dims, object->num_dims);
 	
@@ -31,11 +32,12 @@ void setNumericPtr(Data* object, mxArray* returnStructure, const char* varname, 
 }
 
 
-void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			  mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize) object->num_dims);
 	mxArray* mxLogicPtr = mxCreateLogicalArray(0, NULL);
-	mxSetData(mxLogicPtr, (void*)object->data_arrays.data);
+	mxSetData(mxLogicPtr, (void*) object->data_arrays.data);
 	mxSetDimensions(mxLogicPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
@@ -52,11 +54,12 @@ void setLogicPtr(Data* object, mxArray* returnStructure, const char* varname, mw
 }
 
 
-void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			 mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize) object->num_dims);
 	mxArray* mxCharPtr = mxCreateCharArray(0, NULL);
-	mxSetData(mxCharPtr, (void*)object->data_arrays.data);
+	mxSetData(mxCharPtr, (void*) object->data_arrays.data);
 	mxSetDimensions(mxCharPtr, obj_dims, object->num_dims);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
@@ -73,7 +76,8 @@ void setCharPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 }
 
 
-void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			mxClassID super_structure_type)
 {
 	
 	Data* data = findSubObjectByShortName(object, "data");
@@ -85,56 +89,59 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 	switch(object->matlab_sparse_type)
 	{
 		case mxDOUBLE_CLASS:
-			mxSpsPtr = mxCreateSparse(((mwSize*)object->dims)[0], ((mwSize*)jc->dims)[0] - 1, 0, object->complexity_flag);
+			mxSpsPtr = mxCreateSparse(((mwSize*) object->dims)[0], ((mwSize*) jc->dims)[0] - 1, 0,
+								 object->complexity_flag);
 			break;
 		case mxLOGICAL_CLASS:
-			mxSpsPtr = mxCreateSparseLogicalMatrix(((mwSize*)object->dims)[0], ((mwSize*)jc->dims)[0] - 1, 0);
+			mxSpsPtr = mxCreateSparseLogicalMatrix(((mwSize*) object->dims)[0], ((mwSize*) jc->dims)[0] - 1, 0);
 			break;
 		default:
 			//error;
 			break;
-			
+		
 	}
-
-	if (data == NULL)
+	
+	if(data == NULL)
 	{
 		//Already set to zero and NULL
 		//mxSetNzmax(mxSpsPtr, 0)
 	}
 	else
 	{
-
-		mxSetNzmax(mxSpsPtr, (mwSize)ir->num_elems);
-
+		
+		mxSetNzmax(mxSpsPtr, (mwSize) ir->num_elems);
+		
 		if(object->complexity_flag == mxCOMPLEX)
 		{
 			DataArrays imag_data = rearrangeImaginaryData(data);
-			mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
-			mxSetImagData(mxSpsPtr, (void*)imag_data.data);
+			mxSetData(mxSpsPtr, (void*) data->data_arrays.data);
+			mxSetImagData(mxSpsPtr, (void*) imag_data.data);
 		}
 		else
 		{
-			mxSetData(mxSpsPtr, (void*)data->data_arrays.data);
+			mxSetData(mxSpsPtr, (void*) data->data_arrays.data);
 		}
 		data->data_flags.is_mx_used = TRUE;
 		
-		mwIndex* irPtr = mxMalloc(ir->num_elems*sizeof(mwIndex));
-		for (index_t i = 0; i < ir->num_elems; i++)
+		mwIndex* irPtr = mxMalloc(ir->num_elems * sizeof(mwIndex));
+		index_t i;
+		for(i = 0; i < ir->num_elems; i++)
 		{
-			irPtr[i] = ((mwIndex*)ir->data_arrays.data)[i];
+			irPtr[i] = ((mwIndex*) ir->data_arrays.data)[i];
 		}
 		mxSetIr(mxSpsPtr, irPtr);
-
+		
 		ir->data_flags.is_mx_used = FALSE;
-
+		
 	}
-
+	
 	//sparse matrices always have two dimensions
 	
 	mwIndex* jcPtr = mxGetJc(mxSpsPtr);
-	for(index_t i = 0; i < jc->num_elems; i++)
+	index_t i;
+	for(i = 0; i < jc->num_elems; i++)
 	{
-		jcPtr[i] = ((mwIndex*)jc->data_arrays.data)[i];
+		jcPtr[i] = ((mwIndex*) jc->data_arrays.data)[i];
 	}
 	jc->data_flags.is_mx_used = FALSE;
 	
@@ -151,15 +158,17 @@ void setSpsPtr(Data* object, mxArray* returnStructure, const char* varname, mwIn
 }
 
 
-void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			 mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize) object->num_dims);
 	int num_fields = object->num_sub_objs;
 	mxArray* mxCellPtr = mxCreateCellArray(object->num_dims, obj_dims);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, index, varname, makeSubstructure(mxCellPtr, num_fields, object->sub_objects, mxCELL_CLASS));
+		mxSetField(returnStructure, index, varname,
+				 makeSubstructure(mxCellPtr, num_fields, object->sub_objects, mxCELL_CLASS));
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
@@ -170,20 +179,23 @@ void setCellPtr(Data* object, mxArray* returnStructure, const char* varname, mwI
 }
 
 
-void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index, mxClassID super_structure_type)
+void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, mwIndex index,
+			   mxClassID super_structure_type)
 {
-	mwSize* obj_dims = makeObjDims(object->dims, (mwSize)object->num_dims);
+	mwSize* obj_dims = makeObjDims(object->dims, (mwSize) object->num_dims);
 	int num_fields = object->num_sub_objs;
 	char** field_names = getFieldNames(object);
-	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, (const char**)field_names);
+	mxArray* mxStructPtr = mxCreateStructArray(object->num_dims, obj_dims, num_fields, (const char**) field_names);
 	
 	if(super_structure_type == mxSTRUCT_CLASS)
 	{
-		mxSetField(returnStructure, index, varname, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
+		mxSetField(returnStructure, index, varname,
+				 makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
 	}
 	else if(super_structure_type == mxCELL_CLASS)
 	{
-		mxSetCell(returnStructure, index, makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
+		mxSetCell(returnStructure, index,
+				makeSubstructure(mxStructPtr, num_fields, object->sub_objects, mxSTRUCT_CLASS));
 	}
 	
 	mxFree(field_names);
@@ -194,8 +206,9 @@ void setStructPtr(Data* object, mxArray* returnStructure, const char* varname, m
 
 char** getFieldNames(Data* object)
 {
-	char** varnames = mxMalloc((object->num_sub_objs)*sizeof(char*));
-	for(uint16_t index = 0; index < object->num_sub_objs; index++)
+	char** varnames = mxMalloc((object->num_sub_objs) * sizeof(char*));
+	uint16_t index;
+	for(index = 0; index < object->num_sub_objs; index++)
 	{
 		Data* obj = dequeue(object->sub_objects);
 		varnames[index] = obj->names.short_name;
@@ -208,10 +221,11 @@ char** getFieldNames(Data* object)
 mwSize* makeObjDims(const index_t* dims, const mwSize num_dims)
 {
 	
-	mwSize* obj_dims = mxMalloc(num_dims*sizeof(mwSize));
-	for(int i = 0; i < num_dims; i++)
+	mwSize* obj_dims = mxMalloc(num_dims * sizeof(mwSize));
+	int i;
+	for(i = 0; i < num_dims; i++)
 	{
-		obj_dims[i] = (mwSize)dims[i];
+		obj_dims[i] = (mwSize) dims[i];
 	}
 	return obj_dims;
 	
@@ -236,13 +250,17 @@ DataArrays rearrangeImaginaryData(Data* object)
 		case mxUINT64_CLASS:
 		case mxSINGLE_CLASS:
 		case mxDOUBLE_CLASS:
-			imag_data.data = mxMalloc((size_t)object->num_elems*object->elem_size/2);
-			for(uint32_t i = 0; i < object->num_elems; i++)
+			imag_data.data = mxMalloc((size_t) object->num_elems * object->elem_size / 2);
+			uint32_t i;
+			for(i = 0; i < object->num_elems; i++)
 			{
-				memcpy(imag_data.data + i*object->elem_size/2, object->data_arrays.data + (2*i + 1)*object->elem_size/2, (size_t)object->elem_size/2);
-				memcpy(object->data_arrays.data + i*object->elem_size/2, object->data_arrays.data + i*object->elem_size, (size_t)object->elem_size/2);
+				memcpy(imag_data.data + i * object->elem_size / 2,
+					  object->data_arrays.data + (2 * i + 1) * object->elem_size / 2,
+					  (size_t) object->elem_size / 2);
+				memcpy(object->data_arrays.data + i * object->elem_size / 2,
+					  object->data_arrays.data + i * object->elem_size, (size_t) object->elem_size / 2);
 			}
-			mxRealloc(object->data_arrays.data, (size_t)object->num_elems*object->elem_size/2);
+			mxRealloc(object->data_arrays.data, (size_t) object->num_elems * object->elem_size / 2);
 			break;
 		default:
 			//this shouldn't happen

@@ -7,7 +7,7 @@ error_t makeObjectTreeSkeleton(void)
 
 error_t readTreeNode(Data* object, address_t node_address, address_t heap_address)
 {
-	
+	int i;
 	uint16_t entries_used = 0;
 	//guess how large the tree is going to be so we don't waste time mapping later
 	//mapObject* tree_map_obj = st_navigateTo(node_address, 8);
@@ -42,7 +42,8 @@ error_t readTreeNode(Data* object, address_t node_address, address_t heap_addres
 		return 1;
 	}
 	
-	for(int i = 0; i < entries_used; i++)
+	
+	for(i = 0; i < entries_used; i++)
 	{
 		mapObject* key_map_obj = st_navigateTo(key_address, total_size - (key_address - node_address));
 		byte* key_pointer = key_map_obj->address_ptr;
@@ -51,7 +52,7 @@ error_t readTreeNode(Data* object, address_t node_address, address_t heap_addres
 		key_address += s_block.size_of_lengths + s_block.size_of_offsets;
 	}
 	
-	for(int i = 0; i < entries_used; i++)
+	for(i = 0; i < entries_used; i++)
 	{
 		if(readSnod(object, sub_node_address_list[i], heap_address) != 0)
 		{
@@ -92,7 +93,8 @@ error_t readSnod(Data* object, address_t node_address, address_t heap_address)
 	mapObject* heap_data_segment_map_obj = st_navigateTo(heap_data_segment_address, heap_data_segment_size);
 	byte* heap_data_segment_pointer = heap_data_segment_map_obj->address_ptr;
 	
-	for(int i = num_symbols - 1; i >= 0; i--)
+	int i;
+	for(i = num_symbols - 1; i >= 0; i--)
 	{
 		address_t name_offset = (address_t)getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size, s_block.size_of_offsets, META_DATA_BYTE_ORDER);
 		address_t sub_obj_address = (address_t)getBytesAsNumber(snod_pointer + 8 + i*s_block.sym_table_entry_size + s_block.size_of_offsets, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;

@@ -68,11 +68,12 @@ error_t parseCoordinates(VariableNameToken* vnt)
 	memcpy(variable_name_cpy, vnt->variable_local_name, vnlen*sizeof(char));
 	variable_name_cpy[vnlen] = '\0';
 	coord_num_str = strtok(variable_name_cpy, delim);
-	for(int i = 0; coord_num_str != NULL; i++)
+	int i,j;
+	for(i = 0; coord_num_str != NULL; i++)
 	{
 		size_t coord_num_str_len = strlen(coord_num_str);
 		vnt->variable_local_coordinates[i] = 0;
-		for(uint8_t j = 0; j < coord_num_str_len; j++)
+		for(j = 0; j < coord_num_str_len; j++)
 		{
 			vnt->variable_local_coordinates[i] = vnt->variable_local_coordinates[i]*10 + (coord_num_str[j] - '0');
 		}
@@ -87,7 +88,8 @@ index_t coordToInd(const index_t* coords, const index_t* dims, uint8_t num_dims)
 {
 	index_t ret = 0;
 	index_t mult = 1;
-	for(int i = 0; i < num_dims; i++)
+	int i;
+	for(i = 0; i < num_dims; i++)
 	{
 		ret += (coords[i] - 1)*mult;
 		mult *= dims[i];
@@ -210,7 +212,8 @@ Data* cloneData(Data* old_object)
 			return NULL;
 		}
 #endif
-		for(int i = 0; i < old_object->chunked_info.num_filters; i++)
+		int i,j;
+		for(i = 0; i < old_object->chunked_info.num_filters; i++)
 		{
 			new_object->chunked_info.filters[i].filter_id = old_object->chunked_info.filters[i].filter_id;
 			new_object->chunked_info.filters[i].num_client_vals = old_object->chunked_info.filters[i].num_client_vals;
@@ -226,7 +229,7 @@ Data* cloneData(Data* old_object)
 				return NULL;
 			}
 #endif
-			for(int j = 0; j < old_object->chunked_info.filters[i].num_client_vals; j++)
+			for(j = 0; j < old_object->chunked_info.filters[i].num_client_vals; j++)
 			{
 				new_object->chunked_info.filters[i].client_data[j] = old_object->chunked_info.filters[i].client_data[j];
 			}
@@ -379,7 +382,8 @@ error_t makeVarnameQueue(char* variable_name)
 		strcpy(varname_token->variable_local_name, token);
 		varname_token->variable_local_index = 0;
 		varname_token->variable_name_type = VT_LOCAL_INDEX;
-		for(uint8_t i = 0; i < vnlen; i++)
+		uint8_t i;
+		for(i = 0; i < vnlen; i++)
 		{
 			if(varname_token->variable_local_name[i] < '0' || varname_token->variable_local_name[i] > '9')
 			{
@@ -429,8 +433,7 @@ error_t makeVarnameQueue(char* variable_name)
 
 void removeSpaces(char* source)
 {
-	char* i = source;
-	char* j = source;
+	char* i = source, *j = source;
 	while(*j != 0)
 	{
 		*i = *j++;

@@ -11,7 +11,8 @@ mapObject* st_navigateTo(address_t address, size_t bytes_needed)
 	initTraversal(map_objects);
 	mapObject* obj = NULL;
 	//this queue can get very long in recursive cases so set a hard limit
-	for(uint8_t i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
+	uint8_t i;
+	for(i = 0; i < max_num_map_objs && (obj = (mapObject*)traverseQueue(map_objects)) != NULL; i++)
 	{
 		if(obj->map_start <= address && address + bytes_needed - 1 <= obj->map_start + obj->map_size - 1 && obj->is_mapped == TRUE)
 		{
@@ -67,8 +68,8 @@ mapObject* st_navigateTo(address_t address, size_t bytes_needed)
 		if(map_objects->abs_length > (size_t)4*max_num_map_objs)
 		{
 			initAbsTraversal(map_objects);
-			size_t static_len = map_objects->abs_length;
-			for(size_t i = 0; i < static_len && (obs_obj = (mapObject*)peekTraverse(map_objects)) != NULL; i++)
+			size_t static_len = map_objects->abs_length, j;
+			for(j = 0; j < static_len && (obs_obj = (mapObject*)peekTraverse(map_objects)) != NULL; j++)
 			{
 				if(obs_obj->num_using == 0)
 				{

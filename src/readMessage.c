@@ -32,7 +32,8 @@ void readDataSpaceMessage(Data* object, byte* msg_pointer, address_t msg_address
 		return;
 	}
 #endif
-	for(int i = 0; i < object->num_dims; i++)
+	int i;
+	for(i = 0; i < object->num_dims; i++)
 	{
 		object->dims[object->num_dims - i - 1] = (size_t)getBytesAsNumber(msg_pointer + 8 + i*s_block.size_of_lengths, s_block.size_of_lengths, META_DATA_BYTE_ORDER);
 	}
@@ -151,15 +152,16 @@ void readDataLayoutMessage(Data* object, byte* msg_pointer, address_t msg_addres
 #endif
 			object->data_address = (address_t)getBytesAsNumber(msg_pointer + 3, s_block.size_of_offsets, META_DATA_BYTE_ORDER) + s_block.base_address;
 			//object->data_pointer = msg_pointer + (object->data_address - msg_address);
-			for(int j = 0; j < object->chunked_info.num_chunked_dims; j++)
+			int i;
+			for(i = 0; i < object->chunked_info.num_chunked_dims; i++)
 			{
 				//chunked storage dims are 4 bytes wide
-				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - j - 1] = (size_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*j, 4,
+				object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims - i - 1] = (size_t)getBytesAsNumber(msg_pointer + 3 + s_block.size_of_offsets + 4*i, 4,
 																										META_DATA_BYTE_ORDER);
 			}
 			object->chunked_info.chunked_dims[object->chunked_info.num_chunked_dims] = 0;
 			object->chunked_info.num_chunked_elems = 1;
-			for(int i = 0; i < object->chunked_info.num_chunked_dims; i++)
+			for(i = 0; i < object->chunked_info.num_chunked_dims; i++)
 			{
 				object->chunked_info.num_chunked_elems *= object->chunked_info.chunked_dims[i];
 			}
@@ -196,22 +198,22 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t m
 	}
 	byte* helper_pointer = NULL;
 	uint16_t name_size = 0;
+	int i,j;
 	
 	//version number
 	switch(*msg_pointer)
 	{
 		case 1:
 			helper_pointer = msg_pointer + 8;
-			
-			for(int j = 0; j < object->chunked_info.num_filters; j++)
+			for(i = 0; i < object->chunked_info.num_filters; i++)
 			{
-				object->chunked_info.filters[j].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2, META_DATA_BYTE_ORDER);
+				object->chunked_info.filters[i].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2, META_DATA_BYTE_ORDER);
 				name_size = (uint16_t)getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER) & 1);
-				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 6, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].client_data = mxMalloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
+				object->chunked_info.filters[i].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER) & 1);
+				object->chunked_info.filters[i].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 6, 2, META_DATA_BYTE_ORDER);
+				object->chunked_info.filters[i].client_data = mxMalloc(object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
 #ifdef NO_MEX
-				if(object->chunked_info.filters[j].client_data == NULL)
+				if(object->chunked_info.filters[i].client_data == NULL)
 				{
 					sprintf(error_id, "getmatvar:mallocErrCliDat1");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
@@ -221,9 +223,9 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t m
 				}
 #endif
 				helper_pointer += 8 + name_size;
-				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
+				for(j = 0; j < object->chunked_info.filters[i].num_client_vals; j++)
 				{
-					object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
+					object->chunked_info.filters[i].client_data[j] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
 					helper_pointer += 4;
 				}
 				
@@ -233,15 +235,15 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t m
 		case 2:
 			helper_pointer = msg_pointer + 2;
 			
-			for(int j = 0; j < object->chunked_info.num_filters; j++)
+			for(i = 0; i < object->chunked_info.num_filters; i++)
 			{
 				
-				object->chunked_info.filters[j].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER) & 1);
-				object->chunked_info.filters[j].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER);
-				object->chunked_info.filters[j].client_data = mxMalloc(object->chunked_info.filters[j].num_client_vals*sizeof(uint32_t));
+				object->chunked_info.filters[i].filter_id = (FilterType)getBytesAsNumber(helper_pointer, 2, META_DATA_BYTE_ORDER);
+				object->chunked_info.filters[i].optional_flag = (uint8_t)(getBytesAsNumber(helper_pointer + 2, 2, META_DATA_BYTE_ORDER) & 1);
+				object->chunked_info.filters[i].num_client_vals = (uint16_t)getBytesAsNumber(helper_pointer + 4, 2, META_DATA_BYTE_ORDER);
+				object->chunked_info.filters[i].client_data = mxMalloc(object->chunked_info.filters[i].num_client_vals*sizeof(uint32_t));
 #ifdef NO_MEX
-				if(object->chunked_info.filters[j].client_data == NULL)
+				if(object->chunked_info.filters[i].client_data == NULL)
 				{
 					sprintf(error_id, "getmatvar:mallocErrCliDat2");
 					sprintf(error_message, "Memory allocation failed. Your system may be out of memory.\n\n");
@@ -251,9 +253,9 @@ void readDataStoragePipelineMessage(Data* object, byte* msg_pointer, address_t m
 				}
 #endif
 				helper_pointer += 6;
-				for(int k = 0; k < object->chunked_info.filters[j].num_client_vals; k++)
+				for(j = 0; j < object->chunked_info.filters[i].num_client_vals; j++)
 				{
-					object->chunked_info.filters[j].client_data[k] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
+					object->chunked_info.filters[i].client_data[j] = (uint32_t)getBytesAsNumber(helper_pointer, 4, META_DATA_BYTE_ORDER);
 					helper_pointer += 4;
 				}
 				

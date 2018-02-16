@@ -115,7 +115,8 @@ error_t initializePageObjects(void)
 			return 1;
 		}
 #endif
-		for(size_t i = 0; i < num_pages; i++)
+		size_t i;
+		for(i = 0; i < num_pages; i++)
 		{
 #ifdef WIN32_LEAN_AND_MEAN
 			InitializeCriticalSection(&page_objects[i].lock);

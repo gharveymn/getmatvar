@@ -96,13 +96,13 @@ error_t allocateSpace(Data* object)
 
 void placeData(Data* object, byte* data_pointer, index_t dst_ind, index_t src_ind, index_t num_elems, size_t elem_size, ByteOrder data_byte_order)
 {
-	
+	index_t i;
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__byte_order__ != data_byte_order)
 	{
-		for(index_t j = 0; j < num_elems; j += elem_size)
+		for(i = 0; i < num_elems; i += elem_size)
 		{
-			reverseBytes(data_pointer + j, elem_size);
+			reverseBytes(data_pointer + i, elem_size);
 		}
 	}
 	
@@ -123,7 +123,7 @@ void placeData(Data* object, byte* data_pointer, index_t dst_ind, index_t src_in
 			memcpy(object->data_arrays.data + elem_size*dst_ind, data_pointer + elem_size*src_ind, num_elems*elem_size);
 			break;
 		case mxCELL_CLASS:
-			for(index_t i = 0; i < num_elems; i++)
+			for(i = 0; i < num_elems; i++)
 			{
 				memcpy(object->data_arrays.sub_object_header_offsets + (dst_ind + i), data_pointer + (src_ind + i)*elem_size, sizeof(address_t));
 			}
@@ -137,7 +137,7 @@ void placeData(Data* object, byte* data_pointer, index_t dst_ind, index_t src_in
 		case mxUNKNOWN_CLASS:
 			if(object->data_flags.is_struct_array == TRUE)
 			{
-				for(index_t i = 0; i < num_elems; i++)
+				for(i = 0; i < num_elems; i++)
 				{
 					memcpy(object->data_arrays.sub_object_header_offsets + (dst_ind + i), data_pointer + (src_ind + i)*elem_size, sizeof(address_t));
 				}
@@ -154,13 +154,13 @@ void placeData(Data* object, byte* data_pointer, index_t dst_ind, index_t src_in
 
 void placeDataWithIndexMap(Data* object, byte* data_pointer, index_t num_elems, index_t elem_size, ByteOrder data_byte_order, const index_t* index_map, const index_t* index_sequence)
 {
-	
+	index_t i;
 	//reverse the bytes if the byte order doesn't match the cpu architecture
 	if(__byte_order__ != data_byte_order)
 	{
-		for(index_t j = 0; j < num_elems; j += elem_size)
+		for(i = 0; i < num_elems; i += elem_size)
 		{
-			reverseBytes(data_pointer + j, (size_t)elem_size);
+			reverseBytes(data_pointer + i, (size_t)elem_size);
 		}
 	}
 	
@@ -179,15 +179,15 @@ void placeDataWithIndexMap(Data* object, byte* data_pointer, index_t num_elems, 
 		case mxDOUBLE_CLASS:
 		case mxLOGICAL_CLASS:
 		case mxCHAR_CLASS:
-			for(index_t j = 0; j < num_elems; j++)
+			for(i = 0; i < num_elems; i++)
 			{
-				memcpy(object->data_arrays.data + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, (size_t)elem_size);
+				memcpy(object->data_arrays.data + elem_size*index_map[index_sequence[i]], data_pointer + index_sequence[i]*elem_size, (size_t)elem_size);
 			}
 			break;
 		case mxCELL_CLASS:
-			for(index_t j = 0; j < num_elems; j++)
+			for(i = 0; i < num_elems; i++)
 			{
-				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*index_map[index_sequence[j]], data_pointer + index_sequence[j]*elem_size, (size_t)elem_size);
+				memcpy(object->data_arrays.sub_object_header_offsets + elem_size*index_map[index_sequence[i]], data_pointer + index_sequence[i]*elem_size, (size_t)elem_size);
 			}
 			break;
 		case mxSTRUCT_CLASS:

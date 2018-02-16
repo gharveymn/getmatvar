@@ -21,7 +21,8 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	{
 		readInput(nrhs, prhs);
 		makeReturnStructure(plhs);
-		for(int i = 0; i < parameters.num_vars; i++)
+		int i;
+		for(i = 0; i < parameters.num_vars; i++)
 		{
 			mxFree(parameters.full_variable_names[i]);
 		}
@@ -184,7 +185,8 @@ void readInput(int nrhs, const mxArray* prhs[])
 	}
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
-	for(int i = 1; i < nrhs; i++)
+	int i;
+	for(i = 1; i < nrhs; i++)
 	{
 		
 		if(mxGetClassID(prhs[i]) == mxSTRING_CLASS)
@@ -210,9 +212,10 @@ void readInput(int nrhs, const mxArray* prhs[])
 						input = mxArrayToString(prhs[i]);
 						
 						//verify all chars are numeric
-						for(size_t k = 0; k < mxGetNumberOfElements(prhs[i]); k++)
+						size_t j;
+						for(j = 0; j < mxGetNumberOfElements(prhs[i]); j++)
 						{
-							if((input[k] - '0') > 9 || (input[k] - '0') < 0)
+							if((input[j] - '0') > 9 || (input[j] - '0') < 0)
 							{
 								readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 							}

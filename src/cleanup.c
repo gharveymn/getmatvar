@@ -58,10 +58,11 @@ void freeDataObject(void* object)
 		
 		if(data_object->chunked_info.filters != NULL)
 		{
-			for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+			int i;
+			for(i = 0; i < data_object->chunked_info.num_filters; i++)
 			{
-				mxFree(data_object->chunked_info.filters[j].client_data);
-				data_object->chunked_info.filters[j].client_data = NULL;
+				mxFree(data_object->chunked_info.filters[i].client_data);
+				data_object->chunked_info.filters[i].client_data = NULL;
 			}
 			mxFree(data_object->chunked_info.filters);
 			data_object->chunked_info.filters = NULL;
@@ -105,7 +106,7 @@ void freeDataObject(void* object)
 
 void freeDataObjectTree(Data* data_object)
 {
-	
+	uint32_t i;
 	if(data_object->data_flags.is_mx_used != TRUE)
 	{
 		if(data_object->data_arrays.data != NULL)
@@ -135,15 +136,15 @@ void freeDataObjectTree(Data* data_object)
 		data_object->data_arrays.sub_object_header_offsets = NULL;
 	}
 	
-	for(int j = 0; j < data_object->chunked_info.num_filters; j++)
+	for(i = 0; i < data_object->chunked_info.num_filters; i++)
 	{
-		mxFree(data_object->chunked_info.filters[j].client_data);
-		data_object->chunked_info.filters[j].client_data = NULL;
+		mxFree(data_object->chunked_info.filters[i].client_data);
+		data_object->chunked_info.filters[i].client_data = NULL;
 	}
 	
 	if(data_object->sub_objects != NULL)
 	{
-		for(uint32_t j = 0; j < data_object->num_sub_objs; j++)
+		for(i = 0; i < data_object->num_sub_objs; i++)
 		{
 			Data* obj = dequeue(data_object->sub_objects);
 			freeDataObjectTree(obj);
@@ -163,7 +164,8 @@ void destroyPageObjects(void)
 {
 	if(page_objects != NULL)
 	{
-		for(size_t i = 0; i < num_pages; ++i)
+		size_t i;
+		for(i = 0; i < num_pages; ++i)
 		{
 			if(page_objects[i].is_mapped == TRUE)
 			{
@@ -278,7 +280,8 @@ void endHooks(void)
 	
 	if(parameters.full_variable_names != NULL)
 	{
-		for(int i = 0; i < parameters.num_vars; i++)
+		int i;
+		for(i = 0; i < parameters.num_vars; i++)
 		{
 			mxFree(parameters.full_variable_names[i]);
 		}

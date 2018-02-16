@@ -24,7 +24,8 @@ int main(int argc, char* argv[])
 //		{
 			readInput(argc - 1, argv + 1);
 			makeReturnStructure();
-			for(int i = 0; i < parameters.num_vars; i++)
+			int i;
+			for(i = 0; i < parameters.num_vars; i++)
 			{
 				mxFree(parameters.full_variable_names[i]);
 			}
@@ -37,6 +38,8 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "\nProgram exited successfully.\n\n");
 		
 	}
+	
+	return 0;
 
 }
 
@@ -54,13 +57,14 @@ void makeReturnStructure(void)
 		readMXError("getmatvar:mallocErrMRSME","Memory allocation failed. Your system may be out of memory.\n\n");
 		exit(1);
 	}
-	for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
+	uint32_t i,j;
+	for(i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		Data* obj = dequeue(virtual_super_object->sub_objects);
 		varnames[i] = mxMalloc((obj->names.short_name_length + 1)*sizeof(char));
 		if(varnames[i] == NULL)
 		{
-			for(uint32_t j = 0; j < i - 1; j++)
+			for(j = 0; j < i - 1; j++)
 			{
 				mxFree(varnames[i]);
 			}
@@ -72,7 +76,7 @@ void makeReturnStructure(void)
 	}
 	restartQueue(virtual_super_object->sub_objects);
 	
-	for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
+	for(i = 0; i < virtual_super_object->num_sub_objs; i++)
 	{
 		mxFree(varnames[i]);
 	}
@@ -97,7 +101,8 @@ void readInput(int nrhs, char* prhs[])
 	parameters.full_variable_names = mxMalloc(((nrhs - 1) + 1)*sizeof(char*));
 	kwarg kwarg_expected = NOT_AN_ARGUMENT;
 	bool_t kwarg_flag = FALSE;
-	for(int i = 1; i < nrhs; i++)
+	int i,j;
+	for(i = 1; i < nrhs; i++)
 	{
 		
 		if(kwarg_flag == TRUE)
@@ -109,9 +114,9 @@ void readInput(int nrhs, char* prhs[])
 					input = prhs[i];
 					
 					//verify all chars are numeric
-					for(int k = 0; k < strlen(prhs[i]); k++)
+					for(j = 0; j < strlen(prhs[i]); j++)
 					{
-						if((input[k] - '0') > 9 || (input[k] - '0') < 0)
+						if((input[j] - '0') > 9 || (input[j] - '0') < 0)
 						{
 							readMXError("getmatvar:invalidNumThreadsError", "Error in the number of threads requested.\n\n");
 						}

@@ -12,7 +12,8 @@ error_t fillVariable(char* variable_name)
 	if(strcmp(variable_name, "\0") == 0)
 	{
 		is_getting_everything = TRUE;
-		for(uint32_t i = 0; i < virtual_super_object->num_sub_objs; i++)
+		uint32_t i;
+		for(i = 0; i < virtual_super_object->num_sub_objs; i++)
 		{
 			Data* obj = dequeue(virtual_super_object->sub_objects);
 			if(obj->names.short_name[0] != '#')
@@ -218,7 +219,8 @@ error_t fillDataTree(Data* object)
 		return 1;
 	}
 	initTraversal(object->sub_objects);
-	for(uint32_t i = 0; i < object->num_sub_objs; i++)
+	uint32_t i;
+	for(i = 0; i < object->num_sub_objs; i++)
 	{
 		Data* obj = traverseQueue(object->sub_objects);
 		if(fillDataTree(obj) != 0)
@@ -305,7 +307,8 @@ error_t fillObject(Data* object, address_t this_obj_address)
 	{
 		flushQueue(object->sub_objects);
 		object->num_sub_objs = (uint32_t)object->num_elems;
-		for(index_t i = 0; i < object->num_elems; i++)
+		index_t i;
+		for(i = 0; i < object->num_elems; i++)
 		{
 			address_t new_obj_address = (address_t)object->data_arrays.sub_object_header_offsets[i] + s_block.base_address;
 			//search from virtual_super_object since the reference might be in #refs#
